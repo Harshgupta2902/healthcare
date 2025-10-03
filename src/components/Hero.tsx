@@ -58,8 +58,15 @@ export default function Hero() {
 
   return (
     <section className="relative py-20 md:py-32 lg:py-40 overflow-hidden">
-      {/* Aquatic gradient background overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[rgba(46,196,182,0.22)] via-[rgba(32,150,145,0.18)] to-[rgba(46,196,182,0.28)] pointer-events-none" />
+      {/* Doctor treating patient background image with 30% opacity */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1920&h=1080&fit=crop&auto=format&q=80')"
+          }}
+        />
+      </div>
       
       <div className="container relative mx-auto max-w-6xl px-6 md:px-12">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
