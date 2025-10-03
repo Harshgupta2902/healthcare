@@ -63,7 +63,7 @@ export default function Hero() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
           style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1920&h=1080&fit=crop&auto=format&q=80')"
+            backgroundImage: "url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop&auto=format&q=80')"
           }}
         />
       </div>
@@ -95,9 +95,9 @@ export default function Hero() {
               </Button>
               <Button
                 onClick={handleLearnMore}
-                variant="outline"
+                variant="secondary"
                 size="lg"
-                className="text-lg px-8 py-6 hover:bg-secondary/50 transition-all duration-200">
+                className="text-lg px-8 py-6 bg-white/95 hover:bg-white border border-primary/20 shadow-md hover:shadow-lg transition-all duration-200">
 
                 Learn how it works
               </Button>
