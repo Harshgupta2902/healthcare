@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Calendar, IdCard, Grid3x3, CardSim, CalendarRange, CircleX } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface Service {
   id: string;
