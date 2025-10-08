@@ -65,7 +65,7 @@ export default function Footer({ className }: FooterProps) {
               </p>
             </div>
             <div className="space-y-2 text-sm">
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground !whitespace-pre-line">
                 <span className="font-medium text-foreground">Email:</span> care@healthhere.com
               </p>
               <p className="text-muted-foreground !whitespace-pre-line">
