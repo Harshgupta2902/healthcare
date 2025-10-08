@@ -161,6 +161,13 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] flex items-center justify-center p-4 py-8">
+      <Link 
+        href="/" 
+        className="absolute top-6 left-6 z-20 text-2xl font-heading font-bold text-[var(--color-primary)] hover:opacity-80 transition-opacity"
+      >
+        HealthHere
+      </Link>
+      
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
         style={{
