@@ -497,9 +497,11 @@ export default function ServicesSection() {
       )}
 
       <div className="text-center">
-        <Button variant="outline" size="lg" className="mb-6">
-          See All Specialists
-        </Button>
+        <Link href="/specialists">
+          <Button variant="outline" size="lg" className="mb-6">
+            See All Specialists
+          </Button>
+        </Link>
         
         <div className="max-w-2xl mx-auto">
           <h3 className="text-lg font-semibold mb-4 text-foreground">Quick FAQ</h3>
