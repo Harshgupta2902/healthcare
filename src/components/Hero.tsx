@@ -32,12 +32,33 @@ export default function Hero() {
 
     setIsSubmitting(true);
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.code === "DUPLICATE_EMAIL") {
+          toast.error("This email is already subscribed to our newsletter");
+        } else if (data.code === "INVALID_EMAIL_FORMAT") {
+          toast.error("Please enter a valid email address");
+        } else {
+          toast.error(data.error || "Something went wrong. Please try again.");
+        }
+        return;
+      }
+
       setIsSuccess(true);
-      toast.success("Thank you! We'll be in touch soon.");
+      setEmail("");
+      toast.success("Thank you! You're now subscribed to our newsletter.");
     } catch (error) {
+      console.error("Newsletter subscription error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
