@@ -66,3 +66,11 @@ export const verification = sqliteTable("verification", {
     () => new Date(),
   ),
 });
+
+// Newsletter subscribers table
+export const newsletterSubscribers = sqliteTable('newsletter_subscribers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  subscribedAt: text('subscribed_at').notNull(),
+  status: text('status').notNull().default('active'),
+});
