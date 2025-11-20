@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, CircleX, LogIn } from "lucide-react";
+import { Menu, CircleX, LogIn, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useSession, authClient } from "@/lib/auth-client";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger } from
-"@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 interface HeaderProps {
@@ -24,6 +23,7 @@ interface HeaderProps {
 export default function Header({ className }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const { data: session, isPending, refetch } = useSession();
 
   const handleLoginClick = () => {
     router.push('/login');
@@ -35,15 +35,32 @@ export default function Header({ className }: HeaderProps) {
     setIsMobileMenuOpen(false);
   };
 
+  const handleDashboardClick = () => {
+    router.push('/dashboard');
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    const { error } = await authClient.signOut();
+    if (error?.code) {
+      toast.error(error.code);
+    } else {
+      localStorage.removeItem("bearer_token");
+      refetch();
+      router.push("/");
+      toast.success("Signed out successfully");
+    }
+  };
+
   return (
     <header className={`sticky top-0 z-50 w-full bg-card/80 backdrop-blur-md border-b border-border ${className}`}>
       <div className="container mx-auto px-6 md:px-12">
         <div className="flex h-16 items-center justify-between">
           {/* Brand */}
           <div className="flex items-center">
-            <h1 className="text-xl font-heading font-bold text-primary">
+            <a href="/" className="text-xl font-heading font-bold text-primary hover:opacity-80 transition-opacity">
               HealthHere
-            </h1>
+            </a>
           </div>
 
           {/* Desktop Navigation */}
@@ -69,19 +86,62 @@ export default function Header({ className }: HeaderProps) {
           <div className="flex items-center space-x-4">
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-3">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-muted-foreground hover:text-foreground"
-                onClick={handleLoginClick}
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Login
-              </Button>
+              {!isPending && session?.user ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleDashboardClick}
+                  >
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
+                        <Avatar className="h-9 w-9">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {session.user.name?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium">{session.user.name}</p>
+                          <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleDashboardClick}>
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={handleLoginClick}
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Login
+                  </Button>
 
-              <Button size="sm" onClick={handleSignUpClick}>
-                Sign up
-              </Button>
+                  <Button size="sm" onClick={handleSignUpClick}>
+                    Sign up
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -122,18 +182,56 @@ export default function Header({ className }: HeaderProps) {
                 Pricing
               </a>
               <div className="pt-2 mt-2 border-t border-border space-y-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
-                  onClick={handleLoginClick}
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Login
-                </Button>
-                <Button size="sm" className="w-full" onClick={handleSignUpClick}>
-                  Sign up
-                </Button>
+                {!isPending && session?.user ? (
+                  <>
+                    <div className="px-3 py-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                            {session.user.name?.charAt(0).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{session.user.name}</p>
+                          <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleDashboardClick}
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-start text-muted-foreground hover:text-foreground"
+                      onClick={handleLoginClick}
+                    >
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Login
+                    </Button>
+                    <Button size="sm" className="w-full" onClick={handleSignUpClick}>
+                      Sign up
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
