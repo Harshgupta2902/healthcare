@@ -82,7 +82,7 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
         rememberMe: formData.rememberMe,
-        callbackURL: searchParams.get("redirect") || "/"
+        callbackURL: searchParams.get("redirect") || "/dashboard"
       });
 
       if (error?.code) {
@@ -91,7 +91,7 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back! You've successfully logged in.");
-      router.push(searchParams.get("redirect") || "/");
+      router.push(searchParams.get("redirect") || "/dashboard");
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
