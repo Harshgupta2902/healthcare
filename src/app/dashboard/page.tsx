@@ -434,7 +434,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)]">
+    <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] relative">
+      {/* Background Image with 20% opacity */}
+      <div 
+        className="absolute inset-0 z-0 opacity-20 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/soft-comforting-medical-wellness-agenda--873064d3-20251220130146.jpg)'
+        }}
+      />
+      
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container flex h-16 items-center justify-between">
@@ -457,7 +465,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <div className="container py-8">
+      <div className="container py-8 relative z-10">
         <div className="mb-8">
           <h2 className="text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
             Medical Dashboard
