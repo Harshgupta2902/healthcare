@@ -435,11 +435,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] relative">
-      {/* Background Image with 60% opacity */}
+      {/* Background Image with 20% opacity */}
       <div 
-        className="absolute inset-0 z-0 opacity-60 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 z-0 opacity-20 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: 'url(https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/soft-comforting-medical-wellness-agenda--873064d3-20251220130146.jpg)'
+          backgroundImage: 'url(https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/professional-photograph-of-a-person-fill-f0c94809-20251120130450.jpg)'
         }}
       />
       
