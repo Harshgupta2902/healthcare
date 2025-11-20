@@ -146,8 +146,19 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created successfully! Please check your email to verify.");
-      router.push("/login?registered=true");
+      toast.success("Account created successfully! Redirecting to your dashboard...");
+      
+      // Auto-login after registration
+      const { error: loginError } = await authClient.signIn.email({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (loginError?.code) {
+        router.push("/login?registered=true");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
