@@ -11,36 +11,36 @@ async function main() {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     
-    const currentDate = new Date();
+    const now = new Date();
 
     const sampleMedicalHistory = [
         {
-            userId: 'test-user-001',
-            conditionName: 'Hypertension',
-            diagnosisDate: '2020-03-15',
+            user_id: 'test-user-001',
+            condition_name: 'Hypertension',
+            diagnosis_date: '2020-03-15',
             status: 'chronic',
             notes: 'Stage 1 hypertension, controlled with medication and lifestyle changes',
-            createdAt: threeYearsAgo.toISOString(),
-            updatedAt: currentDate.toISOString(),
+            created_at: threeYearsAgo.toISOString(),
+            updated_at: now.toISOString(),
         },
         {
-            userId: 'test-user-001',
-            conditionName: 'Seasonal Allergies',
-            diagnosisDate: '2018-05-22',
+            user_id: 'test-user-001',
+            condition_name: 'Seasonal Allergies',
+            diagnosis_date: '2018-05-22',
             status: 'active',
             notes: 'Allergic to pollen and dust mites. Symptoms worsen in spring and fall',
-            createdAt: fiveYearsAgo.toISOString(),
-            updatedAt: currentDate.toISOString(),
+            created_at: fiveYearsAgo.toISOString(),
+            updated_at: now.toISOString(),
         },
         {
-            userId: 'test-user-001',
-            conditionName: 'Ankle Sprain (Left)',
-            diagnosisDate: '2022-08-10',
+            user_id: 'test-user-001',
+            condition_name: 'Ankle Sprain (Left)',
+            diagnosis_date: '2022-08-10',
             status: 'resolved',
             notes: 'Grade 2 sprain from sports injury. Fully healed after 8 weeks of physical therapy',
-            createdAt: oneYearAgo.toISOString(),
-            updatedAt: currentDate.toISOString(),
-        },
+            created_at: oneYearAgo.toISOString(),
+            updated_at: now.toISOString(),
+        }
     ];
 
     await db.insert(medicalHistory).values(sampleMedicalHistory);
