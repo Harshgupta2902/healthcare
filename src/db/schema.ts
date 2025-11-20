@@ -74,3 +74,64 @@ export const newsletterSubscribers = sqliteTable('newsletter_subscribers', {
   subscribedAt: text('subscribed_at').notNull(),
   status: text('status').notNull().default('active'),
 });
+
+// Medical dashboard tables
+export const userProfiles = sqliteTable('user_profiles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }),
+  phone: text('phone'),
+  dateOfBirth: text('date_of_birth'),
+  gender: text('gender'),
+  bloodType: text('blood_type'),
+  height: text('height'),
+  weight: text('weight'),
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  postalCode: text('postal_code'),
+  emergencyContactName: text('emergency_contact_name'),
+  emergencyContactPhone: text('emergency_contact_phone'),
+  emergencyContactRelationship: text('emergency_contact_relationship'),
+  profilePhotoUrl: text('profile_photo_url'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const medicalHistory = sqliteTable('medical_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  conditionName: text('condition_name').notNull(),
+  diagnosisDate: text('diagnosis_date'),
+  status: text('status').notNull().default('active'),
+  notes: text('notes'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const medications = sqliteTable('medications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  medicationName: text('medication_name').notNull(),
+  dosage: text('dosage').notNull(),
+  frequency: text('frequency').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date'),
+  prescribingDoctor: text('prescribing_doctor'),
+  notes: text('notes'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const medicalDocuments = sqliteTable('medical_documents', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  documentName: text('document_name').notNull(),
+  documentType: text('document_type').notNull(),
+  fileUrl: text('file_url').notNull(),
+  fileSize: integer('file_size'),
+  uploadDate: text('upload_date').notNull(),
+  notes: text('notes'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
