@@ -4,8 +4,8 @@ import { userProfiles } from '@/db/schema';
 async function main() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const sampleProfiles = [
+
+    const sampleUserProfiles = [
         {
             userId: 'test-user-001',
             phone: '+1-555-0123',
@@ -24,10 +24,10 @@ async function main() {
             profilePhotoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=test-user-001',
             createdAt: thirtyDaysAgo.toISOString(),
             updatedAt: new Date().toISOString(),
-        }
+        },
     ];
 
-    await db.insert(userProfiles).values(sampleProfiles);
+    await db.insert(userProfiles).values(sampleUserProfiles);
     
     console.log('✅ User profiles seeder completed successfully');
 }
