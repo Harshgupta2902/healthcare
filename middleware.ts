@@ -16,5 +16,5 @@ export async function middleware(request: NextRequest) {
  
 export const config = {
   runtime: "nodejs",
-  matcher: ["/dashboard", "/profile", "/appointments"], // Apply middleware to specific routes
+  matcher: ["/profile", "/appointments"], // Removed /dashboard - it has client-side protection
 };
