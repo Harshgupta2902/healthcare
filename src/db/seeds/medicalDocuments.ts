@@ -3,9 +3,15 @@ import { medicalDocuments } from '@/db/schema';
 
 async function main() {
     const now = new Date();
-    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const oneAndHalfYearsAgo = new Date(now.getTime() - 547 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now);
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const oneAndHalfYearsAgo = new Date(now);
+    oneAndHalfYearsAgo.setFullYear(oneAndHalfYearsAgo.getFullYear() - 1);
+    oneAndHalfYearsAgo.setMonth(oneAndHalfYearsAgo.getMonth() - 6);
 
     const sampleDocuments = [
         {
@@ -40,7 +46,7 @@ async function main() {
             notes: 'X-ray taken after ankle injury. No fractures detected, confirmed grade 2 sprain',
             createdAt: oneAndHalfYearsAgo.toISOString(),
             updatedAt: now.toISOString(),
-        },
+        }
     ];
 
     await db.insert(medicalDocuments).values(sampleDocuments);
