@@ -62,16 +62,16 @@ export default function ContactPage() {
       
       {/* Hero Section with Background */}
       <section className="relative w-full py-16 md:py-24 bg-fixed bg-cover bg-center overflow-hidden">
-        {/* Background Image with 70% opacity */}
+        {/* Background Image with 85% opacity */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-70"
+          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-85"
           style={{
             backgroundImage: "url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2074&auto=format&fit=crop')",
           }}
         />
         
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        {/* Lighter Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/30 to-background/70" />
         
         <div className="container mx-auto px-6 md:px-12 max-w-6xl relative z-10">
           <div className="text-center max-w-3xl mx-auto">
