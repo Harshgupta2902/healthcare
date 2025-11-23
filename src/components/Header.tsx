@@ -76,8 +76,8 @@ export default function Header({ className }: HeaderProps) {
               How it works
             </a>
             <a
-              href="#pricing"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors !whitespace-pre-line">
+              href="/contact"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Contact Us
             </a>
           </nav>
@@ -176,10 +176,10 @@ export default function Header({ className }: HeaderProps) {
                 How it works
               </a>
               <a
-              href="#pricing"
+              href="/contact"
               className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}>
-                Pricing
+                Contact Us
               </a>
               <div className="pt-2 mt-2 border-t border-border space-y-2">
                 {!isPending && session?.user ? (
