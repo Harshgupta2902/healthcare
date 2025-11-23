@@ -11,8 +11,17 @@ export default function HowItWorksPage() {
       
       <main className="flex flex-col">
         {/* Hero Section */}
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
+        <section className="py-16 md:py-24 relative overflow-hidden">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/soft-calming-medical-consultation-backgr-1e7d43f4-20251123160242.jpg"
+              alt=""
+              className="w-full h-full object-cover opacity-30"
+            />
+          </div>
+
+          <div className="container mx-auto max-w-6xl px-6 md:px-12 relative z-10">
             <div className="text-center space-y-4 mb-12">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading">
                 How <span className="text-primary">HealthHere</span> Works
