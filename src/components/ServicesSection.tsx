@@ -49,7 +49,7 @@ const services: Service[] = [
   {
     id: "consultations",
     title: "Video Consultations",
-    description: "Connect with healthcare professionals from the comfort of your home",
+    description: "Connect with board-certified healthcare professionals from the comfort and convenience of your home through our secure, HIPAA-compliant video platform. Our telemedicine service eliminates travel time, reduces exposure to illness, and provides immediate access to quality healthcare whenever you need it. Whether you're dealing with a minor illness, managing a chronic condition, or seeking preventive care advice, our experienced doctors are available 24/7 to provide comprehensive consultations. Each session includes a thorough assessment, personalized treatment recommendations, and electronic prescriptions sent directly to your preferred pharmacy. Experience healthcare that fits your schedule and lifestyle, with follow-up appointments and continuity of care built into every interaction.",
     icon: <Calendar className="h-6 w-6" />,
     benefits: [
       "24/7 availability with on-demand scheduling",
@@ -62,7 +62,7 @@ const services: Service[] = [
   {
     id: "specialists",
     title: "Specialist Network",
-    description: "Access to board-certified specialists across multiple medical fields",
+    description: "Gain access to our extensive network of board-certified specialists spanning over 40 medical disciplines, from cardiology and dermatology to mental health and orthopedics. Traditional specialist appointments often require weeks or months of waiting, but our platform connects you with expert physicians in days, not months. Each specialist in our network has been rigorously vetted and maintains active board certifications, ensuring you receive the highest standard of care. Our integrated system allows for seamless referrals from your primary care provider, automatic sharing of medical records, and coordinated treatment plans across multiple specialists. Whether you need a second opinion, ongoing specialist care, or consultation for a specific condition, our network provides expert medical guidance tailored to your unique health needs.",
     icon: <IdCard className="h-6 w-6" />,
     benefits: [
       "Cardiology, dermatology, mental health, and more",
@@ -75,7 +75,7 @@ const services: Service[] = [
   {
     id: "records",
     title: "Secure Health Records",
-    description: "Your complete medical history, accessible anywhere, anytime",
+    description: "Take control of your health information with our comprehensive electronic health records system that centralizes all your medical data in one secure, easily accessible location. Your complete health history, including lab results, imaging reports, vaccination records, prescription history, and physician notes, is stored with bank-level encryption and available whenever you need it. Share your records instantly with healthcare providers, eliminate redundant tests, and ensure continuity of care across different medical facilities. Our system automatically integrates new information from labs, pharmacies, and healthcare providers, keeping your records up-to-date without any effort on your part. With mobile access and customizable privacy controls, you decide who sees your information and when, putting you firmly in charge of your healthcare data.",
     icon: <CardSim className="h-6 w-6" />,
     benefits: [
       "Centralized storage of all medical documents",
@@ -88,7 +88,7 @@ const services: Service[] = [
   {
     id: "plans",
     title: "Personalized Care Plans",
-    description: "Tailored treatment plans designed specifically for your health goals",
+    description: "Receive customized healthcare strategies designed specifically for your unique health profile, medical history, and wellness goals. Our AI-powered platform analyzes your health data, lifestyle factors, and medical conditions to create comprehensive care plans that evolve with your needs. Each plan includes detailed medication management with automated reminders, lifestyle recommendations based on evidence-based practices, and measurable health goals with progress tracking. Your care team monitors your advancement through regular check-ins and adjusts your plan as needed to ensure optimal outcomes. From managing chronic conditions like diabetes and hypertension to achieving wellness goals such as weight management and stress reduction, your personalized plan serves as a roadmap to better health. Interactive dashboards provide real-time insights into your progress, helping you stay motivated and engaged in your health journey.",
     icon: <Grid3x3 className="h-6 w-6" />,
     benefits: [
       "AI-powered health recommendations",
