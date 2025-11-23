@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { CircleCheckBig } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Hero() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -70,11 +72,7 @@ export default function Hero() {
   };
 
   const handleLearnMore = () => {
-    // Scroll to services section or show info
-    const servicesSection = document.getElementById("services");
-    if (servicesSection) {
-      servicesSection.scrollIntoView({ behavior: "smooth" });
-    }
+    router.push("/how-it-works");
   };
 
   return (
