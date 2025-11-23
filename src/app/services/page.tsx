@@ -10,8 +10,17 @@ export default function ServicesPage() {
       
       <main className="flex flex-col">
         {/* Hero Section */}
-        <section className="relative w-full bg-gradient-to-br from-primary/5 via-accent/20 to-secondary/30 border-b border-border">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12 py-16 md:py-24">
+        <section className="relative w-full bg-gradient-to-br from-primary/5 via-accent/20 to-secondary/30 border-b border-border overflow-hidden">
+          {/* Background image with 20% opacity and parallax effect */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-fixed"
+            style={{
+              backgroundImage: "url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop&auto=format&q=80')",
+              opacity: 0.2
+            }}
+          />
+          
+          <div className="container relative mx-auto max-w-6xl px-6 md:px-12 py-16 md:py-24">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
                 Healthcare Services Designed for You
