@@ -21,6 +21,7 @@ interface Service {
   icon: React.ReactNode;
   benefits: string[];
   bookable: boolean;
+  backgroundImage: string;
 }
 
 interface ServiceCardProps {
@@ -57,7 +58,8 @@ const services: Service[] = [
       "Instant access to prescriptions and care plans",
       "Follow-up reminders and care continuity"
     ],
-    bookable: true
+    bookable: true,
+    backgroundImage: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=1920&h=1080&fit=crop&auto=format&q=80"
   },
   {
     id: "specialists",
@@ -70,7 +72,8 @@ const services: Service[] = [
       "Seamless referrals and care coordination",
       "Expert second opinions when you need them"
     ],
-    bookable: true
+    bookable: true,
+    backgroundImage: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=1920&h=1080&fit=crop&auto=format&q=80"
   },
   {
     id: "records",
@@ -83,7 +86,8 @@ const services: Service[] = [
       "Automatic integration with lab results",
       "Privacy-first approach with bank-level security"
     ],
-    bookable: false
+    bookable: false,
+    backgroundImage: "https://images.unsplash.com/photo-1584515933487-779824d29309?w=1920&h=1080&fit=crop&auto=format&q=80"
   },
   {
     id: "plans",
@@ -96,7 +100,8 @@ const services: Service[] = [
       "Lifestyle and wellness goal setting",
       "Progress monitoring with regular check-ins"
     ],
-    bookable: true
+    bookable: true,
+    backgroundImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop&auto=format&q=80"
   }
 ];
 
@@ -108,47 +113,59 @@ const timeSlots = [
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
   return (
-    <div className="bg-secondary/30 border border-border/50 rounded-lg p-8 hover:bg-secondary/40 transition-colors">
-      {/* Header with Icon and Title */}
-      <div className="flex items-start gap-4 mb-6">
-        <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground flex-shrink-0">
-          {service.icon}
-        </div>
-        <div className="flex-1">
-          <h3 className="text-2xl font-bold text-foreground mb-2">
-            {service.title}
-          </h3>
-        </div>
-      </div>
+    <div className="relative bg-secondary/30 border border-border/50 rounded-lg p-8 hover:bg-secondary/40 transition-colors overflow-hidden">
+      {/* Background image with 20% opacity and parallax effect */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-fixed pointer-events-none"
+        style={{
+          backgroundImage: `url('${service.backgroundImage}')`,
+          opacity: 0.2
+        }}
+      />
       
-      {/* Detailed Description */}
-      <div className="mb-6">
-        <p className="text-muted-foreground leading-relaxed">
-          {service.description}
-        </p>
-      </div>
-      
-      {/* Benefits Section */}
-      <div className="mb-6">
-        <h4 className="font-semibold text-foreground mb-3">Key Benefits:</h4>
-        <div className="grid md:grid-cols-2 gap-3">
-          {service.benefits.map((benefit, index) => (
-            <div key={index} className="flex items-start gap-2">
-              <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-              <span className="text-sm text-muted-foreground">{benefit}</span>
-            </div>
-          ))}
+      {/* Content with relative positioning to stay above background */}
+      <div className="relative">
+        {/* Header with Icon and Title */}
+        <div className="flex items-start gap-4 mb-6">
+          <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground flex-shrink-0">
+            {service.icon}
+          </div>
+          <div className="flex-1">
+            <h3 className="text-2xl font-bold text-foreground mb-2">
+              {service.title}
+            </h3>
+          </div>
         </div>
-      </div>
-      
-      {/* Book Now Button */}
-      {service.bookable && (
-        <div className="pt-4 border-t border-border/50">
-          <Button onClick={onBook} size="default" className="px-8">
-            Book Now
-          </Button>
+        
+        {/* Detailed Description */}
+        <div className="mb-6">
+          <p className="text-muted-foreground leading-relaxed">
+            {service.description}
+          </p>
         </div>
-      )}
+        
+        {/* Benefits Section */}
+        <div className="mb-6">
+          <h4 className="font-semibold text-foreground mb-3">Key Benefits:</h4>
+          <div className="grid md:grid-cols-2 gap-3">
+            {service.benefits.map((benefit, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                <span className="text-sm text-muted-foreground">{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Book Now Button */}
+        {service.bookable && (
+          <div className="pt-4 border-t border-border/50">
+            <Button onClick={onBook} size="default" className="px-8">
+              Book Now
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
