@@ -108,47 +108,48 @@ const timeSlots = [
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
   return (
-    <Card className="h-full bg-secondary/50 border-border/50 hover:bg-secondary/70 transition-colors flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 rounded-lg bg-accent/50 text-accent-foreground">
-            {service.icon}
-          </div>
-          <div>
-            <CardTitle className="text-lg font-semibold text-foreground">
-              {service.title}
-            </CardTitle>
-          </div>
+    <div className="bg-secondary/30 border border-border/50 rounded-lg p-8 hover:bg-secondary/40 transition-colors">
+      {/* Header with Icon and Title */}
+      <div className="flex items-start gap-4 mb-6">
+        <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground flex-shrink-0">
+          {service.icon}
         </div>
-        <CardDescription className="text-muted-foreground leading-relaxed text-sm">
-          {service.description}
-        </CardDescription>
-      </CardHeader>
+        <div className="flex-1">
+          <h3 className="text-2xl font-bold text-foreground mb-2">
+            {service.title}
+          </h3>
+        </div>
+      </div>
       
-      <CardContent className="pt-0 flex-1 flex flex-col">
-        {/* Benefits Section */}
-        <div className="mb-4 flex-1">
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <h4 className="font-medium text-sm mb-2 text-foreground">Key Benefits:</h4>
-            <ul className="space-y-2">
-              {service.benefits.map((benefit, index) => (
-                <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-          </div>
+      {/* Detailed Description */}
+      <div className="mb-6">
+        <p className="text-muted-foreground leading-relaxed">
+          {service.description}
+        </p>
+      </div>
+      
+      {/* Benefits Section */}
+      <div className="mb-6">
+        <h4 className="font-semibold text-foreground mb-3">Key Benefits:</h4>
+        <div className="grid md:grid-cols-2 gap-3">
+          {service.benefits.map((benefit, index) => (
+            <div key={index} className="flex items-start gap-2">
+              <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+              <span className="text-sm text-muted-foreground">{benefit}</span>
+            </div>
+          ))}
         </div>
-        
-        {/* Book Now Button */}
-        {service.bookable && (
-          <Button onClick={onBook} size="sm" className="w-full">
+      </div>
+      
+      {/* Book Now Button */}
+      {service.bookable && (
+        <div className="pt-4 border-t border-border/50">
+          <Button onClick={onBook} size="default" className="px-8">
             Book Now
           </Button>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </div>
   );
 }
 
