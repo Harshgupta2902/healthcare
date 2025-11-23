@@ -71,7 +71,7 @@ export default function Header({ className }: HeaderProps) {
               Services
             </a>
             <a
-              href="#how-it-works"
+              href="/how-it-works"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               How it works
             </a>
@@ -170,7 +170,7 @@ export default function Header({ className }: HeaderProps) {
                 Services
               </a>
               <a
-              href="#how-it-works"
+              href="/how-it-works"
               className="block px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}>
                 How it works
