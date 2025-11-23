@@ -66,7 +66,7 @@ export default function Header({ className }: HeaderProps) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <a
-              href="#services"
+              href="/services"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Services
             </a>
