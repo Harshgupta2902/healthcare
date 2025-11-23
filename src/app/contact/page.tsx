@@ -62,9 +62,9 @@ export default function ContactPage() {
       
       {/* Hero Section with Background */}
       <section className="relative w-full py-16 md:py-24 bg-fixed bg-cover bg-center overflow-hidden">
-        {/* Background Image with 20% opacity */}
+        {/* Background Image with 30% opacity */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-20"
+          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-30"
           style={{
             backgroundImage: "url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2074&auto=format&fit=crop')",
           }}
