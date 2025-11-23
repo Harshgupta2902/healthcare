@@ -107,12 +107,10 @@ const timeSlots = [
 ];
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
   return (
-    <Card className="h-full bg-secondary/50 border-border/50 hover:bg-secondary/70 transition-colors">
+    <Card className="h-full bg-secondary/50 border-border/50 hover:bg-secondary/70 transition-colors flex flex-col">
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <div className="p-2 rounded-lg bg-accent/50 text-accent-foreground">
             {service.icon}
           </div>
@@ -122,42 +120,33 @@ function ServiceCard({ service, onBook }: ServiceCardProps) {
             </CardTitle>
           </div>
         </div>
-        <CardDescription className="text-muted-foreground leading-relaxed">
+        <CardDescription className="text-muted-foreground leading-relaxed text-sm">
           {service.description}
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="pt-0">
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="flex-1">
-                  {isExpanded ? "Show Less" : "Learn More"}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3">
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2 text-foreground">Key Benefits:</h4>
-                  <ul className="space-y-1">
-                    {service.benefits.map((benefit, index) => (
-                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        {benefit}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-            
-            {service.bookable && (
-              <Button onClick={onBook} size="sm" className="flex-1">
-                Book Now
-              </Button>
-            )}
+      <CardContent className="pt-0 flex-1 flex flex-col">
+        {/* Benefits Section */}
+        <div className="mb-4 flex-1">
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <h4 className="font-medium text-sm mb-2 text-foreground">Key Benefits:</h4>
+            <ul className="space-y-2">
+              {service.benefits.map((benefit, index) => (
+                <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  {benefit}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
+        
+        {/* Book Now Button */}
+        {service.bookable && (
+          <Button onClick={onBook} size="sm" className="w-full">
+            Book Now
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
