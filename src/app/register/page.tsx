@@ -52,6 +52,14 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "professional" || roleParam === "client") {
+      setFormData(prev => ({ ...prev, role: roleParam as "client" | "professional" }));
+    }
+  }, [searchParams]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
