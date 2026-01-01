@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User, Stethoscope } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 interface FormData {
@@ -21,6 +23,7 @@ interface FormData {
   gender: string;
   password: string;
   confirmPassword: string;
+  role: "client" | "professional";
 }
 
 interface FormErrors {
@@ -42,6 +45,7 @@ export default function RegisterPage() {
     gender: "",
     password: "",
     confirmPassword: "",
+    role: "client",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
