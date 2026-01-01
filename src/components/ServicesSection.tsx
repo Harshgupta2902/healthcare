@@ -451,15 +451,15 @@ export default function ServicesSection() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-8 mb-12">
-          {services.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              onBook={() => handleBookService(service)}
-            />
-          ))}
-        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onBook={() => handleBookService(service)}
+              />
+            ))}
+          </div>
       )}
 
       <div className="text-center">
