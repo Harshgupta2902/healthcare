@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Apple, Phone, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
