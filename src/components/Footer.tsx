@@ -51,9 +51,9 @@ export default function Footer({ className }: FooterProps) {
   };
 
   return (
-    <footer className={`bg-card border-t !w-full !h-[372px] ${className}`}>
-      <div className="max-w-6xl mx-auto px-6 md:px-12 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+    <footer className={`bg-card border-t w-full ${className}`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-8 md:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-12">
           {/* Contact & Company Info */}
           <div className="space-y-4">
             <div>
