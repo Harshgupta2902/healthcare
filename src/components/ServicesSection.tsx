@@ -428,12 +428,12 @@ export default function ServicesSection() {
   }
 
   return (
-    <section className="py-16">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-4 text-foreground">
+    <section className="py-12 md:py-16">
+      <div className="text-center mb-8 md:mb-12">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-3 md:mb-4 text-foreground">
           Comprehensive Healthcare Services
         </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
           From video consultations to personalized care plans, we provide everything you need for better health outcomes.
         </p>
       </div>
