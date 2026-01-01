@@ -201,6 +201,23 @@ export default function RegisterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <Tabs 
+              defaultValue="client" 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as "client" | "professional" }))}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="client" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Patient
+                </TabsTrigger>
+                <TabsTrigger value="professional" className="flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4" />
+                  Professional
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-sm font-medium text-[var(--color-foreground)]">
