@@ -113,15 +113,15 @@ const timeSlots = [
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
   return (
-    <div className="aspect-square bg-white border border-border/50 rounded-lg p-6 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center text-center">
-      <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground mb-3">
+    <div className="aspect-square bg-white border border-border/50 rounded-lg p-4 sm:p-6 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center text-center">
+      <div className="p-2 sm:p-3 rounded-lg bg-accent/50 text-accent-foreground mb-2 sm:mb-3">
         {service.icon}
       </div>
-      <h3 className="text-base font-semibold text-foreground mb-3">
+      <h3 className="text-sm sm:text-base font-semibold text-foreground mb-2 sm:mb-3">
         {service.title}
       </h3>
       {service.bookable && (
-        <Button onClick={onBook} size="sm">
+        <Button onClick={onBook} size="sm" className="text-xs sm:text-sm">
           Book Now
         </Button>
       )}
