@@ -34,7 +34,7 @@ export default function HomePage() {
         
         {/* Services Section moved down with visual separation */}
         <section id="services" className="w-full">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6 md:px-12">
             <ServicesSection />
           </div>
         </section>
