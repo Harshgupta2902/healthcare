@@ -227,15 +227,15 @@ export const HealthProfessionalSearch = () => {
             </form>
 
             {/* Popular searches */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-muted-foreground mb-3">Popular searches:</p>
-              <div className="flex flex-wrap justify-center gap-2">
+            <div className="mt-6 sm:mt-8 text-center">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">Popular searches:</p>
+              <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
                 {popularSearches.map((search) =>
                 <button
                   key={search}
                   type="button"
                   onClick={() => handlePopularSearch(search)}
-                  className="px-3 py-1 text-sm bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground rounded-full transition-colors duration-200">
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground rounded-full transition-colors duration-200">
 
                     {search}
                   </button>
