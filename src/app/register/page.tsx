@@ -140,6 +140,7 @@ export default function RegisterPage() {
         email: formData.email,
         name: formData.fullName,
         password: formData.password,
+        role: formData.role,
       });
 
       if (error?.code) {
@@ -150,7 +151,11 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created successfully! Redirecting to your dashboard...");
+      if (formData.role === "professional") {
+        toast.success("Professional account created! You will need to complete your profile to start accepting patients.");
+      } else {
+        toast.success("Account created successfully! Redirecting to your dashboard...");
+      }
       
       // Auto-login after registration
       const { error: loginError } = await authClient.signIn.email({
@@ -161,7 +166,7 @@ export default function RegisterPage() {
       if (loginError?.code) {
         router.push("/login?registered=true");
       } else {
-        router.push("/dashboard");
+        router.push(formData.role === "professional" ? "/dashboard/professional" : "/dashboard");
       }
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
