@@ -113,22 +113,18 @@ const timeSlots = [
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
   return (
-    <div className="bg-secondary/30 border border-border/50 rounded-lg p-6 hover:bg-secondary/40 transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-accent/50 text-accent-foreground">
-            {service.icon}
-          </div>
-          <h3 className="text-lg font-semibold text-foreground">
-            {service.title}
-          </h3>
-        </div>
-        {service.bookable && (
-          <Button onClick={onBook} size="sm">
-            Book Now
-          </Button>
-        )}
+    <div className="aspect-square bg-secondary/60 border border-border/50 rounded-lg p-6 hover:bg-secondary/70 transition-colors flex flex-col items-center justify-center text-center">
+      <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground mb-3">
+        {service.icon}
       </div>
+      <h3 className="text-base font-semibold text-foreground mb-3">
+        {service.title}
+      </h3>
+      {service.bookable && (
+        <Button onClick={onBook} size="sm">
+          Book Now
+        </Button>
+      )}
     </div>
   );
 }
