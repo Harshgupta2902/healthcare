@@ -207,16 +207,25 @@ export default function Header({ className }: HeaderProps) {
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full justify-start"
-                      onClick={handleDashboardClick}
-                    >
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Button>
-                    <Button 
+<Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start"
+                        onClick={handleDashboardClick}
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        My Dashboard
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start"
+                        onClick={handleProfessionalDashboardClick}
+                      >
+                        <Stethoscope className="h-4 w-4 mr-2" />
+                        Professional Portal
+                      </Button>
+                      <Button
                       variant="ghost" 
                       size="sm" 
                       className="w-full justify-start text-muted-foreground hover:text-foreground"
