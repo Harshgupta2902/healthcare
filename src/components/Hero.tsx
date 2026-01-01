@@ -76,7 +76,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative py-20 md:py-32 lg:py-40 overflow-hidden">
+    <section className="relative py-12 sm:py-16 md:py-24 lg:py-32 xl:py-40 overflow-hidden">
       {/* Doctor treating patient background image with 30% opacity */}
       <div className="absolute inset-0 pointer-events-none">
         <div 
@@ -87,28 +87,28 @@ export default function Hero() {
         />
       </div>
       
-      <div className="container relative mx-auto max-w-6xl px-6 md:px-12">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 md:px-12">
+        <div className="grid lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
           {/* Left column - Content */}
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {/* Headline */}
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading leading-tight !whitespace-pre-line">
+            <div className="space-y-3 md:space-y-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading leading-tight">
                 {" "}
-                <span className="text-primary !whitespace-pre-line"></span>
+                <span className="text-primary"></span>
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
                 Your trusted partner for confidential, personalized healthcare. 
                 Simple consultations, expert care, all from the comfort of your home.
               </p>
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <Button
                 onClick={handleBookConsultation}
                 size="lg"
-                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-200">
+                className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 shadow-lg hover:shadow-xl transition-all duration-200">
 
                 Book a free consultation
               </Button>
@@ -116,7 +116,7 @@ export default function Hero() {
                 onClick={handleLearnMore}
                 variant="secondary"
                 size="lg"
-                className="text-lg px-8 py-6 bg-white/95 hover:bg-white border border-primary/20 shadow-md hover:shadow-lg transition-all duration-200">
+                className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-white/95 hover:bg-white border border-primary/20 shadow-md hover:shadow-lg transition-all duration-200">
 
                 Learn how it works
               </Button>
@@ -124,7 +124,7 @@ export default function Hero() {
 
             {/* Email capture form */}
             <Card className="bg-card/80 backdrop-blur-sm shadow-lg border-0 rounded-xl max-w-md">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {!isSuccess ?
                 <form onSubmit={handleEmailSubmit} className="space-y-4">
                     <div className="space-y-2">
