@@ -259,7 +259,7 @@ export default function LoginPage() {
               </Button>
             </div>
 
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <p className="text-sm text-[var(--color-muted-foreground)]">
                 Don't have an account?{" "}
                 <Link
@@ -267,6 +267,16 @@ export default function LoginPage() {
                   className="font-medium text-[var(--color-primary)] hover:underline transition-colors"
                 >
                   Sign up
+                </Link>
+              </p>
+              <Separator className="w-1/2 mx-auto opacity-50" />
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                Are you a healthcare professional?{" "}
+                <Link
+                  href="/register?role=professional"
+                  className="font-medium text-[var(--color-primary)] hover:underline transition-colors"
+                >
+                  Register as a Professional
                 </Link>
               </p>
             </div>
