@@ -82,7 +82,6 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
         rememberMe: formData.rememberMe,
-        callbackURL: searchParams.get("redirect") || "/dashboard"
       });
 
       if (error?.code) {
@@ -91,7 +90,10 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back! You've successfully logged in.");
-      router.push(searchParams.get("redirect") || "/dashboard");
+      
+      const userRole = data?.user?.role;
+      const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
+      router.push(redirectPath);
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
