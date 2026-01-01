@@ -217,7 +217,7 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Tabs 
-              defaultValue="client" 
+              value={formData.role} 
               onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as "client" | "professional" }))}
               className="w-full"
             >
