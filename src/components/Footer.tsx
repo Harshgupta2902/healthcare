@@ -72,7 +72,7 @@ export default function Footer({ className }: FooterProps) {
                 <span className="font-medium text-foreground">Phone:</span> +91 9981322736
               </p>
             </div>
-            </div>
+          </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
