@@ -36,9 +36,14 @@ export default function Header({ className }: HeaderProps) {
   };
 
   const handleDashboardClick = () => {
-    router.push('/dashboard');
-    setIsMobileMenuOpen(false);
-  };
+      router.push('/dashboard');
+      setIsMobileMenuOpen(false);
+    };
+
+    const handleProfessionalDashboardClick = () => {
+      router.push('/dashboard/professional');
+      setIsMobileMenuOpen(false);
+    };
 
   const handleSignOut = async () => {
     const { error } = await authClient.signOut();
