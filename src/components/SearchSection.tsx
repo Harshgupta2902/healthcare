@@ -115,20 +115,20 @@ export const HealthProfessionalSearch = () => {
   };
 
   return (
-    <section className="relative py-20 px-6 md:px-12">
+    <section className="relative py-12 md:py-20 px-4 sm:px-6 md:px-12">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/30 via-teal-50/20 to-cyan-50/30 pointer-events-none" />
       
       <div className="relative max-w-4xl mx-auto">
         {/* Header content */}
-        <div className="text-center mb-12">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight lg:!text-[43px]">
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3 md:mb-4 tracking-tight">
             Find Health Professionals{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               Near You
             </span>
           </h1>
-          <p className="font-sans text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="font-sans text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-2">
             Search by location and specialty to connect with qualified healthcare professionals
           </p>
         </div>
