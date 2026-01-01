@@ -65,13 +65,14 @@ export default function Footer({ className }: FooterProps) {
               </p>
             </div>
             <div className="space-y-2 text-sm">
-              <p className="text-muted-foreground !whitespace-pre-line">
-                <span className="font-medium text-foreground">Email:</span> care@healthhere.com
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">Email:</span> care@healthhere.com
               </p>
-              <p className="text-muted-foreground !whitespace-pre-line">
-                <span className="font-medium text-foreground">Phone:</span> +91 9981322736
+              <p className="text-muted-foreground">
+                <span className="font-medium text-foreground">Phone:</span> +91 9981322736
               </p>
             </div>
+          </div>
           </div>
 
           {/* Quick Links */}
