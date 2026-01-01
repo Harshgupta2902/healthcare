@@ -187,14 +187,14 @@ export default function Hero() {
                 <img
                   src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&h=400&fit=crop&crop=faces&auto=format&q=80"
                   alt="Friendly healthcare professional in a consultation setting, representing empathetic and accessible medical care"
-                  className="w-full h-64 md:h-80 object-cover" />
+                  className="w-full h-48 sm:h-56 md:h-64 lg:h-80 object-cover" />
 
-                <div className="p-6 bg-gradient-to-t from-card to-card/95">
-                  <div className="space-y-2">
-                    <h3 className="font-heading font-semibold text-lg">
+                <div className="p-4 sm:p-6 bg-gradient-to-t from-card to-card/95">
+                  <div className="space-y-1 sm:space-y-2">
+                    <h3 className="font-heading font-semibold text-base sm:text-lg">
                       Trusted Healthcare
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       Professional consultations with licensed healthcare providers, 
                       designed around your schedule and comfort.
                     </p>
