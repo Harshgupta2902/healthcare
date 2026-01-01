@@ -136,3 +136,86 @@ export const medicalDocuments = sqliteTable('medical_documents', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+// Professional profiles table
+export const professionalProfiles = sqliteTable('professional_profiles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }),
+  specialization: text('specialization').notNull(),
+  licenseNumber: text('license_number').notNull(),
+  bio: text('bio'),
+  yearsOfExperience: integer('years_of_experience'),
+  consultationFee: integer('consultation_fee'),
+  phone: text('phone'),
+  profilePhotoUrl: text('profile_photo_url'),
+  isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Professional qualifications table
+export const professionalQualifications = sqliteTable('professional_qualifications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  professionalId: text('professional_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  degree: text('degree').notNull(),
+  institution: text('institution').notNull(),
+  year: integer('year'),
+  documentUrl: text('document_url'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Appointments table
+export const appointments = sqliteTable('appointments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  clientId: text('client_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  professionalId: text('professional_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  appointmentType: text('appointment_type').notNull(),
+  status: text('status').notNull().default('pending'),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  notes: text('notes'),
+  meetingUrl: text('meeting_url'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Professional availability table
+export const professionalAvailability = sqliteTable('professional_availability', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  professionalId: text('professional_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  dayOfWeek: integer('day_of_week').notNull(),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  isAvailable: integer('is_available', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Professional payments table
+export const professionalPayments = sqliteTable('professional_payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  professionalId: text('professional_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  appointmentId: integer('appointment_id').references(() => appointments.id, { onDelete: 'set null' }),
+  amount: integer('amount').notNull(),
+  status: text('status').notNull().default('pending'),
+  paymentMethod: text('payment_method'),
+  transactionId: text('transaction_id'),
+  paidAt: text('paid_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// Consultation requests table
+export const consultationRequests = sqliteTable('consultation_requests', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  clientId: text('client_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  professionalId: text('professional_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  requestType: text('request_type').notNull(),
+  status: text('status').notNull().default('pending'),
+  message: text('message'),
+  preferredDate: text('preferred_date'),
+  preferredTime: text('preferred_time'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
