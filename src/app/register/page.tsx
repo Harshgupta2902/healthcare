@@ -202,7 +202,9 @@ export default function RegisterPage() {
               Create your account
             </CardTitle>
             <CardDescription className="text-[var(--color-muted-foreground)]">
-              Join HealthHere to access quality healthcare
+              {formData.role === "professional" 
+                ? "Join as a healthcare professional to provide care" 
+                : "Join HealthHere to access quality healthcare"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
