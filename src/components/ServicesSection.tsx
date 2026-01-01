@@ -451,7 +451,7 @@ export default function ServicesSection() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 md:mb-12">
             {services.map((service) => (
               <ServiceCard
                 key={service.id}
@@ -464,21 +464,21 @@ export default function ServicesSection() {
 
       <div className="text-center">
         <Link href="/specialists">
-          <Button variant="outline" size="lg" className="mb-6">
+          <Button variant="outline" size="lg" className="mb-4 md:mb-6">
             See All Specialists
           </Button>
         </Link>
         
-        <div className="max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold mb-4 text-foreground">Quick FAQ</h3>
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
+        <div className="max-w-2xl mx-auto px-2">
+          <h3 className="text-base sm:text-lg font-semibold mb-3 md:mb-4 text-foreground">Quick FAQ</h3>
+          <div className="grid sm:grid-cols-2 gap-3 md:gap-4 text-sm">
             <div className="text-left">
               <h4 className="font-medium text-foreground mb-1">How quickly can I get an appointment?</h4>
-              <p className="text-muted-foreground">Most appointments can be scheduled within 24-48 hours, with urgent consultations available same-day.</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Most appointments can be scheduled within 24-48 hours, with urgent consultations available same-day.</p>
             </div>
             <div className="text-left">
               <h4 className="font-medium text-foreground mb-1">Are consultations covered by insurance?</h4>
-              <p className="text-muted-foreground">Yes, we accept most major insurance plans. Check with your provider for specific coverage details.</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">Yes, we accept most major insurance plans. Check with your provider for specific coverage details.</p>
             </div>
           </div>
         </div>
