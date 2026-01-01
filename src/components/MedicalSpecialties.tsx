@@ -50,11 +50,11 @@ const specialties: MedicalSpecialty[] = [
 
 export const MedicalSpecialties = () => {
   return (
-    <section className="px-6 !text-center !opacity-100 !block !items-start !m-0 md:!px-[35px] !py-16 !border-0 !w-[1169px] !h-[564px]">
+    <section className="py-12 md:py-16 w-full">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-foreground">
             Medical Specialties
           </h2>
           <button className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium group">
@@ -64,14 +64,14 @@ export const MedicalSpecialties = () => {
         </div>
 
         {/* Specialties Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {specialties.map((specialty) =>
           <div
             key={specialty.id}
-            className="group cursor-pointer bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 p-4 flex flex-col items-center text-center w-full">
+            className="group cursor-pointer bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 p-3 sm:p-4 flex flex-col items-center text-center w-full">
 
               {/* Specialty Image */}
-              <div className="w-16 h-16 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-300 flex-shrink-0 mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-300 flex-shrink-0 mb-3 sm:mb-4">
                 <img
                 src={specialty.imageUrl}
                 alt={`${specialty.name} specialist icon`}
@@ -82,12 +82,12 @@ export const MedicalSpecialties = () => {
               {/* Content */}
               <div className="flex-1">
                 {/* Specialty name */}
-                <h3 className="font-heading font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors leading-tight">
+                <h3 className="font-heading font-semibold text-sm sm:text-base md:text-lg text-foreground mb-1 sm:mb-2 group-hover:text-primary transition-colors leading-tight">
                   {specialty.name}
                 </h3>
 
                 {/* Description */}
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed hidden sm:block">
                   {specialty.description}
                 </p>
               </div>
