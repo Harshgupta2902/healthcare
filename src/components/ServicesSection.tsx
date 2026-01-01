@@ -113,7 +113,7 @@ const timeSlots = [
 
 function ServiceCard({ service, onBook }: ServiceCardProps) {
   return (
-    <div className="aspect-square bg-secondary/60 border border-border/50 rounded-lg p-6 hover:bg-secondary/70 transition-colors flex flex-col items-center justify-center text-center">
+    <div className="aspect-square bg-white border border-border/50 rounded-lg p-6 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center text-center">
       <div className="p-3 rounded-lg bg-accent/50 text-accent-foreground mb-3">
         {service.icon}
       </div>
