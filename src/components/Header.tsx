@@ -118,12 +118,17 @@ export default function Header({ className }: HeaderProps) {
                           <p className="text-xs text-muted-foreground">{session.user.email}</p>
                         </div>
                       </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleDashboardClick}>
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleSignOut}>
+<DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleDashboardClick}>
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          My Dashboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleProfessionalDashboardClick}>
+                          <Stethoscope className="h-4 w-4 mr-2" />
+                          Professional Portal
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleSignOut}>
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign out
                       </DropdownMenuItem>
