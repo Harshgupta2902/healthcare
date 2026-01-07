@@ -159,10 +159,13 @@ export default function ProfessionalDashboardPage() {
   });
 
   useEffect(() => {
+    // Check if we have a token in localStorage as a hint
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem("bearer_token");
+
     if (!isPending) {
-      if (!session?.user) {
+      if (!session?.user && !hasToken) {
         router.push("/login?redirect=/dashboard/professional");
-      } else if (session.user.role !== "professional") {
+      } else if (session?.user && session.user.role !== "professional") {
         toast.error("Access denied. This portal is for healthcare professionals only.");
         router.push("/dashboard");
       }
