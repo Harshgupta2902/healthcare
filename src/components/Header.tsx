@@ -24,6 +24,11 @@ export default function Header({ className }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const { data: session, isPending, refetch } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLoginClick = () => {
     router.push('/login');
@@ -36,14 +41,16 @@ export default function Header({ className }: HeaderProps) {
   };
 
   const handleDashboardClick = () => {
-      router.push('/dashboard');
-      setIsMobileMenuOpen(false);
-    };
+    const userRole = session?.user?.role;
+    const path = userRole === "professional" ? '/dashboard/professional' : '/dashboard';
+    router.push(path);
+    setIsMobileMenuOpen(false);
+  };
 
-    const handleProfessionalDashboardClick = () => {
-      router.push('/dashboard/professional');
-      setIsMobileMenuOpen(false);
-    };
+  const handleProfessionalDashboardClick = () => {
+    router.push('/dashboard/professional');
+    setIsMobileMenuOpen(false);
+  };
 
   const handleSignOut = async () => {
     const { error } = await authClient.signOut();
