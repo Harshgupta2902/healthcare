@@ -91,13 +91,13 @@ export default function LoginPage() {
 
         toast.success("Welcome back! You've successfully logged in.");
         
-        // Use a small delay to ensure session is synced
+        // Use window.location.href for a more robust redirect that ensures fresh session state
+        const userRole = data?.user?.role || "client";
+        const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
+        
         setTimeout(() => {
-          const userRole = data?.user?.role;
-          const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
-          router.push(redirectPath);
-          router.refresh(); // Force refresh to update server components like Header
-        }, 100);
+          window.location.href = redirectPath;
+        }, 500);
       } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
