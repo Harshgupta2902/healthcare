@@ -22,7 +22,7 @@ export const auth = betterAuth({
 			}
 		}
 	},
-	plugins: []
+	plugins: [bearer()]
 });
 
 // Session validation helper
