@@ -12,6 +12,10 @@ export const auth = betterAuth({
 	emailAndPassword: {    
 		enabled: true
 	},
+	trustedOrigins: [
+		"https://3000-bf4b710e-19e6-48a8-a530-68d03fc59e57.orchids.cloud",
+		"http://localhost:3000"
+	],
 	user: {
 		additionalFields: {
 			role: {
