@@ -5,6 +5,7 @@ const LOADER = path.resolve(__dirname, 'src/visual-edits/component-tagger-loader
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['better-auth', '@noble/ciphers'],
+  transpilePackages: ['better-auth'],
   images: {
     remotePatterns: [
       {
