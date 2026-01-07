@@ -91,10 +91,13 @@ export default function LoginPage() {
 
         toast.success("Welcome back! You've successfully logged in.");
         
-        // Use window.location.href for a more robust redirect that ensures fresh session state
+        // Ensure we have the user role correctly
         const userRole = data?.user?.role || "client";
         const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
         
+        // Log for debugging (will only show in browser console)
+        console.log("Login successful, role:", userRole, "redirecting to:", redirectPath);
+
         setTimeout(() => {
           window.location.href = redirectPath;
         }, 500);
