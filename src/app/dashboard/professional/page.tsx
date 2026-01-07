@@ -164,7 +164,13 @@ export default function ProfessionalDashboardPage() {
 
     if (!isPending) {
       if (!session?.user && !hasToken) {
-        router.push("/login?redirect=/dashboard/professional");
+        // Only redirect if we've given the session a chance to load
+        const timeoutId = setTimeout(() => {
+          if (!session?.user && !localStorage.getItem("bearer_token")) {
+            router.push("/login?redirect=/dashboard/professional");
+          }
+        }, 1000);
+        return () => clearTimeout(timeoutId);
       } else if (session?.user && session.user.role !== "professional") {
         toast.error("Access denied. This portal is for healthcare professionals only.");
         router.push("/dashboard");
