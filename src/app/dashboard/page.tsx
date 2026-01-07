@@ -144,8 +144,13 @@ export default function DashboardPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.push("/login?redirect=/dashboard");
+    // Check if we have a token in localStorage as a hint
+    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem("bearer_token");
+    
+    if (!isPending) {
+      if (!session?.user && !hasToken) {
+        router.push("/login?redirect=/dashboard");
+      }
     }
   }, [session, isPending, router]);
 
