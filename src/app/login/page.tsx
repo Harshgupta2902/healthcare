@@ -89,12 +89,16 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success("Welcome back! You've successfully logged in.");
-      
-      const userRole = data?.user?.role;
-      const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
-      router.push(redirectPath);
-    } catch (error) {
+        toast.success("Welcome back! You've successfully logged in.");
+        
+        // Use a small delay to ensure session is synced
+        setTimeout(() => {
+          const userRole = data?.user?.role;
+          const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
+          router.push(redirectPath);
+          router.refresh(); // Force refresh to update server components like Header
+        }, 100);
+      } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
