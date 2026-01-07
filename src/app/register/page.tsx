@@ -166,15 +166,20 @@ export default function RegisterPage() {
       }
       
       // Auto-login after registration
-      const { error: loginError } = await authClient.signIn.email({
+      const { data: loginData, error: loginError } = await authClient.signIn.email({
         email: formData.email,
         password: formData.password,
       });
 
       if (loginError?.code) {
-        router.push("/login?registered=true");
+        window.location.href = "/login?registered=true";
       } else {
-        router.push(formData.role === "professional" ? "/dashboard/professional" : "/dashboard");
+        const userRole = loginData?.user?.role || formData.role;
+        const redirectPath = userRole === "professional" ? "/dashboard/professional" : "/dashboard";
+        
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 500);
       }
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
