@@ -94,20 +94,20 @@ export default function Header({ className }: HeaderProps) {
             </a>
           </nav>
 
-          {/* Right Section */}
-          <div className="flex items-center space-x-4">
-            {/* Desktop Auth */}
-            <div className="hidden md:flex items-center space-x-3">
-              {!isPending && session?.user ? (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleDashboardClick}
-                  >
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
-                  </Button>
+            {/* Right Section */}
+            <div className="flex items-center space-x-4">
+              {/* Desktop Auth */}
+              <div className="hidden md:flex items-center space-x-3">
+                {mounted && !isPending && session?.user ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDashboardClick}
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
