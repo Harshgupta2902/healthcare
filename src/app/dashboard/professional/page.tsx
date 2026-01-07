@@ -159,8 +159,13 @@ export default function ProfessionalDashboardPage() {
   });
 
   useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.push("/login?redirect=/dashboard/professional");
+    if (!isPending) {
+      if (!session?.user) {
+        router.push("/login?redirect=/dashboard/professional");
+      } else if (session.user.role !== "professional") {
+        toast.error("Access denied. This portal is for healthcare professionals only.");
+        router.push("/dashboard");
+      }
     }
   }, [session, isPending, router]);
 
