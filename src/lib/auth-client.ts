@@ -13,12 +13,12 @@ export const authClient = createAuthClient({
           ctx.headers.set("Authorization", `Bearer ${token}`);
         }
       },
-      onSuccess: (ctx) => {
-          const authToken = ctx.response.headers.get("set-auth-token")
-          if(authToken){
-            localStorage.setItem("bearer_token", authToken);
-          }
-      }
+        onSuccess: (ctx) => {
+            const authToken = ctx.response.headers.get("set-auth-token") || ctx.response.headers.get("Authorization")?.split(" ")[1];
+            if(authToken){
+              localStorage.setItem("bearer_token", authToken);
+            }
+        }
   }
 });
 
