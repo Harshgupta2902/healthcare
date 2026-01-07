@@ -149,7 +149,13 @@ export default function DashboardPage() {
     
     if (!isPending) {
       if (!session?.user && !hasToken) {
-        router.push("/login?redirect=/dashboard");
+        // Only redirect if we've given the session a chance to load
+        const timeoutId = setTimeout(() => {
+          if (!session?.user && !localStorage.getItem("bearer_token")) {
+            router.push("/login?redirect=/dashboard");
+          }
+        }, 1000);
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [session, isPending, router]);
