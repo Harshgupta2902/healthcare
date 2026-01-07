@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Menu, CircleX, LogIn, LogOut, LayoutDashboard, Stethoscope } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useSession, authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,122 +20,122 @@ interface HeaderProps {
   className?: string;
 }
 
-function UserMenu({ session, isPending, refetch, mounted }: { session: any, isPending: boolean, refetch: () => void, mounted: boolean }) {
+export default function Header({ className }: HeaderProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [isPending, setIsPending] = useState(true);
   const router = useRouter();
+
+  const fetchSession = async () => {
+    setIsPending(true);
+    try {
+      const { data } = await authClient.getSession();
+      setSession(data);
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    fetchSession();
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await authClient.signOut();
+      if (error?.code) {
+        toast.error(error.code);
+      } else {
+        localStorage.removeItem("bearer_token");
+        setSession(null);
+        setIsMobileMenuOpen(false);
+        router.push("/");
+        toast.success("Signed out successfully");
+      }
+    } catch (err) {
+      toast.error("An error occurred during sign out");
+    }
+  };
 
   const handleDashboardClick = () => {
     const userRole = session?.user?.role;
     const path = userRole === "professional" ? '/dashboard/professional' : '/dashboard';
     router.push(path);
+    setIsMobileMenuOpen(false);
   };
 
-  const handleProfessionalDashboardClick = () => {
-    router.push('/dashboard/professional');
-  };
+  // Prevent SSR of the auth-dependent parts to avoid hydration mismatch
+  const renderAuthSection = () => {
+    if (!mounted || isPending) return null;
 
-  const handleSignOut = async () => {
-    const { error } = await authClient.signOut();
-    if (error?.code) {
-      toast.error(error.code);
-    } else {
-      localStorage.removeItem("bearer_token");
-      refetch();
-      router.push("/");
-      toast.success("Signed out successfully");
+    if (session?.user) {
+      return (
+        <div className="hidden md:flex items-center space-x-3">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleDashboardClick}
+          >
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {session.user.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{session.user.name}</p>
+                  <p className="text-xs text-muted-foreground">{session.user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDashboardClick}>
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                My Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/professional')}>
+                <Stethoscope className="h-4 w-4 mr-2" />
+                Professional Portal
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      );
     }
-  };
 
-  if (!mounted || isPending) return null;
-
-  if (session?.user) {
     return (
       <div className="hidden md:flex items-center space-x-3">
         <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleDashboardClick}
+          variant="ghost" 
+          size="sm" 
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => router.push('/login')}
         >
-          <LayoutDashboard className="h-4 w-4 mr-2" />
-          Dashboard
+          <LogIn className="h-4 w-4 mr-2" />
+          Login
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {session.user.name?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{session.user.name}</p>
-                <p className="text-xs text-muted-foreground">{session.user.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDashboardClick}>
-              <LayoutDashboard className="h-4 w-4 mr-2" />
-              My Dashboard
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleProfessionalDashboardClick}>
-              <Stethoscope className="h-4 w-4 mr-2" />
-              Professional Portal
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button size="sm" onClick={() => router.push('/register')}>
+          Sign up
+        </Button>
       </div>
     );
-  }
-
-  return (
-    <div className="hidden md:flex items-center space-x-3">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="text-muted-foreground hover:text-foreground"
-        onClick={() => router.push('/login')}
-      >
-        <LogIn className="h-4 w-4 mr-2" />
-        Login
-      </Button>
-      <Button size="sm" onClick={() => router.push('/register')}>
-        Sign up
-      </Button>
-    </div>
-  );
-}
-
-export default function Header({ className }: HeaderProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const router = useRouter();
-  
-  // We call useSession here, but we will guard its usage in the UI
-  const { data: session, isPending, refetch } = useSession();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleSignOut = async () => {
-    const { error } = await authClient.signOut();
-    if (error?.code) {
-      toast.error(error.code);
-    } else {
-      localStorage.removeItem("bearer_token");
-      refetch();
-      setIsMobileMenuOpen(false);
-      router.push("/");
-      toast.success("Signed out successfully");
-    }
   };
 
   return (
@@ -161,7 +161,7 @@ export default function Header({ className }: HeaderProps) {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <UserMenu session={session} isPending={isPending} refetch={refetch} mounted={mounted} />
+            {renderAuthSection()}
 
             <Button
               variant="ghost"
@@ -191,7 +191,7 @@ export default function Header({ className }: HeaderProps) {
                     </Avatar>
                     <div className="text-sm font-medium">{session.user.name}</div>
                   </div>
-                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => { router.push(session.user.role === 'professional' ? '/dashboard/professional' : '/dashboard'); setIsMobileMenuOpen(false); }}>
+                  <Button variant="outline" size="sm" className="w-full justify-start" onClick={handleDashboardClick}>
                     <LayoutDashboard className="h-4 w-4 mr-2" /> Dashboard
                   </Button>
                   <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleSignOut}>
