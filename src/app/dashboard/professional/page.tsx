@@ -400,25 +400,40 @@ export default function ProfessionalDashboardPage() {
   const handleAddAvailability = async () => {
     setIsSaving(true);
     try {
+      const payload = {
+        dayOfWeek: parseInt(availabilityForm.dayOfWeek),
+        startTime: availabilityForm.startTime,
+        endTime: availabilityForm.endTime,
+        isAvailable: availabilityForm.isAvailable
+      };
+
+      console.log("Adding availability with payload:", payload);
+
       const response = await fetch("/api/professional/availability", {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({
-          ...availabilityForm,
-          dayOfWeek: parseInt(availabilityForm.dayOfWeek)
-        })
+        body: JSON.stringify(payload)
       });
       
       if (response.ok) {
+        const result = await response.json();
+        console.log("Availability added successfully:", result);
         toast.success("Availability added successfully");
         setShowAddAvailability(false);
         setAvailabilityForm({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00", isAvailable: true });
         fetchAvailability();
       } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add availability");
+        const errorText = await response.text();
+        console.error("Failed to add availability:", response.status, errorText);
+        let errorMessage = "Failed to add availability";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch (e) {}
+        toast.error(errorMessage);
       }
     } catch (error) {
+      console.error("An error occurred while adding availability:", error);
       toast.error("An error occurred");
     } finally {
       setIsSaving(false);
