@@ -577,16 +577,27 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-heading font-bold text-[var(--color-primary)]">HealthHere</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-[var(--color-muted-foreground)]">
+            <span className="text-sm text-[var(--color-muted-foreground)] hidden md:inline">
               Welcome, {session.user.name}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/")}
-            >
-              Home
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/")}
+              >
+                Home
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Log out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
