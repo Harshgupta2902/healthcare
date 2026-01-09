@@ -428,6 +428,45 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAddInsurance = async () => {
+    if (!insuranceForm.providerName.trim() || !insuranceForm.policyNumber.trim() || 
+        !insuranceForm.policyHolderName.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/insurance", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(insuranceForm)
+      });
+      
+      if (response.ok) {
+        toast.success("Insurance added successfully");
+        setShowAddInsurance(false);
+        setInsuranceForm({
+          providerName: "",
+          policyNumber: "",
+          groupNumber: "",
+          policyHolderName: "",
+          relationshipToHolder: "",
+          expirationDate: "",
+          notes: ""
+        });
+        fetchInsurance();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to add insurance");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDeleteCondition = async (id: number) => {
     try {
       const response = await fetch(`/api/medical-history/${id}`, {
@@ -476,6 +515,24 @@ export default function DashboardPage() {
         fetchDocuments();
       } else {
         toast.error("Failed to delete document");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleDeleteInsurance = async (id: number) => {
+    try {
+      const response = await fetch(`/api/insurance/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        toast.success("Insurance deleted");
+        fetchInsurance();
+      } else {
+        toast.error("Failed to delete insurance");
       }
     } catch (error) {
       toast.error("An error occurred");
