@@ -1274,6 +1274,163 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Insurance Tab */}
+          <TabsContent value="insurance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Insurance Information</CardTitle>
+                    <CardDescription>Manage your health insurance policies</CardDescription>
+                  </div>
+                  <Dialog open={showAddInsurance} onOpenChange={setShowAddInsurance}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Insurance
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Insurance Policy</DialogTitle>
+                        <DialogDescription>Enter your insurance coverage details</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        <div className="space-y-2">
+                          <Label>Insurance Provider *</Label>
+                          <Input
+                            placeholder="e.g., Blue Cross Blue Shield"
+                            value={insuranceForm.providerName}
+                            onChange={(e) => setInsuranceForm({ ...insuranceForm, providerName: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Policy Number *</Label>
+                            <Input
+                              placeholder="Policy #"
+                              value={insuranceForm.policyNumber}
+                              onChange={(e) => setInsuranceForm({ ...insuranceForm, policyNumber: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Group Number</Label>
+                            <Input
+                              placeholder="Group #"
+                              value={insuranceForm.groupNumber}
+                              onChange={(e) => setInsuranceForm({ ...insuranceForm, groupNumber: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Policy Holder Name *</Label>
+                          <Input
+                            placeholder="Full name as it appears on card"
+                            value={insuranceForm.policyHolderName}
+                            onChange={(e) => setInsuranceForm({ ...insuranceForm, policyHolderName: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Relationship to Holder</Label>
+                          <Input
+                            placeholder="e.g., Self, Spouse, Child"
+                            value={insuranceForm.relationshipToHolder}
+                            onChange={(e) => setInsuranceForm({ ...insuranceForm, relationshipToHolder: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Expiration Date</Label>
+                          <Input
+                            type="date"
+                            value={insuranceForm.expirationDate}
+                            onChange={(e) => setInsuranceForm({ ...insuranceForm, expirationDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Notes</Label>
+                          <Textarea
+                            placeholder="Additional information..."
+                            value={insuranceForm.notes}
+                            onChange={(e) => setInsuranceForm({ ...insuranceForm, notes: e.target.value })}
+                            rows={3}
+                          />
+                        </div>
+                        <Button onClick={handleAddInsurance} className="w-full" disabled={isSaving}>
+                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Add Insurance
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingInsurance ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
+                  </div>
+                ) : insuranceData.length === 0 ? (
+                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
+                    <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No insurance information recorded yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {insuranceData.map((policy) => (
+                      <div
+                        key={policy.id}
+                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="h-5 w-5 text-[var(--color-primary)]" />
+                              <h4 className="font-semibold text-[var(--color-foreground)]">
+                                {policy.providerName}
+                              </h4>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 text-sm">
+                              <div className="space-y-1">
+                                <p><span className="text-[var(--color-muted-foreground)]">Policy #:</span> {policy.policyNumber}</p>
+                                {policy.groupNumber && (
+                                  <p><span className="text-[var(--color-muted-foreground)]">Group #:</span> {policy.groupNumber}</p>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <p><span className="text-[var(--color-muted-foreground)]">Holder:</span> {policy.policyHolderName}</p>
+                                {policy.relationshipToHolder && (
+                                  <p><span className="text-[var(--color-muted-foreground)]">Relationship:</span> {policy.relationshipToHolder}</p>
+                                )}
+                              </div>
+                            </div>
+                            {policy.expirationDate && (
+                              <p className="text-sm mt-2 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                <span className="text-[var(--color-muted-foreground)]">Expires:</span> {new Date(policy.expirationDate).toLocaleDateString()}
+                              </p>
+                            )}
+                            {policy.notes && (
+                              <p className="text-sm mt-3 pt-3 border-t border-[var(--color-border)] text-[var(--color-muted-foreground)]">
+                                {policy.notes}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteInsurance(policy.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
