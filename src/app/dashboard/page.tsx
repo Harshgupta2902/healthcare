@@ -116,11 +116,13 @@ export default function DashboardPage() {
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
+  const [insuranceData, setInsuranceData] = useState<Insurance[]>([]);
   
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isLoadingMeds, setIsLoadingMeds] = useState(true);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [isLoadingInsurance, setIsLoadingInsurance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -129,6 +131,7 @@ export default function DashboardPage() {
   const [showAddCondition, setShowAddCondition] = useState(false);
   const [showAddMedication, setShowAddMedication] = useState(false);
   const [showAddDocument, setShowAddDocument] = useState(false);
+  const [showAddInsurance, setShowAddInsurance] = useState(false);
   
   const [conditionForm, setConditionForm] = useState({
     conditionName: "",
@@ -154,6 +157,16 @@ export default function DashboardPage() {
     fileUrl: "",
     fileSize: 0,
     uploadDate: new Date().toISOString().split('T')[0],
+    notes: ""
+  });
+
+  const [insuranceForm, setInsuranceForm] = useState({
+    providerName: "",
+    policyNumber: "",
+    groupNumber: "",
+    policyHolderName: "",
+    relationshipToHolder: "",
+    expirationDate: "",
     notes: ""
   });
 
