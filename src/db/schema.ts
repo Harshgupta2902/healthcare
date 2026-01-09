@@ -219,3 +219,17 @@ export const consultationRequests = sqliteTable('consultation_requests', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const insurance = sqliteTable('insurance', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  providerName: text('provider_name').notNull(),
+  policyNumber: text('policy_number').notNull(),
+  groupNumber: text('group_number'),
+  policyHolderName: text('policy_holder_name').notNull(),
+  relationshipToHolder: text('relationship_to_holder'),
+  expirationDate: text('expiration_date'),
+  notes: text('notes'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
