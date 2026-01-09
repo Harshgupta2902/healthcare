@@ -153,14 +153,25 @@ export default function ProfessionalDashboardPage() {
     documentUrl: ""
   });
   
-  const [availabilityForm, setAvailabilityForm] = useState({
-    dayOfWeek: "1",
-    startTime: "09:00",
-    endTime: "17:00",
-    isAvailable: true
-  });
-
-  useEffect(() => {
+    const [availabilityForm, setAvailabilityForm] = useState({
+      dayOfWeek: "1",
+      startTime: "09:00",
+      endTime: "17:00",
+      isAvailable: true
+    });
+  
+    const handleLogout = async () => {
+      try {
+        await authClient.signOut();
+        localStorage.removeItem("bearer_token");
+        router.push("/login");
+        toast.success("Logged out successfully");
+      } catch (error) {
+        toast.error("Failed to log out");
+      }
+    };
+  
+    useEffect(() => {
     // Check if we have a token in localStorage as a hint
     const hasToken = typeof window !== 'undefined' && !!localStorage.getItem("bearer_token");
 
