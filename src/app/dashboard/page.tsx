@@ -30,7 +30,8 @@ import {
   MapPin,
   AlertCircle,
   Save,
-  Camera
+  Camera,
+  Shield
 } from "lucide-react";
 
 interface UserProfile {
