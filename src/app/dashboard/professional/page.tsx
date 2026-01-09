@@ -630,7 +630,7 @@ export default function ProfessionalDashboardPage() {
               Consultations
             </TabsTrigger>
             <TabsTrigger value="calendar" className="gap-2">
-              <Calendar className="h-4 w-4" />
+              <CalendarIcon className="h-4 w-4" />
               Calendar
             </TabsTrigger>
             <TabsTrigger value="payments" className="gap-2">
