@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { 
   User, 
   GraduationCap, 
@@ -33,7 +34,8 @@ import {
   Save,
   FileText,
   Phone,
-  Mail
+  Mail,
+  LogOut
 } from "lucide-react";
 
 interface ProfessionalProfile {
