@@ -94,6 +94,20 @@ interface MedicalDocument {
   updatedAt: string;
 }
 
+interface Insurance {
+  id: number;
+  userId: string;
+  providerName: string;
+  policyNumber: string;
+  groupNumber: string | null;
+  policyHolderName: string;
+  relationshipToHolder: string | null;
+  expirationDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
