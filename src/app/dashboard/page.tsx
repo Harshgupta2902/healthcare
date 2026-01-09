@@ -172,6 +172,17 @@ export default function DashboardPage() {
     notes: ""
   });
 
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut();
+      localStorage.removeItem("bearer_token");
+      router.push("/login");
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
+
   // Redirect if not authenticated
   useEffect(() => {
     // Check if we have a token in localStorage as a hint
