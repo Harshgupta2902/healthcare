@@ -20,7 +20,7 @@ import {
   User, 
   GraduationCap, 
   Users, 
-  Calendar,
+  Calendar as CalendarIcon,
   IndianRupee,
   MessageSquare,
   Video,
@@ -35,8 +35,10 @@ import {
   FileText,
   Phone,
   Mail,
-  LogOut
+  LogOut,
+  Info
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 
 interface ProfessionalProfile {
   id: number;
