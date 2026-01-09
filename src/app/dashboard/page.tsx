@@ -195,6 +195,7 @@ export default function DashboardPage() {
       fetchMedicalHistory();
       fetchMedications();
       fetchDocuments();
+      fetchInsurance();
     }
   }, [session]);
 
@@ -275,6 +276,23 @@ export default function DashboardPage() {
       console.error("Error fetching documents:", error);
     } finally {
       setIsLoadingDocs(false);
+    }
+  };
+
+  const fetchInsurance = async () => {
+    try {
+      const response = await fetch("/api/insurance", {
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setInsuranceData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching insurance:", error);
+    } finally {
+      setIsLoadingInsurance(false);
     }
   };
 
