@@ -1168,7 +1168,7 @@ export default function ProfessionalDashboardPage() {
                             <DollarSign className={`h-5 w-5 ${payment.status === "completed" ? "text-green-600" : "text-yellow-600"}`} />
                           </div>
                           <div>
-                            <p className="font-medium">${(payment.amount / 100).toFixed(2)}</p>
+                            <p className="font-medium">₹{(payment.amount / 100).toFixed(2)}</p>
                             <p className="text-sm text-[var(--color-muted-foreground)]">
                               {payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : "Pending"}
                             </p>
