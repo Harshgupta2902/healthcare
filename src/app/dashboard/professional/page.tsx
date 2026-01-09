@@ -1266,6 +1266,104 @@ export default function ProfessionalDashboardPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <div className="mt-12 space-y-6">
+          <Separator />
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-6 w-6 text-[var(--color-primary)]" />
+            <h2 className="text-2xl font-heading font-bold text-[var(--color-foreground)]">
+              Pictorial Schedule
+            </h2>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Calendar Overview</CardTitle>
+              <CardDescription>Visual representation of your availability and scheduled appointments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 flex justify-center p-4 border rounded-xl bg-white shadow-sm">
+                  <Calendar
+                    mode="single"
+                    className="rounded-md border"
+                    modifiers={{
+                      available: (date) => availability.some(slot => slot.dayOfWeek === date.getDay()),
+                      appointment: (date) => appointments.some(apt => {
+                        const aptDate = new Date(apt.startTime);
+                        return aptDate.toDateString() === date.toDateString();
+                      })
+                    }}
+                    modifiersClassNames={{
+                      available: "bg-green-50 text-green-700 font-bold border-b-2 border-green-500 rounded-none",
+                      appointment: "bg-blue-100 text-blue-800 font-extrabold ring-2 ring-blue-400 rounded-md"
+                    }}
+                  />
+                </div>
+                
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="bg-green-50/50 border-green-100">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-800">
+                          <CheckCircle className="h-4 w-4" />
+                          Weekly Availability
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-1">
+                          {DAYS_OF_WEEK.map((day, idx) => {
+                            const daySlots = availability.filter(s => s.dayOfWeek === idx);
+                            if (daySlots.length === 0) return null;
+                            return (
+                              <div key={idx} className="text-xs flex justify-between">
+                                <span className="font-semibold">{day}:</span>
+                                <span>{daySlots.map(s => `${s.startTime}-${s.endTime}`).join(", ")}</span>
+                              </div>
+                            );
+                          })}
+                          {availability.length === 0 && <p className="text-xs text-muted-foreground">No availability set</p>}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-blue-50/50 border-blue-100">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-800">
+                          <CalendarIcon className="h-4 w-4" />
+                          Legend
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="w-3 h-3 bg-green-50 border-b-2 border-green-500 rounded-sm" />
+                          <span>Days with recurring availability</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="w-3 h-3 bg-blue-100 ring-2 ring-blue-400 rounded-sm" />
+                          <span>Days with scheduled appointments</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-muted-foreground">Appointments take precedence in color</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
+                    <h4 className="text-sm font-semibold mb-2">Quick Tips</h4>
+                    <ul className="text-xs space-y-2 text-muted-foreground list-disc pl-4">
+                      <li>Availability slots are recurring every week for the selected day.</li>
+                      <li>Appointments are specific to a date and time.</li>
+                      <li>Use the "Calendar" tab above to manage specific slots or view appointment details.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
