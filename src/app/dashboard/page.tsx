@@ -590,7 +590,7 @@ export default function DashboardPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -606,6 +606,10 @@ export default function DashboardPage() {
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
               Documents
+            </TabsTrigger>
+            <TabsTrigger value="insurance" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Insurance
             </TabsTrigger>
           </TabsList>
 
