@@ -31,8 +31,10 @@ import {
   AlertCircle,
   Save,
   Camera,
-  Shield
+  Shield,
+  LogOut
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface UserProfile {
   id: number;
