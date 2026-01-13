@@ -162,12 +162,25 @@ export default function RegisterPage() {
 
       toast.success("Account created successfully! Redirecting...");
       
-      // The signUp call should have signed the user in and set the token via the onSuccess hook in auth-client.ts
-      // We'll give it a moment to ensure localStorage is updated
+      // Better Auth should have set the token via onSuccess in auth-client.ts
+      // But we can also check the data returned here
+      const token = (data as any)?.token;
+      if (token) {
+        localStorage.setItem("bearer_token", token);
+      }
+      
+      const redirectPath = formData.role === "professional" ? "/dashboard/professional" : "/dashboard";
+      
+      // Use router.push for smoother transition, and window.location as fallback
       setTimeout(() => {
-        const redirectPath = formData.role === "professional" ? "/dashboard/professional" : "/dashboard";
-        window.location.href = redirectPath;
-      }, 800);
+        router.push(redirectPath);
+        // Fallback for environment issues
+        setTimeout(() => {
+          if (window.location.pathname === "/register") {
+            window.location.href = redirectPath;
+          }
+        }, 1500);
+      }, 500);
       
     } catch (error) {
       console.error("Registration error:", error);
