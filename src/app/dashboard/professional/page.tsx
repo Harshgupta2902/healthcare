@@ -1109,11 +1109,11 @@ export default function ProfessionalDashboardPage() {
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
                     </div>
-                  ) : appointments.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No upcoming appointments</p>
-                    </div>
+                    ) : appointments.length === 0 ? (
+                      <div className="text-center py-8 text-[var(--color-muted-foreground)]">
+                        <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No upcoming appointments</p>
+                      </div>
                   ) : (
                     <div className="space-y-3">
                       {appointments.map((apt) => (
