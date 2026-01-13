@@ -151,11 +151,12 @@ export default function RegisterPage() {
         role: formData.role,
       });
 
-      if (error?.code) {
+      if (error) {
+        console.error("Registration error details:", error);
         const errorMap: Record<string, string> = {
           USER_ALREADY_EXISTS: "Email already registered. Please login instead."
         };
-        toast.error(errorMap[error.code] || "Registration failed. Please try again.");
+        toast.error(errorMap[error.code as string] || error.message || "Registration failed. Please try again.");
         return;
       }
 
