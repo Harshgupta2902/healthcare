@@ -159,29 +159,17 @@ export default function RegisterPage() {
         return;
       }
 
-      if (formData.role === "professional") {
-        toast.success("Professional account created! You will need to complete your profile to start accepting patients.");
-      } else {
-        toast.success("Account created successfully! Redirecting to your dashboard...");
-      }
+      toast.success("Account created successfully! Redirecting...");
       
-      // Auto-login after registration
-      const { data: loginData, error: loginError } = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (loginError?.code) {
-        window.location.href = "/login?registered=true";
-      } else {
-        const userRole = loginData?.user?.role || formData.role;
-        const redirectPath = userRole === "professional" ? "/dashboard/professional" : "/dashboard";
-        
-        setTimeout(() => {
-          window.location.href = redirectPath;
-        }, 500);
-      }
+      // The signUp call should have signed the user in and set the token via the onSuccess hook in auth-client.ts
+      // We'll give it a moment to ensure localStorage is updated
+      setTimeout(() => {
+        const redirectPath = formData.role === "professional" ? "/dashboard/professional" : "/dashboard";
+        window.location.href = redirectPath;
+      }, 800);
+      
     } catch (error) {
+      console.error("Registration error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
