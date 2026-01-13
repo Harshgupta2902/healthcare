@@ -68,7 +68,7 @@ export default function Hero() {
   };
 
   const handleBookConsultation = () => {
-    toast.info("Booking system coming soon! We'll contact you shortly.");
+    router.push("/book-consultation");
   };
 
   const handleLearnMore = () => {
