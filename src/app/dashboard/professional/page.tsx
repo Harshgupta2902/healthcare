@@ -956,13 +956,13 @@ export default function ProfessionalDashboardPage() {
                             <p className="text-sm text-[var(--color-muted-foreground)]">
                               Client: {request.clientName || request.clientEmail || "Unknown"}
                             </p>
-                            {request.preferredDate && (
-                              <p className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Preferred: {new Date(request.preferredDate).toLocaleDateString()}
-                                {request.preferredTime && ` at ${request.preferredTime}`}
-                              </p>
-                            )}
+                              {request.preferredDate && (
+                                <p className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
+                                  <CalendarIcon className="h-3 w-3" />
+                                  Preferred: {new Date(request.preferredDate).toLocaleDateString()}
+                                  {request.preferredTime && ` at ${request.preferredTime}`}
+                                </p>
+                              )}
                             {request.message && (
                               <p className="text-sm mt-2 bg-gray-50 p-2 rounded">{request.message}</p>
                             )}
