@@ -1074,13 +1074,13 @@ export default function ProfessionalDashboardPage() {
                   ) : (
                     <div className="space-y-2">
                       {availability.map((slot) => (
-                        <div
-                          key={slot.id}
-                          className="flex items-center justify-between p-3 border border-[var(--color-border)] rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Calendar className="h-4 w-4 text-[var(--color-primary)]" />
-                            <span className="font-medium">{DAYS_OF_WEEK[slot.dayOfWeek]}</span>
+                          <div
+                            key={slot.id}
+                            className="flex items-center justify-between p-3 border border-[var(--color-border)] rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <CalendarIcon className="h-4 w-4 text-[var(--color-primary)]" />
+                              <span className="font-medium">{DAYS_OF_WEEK[slot.dayOfWeek]}</span>
                             <span className="text-[var(--color-muted-foreground)]">
                               {slot.startTime} - {slot.endTime}
                             </span>
