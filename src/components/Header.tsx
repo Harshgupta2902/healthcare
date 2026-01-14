@@ -143,23 +143,24 @@ export default function Header({ className }: HeaderProps) {
     <header className={`sticky top-0 z-50 w-full bg-card/80 backdrop-blur-md border-b border-border ${className}`}>
       <div className="container mx-auto px-6 md:px-12">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <a href="/" className="text-xl font-heading font-bold text-primary hover:opacity-80 transition-opacity">
-              HealthHere
-            </a>
-          </div>
+            <div className="flex items-center">
+              <Link href="/" className="text-xl font-heading font-bold text-primary hover:opacity-80 transition-opacity">
+                HealthHere
+              </Link>
+            </div>
 
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Services
-            </a>
-            <a href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              How it works
-            </a>
-            <a href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Contact Us
-            </a>
-          </nav>
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Services
+              </Link>
+              <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                How it works
+              </Link>
+              <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Contact Us
+              </Link>
+            </nav>
+
 
           <div className="flex items-center space-x-4">
             {renderAuthSection()}
