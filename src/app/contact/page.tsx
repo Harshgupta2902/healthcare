@@ -6,8 +6,9 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Send, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -20,7 +21,6 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
       toast.error("Please fill in all fields");
       return;
@@ -35,9 +35,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
       toast.success("Message sent successfully! We'll get back to you soon.");
       setFormData({ email: "", subject: "", message: "" });
     } catch (error) {
@@ -57,223 +55,165 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
+      {/* Designer Background: Subtle texture across the whole page */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
+      
       <Header />
       
-      {/* Hero Section with Background */}
-      <section className="relative w-full py-16 md:py-24 bg-fixed bg-cover bg-center overflow-hidden">
-        {/* Background Image with 85% opacity */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-fixed opacity-85"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2074&auto=format&fit=crop')",
-          }}
-        />
-        
-        {/* Lighter Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/30 to-background/70" />
-        
-        <div className="container mx-auto px-6 md:px-12 max-w-6xl relative z-10">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-4">
-              Get in Touch
-            </h1>
-            <p className="text-lg text-muted-foreground">
+      <main className="relative z-10 flex flex-col">
+        {/* Modern Hero Section */}
+        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+          {/* Atmospheric Glows */}
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Contact our team</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]"
+            >
+              Get in <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
+                Touch with Us
+              </span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium"
+            >
               Have questions or concerns? We're here to help. Reach out to our team and we'll respond as soon as possible.
-            </p>
+            </motion.p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Main Content */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-6 md:px-12 max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
-            {/* Contact Form - Takes 2 columns */}
-            <div className="lg:col-span-2">
-              <div className="bg-card rounded-lg border border-border p-6 md:p-8 shadow-sm">
-                <h2 className="text-2xl font-heading font-semibold text-foreground mb-2">
-                  Send us a Message
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  Fill out the form below and our team will get back to you within 24 hours.
-                </p>
+        {/* Main Content Grid */}
+        <section className="py-20 relative">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+              {/* Contact Information - 5 cols */}
+              <div className="lg:col-span-5 space-y-12">
+                <div className="space-y-6">
+                  <h2 className="text-3xl font-black tracking-tighter">Connection Points</h2>
+                  <p className="text-muted-foreground font-medium">Choose the most convenient way to reach us. Our support team is standing by.</p>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Email Address */}
-                  <div className="space-y-2">
-                    <label 
-                      htmlFor="email" 
-                      className="text-sm font-medium text-foreground"
-                    >
-                      Email Address <span className="text-destructive">*</span>
-                    </label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="your.email@example.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      required
-                      className="w-full"
-                    />
+                <div className="grid gap-6">
+                  {[
+                    { icon: Mail, title: "Email Address", content: "care@healthhere.com", href: "mailto:care@healthhere.com" },
+                    { icon: Phone, title: "Direct Line", content: "+91 9981322736", href: "tel:+919981322736" },
+                    { icon: MapPin, title: "Headquarters", content: "Medical District, Mumbai, MH 400001" },
+                    { icon: Clock, title: "Business Hours", content: "Mon - Fri: 9:00 AM - 6:00 PM" }
+                  ].map((item, i) => (
+                    <div key={i} className="group flex items-start gap-4 p-6 rounded-3xl bg-secondary/20 border border-border/50 hover:border-primary/20 transition-all">
+                      <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
+                        <item.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-widest text-primary mb-1">{item.title}</div>
+                        {item.href ? (
+                          <a href={item.href} className="text-lg font-bold hover:text-primary transition-colors">{item.content}</a>
+                        ) : (
+                          <div className="text-lg font-bold">{item.content}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Emergency Note - High Visibility */}
+                <div className="p-8 rounded-[32px] bg-red-500/5 border border-red-500/10 space-y-3">
+                  <div className="flex items-center gap-2 text-red-500 font-black uppercase tracking-widest text-xs">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    Medical Emergency?
                   </div>
-
-                  {/* Subject */}
-                  <div className="space-y-2">
-                    <label 
-                      htmlFor="subject" 
-                      className="text-sm font-medium text-foreground"
-                    >
-                      Subject <span className="text-destructive">*</span>
-                    </label>
-                    <Input
-                      id="subject"
-                      name="subject"
-                      type="text"
-                      placeholder="What is this regarding?"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      required
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Message */}
-                  <div className="space-y-2">
-                    <label 
-                      htmlFor="message" 
-                      className="text-sm font-medium text-foreground"
-                    >
-                      Message <span className="text-destructive">*</span>
-                    </label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Please describe your concern or question in detail..."
-                      value={formData.message}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                      required
-                      rows={6}
-                      className="w-full resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Please provide as much detail as possible to help us assist you better.
-                    </p>
-                  </div>
-
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full md:w-auto"
-                    size="lg"
-                  >
-                    {isSubmitting ? (
-                      "Sending..."
-                    ) : (
-                      <>
-                        Send Message
-                        <Send className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </div>
-
-            {/* Contact Information - Takes 1 column */}
-            <div className="space-y-6">
-              {/* Contact Details Card */}
-              <div className="bg-card rounded-lg border border-border p-6 shadow-sm">
-                <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
-                  Contact Information
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* Email */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Email</p>
-                      <a 
-                        href="mailto:care@healthhere.com"
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        care@healthhere.com
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Phone */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Phone className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Phone</p>
-                      <a 
-                        href="tel:+919981322736"
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        +91 9981322736
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <MapPin className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Address</p>
-                      <p className="text-sm text-muted-foreground">
-                        123 Healthcare Avenue<br />
-                        Medical District<br />
-                        Mumbai, Maharashtra 400001<br />
-                        India
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Business Hours */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Clock className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Business Hours</p>
-                      <p className="text-sm text-muted-foreground">
-                        Monday - Friday: 9:00 AM - 6:00 PM<br />
-                        Saturday: 10:00 AM - 4:00 PM<br />
-                        Sunday: Closed
-                      </p>
-                    </div>
-                  </div>
+                  <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                    For urgent medical concerns, please call emergency services at <span className="text-foreground font-black">108</span> or visit your nearest hospital immediately.
+                  </p>
                 </div>
               </div>
 
-              {/* Emergency Note */}
-              <div className="bg-destructive/10 rounded-lg border border-destructive/20 p-4">
-                <p className="text-sm font-medium text-destructive mb-1">
-                  Medical Emergency?
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  For urgent medical concerns, please call emergency services at <strong>108</strong> or visit your nearest hospital immediately.
-                </p>
+              {/* Contact Form - 7 cols */}
+              <div className="lg:col-span-7">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 pointer-events-none" />
+                  <div className="relative bg-background border border-border/50 rounded-[32px] p-8 md:p-12 shadow-2xl">
+                    <div className="space-y-2 mb-10">
+                      <h3 className="text-3xl font-black tracking-tight">Direct Message</h3>
+                      <p className="text-muted-foreground font-medium">Expected response time: Under 24 hours.</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Email Address</label>
+                        <Input
+                          name="email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Subject Matter</label>
+                        <Input
+                          name="subject"
+                          type="text"
+                          placeholder="How can we help?"
+                          value={formData.subject}
+                          onChange={handleChange}
+                          className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Your Message</label>
+                        <Textarea
+                          name="message"
+                          placeholder="Provide as much detail as possible..."
+                          value={formData.message}
+                          onChange={handleChange}
+                          className="min-h-[200px] rounded-3xl border-border/50 bg-secondary/10 p-6 focus:bg-background transition-all resize-none"
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-16 rounded-2xl text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all group"
+                      >
+                        {isSubmitting ? "Processing..." : (
+                          <>
+                            Send Message
+                            <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
+        </section>
+      </main>
+      
       <Footer />
     </div>
   );
