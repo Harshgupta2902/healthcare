@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Apple, Phone, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Apple, Phone, Loader2, Eye, EyeOff, Sparkles, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { motion } from "framer-motion";
 
 interface FormData {
   email: string;
@@ -91,13 +92,9 @@ export default function LoginPage() {
 
         toast.success("Welcome back! You've successfully logged in.");
         
-        // Ensure we have the user role correctly
         const userRole = data?.user?.role || "client";
         const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
         
-        // Log for debugging (will only show in browser console)
-        console.log("Login successful, role:", userRole, "redirecting to:", redirectPath);
-
         setTimeout(() => {
           window.location.href = redirectPath;
         }, 500);
@@ -113,182 +110,177 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] flex items-center justify-center p-4">
+    <div className="min-h-screen relative bg-background flex items-center justify-center p-4 selection:bg-primary selection:text-primary-foreground overflow-hidden">
+      {/* Designer Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+      
       <Link 
         href="/" 
-        className="absolute top-6 left-6 z-20 text-2xl font-heading font-bold text-[var(--color-primary)] hover:opacity-80 transition-opacity"
+        className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary hover:gap-3 transition-all"
       >
-        HealthHere
+        <ChevronLeft className="w-4 h-4" />
+        Back to Home
       </Link>
       
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-        style={{
-          backgroundImage: 'url("https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/soft%2c-calming-healthcare-background-pa-0a80ffd9-20250906163520.jpg")'
-        }}
-      />
-      
       <div className="relative z-10 w-full max-w-md">
-        <Card className="shadow-lg border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-heading font-bold text-[var(--color-foreground)]">
-              Welcome back
-            </CardTitle>
-            <CardDescription className="text-[var(--color-muted-foreground)]">
-              Sign in to your HealthHere account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-[var(--color-foreground)]">
-                  Email address
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className={`bg-white border-[var(--color-border)] focus:border-[var(--color-ring)] focus:ring-[var(--color-ring)] ${
-                    errors.email ? "border-red-500 focus:border-red-500" : ""
-                  }`}
-                  disabled={isLoading}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
-                )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative group"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          
+          <Card className="relative shadow-2xl border border-border/50 bg-background/80 backdrop-blur-xl rounded-[32px] overflow-hidden">
+            <CardHeader className="space-y-4 text-center pt-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mx-auto mb-2">
+                <Sparkles className="w-3 h-3" />
+                <span>Secure Access</span>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-[var(--color-foreground)]">
-                  Password
-                </Label>
-                <div className="relative">
+              <CardTitle className="text-3xl font-black tracking-tight text-foreground">
+                Welcome Back
+              </CardTitle>
+              <CardDescription className="text-muted-foreground font-medium">
+                Enter your credentials to access your dashboard.
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-8 pb-10">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                    Email Address
+                  </Label>
                   <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={formData.email}
                     onChange={handleInputChange}
-                    className={`bg-white border-[var(--color-border)] focus:border-[var(--color-ring)] focus:ring-[var(--color-ring)] pr-10 ${
-                      errors.password ? "border-red-500 focus:border-red-500" : ""
+                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${
+                      errors.email ? "border-red-500/50" : ""
                     }`}
                     disabled={isLoading}
-                    autoComplete="off"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
+                  {errors.email && (
+                    <p className="text-xs text-red-500 font-bold ml-1">{errors.email}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 pr-14 focus:bg-background transition-all font-bold ${
+                        errors.password ? "border-red-500/50" : ""
+                      }`}
+                      disabled={isLoading}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                      disabled={isLoading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-xs text-red-500 font-bold ml-1">{errors.password}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="rememberMe"
+                      name="rememberMe"
+                      type="checkbox"
+                      checked={formData.rememberMe}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-primary focus:ring-primary border-border/50 rounded cursor-pointer"
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="rememberMe" className="text-xs font-bold text-muted-foreground cursor-pointer">
+                      Remember me
+                    </Label>
+                  </div>
+                  <Link href="/forgot-password" size="sm" className="text-xs font-black text-primary hover:underline">
+                    Forgot Password?
+                  </Link>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    "Log In"
+                  )}
+                </Button>
+              </form>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
+                  <span className="bg-background px-4 text-muted-foreground">
+                    Or Continue With
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { icon: Mail, label: "Google" },
+                  { icon: Apple, label: "Apple" },
+                  { icon: Phone, label: "Phone" }
+                ].map((item) => (
+                  <Button
+                    key={item.label}
+                    variant="outline"
+                    onClick={() => handleSocialLogin(item.label)}
+                    className="h-14 rounded-2xl border-border/50 hover:bg-secondary/50 transition-all group"
                     disabled={isLoading}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-red-500">{errors.password}</p>
-                )}
+                    <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  </Button>
+                ))}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-[var(--color-primary)] focus:ring-[var(--color-ring)] border-[var(--color-border)] rounded"
-                  disabled={isLoading}
-                />
-                <Label htmlFor="rememberMe" className="text-sm text-[var(--color-foreground)]">
-                  Remember me
-                </Label>
+              <div className="text-center pt-4">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Don't have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-black text-primary hover:underline"
+                  >
+                    Sign Up
+                  </Link>
+                </p>
               </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-medium py-2.5 transition-colors"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Log in to access your account"
-                )}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-[var(--color-muted-foreground)]">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin("Google")}
-                className="h-10 border-[var(--color-border)] hover:bg-[var(--color-accent)] transition-colors"
-                disabled={isLoading}
-              >
-                <Mail className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin("Apple")}
-                className="h-10 border-[var(--color-border)] hover:bg-[var(--color-accent)] transition-colors"
-                disabled={isLoading}
-              >
-                <Apple className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSocialLogin("Phone")}
-                className="h-10 border-[var(--color-border)] hover:bg-[var(--color-accent)] transition-colors"
-                disabled={isLoading}
-              >
-                <Phone className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="text-center space-y-2">
-              <p className="text-sm text-[var(--color-muted-foreground)]">
-                Don't have an account?{" "}
-                <Link
-                  href="/register"
-                  className="font-medium text-[var(--color-primary)] hover:underline transition-colors"
-                >
-                  Sign up
-                </Link>
-              </p>
-              <Separator className="w-1/2 mx-auto opacity-50" />
-              <p className="text-xs text-[var(--color-muted-foreground)]">
-                Are you a healthcare professional?{" "}
-                <Link
-                  href="/register?role=professional"
-                  className="font-medium text-[var(--color-primary)] hover:underline transition-colors"
-                >
-                  Register as a Professional
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
