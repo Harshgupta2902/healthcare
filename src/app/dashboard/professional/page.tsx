@@ -160,11 +160,29 @@ export default function ProfessionalDashboardPage() {
     const [availabilityForm, setAvailabilityForm] = useState({
       dayOfWeek: "1",
       startTime: "09:00",
-      endTime: "17:00",
-      isAvailable: true
-    });
-  
-    const handleLogout = async () => {
+    endTime: "17:00",
+    isAvailable: true
+  });
+
+  const fetchSession = async () => {
+    setIsPending(true);
+    try {
+      const { data } = await authClient.getSession();
+      setSession(data);
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    fetchSession();
+  }, []);
+
+  const handleLogout = async () => {
+
       try {
         await authClient.signOut();
         localStorage.removeItem("bearer_token");
