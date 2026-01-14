@@ -106,17 +106,21 @@ export default function Hero() {
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
-                  onClick={handleBookConsultation}
+                  asChild
                   size="lg"
                   className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-lg hover:shadow-xl transition-all duration-200">
-                  Book a free consultation
+                  <Link href="/book-consultation">
+                    Book a free consultation
+                  </Link>
                 </Button>
                 <Button
-                  onClick={handleLearnMore}
+                  asChild
                   variant="secondary"
                   size="lg"
                   className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 bg-white/95 hover:bg-white border border-primary/20 shadow-md hover:shadow-lg transition-all duration-200">
-                  Learn how it works
+                  <Link href="/how-it-works">
+                    Learn how it works
+                  </Link>
                 </Button>
               </div>
 
