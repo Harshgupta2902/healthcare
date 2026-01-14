@@ -112,7 +112,9 @@ interface Insurance {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const [session, setSession] = useState<any>(null);
+  const [isPending, setIsPending] = useState(true);
+  const [mounted, setMounted] = useState(false);
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([]);
