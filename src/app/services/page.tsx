@@ -1,112 +1,112 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServicesSection from "@/components/ServicesSection";
-import { Stethoscope, Shield, Clock, Users } from "lucide-react";
+import { Stethoscope, Shield, Clock, Users, Sparkles, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function ServicesPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
+      {/* Designer Background: Subtle texture across the whole page */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
+      
       <Header />
       
-      <main className="flex flex-col">
-        {/* Hero Section */}
-        <section className="relative w-full bg-gradient-to-br from-primary/5 via-accent/20 to-secondary/30 border-b border-border overflow-hidden">
-          {/* Background image with 20% opacity and parallax effect */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-fixed"
-            style={{
-              backgroundImage: "url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1920&h=1080&fit=crop&auto=format&q=80')",
-              opacity: 0.2
-            }}
-          />
+      <main className="relative z-10 flex flex-col">
+        {/* Modern Hero Section */}
+        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+          {/* Atmospheric Glows */}
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
           
-          <div className="container relative mx-auto max-w-6xl px-6 md:px-12 py-16 md:py-24">
-            <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-                Healthcare Services Designed for You
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8">
-                Experience comprehensive, accessible healthcare through our range of innovative digital services. 
-                Quality care, whenever and wherever you need it.
-              </p>
-              
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-accent/50 flex items-center justify-center">
-                    <Stethoscope className="h-6 w-6 text-primary" />
+          <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Comprehensive Solutions</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
+              Healthcare <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
+                Without Limits
+              </span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium mb-12">
+              Experience the next generation of digital healthcare. We've simplified medical access so you can focus on what matters most: your wellbeing.
+            </p>
+            
+            {/* Trust Indicators - Minimalist & Modern */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto pt-8 border-t border-border/50">
+              {[
+                { icon: Stethoscope, label: "Board-Certified", sub: "Professionals" },
+                { icon: Shield, label: "HIPAA Compliant", sub: "Secure Platform" },
+                { icon: Clock, label: "24/7 Access", sub: "On-Demand Care" },
+                { icon: Users, label: "10,000+ Patients", sub: "Trusted by Many" }
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-primary shadow-sm">
+                    <item.icon className="h-5 w-5" />
                   </div>
-                  <div className="text-sm font-medium text-foreground">Board-Certified</div>
-                  <div className="text-xs text-muted-foreground">Professionals</div>
-                </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-accent/50 flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-primary" />
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-black uppercase tracking-wider">{item.label}</div>
+                    <div className="text-[10px] text-muted-foreground font-medium">{item.sub}</div>
                   </div>
-                  <div className="text-sm font-medium text-foreground">HIPAA Compliant</div>
-                  <div className="text-xs text-muted-foreground">Secure Platform</div>
                 </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-accent/50 flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="text-sm font-medium text-foreground">24/7 Access</div>
-                  <div className="text-xs text-muted-foreground">On-Demand Care</div>
-                </div>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-accent/50 flex items-center justify-center">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="text-sm font-medium text-foreground">10,000+ Patients</div>
-                  <div className="text-xs text-muted-foreground">Trusted by Many</div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Services Section */}
-        <section className="w-full py-8">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
+        {/* Services Section - Clean Layout */}
+        <section className="w-full py-12 relative">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <ServicesSection />
           </div>
         </section>
 
-        {/* Why Choose Us Section */}
-        <section className="w-full bg-secondary/30 border-y border-border py-16">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4 text-foreground">
-                Why Choose HealthHere?
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                We're committed to making quality healthcare accessible, affordable, and convenient for everyone.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-card/50 p-6 rounded-lg border border-border/50">
-                <h3 className="text-xl font-semibold mb-3 text-foreground">Affordable Care</h3>
-                <p className="text-muted-foreground">
-                  Transparent pricing with no hidden fees. We accept most major insurance plans and offer flexible payment options.
+        {/* Why Choose Us Section - Modern Grid */}
+        <section className="w-full py-32 relative overflow-hidden bg-secondary/20 border-y border-border/50">
+          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
+          
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row gap-16 items-start">
+              <div className="md:w-1/3 sticky top-32">
+                <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 leading-tight">
+                  Why settle for <br />
+                  <span className="text-primary">ordinary?</span>
+                </h2>
+                <p className="text-lg text-muted-foreground font-medium mb-8">
+                  We're committed to making quality healthcare accessible, affordable, and convenient for everyone.
                 </p>
+                <Button asChild className="rounded-xl h-12 px-6 font-bold">
+                  <Link href="/book-consultation">Start Journey <ChevronRight className="ml-2 w-4 h-4" /></Link>
+                </Button>
               </div>
               
-              <div className="bg-card/50 p-6 rounded-lg border border-border/50">
-                <h3 className="text-xl font-semibold mb-3 text-foreground">Quality Assured</h3>
-                <p className="text-muted-foreground">
-                  All our healthcare professionals are board-certified and undergo rigorous verification to ensure the highest standards of care.
-                </p>
-              </div>
-              
-              <div className="bg-card/50 p-6 rounded-lg border border-border/50">
-                <h3 className="text-xl font-semibold mb-3 text-foreground">Seamless Experience</h3>
-                <p className="text-muted-foreground">
-                  From booking to follow-up, our platform is designed for simplicity. Get care without the complexity of traditional healthcare.
-                </p>
+              <div className="md:w-2/3 grid gap-6">
+                {[
+                  {
+                    title: "Affordable Care",
+                    desc: "Transparent pricing with no hidden fees. We accept most major insurance plans and offer flexible payment options."
+                  },
+                  {
+                    title: "Quality Assured",
+                    desc: "All our healthcare professionals are board-certified and undergo rigorous verification to ensure the highest standards of care."
+                  },
+                  {
+                    title: "Seamless Experience",
+                    desc: "From booking to follow-up, our platform is designed for simplicity. Get care without the complexity of traditional healthcare."
+                  }
+                ].map((feature, i) => (
+                  <div key={i} className="group p-8 rounded-3xl bg-background border border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
+                    <h3 className="text-xl font-black mb-4 group-hover:text-primary transition-colors">{feature.title}</h3>
+                    <p className="text-muted-foreground font-medium leading-relaxed">
+                      {feature.desc}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
