@@ -1,100 +1,121 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, HeartPulse, Brain, Zap, Baby, Eye, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface MedicalSpecialty {
   id: string;
   name: string;
   description: string;
-  imageUrl: string;
+  icon: React.ReactNode;
+  color: string;
 }
 
 const specialties: MedicalSpecialty[] = [
-{
-  id: "general-physician",
-  name: "General Physician",
-  description: "Comprehensive primary care for all your health needs. From routine check-ups to managing chronic conditions.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/general-physician-doctor-icon%2c-profess-87c3f74e-20250904181234.jpg"
-},
-{
-  id: "psychologist",
-  name: "Psychologist",
-  description: "Mental health support and counseling services. Professional therapy for emotional wellbeing and life challenges.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/psychology-and-mental-health-icon%2c-bra-5860e310-20250904181243.jpg"
-},
-{
-  id: "gynecologist",
-  name: "Gynecologist",
-  description: "Specialized women's health care services. Expert care for reproductive health and wellness throughout life.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/gynecology-women%27s-health-icon%2c-fema-dc316332-20250904181252.jpg"
-},
-{
-  id: "pediatrician",
-  name: "Pediatrician",
-  description: "Dedicated healthcare for infants, children, and adolescents. Comprehensive care for your child's growth and development.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/pediatric-healthcare-icon%2c-child-medic-284bb268-20250904181301.jpg"
-},
-{
-  id: "ophthalmologist",
-  name: "Ophthalmologist",
-  description: "Complete eye care and vision health services. From routine eye exams to advanced surgical treatments.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/ophthalmology-eye-care-icon%2c-stylized--0fb2aef4-20250904181315.jpg"
-},
-{
-  id: "psychiatrist",
-  name: "Psychiatrist",
-  description: "Medical treatment for mental health conditions. Comprehensive psychiatric care with medication management.",
-  imageUrl: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/psychiatry-mental-health-icon%2c-brain-w-0820a790-20250904181324.jpg"
-}];
-
+  {
+    id: "general-physician",
+    name: "General Physician",
+    description: "Primary care for your daily health needs.",
+    icon: <HeartPulse className="w-6 h-6" />,
+    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+  },
+  {
+    id: "psychologist",
+    name: "Psychologist",
+    description: "Mental health and emotional wellbeing.",
+    icon: <Brain className="w-6 h-6" />,
+    color: "bg-purple-500/10 text-purple-600 border-purple-500/20"
+  },
+  {
+    id: "gynecologist",
+    name: "Gynecologist",
+    description: "Specialized women's health care.",
+    icon: <Zap className="w-6 h-6" />,
+    color: "bg-pink-500/10 text-pink-600 border-pink-500/20"
+  },
+  {
+    id: "pediatrician",
+    name: "Pediatrician",
+    description: "Dedicated care for your children.",
+    icon: <Baby className="w-6 h-6" />,
+    color: "bg-blue-500/10 text-blue-600 border-blue-500/20"
+  },
+  {
+    id: "ophthalmologist",
+    name: "Ophthalmologist",
+    description: "Expert eye care and vision health.",
+    icon: <Eye className="w-6 h-6" />,
+    color: "bg-amber-500/10 text-amber-600 border-amber-500/20"
+  },
+  {
+    id: "psychiatrist",
+    name: "Psychiatrist",
+    description: "Medical mental health treatment.",
+    icon: <ShieldCheck className="w-6 h-6" />,
+    color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20"
+  }
+];
 
 export const MedicalSpecialties = () => {
   return (
-    <section className="py-12 md:py-16 w-full">
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-foreground">
-            Medical Specialties
-          </h2>
-          <button className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors font-medium group">
-            View more
+    <section className="py-24 relative overflow-hidden">
+      <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-16">
+          <div className="max-w-2xl space-y-4">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
+              Specialized Care <br />
+              <span className="text-primary">For Every Need</span>
+            </h2>
+            <p className="text-lg text-muted-foreground font-medium">
+              We've gathered the finest specialists across multiple disciplines to ensure you receive expert guidance no matter the concern.
+            </p>
+          </div>
+          <Link 
+            href="/specialists" 
+            className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary hover:opacity-80 transition-all"
+          >
+            View All Specialists
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          </Link>
         </div>
 
-        {/* Specialties Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {specialties.map((specialty) =>
-          <div
-            key={specialty.id}
-            className="group cursor-pointer bg-card rounded-xl shadow-sm border border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 p-3 sm:p-4 flex flex-col items-center text-center w-full">
-
-              {/* Specialty Image */}
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-300 flex-shrink-0 mb-3 sm:mb-4">
-                <img
-                src={specialty.imageUrl}
-                alt={`${specialty.name} specialist icon`}
-                className="w-full h-full object-cover" />
-
+        {/* Dynamic Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {specialties.map((specialty, index) => (
+            <motion.div
+              key={specialty.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+              className="group relative p-8 rounded-3xl bg-card border border-border hover:border-primary/30 transition-all duration-500 shadow-sm hover:shadow-2xl hover:shadow-primary/5"
+            >
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${specialty.color} mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+                {specialty.icon}
               </div>
-
-              {/* Content */}
-              <div className="flex-1">
-                {/* Specialty name */}
-                <h3 className="font-heading font-semibold text-sm sm:text-base md:text-lg text-foreground mb-1 sm:mb-2 group-hover:text-primary transition-colors leading-tight">
+              
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary">
                   {specialty.name}
                 </h3>
-
-                {/* Description */}
-                <p className="text-xs text-muted-foreground leading-relaxed hidden sm:block">
+                <p className="text-muted-foreground leading-relaxed font-medium">
                   {specialty.description}
                 </p>
               </div>
-            </div>
-          )}
+
+              {/* Decorative Arrow */}
+              <div className="absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                <ArrowRight className="w-5 h-5 text-primary" />
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </section>);
-
+    </section>
+  );
 };
+
+import { ArrowRight } from "lucide-react";
