@@ -5,413 +5,192 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, MessageSquare, MapPin, Clock, Shield, Calendar, CheckCircle2 } from "lucide-react";
+import { Video, MessageSquare, MapPin, Clock, Shield, Calendar, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function HowItWorksPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
+      {/* Designer Background: Subtle texture across the whole page */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
+      
       <Header />
       
-      <main className="flex flex-col">
-        {/* Hero Section */}
-        <section className="py-16 md:py-24 relative overflow-hidden">
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/soft-calming-medical-consultation-backgr-1e7d43f4-20251123160242.jpg"
-              alt=""
-              className="w-full h-full object-cover opacity-30"
-            />
-          </div>
-
-          <div className="container mx-auto max-w-6xl px-6 md:px-12 relative z-10">
-            <div className="text-center space-y-4 mb-12">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading">
-                How <span className="text-primary">HealthHere</span> Works
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-                We've designed multiple ways to connect with healthcare professionals, 
-                ensuring you get the care you need, when and how you need it.
-              </p>
-            </div>
-
-            {/* Key Benefits Strip */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-              <Card className="bg-card border-0 shadow-md">
-                <CardContent className="p-6 text-center space-y-2">
-                  <Clock className="w-8 h-8 text-primary mx-auto" />
-                  <h3 className="font-heading font-semibold">24/7 Availability</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Access care anytime, anywhere
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-card border-0 shadow-md">
-                <CardContent className="p-6 text-center space-y-2">
-                  <Shield className="w-8 h-8 text-primary mx-auto" />
-                  <h3 className="font-heading font-semibold">Secure & Private</h3>
-                  <p className="text-sm text-muted-foreground">
-                    HIPAA-compliant platform
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-card border-0 shadow-md">
-                <CardContent className="p-6 text-center space-y-2">
-                  <Calendar className="w-8 h-8 text-primary mx-auto" />
-                  <h3 className="font-heading font-semibold">Flexible Scheduling</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Book appointments that fit your life
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Video Consultations Section */}
-        <section className="py-12 md:py-16 bg-accent/30">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Video className="w-6 h-6 text-primary" />
+      <main className="relative z-10 flex flex-col">
+        {/* Modern Hero Section */}
+        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+          {/* Atmospheric Glows */}
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>The Platform Guide</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]"
+            >
+              How <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
+                HealthHere Works
+              </span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium mb-16"
+            >
+              We've designed multiple ways to connect with healthcare professionals, 
+              ensuring you get the care you need, when and how you need it.
+            </motion.p>
+            
+            {/* Key Benefits - Modernized */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {[
+                { icon: Clock, label: "24/7 Availability", desc: "Access care anytime, anywhere" },
+                { icon: Shield, label: "Secure & Private", desc: "HIPAA-compliant platform" },
+                { icon: Calendar, label: "Flexible Scheduling", desc: "Book appointments that fit your life" }
+              ].map((benefit, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                  className="group p-8 rounded-3xl bg-background border border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 text-center"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-primary mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <benefit.icon className="h-6 w-6" />
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-heading">Video Consultations</h2>
-                </div>
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Connect face-to-face with licensed healthcare professionals through secure, 
-                  high-quality video calls from the comfort of your home. Perfect for routine 
-                  check-ups, follow-ups, mental health sessions, and non-emergency medical concerns. 
-                  Our video platform enables real-time interaction where doctors can observe symptoms, 
-                  provide diagnoses, and prescribe medications when appropriate.
-                </p>
-
-                <div className="space-y-3">
-                  <h3 className="font-heading font-semibold text-lg">How It Works:</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Schedule:</span> Choose a convenient time slot that works for you
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Connect:</span> Join the secure video call at your appointment time
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Consult:</span> Discuss your health concerns with a qualified professional
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Follow-up:</span> Receive prescriptions, treatment plans, or referrals as needed
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <Video className="w-4 h-4 mr-2" />
-                    Book Video Consultation
-                  </Button>
-                </div>
-              </div>
-
-              <div className="order-first lg:order-last">
-                <Card className="bg-card border-0 shadow-xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <img
-                      src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/professional-video-consultation-scene-sh-b9af7f06-20251123155858.jpg"
-                      alt="Patient having a video consultation with doctor from home"
-                      className="w-full h-full object-cover"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+                  <h3 className="text-lg font-black mb-2">{benefit.label}</h3>
+                  <p className="text-sm text-muted-foreground font-medium">{benefit.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Text/Chat Consultations Section */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <Card className="bg-card border-0 shadow-xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <img
-                      src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/person-using-smartphone-for-text-based-m-fdb84eda-20251123155856.jpg"
-                      alt="Person using smartphone for text-based medical chat consultation"
-                      className="w-full h-full object-cover"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-primary" />
+        {/* Dynamic Consultation Sections */}
+        {[
+          {
+            id: "video",
+            icon: Video,
+            title: "Video Consultations",
+            desc: "Connect face-to-face with licensed healthcare professionals through secure, high-quality video calls from the comfort of your home. Perfect for routine check-ups, follow-ups, and mental health sessions.",
+            steps: ["Choose a convenient time slot", "Join the secure video call", "Discuss your health concerns", "Receive digital prescriptions"],
+            img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
+            dark: true
+          },
+          {
+            id: "chat",
+            icon: MessageSquare,
+            title: "Text/Chat Support",
+            desc: "Get expert medical advice through secure text messaging when you need quick answers or prefer written communication. Ideal for follow-ups and prescription refills.",
+            steps: ["Send your health question", "Provider responds within hours", "Continue the conversation", "Access complete chat history"],
+            img: "https://images.unsplash.com/photo-1512428559083-a400a3b84c6e?w=800&q=80",
+            dark: false
+          },
+          {
+            id: "in-person",
+            icon: MapPin,
+            title: "In-Person Visits",
+            desc: "Schedule traditional face-to-face visits at one of our partner clinics when physical examinations are necessary. Essential for comprehensive screenings and diagnostic procedures.",
+            steps: ["Search for nearby partner clinics", "Select your preferred provider", "Complete pre-visit forms online", "Visit for comprehensive exam"],
+            img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
+            dark: true
+          }
+        ].map((section, idx) => (
+          <section key={section.id} className={`py-32 relative overflow-hidden ${section.dark ? 'bg-secondary/20 border-y border-border/50' : 'bg-background'}`}>
+            {section.dark && <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />}
+            
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className={`flex flex-col lg:items-center gap-16 ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}>
+                <div className="lg:w-1/2 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                      <section.icon className="w-7 h-7" />
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">{section.title}</h2>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-heading">Text/Chat Consultations</h2>
-                </div>
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Get expert medical advice through secure text messaging when you need quick answers 
-                  or prefer written communication. Ideal for follow-up questions, prescription refills, 
-                  minor concerns, and ongoing condition management. Our chat platform allows you to 
-                  communicate at your own pace, review conversation history, and share photos of 
-                  symptoms or test results when needed.
-                </p>
-
-                <div className="space-y-3">
-                  <h3 className="font-heading font-semibold text-lg">How It Works:</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Message:</span> Send your health question through our secure platform
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Respond:</span> Healthcare provider reviews and responds within hours
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Clarify:</span> Continue the conversation with follow-up questions
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Save:</span> Access your complete chat history anytime for reference
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-accent/50 rounded-lg p-4 border border-primary/20">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">💡 Pro Tip:</span> Chat consultations 
-                    are perfect for busy schedules - message anytime and receive responses when 
-                    providers are available, no appointment needed.
+                  
+                  <p className="text-xl text-muted-foreground font-medium leading-relaxed">
+                    {section.desc}
                   </p>
-                </div>
 
-                <div className="pt-4">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Start Chat Consultation
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* In-Person Appointments Section */}
-        <section className="py-12 md:py-16 bg-accent/30">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-primary" />
+                  <div className="space-y-4 pt-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">The Process:</h4>
+                    <div className="grid gap-3">
+                      {section.steps.map((step, i) => (
+                        <div key={i} className="flex items-center gap-3 group/step">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary group-hover/step:bg-primary group-hover/step:text-white transition-colors">
+                            {i + 1}
+                          </div>
+                          <span className="font-medium text-muted-foreground group-hover/step:text-foreground transition-colors">{step}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-heading">In-Person Appointments</h2>
-                </div>
-                
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Schedule traditional face-to-face visits at one of our partner clinics when physical 
-                  examinations are necessary. Essential for comprehensive health screenings, diagnostic 
-                  procedures, vaccinations, and situations requiring hands-on medical assessment. 
-                  Our network of modern, well-equipped facilities ensures you receive thorough, 
-                  professional care in comfortable environments close to your location.
-                </p>
 
-                <div className="space-y-3">
-                  <h3 className="font-heading font-semibold text-lg">How It Works:</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Find:</span> Search for partner clinics near your location
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Book:</span> Select your preferred time and healthcare provider
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Prepare:</span> Complete pre-visit forms online to save time
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-semibold">Visit:</span> Arrive at the clinic for your comprehensive examination
-                      </p>
-                    </div>
+                  <div className="pt-8">
+                    <Button size="lg" className="rounded-2xl h-14 px-8 font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all group">
+                      Get Started Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <h3 className="font-heading font-semibold text-lg">When to Choose In-Person:</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Physical examinations requiring hands-on assessment</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Laboratory tests, blood work, or diagnostic imaging</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Vaccinations, injections, or medical procedures</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>Complex cases requiring specialized equipment</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="pt-4">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Find Nearby Clinic
-                  </Button>
+                <div className="lg:w-1/2">
+                  <div className="relative group">
+                    <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-80 transition-opacity duration-500" />
+                    <div className="relative rounded-[32px] overflow-hidden border border-border/50 shadow-2xl">
+                      <img
+                        src={section.img}
+                        alt={section.title}
+                        className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="order-first lg:order-last">
-                <Card className="bg-card border-0 shadow-xl overflow-hidden">
-                  <CardContent className="p-0">
-                    <img
-                      src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/warm-welcoming-in-person-medical-appoint-2c7b8302-20251123155857.jpg"
-                      alt="Patient and doctor having face-to-face consultation in modern clinic"
-                      className="w-full h-full object-cover"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ))}
 
-        {/* Comparison Section */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto max-w-6xl px-6 md:px-12">
-            <div className="text-center space-y-4 mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading">
-                Choose What Works Best for You
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                All consultation types include access to qualified healthcare professionals, 
-                secure medical records, and seamless care coordination.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="bg-card border-2 border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Video className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-xl">Video</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✓ Real-time interaction</li>
-                    <li>✓ Visual assessment</li>
-                    <li>✓ Scheduled appointments</li>
-                    <li>✓ 15-30 minute sessions</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground pt-2 border-t">
-                    Best for: Routine check-ups, follow-ups, mental health
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-2 border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-xl">Chat</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✓ Asynchronous messaging</li>
-                    <li>✓ Flexible timing</li>
-                    <li>✓ No appointment needed</li>
-                    <li>✓ Quick questions</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground pt-2 border-t">
-                    Best for: Follow-ups, refills, minor concerns
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-2 border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-heading font-semibold text-xl">In-Person</h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✓ Comprehensive exams</li>
-                    <li>✓ Lab work & imaging</li>
-                    <li>✓ Physical procedures</li>
-                    <li>✓ Specialized care</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground pt-2 border-t">
-                    Best for: Physical exams, tests, vaccinations
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 md:py-20 bg-primary/5">
-          <div className="container mx-auto max-w-4xl px-6 md:px-12 text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-heading">
-              Ready to Get Started?
+        {/* Final CTA - Designer Style */}
+        <section className="py-32 w-full bg-background relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="container mx-auto max-w-4xl px-4 text-center space-y-12">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight">
+              Experience the future <br />
+              of <span className="text-primary">care today.</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of patients who trust HealthHere for convenient, 
-              quality healthcare. Your first consultation is free.
+            <p className="text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
+              We're not just another healthcare app. We're your dedicated health partner, available whenever and wherever you need us.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button size="lg" className="text-lg px-8 py-6" onClick={() => router.push("/login")}>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => router.push("/register")}>
                 Create Free Account
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                Browse Specialists
+              <Button variant="outline" size="lg" className="h-16 px-10 text-lg font-bold rounded-2xl border-2 hover:bg-secondary/50 transition-all" onClick={() => router.push("/specialists")}>
+                Meet the Experts
               </Button>
             </div>
           </div>
         </section>
       </main>
-
+      
       <Footer />
     </div>
   );
