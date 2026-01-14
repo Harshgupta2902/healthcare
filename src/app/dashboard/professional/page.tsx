@@ -125,7 +125,9 @@ const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "F
 
 export default function ProfessionalDashboardPage() {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const [session, setSession] = useState<any>(null);
+  const [isPending, setIsPending] = useState(true);
+  const [mounted, setMounted] = useState(false);
   
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [qualifications, setQualifications] = useState<Qualification[]>([]);
