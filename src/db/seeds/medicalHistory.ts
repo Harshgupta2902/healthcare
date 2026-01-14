@@ -15,31 +15,31 @@ async function main() {
 
     const sampleMedicalHistory = [
         {
-            user_id: 'test-user-001',
-            condition_name: 'Hypertension',
-            diagnosis_date: '2020-03-15',
+            userId: 'test-user-001',
+            conditionName: 'Hypertension',
+            diagnosisDate: '2020-03-15',
             status: 'chronic',
             notes: 'Stage 1 hypertension, controlled with medication and lifestyle changes',
-            created_at: threeYearsAgo.toISOString(),
-            updated_at: now.toISOString(),
+            createdAt: threeYearsAgo.toISOString(),
+            updatedAt: now.toISOString(),
         },
         {
-            user_id: 'test-user-001',
-            condition_name: 'Seasonal Allergies',
-            diagnosis_date: '2018-05-22',
+            userId: 'test-user-001',
+            conditionName: 'Seasonal Allergies',
+            diagnosisDate: '2018-05-22',
             status: 'active',
             notes: 'Allergic to pollen and dust mites. Symptoms worsen in spring and fall',
-            created_at: fiveYearsAgo.toISOString(),
-            updated_at: now.toISOString(),
+            createdAt: fiveYearsAgo.toISOString(),
+            updatedAt: now.toISOString(),
         },
         {
-            user_id: 'test-user-001',
-            condition_name: 'Ankle Sprain (Left)',
-            diagnosis_date: '2022-08-10',
+            userId: 'test-user-001',
+            conditionName: 'Ankle Sprain (Left)',
+            diagnosisDate: '2022-08-10',
             status: 'resolved',
             notes: 'Grade 2 sprain from sports injury. Fully healed after 8 weeks of physical therapy',
-            created_at: oneYearAgo.toISOString(),
-            updated_at: now.toISOString(),
+            createdAt: oneYearAgo.toISOString(),
+            updatedAt: now.toISOString(),
         }
     ];
 
