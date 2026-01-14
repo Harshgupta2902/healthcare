@@ -181,6 +181,7 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
+        {/* @ts-ignore */}
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
@@ -195,6 +196,7 @@ function ChartTooltipContent({
               )}
             >
               {formatter && item?.value !== undefined && item.name ? (
+                // @ts-ignore
                 formatter(item.value, item.name, item, index, item.payload)
               ) : (
                 <>
