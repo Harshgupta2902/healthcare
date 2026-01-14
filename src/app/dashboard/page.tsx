@@ -174,6 +174,23 @@ export default function DashboardPage() {
     notes: ""
   });
 
+  const fetchSession = async () => {
+    setIsPending(true);
+    try {
+      const { data } = await authClient.getSession();
+      setSession(data);
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    fetchSession();
+  }, []);
+
   const handleLogout = async () => {
     try {
       await authClient.signOut();
