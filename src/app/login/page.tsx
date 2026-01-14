@@ -92,7 +92,7 @@ export default function LoginPage() {
 
         toast.success("Welcome back! You've successfully logged in.");
         
-        const userRole = data?.user?.role || "client";
+        const userRole = (data?.user as any)?.role || "client";
         const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
         
         setTimeout(() => {
