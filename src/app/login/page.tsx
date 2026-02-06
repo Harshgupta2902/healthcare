@@ -24,7 +24,7 @@ interface FormErrors {
   password?: string;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
