@@ -93,7 +93,7 @@ const specialists: Specialist[] = [
   }
 ];
 
-export default function SpecialistsPage() {
+function SpecialistsContent() {
   const searchParams = useSearchParams();
   const specialtyParam = searchParams.get("specialty");
   const cityParam = searchParams.get("city");
