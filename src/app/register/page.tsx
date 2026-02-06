@@ -259,5 +259,14 @@ function RegisterContent() {
         </motion.div>
       </div>
     </div>
+    );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
   );
 }
+
