@@ -36,7 +36,7 @@ interface FormErrors {
   confirmPassword?: string;
 }
 
-export default function RegisterPage() {
+function RegisterContent() {
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     mobileNumber: "",
