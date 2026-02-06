@@ -381,5 +381,14 @@ function SpecialistsContent() {
       
       <Footer />
     </div>
+    );
+}
+
+export default function SpecialistsPage() {
+  return (
+    <Suspense>
+      <SpecialistsContent />
+    </Suspense>
   );
 }
+
