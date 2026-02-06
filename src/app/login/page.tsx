@@ -283,5 +283,14 @@ function LoginContent() {
         </motion.div>
       </div>
     </div>
+    );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }
+
