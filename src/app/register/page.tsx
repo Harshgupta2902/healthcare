@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Apple, Phone, Loader2, Eye, EyeOff, Sparkles, ChevronLeft, User, Stethoscope } from "lucide-react";
