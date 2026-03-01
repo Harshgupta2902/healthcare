@@ -183,9 +183,10 @@ export default function Header({ className }: HeaderProps) {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card">
             <nav className="px-2 py-4 space-y-2">
-              <Link href="/services" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Services</Link>
-              <Link href="/how-it-works" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>How it works</Link>
-              <Link href="/contact" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
+                <Link href="/services" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Services</Link>
+                <Link href="/how-it-works" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>How it works</Link>
+                <Link href="/support" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Support Center</Link>
+                <Link href="/contact" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
               
               <div className="pt-2 mt-2 border-t border-border space-y-2">
 
