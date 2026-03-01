@@ -1,105 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { professionalQualifications, session } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
-async function getSessionUser(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
+export async function GET() {
+  const supabase = await createClient();
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const token = authHeader.substring(7);
+  const { data, error } = await supabase
+    .from('qualifications')
+    .select('*')
+    .eq('professional_id', user.id);
 
-  try {
-    const sessions = await db.select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
-
-    if (sessions.length === 0) {
-      return null;
-    }
-
-    const userSession = sessions[0];
-    
-    if (new Date(userSession.expiresAt) <= new Date()) {
-      return null;
-    }
-
-    return { userId: userSession.userId };
-  } catch (error) {
-    console.error('Session validation error:', error);
-    return null;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-}
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getSessionUser(request);
-    
-    if (!user) {
-      return NextResponse.json({ 
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED' 
-      }, { status: 401 });
-    }
-
-    const qualifications = await db.select()
-      .from(professionalQualifications)
-      .where(eq(professionalQualifications.professionalId, user.userId));
-
-    return NextResponse.json(qualifications, { status: 200 });
-  } catch (error) {
-    console.error('GET error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error')
-    }, { status: 500 });
-  }
+  return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const user = await getSessionUser(request);
-    
-    if (!user) {
-      return NextResponse.json({ 
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED' 
-      }, { status: 401 });
-    }
-
     const body = await request.json();
-
     const { degree, institution, year, documentUrl } = body;
 
     if (!degree || !institution) {
-      return NextResponse.json({ 
-        error: 'Degree and institution are required',
-        code: 'VALIDATION_ERROR' 
-      }, { status: 400 });
+      return NextResponse.json({ error: 'Degree and institution are required' }, { status: 400 });
     }
 
-    const currentTimestamp = new Date().toISOString();
-
-    const newQualification = await db.insert(professionalQualifications)
-      .values({
-        professionalId: user.userId,
+    const { data, error } = await supabase
+      .from('qualifications')
+      .insert({
+        professional_id: user.id,
         degree,
         institution,
-        year: year ?? null,
-        documentUrl: documentUrl ?? null,
-        createdAt: currentTimestamp,
-        updatedAt: currentTimestamp
+        year: year ? parseInt(year) : null,
+        document_url: documentUrl,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .returning();
+      .select()
+      .single();
 
-    return NextResponse.json(newQualification[0], { status: 200 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('POST error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error')
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

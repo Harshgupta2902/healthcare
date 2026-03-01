@@ -1,51 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { professionalProfiles, user, userProfiles } from "@/db/schema";
-import { eq, like, or, and, sql } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
     const specialty = searchParams.get("specialty");
     const city = searchParams.get("city");
 
-    const conditions = [];
+    let query = supabase
+      .from('professional_profiles')
+      .select(`
+        user_id,
+        specialization,
+        bio,
+        years_of_experience,
+        consultation_fee,
+        is_verified,
+        users!inner (
+          name
+        ),
+        client_medical_profiles (
+          city
+        )
+      `);
 
     if (specialty) {
-      conditions.push(
-        like(professionalProfiles.specialization, `%${specialty}%`)
-      );
+      query = query.ilike('specialization', `%${specialty}%`);
     }
 
     if (city) {
-      conditions.push(
-        like(userProfiles.city, `%${city}%`)
-      );
+      // For filtering by joined table in Supabase, we can use the dot notation if defined properly
+      // or filter in JS if the dataset is small. For better performance, we use !inner on the join.
+      query = query.ilike('client_medical_profiles.city', `%${city}%`);
     }
 
-    const professionals = await db
-      .select({
-        id: professionalProfiles.userId,
-        name: user.name,
-        specialization: professionalProfiles.specialization,
-        bio: professionalProfiles.bio,
-        yearsOfExperience: professionalProfiles.yearsOfExperience,
-        consultationFee: professionalProfiles.consultationFee,
-        profilePhotoUrl: professionalProfiles.profilePhotoUrl,
-        isVerified: professionalProfiles.isVerified,
-        city: userProfiles.city,
-      })
-      .from(professionalProfiles)
-      .innerJoin(user, eq(professionalProfiles.userId, user.id))
-      .leftJoin(userProfiles, eq(professionalProfiles.userId, userProfiles.userId))
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    const professionals = data.map((p: any) => ({
+      id: p.user_id,
+      name: p.users?.name,
+      specialization: p.specialization,
+      bio: p.bio,
+      yearsOfExperience: p.years_of_experience,
+      consultationFee: p.consultation_fee,
+      isVerified: p.is_verified,
+      city: p.client_medical_profiles?.city,
+    }));
 
     return NextResponse.json({ professionals });
   } catch (error) {
     console.error("Error searching professionals:", error);
     return NextResponse.json(
-      { error: "Failed to search professionals" },
+      { error: "Failed to search professionals: " + (error instanceof Error ? error.message : "Unknown error") },
       { status: 500 }
     );
   }
 }
+

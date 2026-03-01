@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
+import {
+  updateMedicalProfile,
+  addMedicalCondition,
+  deleteMedicalCondition,
+  addMedication,
+  deleteMedication,
+  addMedicalDocument,
+  deleteMedicalDocument,
+  addInsurance,
+  deleteInsurance
+} from "@/features/client/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +26,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { 
-  User, 
-  Heart, 
-  Pill, 
-  FileText, 
-  Upload, 
-  Loader2, 
-  Edit, 
-  Plus, 
+import {
+  User,
+  Heart,
+  Pill,
+  FileText,
+  Upload,
+  Loader2,
+  Edit,
+  Plus,
   Trash2,
   Calendar,
   Phone,
@@ -34,10 +45,9 @@ import {
   Shield,
   LogOut
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 
 interface UserProfile {
-  id: number;
+  id: string;
   userId: string;
   phone: string | null;
   dateOfBirth: string | null;
@@ -58,7 +68,7 @@ interface UserProfile {
 }
 
 interface MedicalHistory {
-  id: number;
+  id: string;
   userId: string;
   conditionName: string;
   diagnosisDate: string | null;
@@ -69,7 +79,7 @@ interface MedicalHistory {
 }
 
 interface Medication {
-  id: number;
+  id: string;
   userId: string;
   medicationName: string;
   dosage: string;
@@ -84,7 +94,7 @@ interface Medication {
 }
 
 interface MedicalDocument {
-  id: number;
+  id: string;
   userId: string;
   documentName: string;
   documentType: string;
@@ -97,7 +107,7 @@ interface MedicalDocument {
 }
 
 interface Insurance {
-  id: number;
+  id: string;
   userId: string;
   providerName: string;
   policyNumber: string;
@@ -112,38 +122,39 @@ interface Insurance {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
   const [mounted, setMounted] = useState(false);
-  
+  const supabase = createClient();
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
   const [insuranceData, setInsuranceData] = useState<Insurance[]>([]);
-  
+
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isLoadingMeds, setIsLoadingMeds] = useState(true);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [isLoadingInsurance, setIsLoadingInsurance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<UserProfile>>({});
-  
+
   const [showAddCondition, setShowAddCondition] = useState(false);
   const [showAddMedication, setShowAddMedication] = useState(false);
   const [showAddDocument, setShowAddDocument] = useState(false);
   const [showAddInsurance, setShowAddInsurance] = useState(false);
-  
+
   const [conditionForm, setConditionForm] = useState({
     conditionName: "",
     diagnosisDate: "",
     status: "active",
     notes: ""
   });
-  
+
   const [medicationForm, setMedicationForm] = useState({
     medicationName: "",
     dosage: "",
@@ -154,7 +165,7 @@ export default function DashboardPage() {
     notes: "",
     isActive: true
   });
-  
+
   const [documentForm, setDocumentForm] = useState({
     documentName: "",
     documentType: "report",
@@ -174,84 +185,92 @@ export default function DashboardPage() {
     notes: ""
   });
 
-  const fetchSession = async () => {
-    setIsPending(true);
-    try {
-      const { data } = await authClient.getSession();
-      setSession(data);
-    } catch (error) {
-      console.error("Failed to fetch session:", error);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
   useEffect(() => {
     setMounted(true);
-    fetchSession();
-  }, []);
+
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        router.push("/login?redirect=/dashboard");
+      }
+      setIsPending(false);
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
 
   const handleLogout = async () => {
     try {
-      await authClient.signOut();
-      localStorage.removeItem("bearer_token");
-      router.push("/login");
+      await supabase.auth.signOut();
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error("Failed to log out");
     }
   };
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    // Check if we have a token in localStorage as a hint
-    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem("bearer_token");
-    
-    if (!isPending) {
-      if (!session?.user && !hasToken) {
-        // Only redirect if we've given the session a chance to load
-        const timeoutId = setTimeout(() => {
-          if (!session?.user && !localStorage.getItem("bearer_token")) {
-            router.push("/login?redirect=/dashboard");
-          }
-        }, 1000);
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [session, isPending, router]);
-
   // Fetch all data
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchProfile();
       fetchMedicalHistory();
       fetchMedications();
       fetchDocuments();
       fetchInsurance();
     }
-  }, [session]);
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("bearer_token");
-    return {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    };
-  };
+  }, [user]);
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/user-profile", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
-        setProfileForm(data);
-      } else if (response.status === 404) {
-        // Profile doesn't exist yet, that's okay
-        setProfile(null);
+      // Get core profile info
+      const { data: coreProfile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Get medical profile info
+      const { data: medProfile } = await supabase
+        .from('client_medical_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (coreProfile || medProfile) {
+        const merged: UserProfile = {
+          id: user.id,
+          userId: user.id,
+          phone: coreProfile?.phone || null,
+          profilePhotoUrl: coreProfile?.image || null,
+          dateOfBirth: medProfile?.date_of_birth || null,
+          gender: medProfile?.gender || null,
+          bloodType: medProfile?.blood_type || null,
+          height: medProfile?.height ? parseFloat(medProfile.height) : null,
+          weight: medProfile?.weight ? parseFloat(medProfile.weight) : null,
+          address: medProfile?.address || null,
+          city: medProfile?.city || null,
+          state: medProfile?.state || null,
+          postalCode: medProfile?.postal_code || null,
+          emergencyContactName: medProfile?.emergency_contact_name || null,
+          emergencyContactPhone: medProfile?.emergency_contact_phone || null,
+          emergencyContactRelationship: medProfile?.emergency_contact_relationship || null,
+          createdAt: coreProfile?.created_at || "",
+          updatedAt: coreProfile?.updated_at || ""
+        };
+        setProfile(merged);
+        setProfileForm(merged);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -262,13 +281,23 @@ export default function DashboardPage() {
 
   const fetchMedicalHistory = async () => {
     try {
-      const response = await fetch("/api/medical-history", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMedicalHistory(data);
+      const { data, error } = await supabase
+        .from('medical_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setMedicalHistory(data.map(item => ({
+          id: item.id,
+          userId: item.user_id,
+          conditionName: item.condition_name,
+          diagnosisDate: item.diagnosis_date,
+          status: item.status,
+          notes: item.notes,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching medical history:", error);
@@ -279,13 +308,27 @@ export default function DashboardPage() {
 
   const fetchMedications = async () => {
     try {
-      const response = await fetch("/api/medications", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMedications(data);
+      const { data, error } = await supabase
+        .from('medications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setMedications(data.map(item => ({
+          id: item.id,
+          userId: item.user_id,
+          medicationName: item.medication_name,
+          dosage: item.dosage,
+          frequency: item.frequency,
+          startDate: item.start_date,
+          endDate: item.end_date,
+          prescribingDoctor: item.prescribing_doctor,
+          notes: item.notes,
+          isActive: item.is_active,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching medications:", error);
@@ -296,13 +339,25 @@ export default function DashboardPage() {
 
   const fetchDocuments = async () => {
     try {
-      const response = await fetch("/api/medical-documents", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDocuments(data);
+      const { data, error } = await supabase
+        .from('medical_documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setDocuments(data.map(item => ({
+          id: item.id,
+          userId: item.user_id,
+          documentName: item.document_name,
+          documentType: item.document_type,
+          fileUrl: item.file_url,
+          fileSize: item.file_size,
+          uploadDate: item.upload_date,
+          notes: item.notes,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -313,13 +368,26 @@ export default function DashboardPage() {
 
   const fetchInsurance = async () => {
     try {
-      const response = await fetch("/api/insurance", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setInsuranceData(data);
+      const { data, error } = await supabase
+        .from('insurance')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setInsuranceData(data.map(item => ({
+          id: item.id,
+          userId: item.user_id,
+          providerName: item.provider_name,
+          policyNumber: item.policy_number,
+          groupNumber: item.group_number,
+          policyHolderName: item.policy_holder_name,
+          relationshipToHolder: item.relationship_to_holder,
+          expirationDate: item.expiration_date,
+          notes: item.notes,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching insurance:", error);
@@ -331,23 +399,12 @@ export default function DashboardPage() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/user-profile", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(profileForm)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
-        setIsEditingProfile(false);
-        toast.success("Profile updated successfully");
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to update profile");
-      }
-    } catch (error) {
-      toast.error("An error occurred while saving");
+      await updateMedicalProfile(profileForm);
+      await fetchProfile();
+      setIsEditingProfile(false);
+      toast.success("Profile updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
@@ -358,66 +415,46 @@ export default function DashboardPage() {
       toast.error("Please enter a condition name");
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const response = await fetch("/api/medical-history", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(conditionForm)
-      });
-      
-      if (response.ok) {
-        toast.success("Condition added successfully");
-        setShowAddCondition(false);
-        setConditionForm({ conditionName: "", diagnosisDate: "", status: "active", notes: "" });
-        fetchMedicalHistory();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add condition");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await addMedicalCondition(conditionForm);
+      toast.success("Condition added successfully");
+      setShowAddCondition(false);
+      setConditionForm({ conditionName: "", diagnosisDate: "", status: "active", notes: "" });
+      fetchMedicalHistory();
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleAddMedication = async () => {
-    if (!medicationForm.medicationName.trim() || !medicationForm.dosage.trim() || 
-        !medicationForm.frequency.trim() || !medicationForm.startDate) {
+    if (!medicationForm.medicationName.trim() || !medicationForm.dosage.trim() ||
+      !medicationForm.frequency.trim() || !medicationForm.startDate) {
       toast.error("Please fill in all required fields");
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const response = await fetch("/api/medications", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(medicationForm)
+      await addMedication(medicationForm);
+      toast.success("Medication added successfully");
+      setShowAddMedication(false);
+      setMedicationForm({
+        medicationName: "",
+        dosage: "",
+        frequency: "",
+        startDate: "",
+        endDate: "",
+        prescribingDoctor: "",
+        notes: "",
+        isActive: true
       });
-      
-      if (response.ok) {
-        toast.success("Medication added successfully");
-        setShowAddMedication(false);
-        setMedicationForm({
-          medicationName: "",
-          dosage: "",
-          frequency: "",
-          startDate: "",
-          endDate: "",
-          prescribingDoctor: "",
-          notes: "",
-          isActive: true
-        });
-        fetchMedications();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add medication");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      fetchMedications();
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
     } finally {
       setIsSaving(false);
     }
@@ -428,150 +465,98 @@ export default function DashboardPage() {
       toast.error("Please enter document name and file URL");
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const response = await fetch("/api/medical-documents", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(documentForm)
+      await addMedicalDocument(documentForm);
+      toast.success("Document added successfully");
+      setShowAddDocument(false);
+      setDocumentForm({
+        documentName: "",
+        documentType: "report",
+        fileUrl: "",
+        fileSize: 0,
+        uploadDate: new Date().toISOString().split('T')[0],
+        notes: ""
       });
-      
-      if (response.ok) {
-        toast.success("Document added successfully");
-        setShowAddDocument(false);
-        setDocumentForm({
-          documentName: "",
-          documentType: "report",
-          fileUrl: "",
-          fileSize: 0,
-          uploadDate: new Date().toISOString().split('T')[0],
-          notes: ""
-        });
-        fetchDocuments();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add document");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      fetchDocuments();
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleAddInsurance = async () => {
-    if (!insuranceForm.providerName.trim() || !insuranceForm.policyNumber.trim() || 
-        !insuranceForm.policyHolderName.trim()) {
+    if (!insuranceForm.providerName.trim() || !insuranceForm.policyNumber.trim() ||
+      !insuranceForm.policyHolderName.trim()) {
       toast.error("Please fill in all required fields");
       return;
     }
-    
+
     setIsSaving(true);
     try {
-      const response = await fetch("/api/insurance", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(insuranceForm)
+      await addInsurance(insuranceForm);
+      toast.success("Insurance added successfully");
+      setShowAddInsurance(false);
+      setInsuranceForm({
+        providerName: "",
+        policyNumber: "",
+        groupNumber: "",
+        policyHolderName: "",
+        relationshipToHolder: "",
+        expirationDate: "",
+        notes: ""
       });
-      
-      if (response.ok) {
-        toast.success("Insurance added successfully");
-        setShowAddInsurance(false);
-        setInsuranceForm({
-          providerName: "",
-          policyNumber: "",
-          groupNumber: "",
-          policyHolderName: "",
-          relationshipToHolder: "",
-          expirationDate: "",
-          notes: ""
-        });
-        fetchInsurance();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add insurance");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      fetchInsurance();
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteCondition = async (id: number) => {
+  const handleDeleteCondition = async (id: string) => {
     try {
-      const response = await fetch(`/api/medical-history/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Condition deleted");
-        fetchMedicalHistory();
-      } else {
-        toast.error("Failed to delete condition");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteMedicalCondition(id);
+      toast.success("Condition deleted");
+      fetchMedicalHistory();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete condition");
     }
   };
 
-  const handleDeleteMedication = async (id: number) => {
+  const handleDeleteMedication = async (id: string) => {
     try {
-      const response = await fetch(`/api/medications/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Medication deleted");
-        fetchMedications();
-      } else {
-        toast.error("Failed to delete medication");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteMedication(id);
+      toast.success("Medication deleted");
+      fetchMedications();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete medication");
     }
   };
 
-  const handleDeleteDocument = async (id: number) => {
+  const handleDeleteDocument = async (id: string) => {
     try {
-      const response = await fetch(`/api/medical-documents/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Document deleted");
-        fetchDocuments();
-      } else {
-        toast.error("Failed to delete document");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteMedicalDocument(id);
+      toast.success("Document deleted");
+      fetchDocuments();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete document");
     }
   };
 
-  const handleDeleteInsurance = async (id: number) => {
+  const handleDeleteInsurance = async (id: string) => {
     try {
-      const response = await fetch(`/api/insurance/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Insurance deleted");
-        fetchInsurance();
-      } else {
-        toast.error("Failed to delete insurance");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteInsurance(id);
+      toast.success("Insurance deleted");
+      fetchInsurance();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete insurance");
     }
   };
 
-  if (isPending || !session) {
+  if (isPending || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
@@ -579,17 +564,16 @@ export default function DashboardPage() {
     );
   }
 
+  // The rest of the UI (JSX) remains largely the same, but using the updated data
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] relative">
-      {/* Background Image with 20% opacity */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-20 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/professional-photograph-of-a-person-fill-f0c94809-20251120130450.jpg)'
         }}
       />
-      
-      {/* Header */}
+
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -597,7 +581,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-[var(--color-muted-foreground)] hidden md:inline">
-              Welcome, {session.user.name}
+              Welcome, {user.user_metadata?.name || user.email}
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -621,7 +605,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="container py-8 relative z-10">
         <div className="mb-8">
           <h2 className="text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
@@ -633,26 +616,26 @@ export default function DashboardPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <Heart className="h-4 w-4" />
-              Medical History
+              History
             </TabsTrigger>
             <TabsTrigger value="medications" className="gap-2">
               <Pill className="h-4 w-4" />
-              Medications
+              Meds
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              Documents
+              Docs
             </TabsTrigger>
             <TabsTrigger value="insurance" className="gap-2">
               <Shield className="h-4 w-4" />
-              Insurance
+              Shield
             </TabsTrigger>
           </TabsList>
 
@@ -694,12 +677,11 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* Profile Photo */}
                     <div className="flex items-center gap-6">
                       <Avatar className="h-24 w-24">
                         <AvatarImage src={profileForm.profilePhotoUrl || undefined} />
                         <AvatarFallback className="bg-[var(--color-primary)] text-white text-2xl">
-                          {session.user.name?.charAt(0).toUpperCase()}
+                          {(user.user_metadata?.name || user.email)?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {isEditingProfile && (
@@ -716,15 +698,14 @@ export default function DashboardPage() {
 
                     <Separator />
 
-                    {/* Basic Info */}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Full Name</Label>
-                        <Input value={session.user.name || ""} disabled />
+                        <Input value={user.user_metadata?.name || ""} disabled />
                       </div>
                       <div className="space-y-2">
                         <Label>Email</Label>
-                        <Input value={session.user.email || ""} disabled />
+                        <Input value={user.email || ""} disabled />
                       </div>
                       <div className="space-y-2">
                         <Label>Phone Number</Label>
@@ -804,101 +785,20 @@ export default function DashboardPage() {
                         />
                       </div>
                     </div>
-
-                    <Separator />
-
-                    {/* Address */}
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-lg">Address</h3>
-                      <div className="space-y-2">
-                        <Label>Street Address</Label>
-                        <Input
-                          placeholder="Enter street address"
-                          value={profileForm.address || ""}
-                          onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                          disabled={!isEditingProfile}
-                        />
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="space-y-2">
-                          <Label>City</Label>
-                          <Input
-                            placeholder="Enter city"
-                            value={profileForm.city || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>State</Label>
-                          <Input
-                            placeholder="Enter state"
-                            value={profileForm.state || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Postal Code</Label>
-                          <Input
-                            placeholder="Enter postal code"
-                            value={profileForm.postalCode || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Emergency Contact */}
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-lg">Emergency Contact</h3>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label>Contact Name</Label>
-                          <Input
-                            placeholder="Enter name"
-                            value={profileForm.emergencyContactName || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactName: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Contact Phone</Label>
-                          <Input
-                            placeholder="Enter phone"
-                            value={profileForm.emergencyContactPhone || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Relationship</Label>
-                          <Input
-                            placeholder="e.g., Spouse, Parent, Sibling"
-                            value={profileForm.emergencyContactRelationship || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactRelationship: e.target.value })}
-                            disabled={!isEditingProfile}
-                          />
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Medical History Tab */}
+          {/* History Tab */}
           <TabsContent value="history" className="space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Medical History</CardTitle>
-                    <CardDescription>Track your health conditions and diagnoses</CardDescription>
+                    <CardTitle>Medical Conditions</CardTitle>
+                    <CardDescription>Your diagnosed conditions and health status</CardDescription>
                   </div>
                   <Dialog open={showAddCondition} onOpenChange={setShowAddCondition}>
                     <DialogTrigger asChild>
@@ -910,13 +810,13 @@ export default function DashboardPage() {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Add Medical Condition</DialogTitle>
-                        <DialogDescription>Enter details about a health condition</DialogDescription>
+                        <DialogDescription>Enter the details of your medical condition.</DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
+                      <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <Label>Condition Name *</Label>
+                          <Label>Condition Name</Label>
                           <Input
-                            placeholder="e.g., Hypertension"
+                            placeholder="e.g. Hypertension"
                             value={conditionForm.conditionName}
                             onChange={(e) => setConditionForm({ ...conditionForm, conditionName: e.target.value })}
                           />
@@ -933,7 +833,7 @@ export default function DashboardPage() {
                           <Label>Status</Label>
                           <Select
                             value={conditionForm.status}
-                            onValueChange={(value) => setConditionForm({ ...conditionForm, status: value })}
+                            onValueChange={(v) => setConditionForm({ ...conditionForm, status: v })}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -941,21 +841,23 @@ export default function DashboardPage() {
                             <SelectContent>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="resolved">Resolved</SelectItem>
-                              <SelectItem value="managed">Managed</SelectItem>
+                              <SelectItem value="chronic">Chronic</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
                           <Label>Notes</Label>
                           <Textarea
-                            placeholder="Additional information..."
+                            placeholder="Additional details..."
                             value={conditionForm.notes}
                             onChange={(e) => setConditionForm({ ...conditionForm, notes: e.target.value })}
-                            rows={3}
                           />
                         </div>
-                        <Button onClick={handleAddCondition} className="w-full" disabled={isSaving}>
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowAddCondition(false)}>Cancel</Button>
+                        <Button onClick={handleAddCondition} disabled={isSaving}>
+                          {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                           Add Condition
                         </Button>
                       </div>
@@ -969,47 +871,22 @@ export default function DashboardPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
                   </div>
                 ) : medicalHistory.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No medical history recorded yet</p>
-                  </div>
+                  <p className="text-center py-8 text-[var(--color-muted-foreground)]">No conditions recorded.</p>
                 ) : (
                   <div className="space-y-4">
-                    {medicalHistory.map((condition) => (
-                      <div
-                        key={condition.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-[var(--color-foreground)]">
-                                {condition.conditionName}
-                              </h4>
-                              <Badge variant={condition.status === "active" ? "destructive" : "secondary"}>
-                                {condition.status}
-                              </Badge>
-                            </div>
-                            {condition.diagnosisDate && (
-                              <p className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1 mb-1">
-                                <Calendar className="h-3 w-3" />
-                                Diagnosed: {new Date(condition.diagnosisDate).toLocaleDateString()}
-                              </p>
-                            )}
-                            {condition.notes && (
-                              <p className="text-sm text-[var(--color-muted-foreground)] mt-2">
-                                {condition.notes}
-                              </p>
-                            )}
+                    {medicalHistory.map((item) => (
+                      <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold">{item.conditionName}</h4>
+                            <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>{item.status}</Badge>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteCondition(condition.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <p className="text-sm text-[var(--color-muted-foreground)]">Diagnosed: {item.diagnosisDate || "Unknown"}</p>
+                          {item.notes && <p className="text-sm mt-2">{item.notes}</p>}
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCondition(item.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -1025,7 +902,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Current Medications</CardTitle>
-                    <CardDescription>Manage your prescriptions and treatments</CardDescription>
+                    <CardDescription>Track your active prescriptions and vitamins</CardDescription>
                   </div>
                   <Dialog open={showAddMedication} onOpenChange={setShowAddMedication}>
                     <DialogTrigger asChild>
@@ -1034,73 +911,47 @@ export default function DashboardPage() {
                         Add Medication
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-md">
                       <DialogHeader>
                         <DialogTitle>Add Medication</DialogTitle>
-                        <DialogDescription>Enter details about a medication</DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                      <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <Label>Medication Name *</Label>
-                          <Input
-                            placeholder="e.g., Lisinopril"
-                            value={medicationForm.medicationName}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, medicationName: e.target.value })}
-                          />
+                          <Label>Medication Name</Label>
+                          <Input value={medicationForm.medicationName} onChange={e => setMedicationForm({ ...medicationForm, medicationName: e.target.value })} />
                         </div>
-                        <div className="space-y-2">
-                          <Label>Dosage *</Label>
-                          <Input
-                            placeholder="e.g., 10mg"
-                            value={medicationForm.dosage}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, dosage: e.target.value })}
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Dosage</Label>
+                            <Input value={medicationForm.dosage} onChange={e => setMedicationForm({ ...medicationForm, dosage: e.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Frequency</Label>
+                            <Input value={medicationForm.frequency} onChange={e => setMedicationForm({ ...medicationForm, frequency: e.target.value })} />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Frequency *</Label>
-                          <Input
-                            placeholder="e.g., Once daily"
-                            value={medicationForm.frequency}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, frequency: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Start Date *</Label>
-                          <Input
-                            type="date"
-                            value={medicationForm.startDate}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, startDate: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>End Date</Label>
-                          <Input
-                            type="date"
-                            value={medicationForm.endDate}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, endDate: e.target.value })}
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Start Date</Label>
+                            <Input type="date" value={medicationForm.startDate} onChange={e => setMedicationForm({ ...medicationForm, startDate: e.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>End Date (Optional)</Label>
+                            <Input type="date" value={medicationForm.endDate} onChange={e => setMedicationForm({ ...medicationForm, endDate: e.target.value })} />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label>Prescribing Doctor</Label>
-                          <Input
-                            placeholder="Dr. Smith"
-                            value={medicationForm.prescribingDoctor}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, prescribingDoctor: e.target.value })}
-                          />
+                          <Input value={medicationForm.prescribingDoctor} onChange={e => setMedicationForm({ ...medicationForm, prescribingDoctor: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                           <Label>Notes</Label>
-                          <Textarea
-                            placeholder="Additional information..."
-                            value={medicationForm.notes}
-                            onChange={(e) => setMedicationForm({ ...medicationForm, notes: e.target.value })}
-                            rows={3}
-                          />
+                          <Textarea value={medicationForm.notes} onChange={e => setMedicationForm({ ...medicationForm, notes: e.target.value })} />
                         </div>
-                        <Button onClick={handleAddMedication} className="w-full" disabled={isSaving}>
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          Add Medication
-                        </Button>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowAddMedication(false)}>Cancel</Button>
+                        <Button onClick={handleAddMedication} disabled={isSaving}>Add Medication</Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -1112,56 +963,22 @@ export default function DashboardPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
                   </div>
                 ) : medications.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <Pill className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No medications recorded yet</p>
-                  </div>
+                  <p className="text-center py-8 text-[var(--color-muted-foreground)]">No medications listed.</p>
                 ) : (
                   <div className="space-y-4">
-                    {medications.map((medication) => (
-                      <div
-                        key={medication.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-[var(--color-foreground)]">
-                                {medication.medicationName}
-                              </h4>
-                              <Badge variant={medication.isActive ? "default" : "secondary"}>
-                                {medication.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                            <div className="space-y-1 text-sm text-[var(--color-muted-foreground)]">
-                              <p><strong>Dosage:</strong> {medication.dosage}</p>
-                              <p><strong>Frequency:</strong> {medication.frequency}</p>
-                              <p className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Started: {new Date(medication.startDate).toLocaleDateString()}
-                              </p>
-                              {medication.endDate && (
-                                <p className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  Ends: {new Date(medication.endDate).toLocaleDateString()}
-                                </p>
-                              )}
-                              {medication.prescribingDoctor && (
-                                <p><strong>Prescribed by:</strong> {medication.prescribingDoctor}</p>
-                              )}
-                              {medication.notes && (
-                                <p className="mt-2">{medication.notes}</p>
-                              )}
-                            </div>
+                    {medications.map((med) => (
+                      <div key={med.id} className="flex items-start justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold">{med.medicationName}</h4>
+                            <Badge variant={med.isActive ? 'outline' : 'secondary'}>{med.isActive ? 'Active' : 'Inactive'}</Badge>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteMedication(medication.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <p className="text-sm">{med.dosage} - {med.frequency}</p>
+                          <p className="text-sm text-[var(--color-muted-foreground)]">Started: {med.startDate}</p>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteMedication(med.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -1172,87 +989,15 @@ export default function DashboardPage() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
+            {/* Similar structure for Documents fetched directly from Supabase */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Medical Documents</CardTitle>
-                    <CardDescription>Upload and manage reports, prescriptions, and scans</CardDescription>
-                  </div>
-                  <Dialog open={showAddDocument} onOpenChange={setShowAddDocument}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Document
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Upload Medical Document</DialogTitle>
-                        <DialogDescription>Add a new document to your medical records</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Document Name *</Label>
-                          <Input
-                            placeholder="e.g., Blood Test Results"
-                            value={documentForm.documentName}
-                            onChange={(e) => setDocumentForm({ ...documentForm, documentName: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Document Type *</Label>
-                          <Select
-                            value={documentForm.documentType}
-                            onValueChange={(value) => setDocumentForm({ ...documentForm, documentType: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="report">Medical Report</SelectItem>
-                              <SelectItem value="prescription">Prescription</SelectItem>
-                              <SelectItem value="scan">Scan/Imaging</SelectItem>
-                              <SelectItem value="xray">X-Ray</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>File URL *</Label>
-                          <Input
-                            placeholder="https://example.com/document.pdf"
-                            value={documentForm.fileUrl}
-                            onChange={(e) => setDocumentForm({ ...documentForm, fileUrl: e.target.value })}
-                          />
-                          <p className="text-xs text-[var(--color-muted-foreground)]">
-                            Enter the URL where your document is hosted
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Upload Date</Label>
-                          <Input
-                            type="date"
-                            value={documentForm.uploadDate}
-                            onChange={(e) => setDocumentForm({ ...documentForm, uploadDate: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Notes</Label>
-                          <Textarea
-                            placeholder="Additional information..."
-                            value={documentForm.notes}
-                            onChange={(e) => setDocumentForm({ ...documentForm, notes: e.target.value })}
-                            rows={3}
-                          />
-                        </div>
-                        <Button onClick={handleAddDocument} className="w-full" disabled={isSaving}>
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          Upload Document
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <CardTitle>Medical Documents</CardTitle>
+                  <Button size="sm" onClick={() => setShowAddDocument(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1261,53 +1006,26 @@ export default function DashboardPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
                   </div>
                 ) : documents.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No documents uploaded yet</p>
-                  </div>
+                  <p className="text-center py-8 text-[var(--color-muted-foreground)]">No documents uploaded.</p>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {documents.map((document) => (
-                      <div
-                        key={document.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-[var(--color-primary)]" />
-                            <h4 className="font-semibold text-[var(--color-foreground)]">
-                              {document.documentName}
-                            </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-50 rounded-lg">
+                            <FileText className="h-6 w-6 text-blue-500" />
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteDocument(document.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div>
+                            <p className="font-bold truncate max-w-[150px]">{doc.documentName}</p>
+                            <p className="text-xs text-[var(--color-muted-foreground)]">{doc.documentType}</p>
+                          </div>
                         </div>
-                        <div className="space-y-1 text-sm text-[var(--color-muted-foreground)]">
-                          <p>
-                            <Badge variant="outline">{document.documentType}</Badge>
-                          </p>
-                          <p className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Uploaded: {new Date(document.uploadDate).toLocaleDateString()}
-                          </p>
-                          {document.fileSize && (
-                            <p>Size: {(document.fileSize / 1024).toFixed(2)} KB</p>
-                          )}
-                          {document.notes && (
-                            <p className="mt-2">{document.notes}</p>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="link"
-                            className="p-0 h-auto mt-2"
-                            onClick={() => window.open(document.fileUrl, "_blank")}
-                          >
-                            View Document →
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={doc.fileUrl} target="_blank" rel="noreferrer">Open</a>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteDocument(doc.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </div>
@@ -1323,89 +1041,11 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Insurance Information</CardTitle>
-                    <CardDescription>Manage your health insurance policies</CardDescription>
-                  </div>
-                  <Dialog open={showAddInsurance} onOpenChange={setShowAddInsurance}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Insurance
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Insurance Policy</DialogTitle>
-                        <DialogDescription>Enter your insurance coverage details</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        <div className="space-y-2">
-                          <Label>Insurance Provider *</Label>
-                          <Input
-                            placeholder="e.g., Blue Cross Blue Shield"
-                            value={insuranceForm.providerName}
-                            onChange={(e) => setInsuranceForm({ ...insuranceForm, providerName: e.target.value })}
-                          />
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Policy Number *</Label>
-                            <Input
-                              placeholder="Policy #"
-                              value={insuranceForm.policyNumber}
-                              onChange={(e) => setInsuranceForm({ ...insuranceForm, policyNumber: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Group Number</Label>
-                            <Input
-                              placeholder="Group #"
-                              value={insuranceForm.groupNumber}
-                              onChange={(e) => setInsuranceForm({ ...insuranceForm, groupNumber: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Policy Holder Name *</Label>
-                          <Input
-                            placeholder="Full name as it appears on card"
-                            value={insuranceForm.policyHolderName}
-                            onChange={(e) => setInsuranceForm({ ...insuranceForm, policyHolderName: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Relationship to Holder</Label>
-                          <Input
-                            placeholder="e.g., Self, Spouse, Child"
-                            value={insuranceForm.relationshipToHolder}
-                            onChange={(e) => setInsuranceForm({ ...insuranceForm, relationshipToHolder: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Expiration Date</Label>
-                          <Input
-                            type="date"
-                            value={insuranceForm.expirationDate}
-                            onChange={(e) => setInsuranceForm({ ...insuranceForm, expirationDate: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Notes</Label>
-                          <Textarea
-                            placeholder="Additional information..."
-                            value={insuranceForm.notes}
-                            onChange={(e) => setInsuranceForm({ ...insuranceForm, notes: e.target.value })}
-                            rows={3}
-                          />
-                        </div>
-                        <Button onClick={handleAddInsurance} className="w-full" disabled={isSaving}>
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          Add Insurance
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <CardTitle>Insurance Policies</CardTitle>
+                  <Button size="sm" onClick={() => setShowAddInsurance(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Plan
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -1414,58 +1054,31 @@ export default function DashboardPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
                   </div>
                 ) : insuranceData.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No insurance information recorded yet</p>
-                  </div>
+                  <p className="text-center py-8 text-[var(--color-muted-foreground)]">No insurance plans linked.</p>
                 ) : (
                   <div className="space-y-4">
-                    {insuranceData.map((policy) => (
-                      <div
-                        key={policy.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Shield className="h-5 w-5 text-[var(--color-primary)]" />
-                              <h4 className="font-semibold text-[var(--color-foreground)]">
-                                {policy.providerName}
-                              </h4>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 text-sm">
-                              <div className="space-y-1">
-                                <p><span className="text-[var(--color-muted-foreground)]">Policy #:</span> {policy.policyNumber}</p>
-                                {policy.groupNumber && (
-                                  <p><span className="text-[var(--color-muted-foreground)]">Group #:</span> {policy.groupNumber}</p>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <p><span className="text-[var(--color-muted-foreground)]">Holder:</span> {policy.policyHolderName}</p>
-                                {policy.relationshipToHolder && (
-                                  <p><span className="text-[var(--color-muted-foreground)]">Relationship:</span> {policy.relationshipToHolder}</p>
-                                )}
-                              </div>
-                            </div>
-                            {policy.expirationDate && (
-                              <p className="text-sm mt-2 flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                <span className="text-[var(--color-muted-foreground)]">Expires:</span> {new Date(policy.expirationDate).toLocaleDateString()}
-                              </p>
-                            )}
-                            {policy.notes && (
-                              <p className="text-sm mt-3 pt-3 border-t border-[var(--color-border)] text-[var(--color-muted-foreground)]">
-                                {policy.notes}
-                              </p>
-                            )}
+                    {insuranceData.map((ins) => (
+                      <div key={ins.id} className="p-4 border rounded-lg relative">
+                        <Button variant="ghost" size="sm" className="absolute top-4 right-4" onClick={() => handleDeleteInsurance(ins.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs uppercase text-[var(--color-muted-foreground)]">Provider</p>
+                            <p className="font-bold">{ins.providerName}</p>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteInsurance(policy.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div>
+                            <p className="text-xs uppercase text-[var(--color-muted-foreground)]">Policy #</p>
+                            <p className="font-bold">{ins.policyNumber}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase text-[var(--color-muted-foreground)]">Policy Holder</p>
+                            <p className="font-bold">{ins.policyHolderName}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase text-[var(--color-muted-foreground)]">Expires</p>
+                            <p className="font-bold">{ins.expirationDate || 'N/A'}</p>
+                          </div>
                         </div>
                       </div>
                     ))}

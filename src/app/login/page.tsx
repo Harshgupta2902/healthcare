@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
 
 interface FormData {
@@ -35,6 +35,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClient();
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -65,7 +66,7 @@ function LoginContent() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    
+
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -73,32 +74,28 @@ function LoginContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
-      const { data, error } = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-        rememberMe: formData.rememberMe,
-      });
+      const { signIn } = await import("@/features/profile/actions");
+      const result = await signIn(formData.email, formData.password);
 
-      if (error?.code) {
-        toast.error("Invalid email or password. Please make sure you have already registered an account and try again.");
+      if (result.error) {
+        toast.error(result.error || "Invalid email or password.");
         return;
       }
 
-        toast.success("Welcome back! You've successfully logged in.");
-        
-        const userRole = (data?.user as any)?.role || "client";
-        const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
-        
-        setTimeout(() => {
-          window.location.href = redirectPath;
-        }, 500);
-      } catch (error) {
+      toast.success("Welcome back! You've successfully logged in.");
+
+      const userRole = result.user?.user_metadata?.role || "client";
+      const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
+
+      router.push(redirectPath);
+      router.refresh();
+    } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -115,15 +112,15 @@ function LoginContent() {
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-      
-      <Link 
-        href="/" 
+
+      <Link
+        href="/"
         className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary hover:gap-3 transition-all"
       >
         <ChevronLeft className="w-4 h-4" />
         Back to Home
       </Link>
-      
+
       <div className="relative z-10 w-full max-w-md">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -131,7 +128,7 @@ function LoginContent() {
           className="relative group"
         >
           <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-          
+
           <Card className="relative shadow-2xl border border-border/50 bg-background/80 backdrop-blur-xl rounded-[32px] overflow-hidden">
             <CardHeader className="space-y-4 text-center pt-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mx-auto mb-2">
@@ -145,7 +142,7 @@ function LoginContent() {
                 Enter your credentials to access your dashboard.
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="space-y-8 pb-10">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
@@ -159,9 +156,8 @@ function LoginContent() {
                     placeholder="your@email.com"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${
-                      errors.email ? "border-red-500/50" : ""
-                    }`}
+                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.email ? "border-red-500/50" : ""
+                      }`}
                     disabled={isLoading}
                   />
                   {errors.email && (
@@ -181,9 +177,8 @@ function LoginContent() {
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 pr-14 focus:bg-background transition-all font-bold ${
-                        errors.password ? "border-red-500/50" : ""
-                      }`}
+                      className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 pr-14 focus:bg-background transition-all font-bold ${errors.password ? "border-red-500/50" : ""
+                        }`}
                       disabled={isLoading}
                       autoComplete="off"
                     />
@@ -283,7 +278,7 @@ function LoginContent() {
         </motion.div>
       </div>
     </div>
-    );
+  );
 }
 
 export default function LoginPage() {

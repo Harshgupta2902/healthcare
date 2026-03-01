@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { newsletterSubscribers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
     const body = await request.json();
     const { email } = body;
 
     // Validate email is provided
     if (!email || typeof email !== 'string' || email.trim() === '') {
       return NextResponse.json(
-        { 
+        {
           error: 'Email is required',
           code: 'EMAIL_REQUIRED'
         },
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Validate email format
     if (!EMAIL_REGEX.test(sanitizedEmail)) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid email format',
           code: 'INVALID_EMAIL_FORMAT'
         },
@@ -36,15 +35,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingSubscriber = await db
-      .select()
-      .from(newsletterSubscribers)
-      .where(eq(newsletterSubscribers.email, sanitizedEmail))
-      .limit(1);
+    const { data: existingSubscriber, error: selectError } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .eq('email', sanitizedEmail)
+      .single();
 
-    if (existingSubscriber.length > 0) {
+    if (existingSubscriber) {
       return NextResponse.json(
-        { 
+        {
           error: 'This email is already subscribed',
           code: 'DUPLICATE_EMAIL'
         },
@@ -53,19 +52,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new subscriber
-    const newSubscriber = await db
-      .insert(newsletterSubscribers)
-      .values({
+    const { data: newSubscriber, error: insertError } = await supabase
+      .from('newsletter_subscribers')
+      .insert({
         email: sanitizedEmail,
-        subscribedAt: new Date().toISOString(),
+        subscribed_at: new Date().toISOString(),
         status: 'active'
       })
-      .returning();
+      .select()
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
 
     return NextResponse.json(
       {
         message: 'Successfully subscribed to newsletter',
-        subscriber: newSubscriber[0]
+        subscriber: newSubscriber
       },
       { status: 201 }
     );
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('POST error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error: ' + error
       },
       { status: 500 }

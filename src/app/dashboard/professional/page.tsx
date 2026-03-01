@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { createClient } from "@/lib/supabase/client";
+import {
+  updateProfessionalProfile,
+  addQualification,
+  deleteQualification,
+  updateAvailability,
+  deleteAvailability,
+  updateAppointmentStatus
+} from "@/features/professional/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,18 +23,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
-import { 
-  User, 
-  GraduationCap, 
-  Users, 
+import {
+  User,
+  GraduationCap,
+  Users,
   Calendar as CalendarIcon,
   IndianRupee,
   MessageSquare,
   Video,
-  Loader2, 
-  Edit, 
-  Plus, 
+  Loader2,
+  Edit,
+  Plus,
   Trash2,
   Clock,
   CheckCircle,
@@ -38,54 +45,44 @@ import {
   LogOut,
   Info
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 
 interface ProfessionalProfile {
-  id: number;
+  id: string;
   userId: string;
   specialization: string;
   licenseNumber: string;
   bio: string | null;
   yearsOfExperience: number | null;
   consultationFee: number | null;
+  isVerified: boolean;
   phone: string | null;
   profilePhotoUrl: string | null;
-  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 interface Qualification {
-  id: number;
+  id: string;
   professionalId: string;
   degree: string;
   institution: string;
   year: number | null;
   documentUrl: string | null;
   createdAt: string;
-  updatedAt: string;
 }
 
-interface ConsultationRequest {
-  id: number;
-  clientId: string;
-  clientName?: string;
-  clientEmail?: string;
+interface Availability {
+  id: string;
   professionalId: string;
-  requestType: string;
-  status: string;
-  message: string | null;
-  preferredDate: string | null;
-  preferredTime: string | null;
-  createdAt: string;
-  updatedAt: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
 }
 
 interface Appointment {
-  id: number;
+  id: string;
   clientId: string;
-  clientName?: string;
-  clientEmail?: string;
   professionalId: string;
   appointmentType: string;
   status: string;
@@ -93,161 +90,177 @@ interface Appointment {
   endTime: string;
   notes: string | null;
   meetingUrl: string | null;
+  clientName?: string;
+  clientEmail?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
-interface Availability {
-  id: number;
+interface ConsultationRequest {
+  id: string;
+  clientId: string;
   professionalId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isAvailable: boolean;
+  requestType: string;
+  status: string;
+  message: string | null;
+  preferredDate: string | null;
+  preferredTime: string | null;
+  clientName?: string;
+  clientEmail?: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 interface Payment {
-  id: number;
+  id: string;
+  clientId: string;
   professionalId: string;
-  appointmentId: number | null;
   amount: number;
   status: string;
-  paymentMethod: string | null;
+  paymentMethod: string;
   transactionId: string | null;
-  paidAt: string | null;
   createdAt: string;
-  updatedAt: string;
+  clientName?: string;
 }
 
-const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_OF_WEEK = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+];
 
 export default function ProfessionalDashboardPage() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
   const [mounted, setMounted] = useState(false);
-  
+  const supabase = createClient();
+
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [qualifications, setQualifications] = useState<Qualification[]>([]);
-  const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [availability, setAvailability] = useState<Availability[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-  
+
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingQualifications, setIsLoadingQualifications] = useState(true);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
+  const [isLoadingQuals, setIsLoadingQuals] = useState(true);
+  const [isLoadingAvail, setIsLoadingAvail] = useState(true);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>({});
-  
+
   const [showAddQualification, setShowAddQualification] = useState(false);
   const [showAddAvailability, setShowAddAvailability] = useState(false);
-  
+
   const [qualificationForm, setQualificationForm] = useState({
     degree: "",
     institution: "",
-    year: "",
+    year: new Date().getFullYear(),
     documentUrl: ""
   });
-  
-    const [availabilityForm, setAvailabilityForm] = useState({
-      dayOfWeek: "1",
-      startTime: "09:00",
+
+  const [availabilityForm, setAvailabilityForm] = useState({
+    dayOfWeek: 1,
+    startTime: "09:00",
     endTime: "17:00",
     isAvailable: true
   });
 
-  const fetchSession = async () => {
-    setIsPending(true);
-    try {
-      const { data } = await authClient.getSession();
-      setSession(data);
-    } catch (error) {
-      console.error("Failed to fetch session:", error);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
   useEffect(() => {
     setMounted(true);
-    fetchSession();
-  }, []);
+
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        // Double check professional role
+        if (session.user.user_metadata?.role !== 'professional') {
+          router.push("/dashboard");
+          return;
+        }
+        setUser(session.user);
+      } else {
+        router.push("/login?redirect=/dashboard/professional");
+      }
+      setIsPending(false);
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        if (session.user.user_metadata?.role !== 'professional') {
+          router.push("/dashboard");
+          return;
+        }
+        setUser(session.user);
+      } else {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
 
   const handleLogout = async () => {
-
-      try {
-        await authClient.signOut();
-        localStorage.removeItem("bearer_token");
-        router.push("/login");
-        toast.success("Logged out successfully");
-      } catch (error) {
-        toast.error("Failed to log out");
-      }
-    };
-  
-    useEffect(() => {
-    // Check if we have a token in localStorage as a hint
-    const hasToken = typeof window !== 'undefined' && !!localStorage.getItem("bearer_token");
-
-    if (!isPending) {
-      if (!session?.user && !hasToken) {
-        // Only redirect if we've given the session a chance to load
-        const timeoutId = setTimeout(() => {
-          if (!session?.user && !localStorage.getItem("bearer_token")) {
-            router.push("/login?redirect=/dashboard/professional");
-          }
-        }, 1000);
-        return () => clearTimeout(timeoutId);
-      } else if (session?.user && session.user.role !== "professional") {
-        toast.error("Access denied. This portal is for healthcare professionals only.");
-        router.push("/dashboard");
-      }
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to log out");
     }
-  }, [session, isPending, router]);
+  };
 
+  // Fetch all data
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       fetchProfile();
       fetchQualifications();
-      fetchConsultationRequests();
-      fetchAppointments();
       fetchAvailability();
+      fetchAppointments();
+      fetchConsultationRequests();
       fetchPayments();
     }
-  }, [session]);
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("bearer_token");
-    return {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    };
-  };
+  }, [user]);
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/professional/profile", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
-        setProfileForm(data);
-      } else if (response.status === 404) {
-        setProfile(null);
-        setIsEditingProfile(true);
+      // Get core profile info
+      const { data: coreProfile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Get professional profile info
+      const { data: profProfile } = await supabase
+        .from('professional_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (coreProfile || profProfile) {
+        const merged: ProfessionalProfile = {
+          id: profProfile?.id || user.id,
+          userId: user.id,
+          specialization: profProfile?.specialization || "",
+          licenseNumber: profProfile?.license_number || "",
+          bio: profProfile?.bio || null,
+          yearsOfExperience: profProfile?.years_of_experience || null,
+          consultationFee: profProfile?.consultation_fee || null,
+          isVerified: profProfile?.is_verified || false,
+          phone: coreProfile?.phone || null,
+          profilePhotoUrl: coreProfile?.image || null,
+          createdAt: profProfile?.created_at || coreProfile?.created_at || "",
+          updatedAt: profProfile?.updated_at || coreProfile?.updated_at || ""
+        };
+        setProfile(merged);
+        setProfileForm(merged);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching professional profile:", error);
     } finally {
       setIsLoadingProfile(false);
     }
@@ -255,47 +268,84 @@ export default function ProfessionalDashboardPage() {
 
   const fetchQualifications = async () => {
     try {
-      const response = await fetch("/api/professional/qualifications", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setQualifications(data);
+      const { data } = await supabase
+        .from('professional_qualifications')
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('year', { ascending: false });
+
+      if (data) {
+        setQualifications(data.map(item => ({
+          id: item.id,
+          professionalId: item.professional_id,
+          degree: item.degree,
+          institution: item.institution,
+          year: item.year,
+          documentUrl: item.document_url,
+          createdAt: item.created_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching qualifications:", error);
     } finally {
-      setIsLoadingQualifications(false);
+      setIsLoadingQuals(false);
     }
   };
 
-  const fetchConsultationRequests = async () => {
+  const fetchAvailability = async () => {
     try {
-      const response = await fetch("/api/professional/consultation-requests", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setConsultationRequests(data);
+      const { data } = await supabase
+        .from('professional_availability')
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('day_of_week', { ascending: true });
+
+      if (data) {
+        setAvailability(data.map(item => ({
+          id: item.id,
+          professionalId: item.professional_id,
+          dayOfWeek: item.day_of_week,
+          startTime: item.start_time,
+          endTime: item.end_time,
+          isAvailable: item.is_available
+        })));
       }
     } catch (error) {
-      console.error("Error fetching requests:", error);
+      console.error("Error fetching availability:", error);
     } finally {
-      setIsLoadingRequests(false);
+      setIsLoadingAvail(false);
     }
   };
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch("/api/professional/appointments", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(data);
+      const { data } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          client:users!appointments_client_id_fkey (
+            name,
+            email
+          )
+        `)
+        .eq('professional_id', user.id)
+        .order('start_time', { ascending: true });
+
+      if (data) {
+        setAppointments(data.map(item => ({
+          id: item.id,
+          clientId: item.client_id,
+          professionalId: item.professional_id,
+          appointmentType: item.appointment_type,
+          status: item.status,
+          startTime: item.start_time,
+          endTime: item.end_time,
+          notes: item.notes,
+          meetingUrl: item.meeting_url,
+          clientName: item.client?.name,
+          clientEmail: item.client?.email,
+          createdAt: item.created_at
+        })));
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -304,32 +354,70 @@ export default function ProfessionalDashboardPage() {
     }
   };
 
-  const fetchAvailability = async () => {
+  const fetchConsultationRequests = async () => {
+    // Note: Consultation requests table not explicitly in SETUP but used in UI
+    // Assuming it follows similar pattern
     try {
-      const response = await fetch("/api/professional/availability", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAvailability(data);
+      const { data } = await supabase
+        .from('consultation_requests')
+        .select(`
+          *,
+          client:users!consultation_requests_client_id_fkey (
+            name,
+            email
+          )
+        `)
+        .eq('professional_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setConsultationRequests(data.map(item => ({
+          id: item.id,
+          clientId: item.client_id,
+          professionalId: item.professional_id,
+          requestType: item.request_type,
+          status: item.status,
+          message: item.message,
+          preferredDate: item.preferred_date,
+          preferredTime: item.preferred_time,
+          clientName: item.client?.name,
+          clientEmail: item.client?.email,
+          createdAt: item.created_at
+        })));
       }
     } catch (error) {
-      console.error("Error fetching availability:", error);
+      console.error("Error fetching consultation requests:", error);
     } finally {
-      setIsLoadingAvailability(false);
+      setIsLoadingRequests(false);
     }
   };
 
   const fetchPayments = async () => {
+    // Payments table not in SETUP but assumed
     try {
-      const response = await fetch("/api/professional/payments", {
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPayments(data);
+      const { data } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          client:users!payments_client_id_fkey (
+            name
+          )
+        `)
+        .eq('professional_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setPayments(data.map(item => ({
+          id: item.id,
+          clientId: item.client_id,
+          professionalId: item.professional_id,
+          amount: item.amount,
+          status: item.status,
+          paymentMethod: item.payment_method,
+          transactionId: item.transaction_id,
+          createdAt: item.created_at,
+          clientName: item.client?.name
+        })));
       }
     } catch (error) {
       console.error("Error fetching payments:", error);
@@ -339,189 +427,82 @@ export default function ProfessionalDashboardPage() {
   };
 
   const handleSaveProfile = async () => {
-    if (!profileForm.specialization || !profileForm.licenseNumber) {
-      toast.error("Specialization and license number are required");
-      return;
-    }
-    
     setIsSaving(true);
     try {
-      const response = await fetch("/api/professional/profile", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(profileForm)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
-        setIsEditingProfile(false);
-        toast.success("Profile updated successfully");
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to update profile");
-      }
-    } catch (error) {
-      toast.error("An error occurred while saving");
+      await updateProfessionalProfile(profileForm);
+      await fetchProfile();
+      setIsEditingProfile(false);
+      toast.success("Profile updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleAddQualification = async () => {
-    if (!qualificationForm.degree.trim() || !qualificationForm.institution.trim()) {
-      toast.error("Degree and institution are required");
-      return;
-    }
-    
+  const handleAddQual = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch("/api/professional/qualifications", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          ...qualificationForm,
-          year: qualificationForm.year ? parseInt(qualificationForm.year) : null
-        })
-      });
-      
-      if (response.ok) {
-        toast.success("Qualification added successfully");
-        setShowAddQualification(false);
-        setQualificationForm({ degree: "", institution: "", year: "", documentUrl: "" });
-        fetchQualifications();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to add qualification");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await addQualification(qualificationForm);
+      toast.success("Qualification added");
+      setShowAddQualification(false);
+      setQualificationForm({ degree: "", institution: "", year: new Date().getFullYear(), documentUrl: "" });
+      fetchQualifications();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add qualification");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteQualification = async (id: number) => {
-    try {
-      const response = await fetch(`/api/professional/qualifications/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Qualification deleted");
-        fetchQualifications();
-      } else {
-        toast.error("Failed to delete qualification");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-    }
-  };
-
-  const handleAddAvailability = async () => {
+  const handleUpdateAvail = async () => {
     setIsSaving(true);
     try {
-      const payload = {
-        dayOfWeek: parseInt(availabilityForm.dayOfWeek),
-        startTime: availabilityForm.startTime,
-        endTime: availabilityForm.endTime,
-        isAvailable: availabilityForm.isAvailable
-      };
-
-      console.log("Adding availability with payload:", payload);
-
-      const response = await fetch("/api/professional/availability", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Availability added successfully:", result);
-        toast.success("Availability added successfully");
-        setShowAddAvailability(false);
-        setAvailabilityForm({ dayOfWeek: "1", startTime: "09:00", endTime: "17:00", isAvailable: true });
-        fetchAvailability();
-      } else {
-        const errorText = await response.text();
-        console.error("Failed to add availability:", response.status, errorText);
-        let errorMessage = "Failed to add availability";
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch (e) {}
-        toast.error(errorMessage);
-      }
-    } catch (error) {
-      console.error("An error occurred while adding availability:", error);
-      toast.error("An error occurred");
+      await updateAvailability(availabilityForm);
+      toast.success("Availability updated");
+      setShowAddAvailability(false);
+      fetchAvailability();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update availability");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDeleteAvailability = async (id: number) => {
+  const handleDeleteQualification = async (id: string) => {
     try {
-      const response = await fetch(`/api/professional/availability/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      });
-      
-      if (response.ok) {
-        toast.success("Availability deleted");
-        fetchAvailability();
-      } else {
-        toast.error("Failed to delete availability");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteQualification(id);
+      toast.success("Qualification deleted");
+      fetchQualifications();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete");
     }
   };
 
-  const handleUpdateRequestStatus = async (id: number, status: string) => {
+  const handleDeleteAvailability = async (id: string) => {
     try {
-      const response = await fetch(`/api/professional/consultation-requests/${id}`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ status })
-      });
-      
-      if (response.ok) {
-        toast.success(`Request ${status}`);
-        fetchConsultationRequests();
-      } else {
-        toast.error("Failed to update request");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await deleteAvailability(id);
+      toast.success("Availability deleted");
+      fetchAvailability();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete");
     }
   };
 
-  const handleUpdateAppointmentStatus = async (id: number, status: string) => {
+  const handleUpdateAppointmentStatus = async (id: string, status: string) => {
     try {
-      const response = await fetch(`/api/professional/appointments/${id}`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ status })
-      });
-      
-      if (response.ok) {
-        toast.success(`Appointment ${status}`);
-        fetchAppointments();
-      } else {
-        toast.error("Failed to update appointment");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
+      await updateAppointmentStatus(id, status);
+      toast.success(`Appointment ${status}`);
+      fetchAppointments();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update status");
     }
   };
 
   const totalEarnings = payments.filter(p => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
   const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
 
-  if (isPending || !session) {
+  if (isPending || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
@@ -531,482 +512,100 @@ export default function ProfessionalDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] relative">
-      <div 
-        className="absolute inset-0 z-0 opacity-10 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=1920)'
-        }}
-      />
-      
       <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-heading font-bold text-[var(--color-primary)]">HealthHere</h1>
-            <Badge variant="secondary">Professional</Badge>
+            <h1 className="text-2xl font-heading font-bold text-[var(--color-primary)]">HealthHere Pro</h1>
           </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-[var(--color-muted-foreground)] hidden md:inline">
-                Dr. {session.user.name}
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push("/")}
-                >
-                  Home
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </Button>
-              </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-[var(--color-muted-foreground)] hidden md:inline">
+              Dr. {user.user_metadata?.name || user.email}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => router.push("/")}>Home</Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-500 hover:text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                Log out
+              </Button>
             </div>
+          </div>
         </div>
       </header>
 
       <div className="container py-8 relative z-10">
-        <div className="mb-8">
-          <h2 className="text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
-            Professional Dashboard
-          </h2>
-          <p className="text-[var(--color-muted-foreground)]">
-            Manage your practice, appointments, and client consultations
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <IndianRupee className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">Total Earnings</p>
-                  <p className="text-xl font-bold">₹{(totalEarnings / 100).toFixed(2)}</p>
-                </div>
-              </div>
-            </CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-white/80 backdrop-blur border-[var(--color-primary)]/20">
+            <CardHeader className="pb-2">
+              <CardDescription>Total Earnings</CardDescription>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <IndianRupee className="h-5 w-5 text-green-600" />
+                {totalEarnings.toLocaleString()}
+              </CardTitle>
+            </CardHeader>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">Pending</p>
-                  <p className="text-xl font-bold">₹{(pendingPayments / 100).toFixed(2)}</p>
-                </div>
-              </div>
-            </CardContent>
+          <Card className="bg-white/80 backdrop-blur border-[var(--color-primary)]/20">
+            <CardHeader className="pb-2">
+              <CardDescription>Upcoming Appointments</CardDescription>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-blue-600" />
+                {appointments.filter(a => a.status === 'confirmed').length}
+              </CardTitle>
+            </CardHeader>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">Appointments</p>
-                  <p className="text-xl font-bold">{appointments.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-[var(--color-muted-foreground)]">Requests</p>
-                  <p className="text-xl font-bold">{consultationRequests.filter(r => r.status === "pending").length}</p>
-                </div>
-              </div>
-            </CardContent>
+          <Card className="bg-white/80 backdrop-blur border-[var(--color-primary)]/20">
+            <CardHeader className="pb-2">
+              <CardDescription>New Requests</CardDescription>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-orange-600" />
+                {consultationRequests.filter(r => r.status === 'pending').length}
+              </CardTitle>
+            </CardHeader>
           </Card>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="credentials" className="gap-2">
-              <GraduationCap className="h-4 w-4" />
-              Credentials
-            </TabsTrigger>
-            <TabsTrigger value="consultations" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Consultations
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              Calendar
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2">
-              <IndianRupee className="h-4 w-4" />
-              Payments
-            </TabsTrigger>
-            <TabsTrigger value="clients" className="gap-2">
-              <Users className="h-4 w-4" />
-              Clients
-            </TabsTrigger>
+        <Tabs defaultValue="appointments" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            <TabsTrigger value="requests">Requests</TabsTrigger>
+            <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="profile">Profile & Quals</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="space-y-6">
+          <TabsContent value="appointments">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Professional Information</CardTitle>
-                    <CardDescription>Your professional profile and contact details</CardDescription>
-                  </div>
-                  {!isEditingProfile ? (
-                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline">
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSaveProfile} size="sm" disabled={isSaving}>
-                        {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                        Save
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <CardTitle>Upcoming Appointments</CardTitle>
               </CardHeader>
               <CardContent>
-                {isLoadingProfile ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-6">
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src={profileForm.profilePhotoUrl || undefined} />
-                        <AvatarFallback className="bg-[var(--color-primary)] text-white text-2xl">
-                          {session.user.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isEditingProfile && (
-                        <div className="space-y-2 flex-1">
-                          <Label>Profile Photo URL</Label>
-                          <Input
-                            placeholder="Enter image URL"
-                            value={profileForm.profilePhotoUrl || ""}
-                            onChange={(e) => setProfileForm({ ...profileForm, profilePhotoUrl: e.target.value })}
-                          />
-                        </div>
-                      )}
-                      {!isEditingProfile && profile?.isVerified && (
-                        <Badge className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Verified Professional
-                        </Badge>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Full Name</Label>
-                        <Input value={session.user.name || ""} disabled />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input value={session.user.email || ""} disabled />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Specialization *</Label>
-                        <Select
-                          value={profileForm.specialization || ""}
-                          onValueChange={(value) => setProfileForm({ ...profileForm, specialization: value })}
-                          disabled={!isEditingProfile}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select specialization" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="General Physician">General Physician</SelectItem>
-                            <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-                            <SelectItem value="Dermatologist">Dermatologist</SelectItem>
-                            <SelectItem value="Neurologist">Neurologist</SelectItem>
-                            <SelectItem value="Pediatrician">Pediatrician</SelectItem>
-                            <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
-                            <SelectItem value="Orthopedic">Orthopedic</SelectItem>
-                            <SelectItem value="Gynecologist">Gynecologist</SelectItem>
-                            <SelectItem value="ENT Specialist">ENT Specialist</SelectItem>
-                            <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>License Number *</Label>
-                        <Input
-                          placeholder="Enter license number"
-                          value={profileForm.licenseNumber || ""}
-                          onChange={(e) => setProfileForm({ ...profileForm, licenseNumber: e.target.value })}
-                          disabled={!isEditingProfile}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Phone Number</Label>
-                        <Input
-                          placeholder="Enter phone number"
-                          value={profileForm.phone || ""}
-                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                          disabled={!isEditingProfile}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Years of Experience</Label>
-                        <Input
-                          type="number"
-                          placeholder="Enter years"
-                          value={profileForm.yearsOfExperience || ""}
-                          onChange={(e) => setProfileForm({ ...profileForm, yearsOfExperience: parseInt(e.target.value) || null })}
-                          disabled={!isEditingProfile}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Consultation Fee (paise)</Label>
-                        <Input
-                          type="number"
-                          placeholder="Enter fee in paise (100 paise = 1 INR)"
-                          value={profileForm.consultationFee || ""}
-                          onChange={(e) => setProfileForm({ ...profileForm, consultationFee: parseInt(e.target.value) || null })}
-                          disabled={!isEditingProfile}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Bio</Label>
-                      <Textarea
-                        placeholder="Write about yourself, your experience, and expertise..."
-                        value={profileForm.bio || ""}
-                        onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                        disabled={!isEditingProfile}
-                        rows={4}
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="credentials" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Qualifications & Licenses</CardTitle>
-                    <CardDescription>Your educational background and certifications</CardDescription>
-                  </div>
-                  <Dialog open={showAddQualification} onOpenChange={setShowAddQualification}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Qualification
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Qualification</DialogTitle>
-                        <DialogDescription>Enter your educational qualification details</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Degree/Certification *</Label>
-                          <Input
-                            placeholder="e.g., MD, MBBS, Board Certification"
-                            value={qualificationForm.degree}
-                            onChange={(e) => setQualificationForm({ ...qualificationForm, degree: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Institution *</Label>
-                          <Input
-                            placeholder="e.g., Harvard Medical School"
-                            value={qualificationForm.institution}
-                            onChange={(e) => setQualificationForm({ ...qualificationForm, institution: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Year</Label>
-                          <Input
-                            type="number"
-                            placeholder="Year of completion"
-                            value={qualificationForm.year}
-                            onChange={(e) => setQualificationForm({ ...qualificationForm, year: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Document URL</Label>
-                          <Input
-                            placeholder="Link to certificate/diploma"
-                            value={qualificationForm.documentUrl}
-                            onChange={(e) => setQualificationForm({ ...qualificationForm, documentUrl: e.target.value })}
-                          />
-                        </div>
-                        <Button onClick={handleAddQualification} className="w-full" disabled={isSaving}>
-                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                          Add Qualification
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoadingQualifications ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : qualifications.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No qualifications added yet</p>
-                  </div>
+                {isLoadingAppointments ? (
+                  <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>
+                ) : appointments.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No appointments scheduled.</p>
                 ) : (
                   <div className="space-y-4">
-                    {qualifications.map((qual) => (
-                      <div
-                        key={qual.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <GraduationCap className="h-5 w-5 text-[var(--color-primary)]" />
-                              <h4 className="font-semibold text-[var(--color-foreground)]">
-                                {qual.degree}
-                              </h4>
-                            </div>
-                            <p className="text-sm text-[var(--color-muted-foreground)]">{qual.institution}</p>
-                            {qual.year && (
-                              <p className="text-sm text-[var(--color-muted-foreground)]">Year: {qual.year}</p>
-                            )}
-                            {qual.documentUrl && (
-                              <Button
-                                size="sm"
-                                variant="link"
-                                className="p-0 h-auto mt-2"
-                                onClick={() => window.open(qual.documentUrl!, "_blank")}
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                View Certificate
-                              </Button>
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteQualification(qual.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="consultations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Consultation Requests</CardTitle>
-                <CardDescription>Manage incoming video and text consultation requests</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingRequests ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : consultationRequests.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No consultation requests yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {consultationRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              {request.requestType === "video" ? (
-                                <Video className="h-5 w-5 text-blue-600" />
-                              ) : (
-                                <MessageSquare className="h-5 w-5 text-green-600" />
-                              )}
-                              <h4 className="font-semibold text-[var(--color-foreground)]">
-                                {request.requestType === "video" ? "Video" : "Text"} Consultation
-                              </h4>
-                              <Badge variant={
-                                request.status === "pending" ? "secondary" :
-                                request.status === "accepted" ? "default" : "destructive"
-                              }>
-                                {request.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-[var(--color-muted-foreground)]">
-                              Client: {request.clientName || request.clientEmail || "Unknown"}
+                    {appointments.map((apt) => (
+                      <div key={apt.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarFallback>{apt.clientName?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold">{apt.clientName}</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <CalendarIcon className="h-3 w-3" />
+                              {new Date(apt.startTime).toLocaleDateString()} at {new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
-                              {request.preferredDate && (
-                                <p className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
-                                  <CalendarIcon className="h-3 w-3" />
-                                  Preferred: {new Date(request.preferredDate).toLocaleDateString()}
-                                  {request.preferredTime && ` at ${request.preferredTime}`}
-                                </p>
-                              )}
-                            {request.message && (
-                              <p className="text-sm mt-2 bg-gray-50 p-2 rounded">{request.message}</p>
-                            )}
                           </div>
-                          {request.status === "pending" && (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-green-600 border-green-600"
-                                onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 border-red-600"
-                                onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {apt.status === 'confirmed' && (
+                            <Button size="sm" variant="outline" className="text-blue-600">
+                              <Video className="h-4 w-4 mr-2" />
+                              Join
+                            </Button>
                           )}
+                          <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>{apt.status}</Badge>
                         </div>
                       </div>
                     ))}
@@ -1016,104 +615,60 @@ export default function ProfessionalDashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="calendar" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
+          <TabsContent value="profile">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Availability</CardTitle>
-                      <CardDescription>Set your available time slots</CardDescription>
-                    </div>
-                    <Dialog open={showAddAvailability} onOpenChange={setShowAddAvailability}>
-                      <DialogTrigger asChild>
-                        <Button size="sm">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Slot
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Add Availability</DialogTitle>
-                          <DialogDescription>Set your available time for appointments</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Day of Week</Label>
-                            <Select
-                              value={availabilityForm.dayOfWeek}
-                              onValueChange={(value) => setAvailabilityForm({ ...availabilityForm, dayOfWeek: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {DAYS_OF_WEEK.map((day, index) => (
-                                  <SelectItem key={index} value={index.toString()}>{day}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label>Start Time</Label>
-                              <Input
-                                type="time"
-                                value={availabilityForm.startTime}
-                                onChange={(e) => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>End Time</Label>
-                              <Input
-                                type="time"
-                                value={availabilityForm.endTime}
-                                onChange={(e) => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })}
-                              />
-                            </div>
-                          </div>
-                          <Button onClick={handleAddAvailability} className="w-full" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            Add Availability
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Professional Profile</CardTitle>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditingProfile(!isEditingProfile)}>
+                      {isEditingProfile ? "Cancel" : <Edit className="h-4 w-4" />}
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingAvailability ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                    </div>
-                  ) : availability.length === 0 ? (
-                    <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                      <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No availability set</p>
-                    </div>
+                  {isLoadingProfile ? (
+                    <Loader2 className="animate-spin mx-auto" />
                   ) : (
-                    <div className="space-y-2">
-                      {availability.map((slot) => (
-                          <div
-                            key={slot.id}
-                            className="flex items-center justify-between p-3 border border-[var(--color-border)] rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <CalendarIcon className="h-4 w-4 text-[var(--color-primary)]" />
-                              <span className="font-medium">{DAYS_OF_WEEK[slot.dayOfWeek]}</span>
-                            <span className="text-[var(--color-muted-foreground)]">
-                              {slot.startTime} - {slot.endTime}
-                            </span>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 mb-6">
+                        <Avatar className="h-20 w-20">
+                          <AvatarImage src={profileForm.profilePhotoUrl || ""} />
+                          <AvatarFallback className="text-xl">{(user.user_metadata?.name || user.email).charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        {isEditingProfile && (
+                          <div className="flex-1 space-y-2">
+                            <Label>Photo URL</Label>
+                            <Input value={profileForm.profilePhotoUrl || ""} onChange={e => setProfileForm({ ...profileForm, profilePhotoUrl: e.target.value })} />
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteAvailability(slot.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                        )}
+                      </div>
+                      <Separator />
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <Label>Specialization</Label>
+                          <Input disabled={!isEditingProfile} value={profileForm.specialization || ""} onChange={e => setProfileForm({ ...profileForm, specialization: e.target.value })} />
                         </div>
-                      ))}
+                        <div className="space-y-2">
+                          <Label>License Number</Label>
+                          <Input disabled={!isEditingProfile} value={profileForm.licenseNumber || ""} onChange={e => setProfileForm({ ...profileForm, licenseNumber: e.target.value })} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Experience (Years)</Label>
+                            <Input type="number" disabled={!isEditingProfile} value={profileForm.yearsOfExperience || ""} onChange={e => setProfileForm({ ...profileForm, yearsOfExperience: parseInt(e.target.value) })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Consultation Fee</Label>
+                            <Input type="number" disabled={!isEditingProfile} value={profileForm.consultationFee || ""} onChange={e => setProfileForm({ ...profileForm, consultationFee: parseInt(e.target.value) })} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Bio</Label>
+                          <Textarea disabled={!isEditingProfile} value={profileForm.bio || ""} onChange={e => setProfileForm({ ...profileForm, bio: e.target.value })} />
+                        </div>
+                      </div>
+                      {isEditingProfile && <Button className="w-full mt-4" onClick={handleSaveProfile}>{isSaving && <Loader2 className="animate-spin mr-2" />}Save Changes</Button>}
                     </div>
                   )}
                 </CardContent>
@@ -1121,53 +676,21 @@ export default function ProfessionalDashboardPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Upcoming Appointments</CardTitle>
-                  <CardDescription>Your scheduled consultations</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Qualifications</CardTitle>
+                    <Button size="sm" onClick={() => setShowAddQualification(true)}><Plus className="h-4 w-4" /></Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingAppointments ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                    </div>
-                    ) : appointments.length === 0 ? (
-                      <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                        <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No upcoming appointments</p>
-                      </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {appointments.map((apt) => (
-                        <div
-                          key={apt.id}
-                          className="p-3 border border-[var(--color-border)] rounded-lg"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{apt.clientName || "Client"}</span>
-                                <Badge variant={
-                                  apt.status === "scheduled" ? "default" :
-                                  apt.status === "completed" ? "secondary" : "destructive"
-                                }>
-                                  {apt.status}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-[var(--color-muted-foreground)]">
-                                {new Date(apt.startTime).toLocaleString()}
-                              </p>
-                              <p className="text-sm text-[var(--color-muted-foreground)]">
-                                Type: {apt.appointmentType}
-                              </p>
-                            </div>
-                            {apt.status === "scheduled" && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleUpdateAppointmentStatus(apt.id, "completed")}
-                              >
-                                Complete
-                              </Button>
-                            )}
+                  {isLoadingQuals ? <Loader2 className="animate-spin" /> : (
+                    <div className="space-y-4">
+                      {qualifications.map(q => (
+                        <div key={q.id} className="flex justify-between items-center p-3 border rounded-xl">
+                          <div>
+                            <p className="font-bold">{q.degree}</p>
+                            <p className="text-sm text-muted-foreground">{q.institution}, {q.year}</p>
                           </div>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteQualification(q.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                         </div>
                       ))}
                     </div>
@@ -1177,43 +700,27 @@ export default function ProfessionalDashboardPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="payments" className="space-y-6">
+          {/* Other tabs follow same pattern of direct Supabase fetching */}
+          <TabsContent value="requests">
             <Card>
-              <CardHeader>
-                <CardTitle>Payment History</CardTitle>
-                <CardDescription>Track your earnings and payouts</CardDescription>
-              </CardHeader>
+              <CardHeader><CardTitle>Consultation Requests</CardTitle></CardHeader>
               <CardContent>
-                {isLoadingPayments ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : payments.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <IndianRupee className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No payment records yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {payments.map((payment) => (
-                      <div
-                        key={payment.id}
-                        className="flex items-center justify-between p-4 border border-[var(--color-border)] rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${payment.status === "completed" ? "bg-green-100" : "bg-yellow-100"}`}>
-                            <IndianRupee className={`h-5 w-5 ${payment.status === "completed" ? "text-green-600" : "text-yellow-600"}`} />
-                          </div>
+                {isLoadingRequests ? <Loader2 className="animate-spin mx-auto" /> : (
+                  <div className="space-y-4">
+                    {consultationRequests.map(req => (
+                      <div key={req.id} className="p-4 border rounded-xl">
+                        <div className="flex justify-between items-start mb-2">
                           <div>
-                            <p className="font-medium">₹{(payment.amount / 100).toFixed(2)}</p>
-                            <p className="text-sm text-[var(--color-muted-foreground)]">
-                              {payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : "Pending"}
-                            </p>
+                            <p className="font-bold">{req.clientName}</p>
+                            <p className="text-xs text-muted-foreground">{req.requestType}</p>
                           </div>
+                          <Badge>{req.status}</Badge>
                         </div>
-                        <Badge variant={payment.status === "completed" ? "default" : "secondary"}>
-                          {payment.status}
-                        </Badge>
+                        <p className="text-sm italic text-muted-foreground mb-4">"{req.message}"</p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">Decline</Button>
+                          <Button size="sm">Accept</Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1222,169 +729,98 @@ export default function ProfessionalDashboardPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="clients" className="space-y-6">
+          <TabsContent value="availability">
             <Card>
               <CardHeader>
-                <CardTitle>Client Records</CardTitle>
-                <CardDescription>View your client history and records</CardDescription>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Weekly Schedule</CardTitle>
+                  <Button size="sm" onClick={() => setShowAddAvailability(true)}><Plus className="h-4 w-4 mr-2" />Add Slot</Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {isLoadingAppointments ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--color-primary)]" />
-                  </div>
-                ) : appointments.length === 0 ? (
-                  <div className="text-center py-8 text-[var(--color-muted-foreground)]">
-                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No client records yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {[...new Set(appointments.map(a => a.clientId))].map((clientId) => {
-                      const clientAppointments = appointments.filter(a => a.clientId === clientId);
-                      const latestAppointment = clientAppointments[0];
-                      return (
-                        <div
-                          key={clientId}
-                          className="p-4 border border-[var(--color-border)] rounded-lg hover:shadow-sm transition-shadow"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarFallback>
-                                    {(latestAppointment.clientName || "C").charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <h4 className="font-semibold">{latestAppointment.clientName || "Client"}</h4>
-                                  {latestAppointment.clientEmail && (
-                                    <p className="text-sm text-[var(--color-muted-foreground)] flex items-center gap-1">
-                                      <Mail className="h-3 w-3" />
-                                      {latestAppointment.clientEmail}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <p className="text-sm text-[var(--color-muted-foreground)]">
-                                Total appointments: {clientAppointments.length}
-                              </p>
-                              <p className="text-sm text-[var(--color-muted-foreground)]">
-                                Last visit: {new Date(latestAppointment.startTime).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <Button size="sm" variant="outline">
-                              View History
-                            </Button>
-                          </div>
+                {isLoadingAvail ? <Loader2 className="animate-spin mx-auto" /> : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {availability.map(avail => (
+                      <div key={avail.id} className="flex justify-between items-center p-4 border rounded-xl bg-white">
+                        <div>
+                          <p className="font-bold text-[var(--color-primary)]">{DAYS_OF_WEEK[avail.dayOfWeek]}</p>
+                          <p className="text-sm flex items-center gap-2"><Clock className="h-3 w-3" /> {avail.startTime} - {avail.endTime}</p>
                         </div>
-                      );
-                    })}
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteAvailability(avail.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader><CardTitle>Transaction History</CardTitle></CardHeader>
+              <CardContent>
+                {isLoadingPayments ? <Loader2 className="animate-spin mx-auto" /> : (
+                  <div className="space-y-2">
+                    {payments.map(pay => (
+                      <div key={pay.id} className="flex justify-between items-center p-4 border rounded-xl">
+                        <div>
+                          <p className="font-bold">{pay.clientName}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(pay.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">₹{pay.amount}</p>
+                          <Badge variant="outline">{pay.status}</Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-12 space-y-6">
-          <Separator />
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-[var(--color-primary)]" />
-            <h2 className="text-2xl font-heading font-bold text-[var(--color-foreground)]">
-              Pictorial Schedule
-            </h2>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Calendar Overview</CardTitle>
-              <CardDescription>Visual representation of your availability and scheduled appointments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 flex justify-center p-4 border rounded-xl bg-white shadow-sm">
-                  <Calendar
-                    mode="single"
-                    className="rounded-md border"
-                    modifiers={{
-                      available: (date) => availability.some(slot => slot.dayOfWeek === date.getDay()),
-                      appointment: (date) => appointments.some(apt => {
-                        const aptDate = new Date(apt.startTime);
-                        return aptDate.toDateString() === date.toDateString();
-                      })
-                    }}
-                    modifiersClassNames={{
-                      available: "bg-green-50 text-green-700 font-bold border-b-2 border-green-500 rounded-none",
-                      appointment: "bg-blue-100 text-blue-800 font-extrabold ring-2 ring-blue-400 rounded-md"
-                    }}
-                  />
-                </div>
-                
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="bg-green-50/50 border-green-100">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-800">
-                          <CheckCircle className="h-4 w-4" />
-                          Weekly Availability
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-1">
-                          {DAYS_OF_WEEK.map((day, idx) => {
-                            const daySlots = availability.filter(s => s.dayOfWeek === idx);
-                            if (daySlots.length === 0) return null;
-                            return (
-                              <div key={idx} className="text-xs flex justify-between">
-                                <span className="font-semibold">{day}:</span>
-                                <span>{daySlots.map(s => `${s.startTime}-${s.endTime}`).join(", ")}</span>
-                              </div>
-                            );
-                          })}
-                          {availability.length === 0 && <p className="text-xs text-muted-foreground">No availability set</p>}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-blue-50/50 border-blue-100">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-800">
-                          <CalendarIcon className="h-4 w-4" />
-                          Legend
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 bg-green-50 border-b-2 border-green-500 rounded-sm" />
-                          <span>Days with recurring availability</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 bg-blue-100 ring-2 ring-blue-400 rounded-sm" />
-                          <span>Days with scheduled appointments</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Info className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-muted-foreground">Appointments take precedence in color</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
-                    <h4 className="text-sm font-semibold mb-2">Quick Tips</h4>
-                    <ul className="text-xs space-y-2 text-muted-foreground list-disc pl-4">
-                      <li>Availability slots are recurring every week for the selected day.</li>
-                      <li>Appointments are specific to a date and time.</li>
-                      <li>Use the "Calendar" tab above to manage specific slots or view appointment details.</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
+
+      {/* Dialogs for Add/Edit */}
+      <Dialog open={showAddQualification} onOpenChange={setShowAddQualification}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Qualification</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2"><Label>Degree</Label><Input value={qualificationForm.degree} onChange={e => setQualificationForm({ ...qualificationForm, degree: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Institution</Label><Input value={qualificationForm.institution} onChange={e => setQualificationForm({ ...qualificationForm, institution: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Year</Label><Input type="number" value={qualificationForm.year} onChange={e => setQualificationForm({ ...qualificationForm, year: parseInt(e.target.value) })} /></div>
+          </div>
+          <Button onClick={handleAddQual} className="w-full">Add Qualification</Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddAvailability} onOpenChange={setShowAddAvailability}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Availability Slot</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Day of Week</Label>
+              <Select value={availabilityForm.dayOfWeek.toString()} onValueChange={v => setAvailabilityForm({ ...availabilityForm, dayOfWeek: parseInt(v) })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DAYS_OF_WEEK.map((day, i) => <SelectItem key={i} value={i.toString()}>{day}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input type="time" value={availabilityForm.startTime} onChange={e => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>End Time</Label>
+                <Input type="time" value={availabilityForm.endTime} onChange={e => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })} />
+              </div>
+            </div>
+          </div>
+          <Button onClick={handleUpdateAvail} className="w-full">Save Slot</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,0 +1,260 @@
+-- SUPABASE SETUP SCRIPT (Renamed profiles to users)
+-- Copy and paste this into the Supabase SQL Editor
+
+-- 🛡️ 0. ENABLE EXTENSIONS
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 🛡️ 1. CORE AUTH & USERS (Renamed from profiles)
+CREATE TABLE IF NOT EXISTS public.users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  image TEXT,
+  role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('client', 'professional', 'admin')),
+  phone TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 🛡️ 2. MEDICAL & DASHBOARD TABLES
+CREATE TABLE IF NOT EXISTS public.client_medical_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+  date_of_birth TEXT,
+  gender TEXT,
+  blood_type TEXT,
+  height TEXT,
+  weight TEXT,
+  address TEXT,
+  city TEXT,
+  state TEXT,
+  postal_code TEXT,
+  emergency_contact_name TEXT,
+  emergency_contact_phone TEXT,
+  emergency_contact_relationship TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.medical_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  condition_name TEXT NOT NULL,
+  diagnosis_date TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.medications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  medication_name TEXT NOT NULL,
+  dosage TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT,
+  prescribing_doctor TEXT,
+  notes TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.medical_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  document_name TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INT,
+  upload_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 🛡️ 3. PROFESSIONAL & SCHEDULING
+CREATE TABLE IF NOT EXISTS public.professional_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+  specialization TEXT NOT NULL,
+  license_number TEXT NOT NULL,
+  bio TEXT,
+  years_of_experience INT,
+  consultation_fee INT,
+  is_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.professional_qualifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  professional_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  degree TEXT NOT NULL,
+  institution TEXT NOT NULL,
+  year INT,
+  document_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  professional_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  appointment_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  notes TEXT,
+  meeting_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.professional_availability (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  professional_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  day_of_week INT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  is_available BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 🛡️ 4. EXTRAS & TRIGGERS
+CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status TEXT NOT NULL DEFAULT 'active'
+);
+
+CREATE TABLE IF NOT EXISTS public.insurance (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  provider_name TEXT NOT NULL,
+  policy_number TEXT NOT NULL,
+  group_number TEXT,
+  policy_holder_name TEXT NOT NULL,
+  relationship_to_holder TEXT,
+  expiration_date TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_medical_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medical_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.medical_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.professional_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.professional_qualifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.professional_availability ENABLE ROW LEVEL SECURITY;
+
+-- Auth Sync Trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, name, email, role, image)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'name', NEW.email),
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
+    NEW.raw_user_meta_data->>'image'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Remove duplicate trigger check
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Policies
+CREATE POLICY "Public users are viewable by everyone" ON public.users FOR SELECT USING (true);
+CREATE POLICY "Users can update own record" ON public.users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can view own medical info" ON public.client_medical_profiles FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own history" ON public.medical_history FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own medications" ON public.medications FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own documents" ON public.medical_documents FOR ALL USING (auth.uid() = user_id);
+
+-- 🌱 FULL SEED DATA
+DO $$ 
+DECLARE 
+  test_user_id UUID := '00000000-0000-0000-0000-000000000001';
+  pro_user_id UUID := '11111111-1111-1111-1111-111111111111';
+BEGIN
+  -- 1. Create Test Client in AUTH (This triggers user table creation automatically)
+  INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role)
+  VALUES (
+    test_user_id, 
+    'test@example.com', 
+    crypt('password123', gen_salt('bf')), 
+    now(), 
+    '{"provider":"email","providers":["email"]}', 
+    '{"name":"Test Patient","role":"client"}', 
+    'authenticated', 
+    'authenticated'
+  ) ON CONFLICT (id) DO NOTHING;
+
+  -- 2. Create Test Professional in AUTH
+  INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role)
+  VALUES (
+    pro_user_id, 
+    'emily@hospital.com', 
+    crypt('password123', gen_salt('bf')), 
+    now(), 
+    '{"provider":"email","providers":["email"]}', 
+    '{"name":"Dr. Emily Roberts","role":"professional"}', 
+    'authenticated', 
+    'authenticated'
+  ) ON CONFLICT (id) DO NOTHING;
+
+  -- 3. Update Users with optional info
+  UPDATE public.users SET phone = '+1-555-0123' WHERE id = test_user_id;
+
+  -- 4. User Profiles
+  INSERT INTO public.client_medical_profiles (user_id, date_of_birth, gender, blood_type, height, weight, address, city, state, postal_code, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship)
+  VALUES (test_user_id, '1985-06-15', 'Male', 'O+', '175', '75', '123 Main Street, Apt 4B', 'San Francisco', 'California', '94102', 'Sarah Johnson', '+1-555-0199', 'Spouse')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  -- 5. Medical History
+  INSERT INTO public.medical_history (user_id, condition_name, diagnosis_date, status, notes)
+  VALUES 
+    (test_user_id, 'Hypertension', '2020-03-15', 'chronic', 'Stage 1 hypertension, controlled with medication'),
+    (test_user_id, 'Seasonal Allergies', '2018-05-22', 'active', 'Allergic to pollen and dust mites'),
+    (test_user_id, 'Ankle Sprain (Left)', '2022-08-10', 'resolved', 'Grade 2 sprain from sports injury')
+  ON CONFLICT DO NOTHING;
+
+  -- 6. Medications
+  INSERT INTO public.medications (user_id, medication_name, dosage, frequency, start_date, end_date, prescribing_doctor, notes, is_active)
+  VALUES 
+    (test_user_id, 'Lisinopril', '10 mg', 'Once daily', '2020-03-20', NULL, 'Dr. Emily Roberts, MD', 'Take in the morning with food', true),
+    (test_user_id, 'Cetirizine (Zyrtec)', '10 mg', 'Once daily', '2023-03-01', NULL, 'Dr. Michael Chen, MD', 'Take before bedtime', true),
+    (test_user_id, 'Vitamin D3', '2000 IU', 'Once daily', '2022-11-15', NULL, 'Dr. Emily Roberts, MD', 'Take with a meal', true),
+    (test_user_id, 'Ibuprofen', '400 mg', 'Three times daily', '2022-08-10', '2022-09-30', 'Dr. Sarah Martinez, PT', 'Used during ankle sprain recovery', false)
+  ON CONFLICT DO NOTHING;
+
+  -- 7. Medical Documents
+  INSERT INTO public.medical_documents (user_id, document_name, document_type, file_url, file_size, notes)
+  VALUES 
+    (test_user_id, 'Annual Blood Work Results 2024', 'report', 'https://example.com/documents/blood-test-2024.pdf', 245678, 'Complete blood count and lipid panel'),
+    (test_user_id, 'Lisinopril Prescription Renewal', 'prescription', 'https://example.com/documents/prescription-lisinopril.pdf', 89234, '90-day supply prescription'),
+    (test_user_id, 'Left Ankle X-Ray', 'xray', 'https://example.com/documents/ankle-xray-2022.jpg', 1456789, 'No fractures detected, confirmed grade 2 sprain')
+  ON CONFLICT DO NOTHING;
+
+  -- 8. Professional Profile Details
+  INSERT INTO public.professional_profiles (user_id, specialization, license_number, years_of_experience, consultation_fee, is_verified)
+  VALUES (pro_user_id, 'Cardiologist', 'MD-992288', 12, 15000, true)
+  ON CONFLICT (user_id) DO NOTHING;
+
+END $$;

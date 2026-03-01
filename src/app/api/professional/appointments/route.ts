@@ -1,75 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { appointments, session, user } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-
-async function getSessionUser(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-
-  try {
-    const sessions = await db.select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
-
-    if (sessions.length === 0) {
-      return null;
-    }
-
-    const userSession = sessions[0];
-    
-    if (new Date(userSession.expiresAt) <= new Date()) {
-      return null;
-    }
-
-    return { userId: userSession.userId };
-  } catch (error) {
-    console.error('Session validation error:', error);
-    return null;
-  }
-}
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser(request);
-    
-    if (!sessionUser) {
-      return NextResponse.json({ 
+    const supabase = await createClient();
+    const { data: { user: sessionUser }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !sessionUser) {
+      return NextResponse.json({
         error: 'Authentication required',
-        code: 'UNAUTHORIZED' 
+        code: 'UNAUTHORIZED'
       }, { status: 401 });
     }
 
-    const professionalAppointments = await db.select({
-      id: appointments.id,
-      clientId: appointments.clientId,
-      professionalId: appointments.professionalId,
-      appointmentType: appointments.appointmentType,
-      status: appointments.status,
-      startTime: appointments.startTime,
-      endTime: appointments.endTime,
-      notes: appointments.notes,
-      meetingUrl: appointments.meetingUrl,
-      createdAt: appointments.createdAt,
-      updatedAt: appointments.updatedAt,
-      clientName: user.name,
-      clientEmail: user.email
-    })
-      .from(appointments)
-      .leftJoin(user, eq(appointments.clientId, user.id))
-      .where(eq(appointments.professionalId, sessionUser.userId));
+    const { data: appointments, error: queryError } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        client_id,
+        professional_id,
+        appointment_type,
+        status,
+        start_time,
+        end_time,
+        notes,
+        meeting_url,
+        created_at,
+        updated_at,
+        client:users (
+          name,
+          email
+        )
+      `)
+      .eq('professional_id', sessionUser.id);
 
-    return NextResponse.json(professionalAppointments, { status: 200 });
+    if (queryError) throw queryError;
+
+    const mappedAppointments = (appointments || []).map((app: any) => ({
+      id: app.id,
+      clientId: app.client_id,
+      professionalId: app.professional_id,
+      appointmentType: app.appointment_type,
+      status: app.status,
+      startTime: app.start_time,
+      endTime: app.end_time,
+      notes: app.notes,
+      meetingUrl: app.meeting_url,
+      createdAt: app.created_at,
+      updatedAt: app.updated_at,
+      clientName: app.client?.name,
+      clientEmail: app.client?.email
+    }));
+
+    return NextResponse.json(mappedAppointments, { status: 200 });
   } catch (error) {
     console.error('GET error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error')
     }, { status: 500 });
   }
 }
+
