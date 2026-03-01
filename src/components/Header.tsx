@@ -153,12 +153,15 @@ export default function Header({ className }: HeaderProps) {
               <Link href="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Services
               </Link>
-              <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                How it works
-              </Link>
-              <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Contact Us
-              </Link>
+                <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  How it works
+                </Link>
+                <Link href="/support" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Support
+                </Link>
+                <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Contact Us
+                </Link>
             </nav>
 
 
