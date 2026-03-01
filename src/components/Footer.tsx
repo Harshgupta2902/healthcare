@@ -97,14 +97,14 @@ export default function Footer({ className }: FooterProps) {
                     About Us
                   </a>
                 </li>
-                <li>
-                  <a
-                    href="/help"
-                    className="text-muted-foreground hover:text-primary transition-colors">
+                  <li>
+                    <a
+                      href="/support"
+                      className="text-muted-foreground hover:text-primary transition-colors">
 
-                    Help & Support
-                  </a>
-                </li>
+                      Help & Support
+                    </a>
+                  </li>
                 <li>
                   <a
                     href="/contact"
