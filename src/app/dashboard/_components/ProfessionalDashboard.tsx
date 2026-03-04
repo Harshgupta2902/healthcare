@@ -125,27 +125,33 @@ const DAYS_OF_WEEK = [
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 ];
 
-export function ProfessionalDashboard({ user }: { user: any }) {
+export function ProfessionalDashboard({ initialData }: { initialData: any }) {
+    const user = initialData?.user;
     const router = useRouter();
     const supabase = createClient();
 
-    const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
-    const [qualifications, setQualifications] = useState<Qualification[]>([]);
-    const [availability, setAvailability] = useState<Availability[]>([]);
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
-    const [payments, setPayments] = useState<Payment[]>([]);
+    const [profile, setProfile] = useState<ProfessionalProfile | null>(initialData?.profile || null);
+    const [qualifications, setQualifications] = useState<Qualification[]>(initialData?.qualifications || []);
+    const [availability, setAvailability] = useState<Availability[]>(initialData?.availability || []);
+    const [appointments, setAppointments] = useState<Appointment[]>(initialData?.appointments || []);
+    const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>(initialData?.consultationRequests || []);
+    const [payments, setPayments] = useState<Payment[]>(initialData?.payments || []);
 
-    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-    const [isLoadingQuals, setIsLoadingQuals] = useState(true);
-    const [isLoadingAvail, setIsLoadingAvail] = useState(true);
-    const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
-    const [isLoadingRequests, setIsLoadingRequests] = useState(true);
-    const [isLoadingPayments, setIsLoadingPayments] = useState(true);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData?.profile);
+    const [isLoadingQuals, setIsLoadingQuals] = useState(!initialData?.qualifications);
+    const [isLoadingAvail, setIsLoadingAvail] = useState(!initialData?.availability);
+    const [isLoadingAppointments, setIsLoadingAppointments] = useState(!initialData?.appointments);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(!initialData?.consultationRequests);
+    const [isLoadingPayments, setIsLoadingPayments] = useState(!initialData?.payments);
     const [isSaving, setIsSaving] = useState(false);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>({});
+    const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>(initialData?.profile || {});
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [showAddQualification, setShowAddQualification] = useState(false);
     const [showAddAvailability, setShowAddAvailability] = useState(false);
@@ -165,7 +171,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
     });
 
     useEffect(() => {
-        if (user) {
+        if (!initialData && user) {
             fetchProfile();
             fetchQualifications();
             fetchAvailability();
@@ -173,7 +179,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
             fetchConsultationRequests();
             fetchPayments();
         }
-    }, [user]);
+    }, [initialData, user]);
 
     const fetchProfile = async () => {
         try {
@@ -653,6 +659,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                             <Input
                                                 placeholder="Enter license number"
                                                 value={profileForm.licenseNumber || ""}
+                                                onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, licenseNumber: e.target.value })}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl"
@@ -663,6 +670,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                             <Input
                                                 placeholder="Enter phone number"
                                                 value={profileForm.phone || ""}
+                                                onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl"
@@ -735,6 +743,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                 <Input
                                                     placeholder="e.g., MD Cardiology, Board Certified"
                                                     value={qualificationForm.degree}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
                                                     onChange={(e) => setQualificationForm({ ...qualificationForm, degree: e.target.value })}
                                                     className="rounded-xl"
                                                 />
@@ -744,6 +753,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                 <Input
                                                     placeholder="e.g., Johns Hopkins Hospital"
                                                     value={qualificationForm.institution}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
                                                     onChange={(e) => setQualificationForm({ ...qualificationForm, institution: e.target.value })}
                                                     className="rounded-xl"
                                                 />
@@ -899,7 +909,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                     {request.preferredDate && (
                                                         <p className="text-sm font-bold text-indigo-600 flex items-center gap-2">
                                                             <CalendarIcon className="h-4 w-4" />
-                                                            {new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                            {mounted ? new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
                                                             {request.preferredTime && <span className="text-slate-400">• {request.preferredTime}</span>}
                                                         </p>
                                                     )}
@@ -1085,7 +1095,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-1 pl-12 text-sm">
-                                                            <p className="text-slate-900 font-black">{new Date(apt.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</p>
+                                                            <p className="text-slate-900 font-black">{mounted ? new Date(apt.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}</p>
                                                             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{apt.status}</p>
                                                         </div>
                                                     </div>
@@ -1138,7 +1148,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                 <div>
                                                     <p className="text-3xl font-black text-slate-900 tracking-tight">₹{(payment.amount / 100).toFixed(2)}</p>
                                                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                                                        {new Date(payment.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                        {mounted ? new Date(payment.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1209,7 +1219,7 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                                                         <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
                                                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Last Seen</p>
                                                             <p className="text-xs font-black text-slate-800 pt-1">
-                                                                {new Date(latestAppointment.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                {mounted ? new Date(latestAppointment.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1248,21 +1258,31 @@ export function ProfessionalDashboard({ user }: { user: any }) {
                     <CardContent className="p-8">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                             <div className="lg:col-span-1 flex justify-center p-8 border-none rounded-3xl bg-white shadow-2xl ring-1 ring-slate-100">
-                                <Calendar
-                                    mode="single"
-                                    className="p-3 border-none"
-                                    modifiers={{
-                                        available: (date) => availability.some(slot => slot.dayOfWeek === date.getDay()),
-                                        appointment: (date) => appointments.some(apt => {
-                                            const aptDate = new Date(apt.startTime);
-                                            return aptDate.toDateString() === date.toDateString();
-                                        })
-                                    }}
-                                    modifiersClassNames={{
-                                        available: "bg-green-50 text-green-700 font-black border-b-4 border-green-500 rounded-none hover:bg-green-100",
-                                        appointment: "bg-indigo-600 text-white font-black ring-4 ring-indigo-100 rounded-xl hover:bg-indigo-700"
-                                    }}
-                                />
+                                {mounted ? (
+                                    <Calendar
+                                        mode="single"
+                                        className="p-3 border-none"
+                                        modifiers={{
+                                            available: (date) => availability.some(slot => slot.dayOfWeek === date.getDay()),
+                                            appointment: (date) => appointments.some(apt => {
+                                                const aptDate = new Date(apt.startTime);
+                                                return (
+                                                    aptDate.getDate() === date.getDate() &&
+                                                    aptDate.getMonth() === date.getMonth() &&
+                                                    aptDate.getFullYear() === date.getFullYear()
+                                                );
+                                            })
+                                        }}
+                                        modifiersClassNames={{
+                                            available: "bg-green-50 text-green-700 font-black border-b-4 border-green-500 rounded-none hover:bg-green-100",
+                                            appointment: "bg-indigo-600 text-white font-black ring-4 ring-indigo-100 rounded-xl hover:bg-indigo-700"
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="h-[350px] w-full flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-200" />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="lg:col-span-2 space-y-8">

@@ -91,7 +91,7 @@ function LoginContent() {
       toast.success("Welcome back! You've successfully logged in.");
 
       const userRole = result.user?.user_metadata?.role || "client";
-      const redirectPath = searchParams.get("redirect") || (userRole === "professional" ? "/dashboard/professional" : "/dashboard");
+      const redirectPath = searchParams.get("redirect") || "/dashboard";
 
       router.push(redirectPath);
       router.refresh();

@@ -121,25 +121,31 @@ interface Insurance {
     updatedAt: string;
 }
 
-export function ClientDashboard({ user }: { user: any }) {
+export function ClientDashboard({ initialData }: { initialData: any }) {
+    const user = initialData?.user;
     const router = useRouter();
     const supabase = createClient();
 
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([]);
-    const [medications, setMedications] = useState<Medication[]>([]);
-    const [documents, setDocuments] = useState<MedicalDocument[]>([]);
-    const [insuranceData, setInsuranceData] = useState<Insurance[]>([]);
+    const [profile, setProfile] = useState<UserProfile | null>(initialData?.profile || null);
+    const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>(initialData?.medicalHistory || []);
+    const [medications, setMedications] = useState<Medication[]>(initialData?.medications || []);
+    const [documents, setDocuments] = useState<MedicalDocument[]>(initialData?.documents || []);
+    const [insuranceData, setInsuranceData] = useState<Insurance[]>(initialData?.insurance || []);
 
-    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-    const [isLoadingMeds, setIsLoadingMeds] = useState(true);
-    const [isLoadingDocs, setIsLoadingDocs] = useState(true);
-    const [isLoadingInsurance, setIsLoadingInsurance] = useState(true);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData?.profile);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(!initialData?.medicalHistory);
+    const [isLoadingMeds, setIsLoadingMeds] = useState(!initialData?.medications);
+    const [isLoadingDocs, setIsLoadingDocs] = useState(!initialData?.documents);
+    const [isLoadingInsurance, setIsLoadingInsurance] = useState(!initialData?.insurance);
     const [isSaving, setIsSaving] = useState(false);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [profileForm, setProfileForm] = useState<Partial<UserProfile>>({});
+    const [profileForm, setProfileForm] = useState<Partial<UserProfile>>(initialData?.profile || {});
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [showAddCondition, setShowAddCondition] = useState(false);
     const [showAddMedication, setShowAddMedication] = useState(false);
@@ -184,14 +190,14 @@ export function ClientDashboard({ user }: { user: any }) {
     });
 
     useEffect(() => {
-        if (user) {
+        if (!initialData && user) {
             fetchProfile();
             fetchMedicalHistory();
             fetchMedications();
             fetchDocuments();
             fetchInsurance();
         }
-    }, [user]);
+    }, [initialData, user]);
 
     const fetchProfile = async () => {
         try {
@@ -658,6 +664,7 @@ export function ClientDashboard({ user }: { user: any }) {
                                         <Input
                                             placeholder="Contact Name"
                                             value={profileForm.emergencyContactName || ""}
+                                            onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                             onChange={(e) => setProfileForm({ ...profileForm, emergencyContactName: e.target.value })}
                                             disabled={!isEditingProfile}
                                             className="rounded-xl border-slate-100 ring-0 focus:ring-slate-200"
@@ -668,6 +675,7 @@ export function ClientDashboard({ user }: { user: any }) {
                                         <Input
                                             placeholder="Phone Number"
                                             value={profileForm.emergencyContactPhone || ""}
+                                            onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                             onChange={(e) => setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })}
                                             disabled={!isEditingProfile}
                                             className="rounded-xl border-slate-100"
@@ -688,6 +696,7 @@ export function ClientDashboard({ user }: { user: any }) {
                                             <Label className="text-xs font-black text-slate-500 uppercase">City</Label>
                                             <Input
                                                 value={profileForm.city || ""}
+                                                onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl border-slate-100"
@@ -697,6 +706,7 @@ export function ClientDashboard({ user }: { user: any }) {
                                             <Label className="text-xs font-black text-slate-500 uppercase">Postal Code</Label>
                                             <Input
                                                 value={profileForm.postalCode || ""}
+                                                onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl border-slate-100"
@@ -736,9 +746,11 @@ export function ClientDashboard({ user }: { user: any }) {
                                             <div className="space-y-2">
                                                 <Label className="font-bold">Condition Name *</Label>
                                                 <Input
-                                                    placeholder="e.g. Type 1 Diabetes, Asthama"
+                                                    id="conditionName"
                                                     value={conditionForm.conditionName}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                     onChange={(e) => setConditionForm({ ...conditionForm, conditionName: e.target.value })}
+                                                    placeholder="e.g. Hypertension"
                                                     className="rounded-xl h-12"
                                                 />
                                             </div>
@@ -818,9 +830,9 @@ export function ClientDashboard({ user }: { user: any }) {
                                                             </Badge>
                                                         </div>
                                                     </div>
-                                                    {condition.diagnosisDate && (
+                                                    {condition.diagnosisDate && mounted && (
                                                         <p className="text-xs font-bold text-slate-400 pl-11">
-                                                            Diagnosed: {new Date(condition.diagnosisDate).toLocaleDateString(undefined, { month: 'long', year: 'numeric', day: 'numeric' })}
+                                                            Diagnosed: {new Date(condition.diagnosisDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric', day: 'numeric' })}
                                                         </p>
                                                     )}
                                                     {condition.notes && (
@@ -881,7 +893,13 @@ export function ClientDashboard({ user }: { user: any }) {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="font-bold">Prescribing Doctor</Label>
-                                                <Input value={medicationForm.prescribingDoctor} onChange={e => setMedicationForm({ ...medicationForm, prescribingDoctor: e.target.value })} className="rounded-xl" />
+                                                <Input
+                                                    value={medicationForm.prescribingDoctor}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
+                                                    onChange={e => setMedicationForm({ ...medicationForm, prescribingDoctor: e.target.value })}
+                                                    placeholder="Dr. Smith"
+                                                    className="rounded-xl"
+                                                />
                                             </div>
                                             <Button onClick={handleAddMedication} className="w-full h-12 rounded-full bg-indigo-600 font-bold" disabled={isSaving}>Add Medication</Button>
                                         </div>
@@ -955,9 +973,48 @@ export function ClientDashboard({ user }: { user: any }) {
                                     </CardTitle>
                                     <CardDescription>Secure storage for lab reports and prescriptions</CardDescription>
                                 </div>
-                                <Button size="sm" onClick={() => setShowAddDocument(true)} className="rounded-full bg-indigo-600 font-bold shadow-lg px-8">
-                                    <Upload className="h-4 w-4 mr-2" /> Upload New
-                                </Button>
+                                <Dialog open={showAddDocument} onOpenChange={setShowAddDocument}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" className="rounded-full bg-indigo-600 font-bold shadow-lg px-8">
+                                            <Upload className="h-4 w-4 mr-2" /> Upload New
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md rounded-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-2xl font-black">Secure Upload</DialogTitle>
+                                            <DialogDescription>Your files are encrypted and stored securely.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-6 pt-4">
+                                            <div className="space-y-2">
+                                                <Label className="font-bold">Document Name</Label>
+                                                <Input
+                                                    value={documentForm.documentName}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z0-9\s\.\-]/g, '')}
+                                                    onChange={e => setDocumentForm({ ...documentForm, documentName: e.target.value })}
+                                                    placeholder="e.g. Lab Report March 2024"
+                                                    className="rounded-xl h-12"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-bold">Document Type</Label>
+                                                <Select value={documentForm.documentType} onValueChange={v => setDocumentForm({ ...documentForm, documentType: v })}>
+                                                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        <SelectItem value="report">Laboratory Report</SelectItem>
+                                                        <SelectItem value="prescription">Doctor Prescription</SelectItem>
+                                                        <SelectItem value="imaging">X-Ray / MRI Scan</SelectItem>
+                                                        <SelectItem value="other">Other Medical File</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-bold">File URL (Mock)</Label>
+                                                <Input value={documentForm.fileUrl} onChange={e => setDocumentForm({ ...documentForm, fileUrl: e.target.value })} placeholder="https://..." className="rounded-xl" />
+                                            </div>
+                                            <Button onClick={handleAddDocument} className="w-full h-12 rounded-full bg-indigo-600 font-bold" disabled={isSaving}>Store in Vault</Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </CardHeader>
                         <CardContent className="p-4 sm:p-6 md:p-8">
@@ -984,7 +1041,7 @@ export function ClientDashboard({ user }: { user: any }) {
                                             <h5 className="font-extrabold text-slate-800 truncate text-sm mb-1">{doc.documentName}</h5>
                                             <p className="text-[10px] uppercase font-black text-slate-400 mb-4">{doc.documentType}</p>
                                             <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                                                <span className="text-[10px] font-bold text-slate-300">{new Date(doc.uploadDate).toLocaleDateString()}</span>
+                                                <span className="text-[10px] font-bold text-slate-300">{mounted ? new Date(doc.uploadDate).toLocaleDateString('en-US') : ''}</span>
                                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-red-300 hover:text-red-500 hover:bg-red-50" onClick={() => handleDeleteDocument(doc.id)}>
                                                     <Trash2 className="h-3 w-3" />
                                                 </Button>
@@ -1005,9 +1062,56 @@ export function ClientDashboard({ user }: { user: any }) {
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
                                     <Shield className="h-6 w-6" /> Insurance Plans
                                 </CardTitle>
-                                <Button size="sm" onClick={() => setShowAddInsurance(true)} className="rounded-full bg-emerald-600 font-bold shadow-lg px-8">
-                                    <Plus className="h-4 w-4 mr-2" /> Add Provider
-                                </Button>
+                                <Dialog open={showAddInsurance} onOpenChange={setShowAddInsurance}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" className="rounded-full bg-emerald-600 font-bold shadow-lg px-8">
+                                            <Plus className="h-4 w-4 mr-2" /> Add Provider
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md rounded-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-2xl font-black text-emerald-900">Link Insurance</DialogTitle>
+                                            <DialogDescription>Direct billing and coverage verification.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-6 pt-4">
+                                            <div className="space-y-2">
+                                                <Label className="font-bold">Provider Name</Label>
+                                                <Input
+                                                    value={insuranceForm.providerName}
+                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\&]/g, '')}
+                                                    onChange={e => setInsuranceForm({ ...insuranceForm, providerName: e.target.value })}
+                                                    placeholder="e.g. Star Health"
+                                                    className="rounded-xl h-12"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="font-bold">Policy Number</Label>
+                                                    <Input
+                                                        value={insuranceForm.policyNumber}
+                                                        onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '')}
+                                                        onChange={e => setInsuranceForm({ ...insuranceForm, policyNumber: e.target.value })}
+                                                        className="rounded-xl"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="font-bold">Holder Name</Label>
+                                                    <Input
+                                                        value={insuranceForm.policyHolderName}
+                                                        onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
+                                                        onChange={e => setInsuranceForm({ ...insuranceForm, policyHolderName: e.target.value })}
+                                                        className="rounded-xl"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-bold">Expiration Date</Label>
+                                                <Input type="date" value={insuranceForm.expirationDate} onChange={e => setInsuranceForm({ ...insuranceForm, expirationDate: e.target.value })} className="rounded-xl" />
+                                            </div>
+                                            <Button onClick={handleAddInsurance} className="w-full h-12 rounded-full bg-emerald-600 font-bold" disabled={isSaving}>Link My Insurance</Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </CardHeader>
                         <CardContent className="p-8">

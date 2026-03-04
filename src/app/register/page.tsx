@@ -160,7 +160,7 @@ function RegisterContent() {
         console.log("Client: Auto-login successful, redirecting to dashboard.");
         toast.success("Account created! You've been automatically logged in.");
         // Redirect to dashboard immediately after auto-login sync
-        const redirectPath = formData.role === "professional" ? "/dashboard/professional" : "/dashboard";
+        const redirectPath = "/dashboard";
         router.push(redirectPath);
         return;
       }
@@ -231,10 +231,24 @@ function RegisterContent() {
                     name="fullName"
                     placeholder="John Doe"
                     value={formData.fullName}
+                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                     onChange={handleInputChange}
                     className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.fullName ? "border-red-500/50 ring-red-500/20" : ""}`}
                   />
                   {errors.fullName && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.fullName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Mobile Number</Label>
+                  <Input
+                    name="mobileNumber"
+                    placeholder="1234567890"
+                    value={formData.mobileNumber}
+                    onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
+                    onChange={handleInputChange}
+                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.mobileNumber ? "border-red-500/50 ring-red-500/20" : ""}`}
+                  />
+                  {errors.mobileNumber && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.mobileNumber}</p>}
                 </div>
 
                 <div className="space-y-2">

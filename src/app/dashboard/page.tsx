@@ -1,87 +1,46 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Loader2, Mail, Phone } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { ClientDashboard } from "./_components/ClientDashboard";
 import { ProfessionalDashboard } from "./_components/ProfessionalDashboard";
+import { getClientDashboardData } from "@/features/client/actions";
+import { getProfessionalDashboardData } from "@/features/professional/actions";
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(true);
-  const supabase = createClient();
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser(session.user);
-        setRole(session.user.user_metadata?.role || 'client');
-      } else {
-        router.push("/login?redirect=/dashboard");
-      }
-      setIsPending(false);
-    };
-
-    checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        setRole(session.user.user_metadata?.role || 'client');
-      } else {
-        setUser(null);
-        setRole(null);
-        router.push("/login");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router, supabase]);
-
-  if (isPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-[var(--color-primary)] mx-auto" />
-          <p className="text-lg font-medium text-slate-600 animate-pulse">Initializing your dashboard...</p>
-        </div>
-      </div>
-    );
+  if (!user) {
+    redirect("/login?redirect=/dashboard");
   }
 
-  if (!user) return null;
+  const role = user.user_metadata?.role || 'client';
 
-  // Determine which background to show based on role
-  const bgImage = role === 'professional'
-    ? 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=1920'
-    : 'https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/project-uploads/6fc308b1-2696-455e-8bb8-f03eddd2ed89/generated_images/professional-photograph-of-a-person-fill-f0c94809-20251120130450.jpg';
+  let dashboardData: any = { user };
+  try {
+    if (role === 'professional') {
+      dashboardData = await getProfessionalDashboardData();
+    } else {
+      dashboardData = await getClientDashboardData();
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--color-bg-gradient-start)] to-[var(--color-bg-gradient-end)] relative overflow-x-hidden">
-      {/* Dynamic Aesthetic Background */}
-      <div
-        className="absolute inset-0 z-0 opacity-10 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      />
+    <div className="min-h-screen bg-[#eff4fb] relative overflow-x-hidden">
+      {/* Premium Theme Gradient Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#eaf1ff] via-[#f3f6fb] to-[#d8e6ff] opacity-80" />
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-teal-100/30 rounded-full blur-[140px]" />
+      </div>
 
       <div className="relative z-10 py-10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
         {role === 'professional' ? (
-          <ProfessionalDashboard user={user} />
+          <ProfessionalDashboard initialData={dashboardData} />
         ) : (
-          <ClientDashboard user={user} />
+          <ClientDashboard initialData={dashboardData} />
         )}
-      </div>
-
-      {/* Optional: Dashboard Support Footer (keeping it minimal or removing if layout footer is enough) */}
-      <div className="relative z-10 bg-white/30 backdrop-blur-sm border-t border-slate-200 mt-20">
-        <div className="container py-8 text-center text-sm text-slate-500">
-          Need help with your dashboard? <span className="font-bold text-indigo-600 cursor-pointer">Contact Tech Support</span>
-        </div>
       </div>
     </div>
   );

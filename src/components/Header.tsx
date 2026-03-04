@@ -71,7 +71,7 @@ export default function Header({ className }: HeaderProps) {
 
   const handleDashboardClick = () => {
     const userRole = user?.user_metadata?.role || "client";
-    const path = userRole === "professional" ? '/dashboard/professional' : '/dashboard';
+    const path = '/dashboard';
     router.push(path);
     setIsMobileMenuOpen(false);
   };
@@ -113,7 +113,7 @@ export default function Header({ className }: HeaderProps) {
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 My Dashboard
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/dashboard/professional')}>
+              <DropdownMenuItem onClick={() => router.push('/dashboard')}>
                 <Stethoscope className="h-4 w-4 mr-2" />
                 Professional Portal
               </DropdownMenuItem>

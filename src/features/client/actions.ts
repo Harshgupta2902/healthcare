@@ -4,54 +4,54 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 const medicalProfileSchema = z.object({
-    phone: z.string().optional().nullable(),
+    phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
     dateOfBirth: z.string().optional().nullable(),
     gender: z.string().optional().nullable(),
     bloodType: z.string().optional().nullable(),
     height: z.number().optional().nullable(),
     weight: z.number().optional().nullable(),
     address: z.string().optional().nullable(),
-    city: z.string().optional().nullable(),
-    state: z.string().optional().nullable(),
-    postalCode: z.string().optional().nullable(),
-    emergencyContactName: z.string().optional().nullable(),
-    emergencyContactPhone: z.string().optional().nullable(),
-    emergencyContactRelationship: z.string().optional().nullable(),
+    city: z.string().regex(/^[a-zA-Z\s]*$/, "City must contain only letters").optional().nullable(),
+    state: z.string().regex(/^[a-zA-Z\s]*$/, "State must contain only letters").optional().nullable(),
+    postalCode: z.string().regex(/^\d*$/, "Postal code must contain only numbers").optional().nullable(),
+    emergencyContactName: z.string().regex(/^[a-zA-Z\s]*$/, "Name must contain only letters").optional().nullable(),
+    emergencyContactPhone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
+    emergencyContactRelationship: z.string().regex(/^[a-zA-Z\s]*$/, "Relationship must contain only letters").optional().nullable(),
     profilePhotoUrl: z.string().optional().nullable(),
 })
 
 const conditionSchema = z.object({
-    conditionName: z.string().min(1),
+    conditionName: z.string().min(1, "Condition name is required").regex(/^[a-zA-Z\s]*$/, "Condition name must contain only letters"),
     diagnosisDate: z.string().optional().nullable(),
     status: z.string().default('active'),
     notes: z.string().optional().nullable(),
 })
 
 const medicationSchema = z.object({
-    medicationName: z.string().min(1),
-    dosage: z.string().min(1),
-    frequency: z.string().min(1),
-    startDate: z.string().min(1),
+    medicationName: z.string().min(1, "Medication name is required").regex(/^[a-zA-Z0-9\s]*$/, "Medication name must be alphanumeric"),
+    dosage: z.string().min(1, "Dosage is required"),
+    frequency: z.string().min(1, "Frequency is required"),
+    startDate: z.string().min(1, "Start date is required"),
     endDate: z.string().optional().nullable(),
-    prescribingDoctor: z.string().optional().nullable(),
+    prescribingDoctor: z.string().regex(/^[a-zA-Z\s\.]*$/, "Doctor name contains invalid characters").optional().nullable(),
     notes: z.string().optional().nullable(),
     isActive: z.boolean().default(true),
 })
 
 const documentSchema = z.object({
-    documentName: z.string().min(1),
-    documentType: z.string().min(1),
-    fileUrl: z.string().url(),
+    documentName: z.string().min(1, "Document name is required").regex(/^[a-zA-Z0-9\s\.\-]*$/, "Invalid characters in name"),
+    documentType: z.string().min(1, "Document type is required"),
+    fileUrl: z.string().url("Invalid file URL"),
     fileSize: z.number().optional().nullable(),
     notes: z.string().optional().nullable(),
 })
 
 const insuranceSchema = z.object({
-    providerName: z.string().min(1),
-    policyNumber: z.string().min(1),
+    providerName: z.string().min(1, "Provider name is required").regex(/^[a-zA-Z\s\&]*$/, "Special characters not allowed"),
+    policyNumber: z.string().min(1, "Policy number is required").regex(/^[a-zA-Z0-9]*$/, "Alphanumeric only"),
     groupNumber: z.string().optional().nullable(),
-    policyHolderName: z.string().min(1),
-    relationshipToHolder: z.string().optional().nullable(),
+    policyHolderName: z.string().min(1, "Holder name is required").regex(/^[a-zA-Z\s]*$/, "Name must contain only letters"),
+    relationshipToHolder: z.string().optional().nullable().transform(val => val || ""),
     expirationDate: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
 })
@@ -240,6 +240,135 @@ export async function deleteInsurance(id: string) {
         .delete()
         .eq('id', id)
         .eq('user_id', user.id)
+
+    if (error) throw new Error(error.message)
+    return { success: true }
+}
+
+export async function getClientDashboardData() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+
+    const [
+        { data: coreProfile },
+        { data: medProfile },
+        { data: history },
+        { data: medications },
+        { data: documents },
+        { data: insurance }
+    ] = await Promise.all([
+        supabase.from('users').select('*').eq('id', user.id).single(),
+        supabase.from('client_medical_profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('medical_history').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('medications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('medical_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('insurance').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+    ])
+
+    return {
+        user,
+        profile: {
+            id: user.id,
+            userId: user.id,
+            phone: coreProfile?.phone || null,
+            profilePhotoUrl: coreProfile?.image || null,
+            dateOfBirth: medProfile?.date_of_birth || null,
+            gender: medProfile?.gender || null,
+            bloodType: medProfile?.blood_type || null,
+            height: medProfile?.height ? parseFloat(medProfile.height) : null,
+            weight: medProfile?.weight ? parseFloat(medProfile.weight) : null,
+            address: medProfile?.address || null,
+            city: medProfile?.city || null,
+            state: medProfile?.state || null,
+            postalCode: medProfile?.postal_code || null,
+            emergencyContactName: medProfile?.emergency_contact_name || null,
+            emergencyContactPhone: medProfile?.emergency_contact_phone || null,
+            emergencyContactRelationship: medProfile?.emergency_contact_relationship || null,
+            createdAt: coreProfile?.created_at || "",
+            updatedAt: coreProfile?.updated_at || ""
+        },
+        medicalHistory: history?.map(item => ({
+            id: item.id,
+            userId: item.user_id,
+            conditionName: item.condition_name,
+            diagnosisDate: item.diagnosis_date,
+            status: item.status,
+            notes: item.notes,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+        })) || [],
+        medications: medications?.map(item => ({
+            id: item.id,
+            userId: item.user_id,
+            medicationName: item.medication_name,
+            dosage: item.dosage,
+            frequency: item.frequency,
+            startDate: item.start_date,
+            endDate: item.end_date,
+            prescribingDoctor: item.prescribing_doctor,
+            notes: item.notes,
+            isActive: item.is_active,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+        })) || [],
+        documents: documents?.map(item => ({
+            id: item.id,
+            userId: item.user_id,
+            documentName: item.document_name,
+            documentType: item.document_type,
+            fileUrl: item.file_url,
+            fileSize: item.file_size,
+            uploadDate: item.upload_date,
+            notes: item.notes,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+        })) || [],
+        insurance: insurance?.map(item => ({
+            id: item.id,
+            userId: item.user_id,
+            providerName: item.provider_name,
+            policyNumber: item.policy_number,
+            groupNumber: item.group_number,
+            policyHolderName: item.policy_holder_name,
+            relationshipToHolder: item.relationship_to_holder,
+            expirationDate: item.expiration_date,
+            notes: item.notes,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at
+        })) || []
+    }
+}
+
+
+export async function subscribeNewsletter(email: string) {
+    const supabase = await createClient()
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+        throw new Error("Invalid email format")
+    }
+
+    const sanitizedEmail = email.trim().toLowerCase()
+
+    // Check existing
+    const { data: existing } = await supabase
+        .from('newsletter_subscribers')
+        .select('*')
+        .eq('email', sanitizedEmail)
+        .single()
+
+    if (existing) {
+        throw new Error("Already subscribed")
+    }
+
+    const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({
+            email: sanitizedEmail,
+            subscribed_at: new Date().toISOString(),
+            status: 'active'
+        })
 
     if (error) throw new Error(error.message)
     return { success: true }

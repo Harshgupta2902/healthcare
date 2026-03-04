@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, MapPin, Star, Clock, Search, Filter, User, Award, Sparkles, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { searchProfessionals } from "@/features/professional/actions";
+
 
 interface Professional {
   id: string;
@@ -105,15 +107,8 @@ function SpecialistsContent() {
   const fetchProfessionals = async (specialty: string, city: string) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (specialty) params.set("specialty", specialty);
-      if (city) params.set("city", city);
-
-      const response = await fetch(`/api/professional/search?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProfessionals(data.professionals || []);
-      }
+      const data = await searchProfessionals(specialty, city);
+      setProfessionals(data || []);
     } catch (error) {
       console.error("Error fetching professionals:", error);
     } finally {

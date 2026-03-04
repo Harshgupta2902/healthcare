@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { subscribeNewsletter } from '@/features/client/actions';
+
 
 interface FooterProps {
   className?: string;
@@ -34,17 +36,19 @@ export default function Footer({ className }: FooterProps) {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const result = await subscribeNewsletter(email.trim());
 
-      setIsSuccess(true);
-      setEmail('');
-      toast.success('Thanks for subscribing! Check your email for confirmation.');
+      if (result.success) {
+        setIsSuccess(true);
+        setEmail('');
+        toast.success('Thanks for subscribing! Check your email for confirmation.');
+      }
 
       // Reset success state after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      toast.error(err.message || 'Subscription failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -97,14 +101,14 @@ export default function Footer({ className }: FooterProps) {
                     About Us
                   </a>
                 </li>
-                  <li>
-                    <a
-                      href="/support"
-                      className="text-muted-foreground hover:text-primary transition-colors">
+                <li>
+                  <a
+                    href="/support"
+                    className="text-muted-foreground hover:text-primary transition-colors">
 
-                      Help & Support
-                    </a>
-                  </li>
+                    Help & Support
+                  </a>
+                </li>
                 <li>
                   <a
                     href="/contact"
@@ -125,44 +129,44 @@ export default function Footer({ className }: FooterProps) {
                 Stay Updated
               </h3>
               {isSuccess ?
-              <div className="p-3 bg-secondary rounded-md">
+                <div className="p-3 bg-secondary rounded-md">
                   <p className="text-sm text-secondary-foreground font-medium">
                     ✓ Successfully subscribed!
                   </p>
                 </div> :
 
-              <form onSubmit={handleNewsletterSubmit} className="space-y-3">
+                <form onSubmit={handleNewsletterSubmit} className="space-y-3">
                   <div className="space-y-2">
                     <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isSubmitting}
-                    className={error ? 'border-destructive' : ''}
-                    aria-describedby={error ? 'email-error' : 'email-privacy'}
-                    aria-label="Email address for newsletter" />
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isSubmitting}
+                      className={error ? 'border-destructive' : ''}
+                      aria-describedby={error ? 'email-error' : 'email-privacy'}
+                      aria-label="Email address for newsletter" />
 
                     {error &&
-                  <p id="email-error" className="text-destructive text-xs" role="alert">
+                      <p id="email-error" className="text-destructive text-xs" role="alert">
                         {error}
                       </p>
-                  }
+                    }
                   </div>
                   <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full"
-                  size="sm">
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full"
+                    size="sm">
 
                     {isSubmitting ?
-                  'Subscribing...' :
+                      'Subscribing...' :
 
-                  <>
+                      <>
                         Subscribe
                         <Send className="w-4 h-4 ml-2" />
                       </>
-                  }
+                    }
                   </Button>
                   <p id="email-privacy" className="text-xs text-muted-foreground">
                     We respect your privacy. Unsubscribe anytime.
@@ -197,7 +201,7 @@ export default function Footer({ className }: FooterProps) {
                   </svg>
                 </a>
               </div>
-              
+
               <div className="pt-4 border-t border-border">
                 <nav className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                   <a
