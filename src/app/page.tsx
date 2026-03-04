@@ -1,40 +1,35 @@
-import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import ServicesSection from "@/components/ServicesSection";
 import { MedicalSpecialties } from "@/components/MedicalSpecialties";
-import Footer from "@/components/Footer";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
+    <div className="bg-background selection:bg-primary selection:text-primary-foreground min-h-screen">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      {/* Sticky Header */}
-      <Header />
-      
+
       {/* Main Content */}
-      <main className="relative z-10 flex flex-col">
+      <div className="relative z-10 flex flex-col">
         {/* Hero Section */}
         <section className="w-full">
           <Hero />
         </section>
-        
+
         {/* Visual Separator */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
-        
+
         {/* Medical Specialties Section */}
         <section className="w-full">
           <MedicalSpecialties />
         </section>
-        
+
         {/* Services Section */}
         <section id="services" className="w-full">
           <ServicesSection />
         </section>
-        
+
         {/* Final Trust Section / Banner */}
         <section className="py-24 w-full bg-background relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
@@ -47,10 +42,7 @@ export default function HomePage() {
             </p>
           </div>
         </section>
-      </main>
-      
-      {/* Footer */}
-      <Footer />
+      </div>
     </div>
   );
 }

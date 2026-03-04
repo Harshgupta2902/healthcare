@@ -1,8 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Video, MessageSquare, MapPin, Clock, Shield, Calendar, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
@@ -15,18 +13,17 @@ export default function HowItWorksPage() {
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      <Header />
-      
+
+
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
         <section className="relative w-full py-24 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
@@ -34,8 +31,8 @@ export default function HowItWorksPage() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>The Platform Guide</span>
             </motion.div>
-            
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -46,17 +43,17 @@ export default function HowItWorksPage() {
                 HealthHere Works
               </span>
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium mb-16"
             >
-              We've designed multiple ways to connect with healthcare professionals, 
+              We've designed multiple ways to connect with healthcare professionals,
               ensuring you get the care you need, when and how you need it.
             </motion.p>
-            
+
             {/* Key Benefits - Modernized */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {[
@@ -114,7 +111,7 @@ export default function HowItWorksPage() {
         ].map((section, idx) => (
           <section key={section.id} className={`py-32 relative overflow-hidden ${section.dark ? 'bg-secondary/20 border-y border-border/50' : 'bg-background'}`}>
             {section.dark && <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />}
-            
+
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className={`flex flex-col lg:items-center gap-16 ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}>
                 <div className="lg:w-1/2 space-y-8">
@@ -124,7 +121,7 @@ export default function HowItWorksPage() {
                     </div>
                     <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">{section.title}</h2>
                   </div>
-                  
+
                   <p className="text-xl text-muted-foreground font-medium leading-relaxed">
                     {section.desc}
                   </p>
@@ -170,7 +167,7 @@ export default function HowItWorksPage() {
         {/* Final CTA - Designer Style */}
         <section className="py-32 w-full bg-background relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container mx-auto max-w-4xl px-4 text-center space-y-12">
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight">
               Experience the future <br />
@@ -190,8 +187,7 @@ export default function HowItWorksPage() {
           </div>
         </section>
       </main>
-      
-      <Footer />
+
     </div>
   );
 }

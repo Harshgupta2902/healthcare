@@ -1,5 +1,3 @@
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import ServicesSection from "@/components/ServicesSection";
 import { Stethoscope, Shield, Clock, Users, Sparkles, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -10,33 +8,32 @@ export default function ServicesPage() {
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      <Header />
-      
+
+
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
         <section className="relative w-full py-24 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Comprehensive Solutions</span>
             </div>
-            
+
             <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
               Healthcare <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
                 Without Limits
               </span>
             </h1>
-            
+
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium mb-12">
               Experience the next generation of digital healthcare. We've simplified medical access so you can focus on what matters most: your wellbeing.
             </p>
-            
+
             {/* Trust Indicators - Minimalist & Modern */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto pt-8 border-t border-border/50">
               {[
@@ -69,7 +66,7 @@ export default function ServicesPage() {
         {/* Why Choose Us Section - Modern Grid */}
         <section className="w-full py-32 relative overflow-hidden bg-secondary/20 border-y border-border/50">
           <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
-          
+
           <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-16 items-start">
               <div className="md:w-1/3 sticky top-32">
@@ -84,7 +81,7 @@ export default function ServicesPage() {
                   <Link href="/book-consultation">Start Journey <ChevronRight className="ml-2 w-4 h-4" /></Link>
                 </Button>
               </div>
-              
+
               <div className="md:w-2/3 grid gap-6">
                 {[
                   {
@@ -112,8 +109,7 @@ export default function ServicesPage() {
           </div>
         </section>
       </main>
-      
-      <Footer />
+
     </div>
   );
 }

@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 
 interface HeaderProps {
@@ -148,10 +150,21 @@ export default function Header({ className }: HeaderProps) {
     <header className={`sticky top-0 z-50 w-full bg-card/80 backdrop-blur-md border-b border-border ${className}`}>
       <div className="container mx-auto px-6 md:px-12">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <Link href="/" className="text-xl font-heading font-bold text-primary hover:opacity-80 transition-opacity">
-              HealthHere
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-xl md:text-2xl font-heading font-bold text-primary hover:opacity-80 transition-opacity flex items-center gap-2">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600 font-extrabold tracking-tight">
+                HealthHere
+              </span>
             </Link>
+            {mounted && !isPending && user && (
+              <Badge variant="secondary" className="hidden sm:flex font-semibold px-3 py-0.5 bg-indigo-50 text-indigo-700 border-indigo-100 gap-1 items-center rounded-full text-[10px] uppercase">
+                {user.user_metadata?.role === 'professional' ? (
+                  <>Professional <BadgeCheck className="h-3 w-3" /></>
+                ) : (
+                  'Patient Portal'
+                )}
+              </Badge>
+            )}
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">

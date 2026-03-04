@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,7 +112,7 @@ export default function BookConsultationPage() {
 
   const handleCitySubmit = () => {
     if (!city.trim()) return;
-    
+
     const concern = healthConcerns.find(c => c.id === selectedConcern);
     if (concern) {
       const params = new URLSearchParams({
@@ -131,8 +129,7 @@ export default function BookConsultationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <Header />
-      
+
       <main className="container mx-auto max-w-5xl px-4 py-12 md:py-16">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold mb-4">
@@ -160,25 +157,23 @@ export default function BookConsultationPage() {
             <h2 className="text-xl md:text-2xl font-semibold text-center mb-6">
               What health concern would you like to address?
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {healthConcerns.map((concern) => (
                 <Card
                   key={concern.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-2 ${
-                    selectedConcern === concern.id
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 border-2 ${selectedConcern === concern.id
                       ? 'border-primary bg-primary/5'
                       : 'border-transparent hover:border-primary/30'
-                  }`}
+                    }`}
                   onClick={() => handleConcernSelect(concern.id)}
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-xl ${
-                        selectedConcern === concern.id
+                      <div className={`p-3 rounded-xl ${selectedConcern === concern.id
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-primary/10 text-primary'
-                      }`}>
+                        }`}>
                         {concern.icon}
                       </div>
                       <div className="flex-1">
@@ -217,7 +212,7 @@ export default function BookConsultationPage() {
                 <p className="text-muted-foreground">
                   We'll find {healthConcerns.find(c => c.id === selectedConcern)?.specialty}s near you
                 </p>
-                
+
                 <div className="space-y-3">
                   <Input
                     type="text"
@@ -226,7 +221,7 @@ export default function BookConsultationPage() {
                     onChange={(e) => setCity(e.target.value)}
                     className="text-lg py-6"
                   />
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {popularCities.map((cityName) => (
                       <Button
@@ -266,7 +261,6 @@ export default function BookConsultationPage() {
         )}
       </main>
 
-      <Footer />
     </div>
   );
 }

@@ -1,7 +1,5 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import {
   Accordion,
   AccordionContent,
@@ -82,17 +80,16 @@ export default function SupportPage() {
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      <Header />
-      
+
+
       <main className="relative z-10">
         {/* Support Hero Section */}
         <section className="relative w-full py-24 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
@@ -100,8 +97,8 @@ export default function SupportPage() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Help & Support Center</span>
             </motion.div>
-            
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -112,8 +109,8 @@ export default function SupportPage() {
                 Support You Today?
               </span>
             </motion.h1>
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -122,8 +119,8 @@ export default function SupportPage() {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
               <div className="relative">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input 
-                  placeholder="Search for articles, guides, or questions..." 
+                <Input
+                  placeholder="Search for articles, guides, or questions..."
                   className="h-16 pl-14 pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-lg font-medium focus:bg-background transition-all"
                 />
               </div>
@@ -158,7 +155,7 @@ export default function SupportPage() {
         {/* FAQs Section */}
         <section className="py-32 relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-black tracking-tight mb-4 italic">Frequently Asked Questions</h2>
@@ -172,11 +169,11 @@ export default function SupportPage() {
                     <span className="w-8 h-px bg-primary/20" />
                     {group.category}
                   </h3>
-                  
+
                   <Accordion type="single" collapsible className="w-full space-y-4">
                     {group.questions.map((faq, faqIdx) => (
-                      <AccordionItem 
-                        key={faqIdx} 
+                      <AccordionItem
+                        key={faqIdx}
                         value={`${groupIdx}-${faqIdx}`}
                         className="border border-border/50 rounded-2xl bg-background px-6 overflow-hidden transition-all data-[state=open]:border-primary/20 data-[state=open]:shadow-lg"
                       >
@@ -199,17 +196,17 @@ export default function SupportPage() {
         <section className="py-32 container mx-auto px-4 max-w-6xl">
           <div className="relative rounded-[48px] bg-foreground text-background p-12 md:p-20 overflow-hidden group">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] opacity-50 group-hover:opacity-100 transition-opacity" />
-            
+
             <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 leading-[1.1]">
+                <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6 leading-[1.1]">
                   Still have <br />
-                  <span className="text-primary italic">questions?</span>
+                  <span className="text-white italic">questions?</span>
                 </h2>
                 <p className="text-background/70 text-lg md:text-xl font-medium mb-10 max-w-md">
                   Can't find the answer you're looking for? Please chat to our friendly team.
                 </p>
-                
+
                 <div className="flex flex-wrap gap-4">
                   <Link href="/contact">
                     <button className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground font-black text-lg hover:scale-105 transition-transform flex items-center gap-2">
@@ -243,8 +240,7 @@ export default function SupportPage() {
           </div>
         </section>
       </main>
-      
-      <Footer />
+
     </div>
   );
 }

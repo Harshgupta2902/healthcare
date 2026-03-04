@@ -182,15 +182,6 @@ function RegisterContent() {
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-      <Link
-        href="/"
-        className="absolute top-8 left-8 z-20 flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary hover:gap-3 transition-all"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back to Home
-      </Link>
-
       <div className="relative z-10 w-full max-w-xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

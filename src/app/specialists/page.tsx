@@ -2,8 +2,6 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +108,7 @@ function SpecialistsContent() {
       const params = new URLSearchParams();
       if (specialty) params.set("specialty", specialty);
       if (city) params.set("city", city);
-      
+
       const response = await fetch(`/api/professional/search?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
@@ -140,24 +138,23 @@ function SpecialistsContent() {
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      <Header />
-      
+
+
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
         <section className="relative w-full py-24 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="mb-16">
               <Link href={specialtyParam ? "/book-consultation" : "/"} className="inline-flex items-center text-sm font-black uppercase tracking-widest text-primary hover:gap-3 transition-all duration-300 gap-2 mb-8">
                 <ArrowLeft className="h-4 w-4" />
                 {specialtyParam ? "Back to Booking" : "Back to Home"}
               </Link>
-              
-              <motion.div 
+
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
@@ -165,8 +162,8 @@ function SpecialistsContent() {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Verified Experts</span>
               </motion.div>
-              
-              <motion.h1 
+
+              <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -177,14 +174,14 @@ function SpecialistsContent() {
                   Specialists
                 </span>
               </motion.h1>
-              
-              <motion.p 
+
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl font-medium"
               >
-                {specialtyParam 
+                {specialtyParam
                   ? `Find trusted ${specialtyParam}s${cityParam ? ` near ${cityParam}` : ""} for your health needs.`
                   : "Explore our comprehensive network of medical specialists across various fields."}
               </motion.p>
@@ -250,17 +247,17 @@ function SpecialistsContent() {
               ) : professionals.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {professionals.map((professional) => (
-                    <div 
+                    <div
                       key={professional.id}
                       className="group bg-background border border-border/50 rounded-[32px] p-8 hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
-                      
+
                       <div className="flex items-start gap-6 mb-8 relative">
                         <div className="w-20 h-20 rounded-2xl bg-secondary flex items-center justify-center overflow-hidden border border-border/50 shadow-sm group-hover:scale-105 transition-transform duration-500">
                           {professional.profilePhotoUrl ? (
-                            <img 
-                              src={professional.profilePhotoUrl} 
+                            <img
+                              src={professional.profilePhotoUrl}
                               alt={professional.name}
                               className="w-full h-full object-cover"
                             />
@@ -280,13 +277,13 @@ function SpecialistsContent() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {professional.bio && (
                         <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8 line-clamp-3">
                           {professional.bio}
                         </p>
                       )}
-                      
+
                       <div className="pt-8 border-t border-border/50 flex items-center justify-between">
                         <div className="space-y-1">
                           <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Consultation Fee</div>
@@ -327,10 +324,10 @@ function SpecialistsContent() {
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-16">
               Browse by <span className="text-primary">Specialty</span>
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {specialists.map((specialist) => (
-                <div 
+                <div
                   key={specialist.id}
                   className="group p-8 rounded-[32px] bg-secondary/20 border border-border/50 hover:bg-background hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5"
                 >
@@ -340,14 +337,14 @@ function SpecialistsContent() {
                   <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
                     {specialist.description}
                   </p>
-                  
+
                   <div className="space-y-4 pt-8 border-t border-border/50">
                     <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">Expertise:</div>
                     <p className="text-xs font-bold leading-relaxed line-clamp-2 italic">
                       {specialist.dealsWith}
                     </p>
                   </div>
-                  
+
                   <Link href={`/book-consultation`} className="mt-8 flex items-center justify-between w-full p-4 rounded-2xl bg-background group-hover:bg-primary group-hover:text-white transition-all duration-500 font-black text-sm uppercase tracking-widest">
                     <span>Book Expert</span>
                     <ChevronRight className="w-5 h-5" />
@@ -361,7 +358,7 @@ function SpecialistsContent() {
         {/* Support Section */}
         <section className="py-32 w-full bg-background relative overflow-hidden border-t border-border/50">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container mx-auto max-w-4xl px-4 text-center space-y-12">
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight">
               Need help <br />
@@ -378,10 +375,9 @@ function SpecialistsContent() {
           </div>
         </section>
       </main>
-      
-      <Footer />
+
     </div>
-    );
+  );
 }
 
 export default function SpecialistsPage() {

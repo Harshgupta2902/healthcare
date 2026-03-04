@@ -22,28 +22,20 @@ export default function Hero() {
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/5 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
       </div>
-      
+
       <div className="container relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
           {/* Badge */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-8 backdrop-blur-md"
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-8 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span className="tracking-wide uppercase">Redefining Healthcare Accessibility</span>
-          </motion.div>
+          </div>
 
           <div className="space-y-10 max-w-5xl">
             {/* Headline with visual flair */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-foreground">
                 Healthcare that <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
@@ -53,15 +45,10 @@ export default function Hero() {
               <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
                 Ditch the waiting room. Access world-class medical experts, personalized treatment plans, and secure care from anywhere in the world.
               </p>
-            </motion.div>
+            </div>
 
             {/* Premium CTAs */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-5 justify-center items-center"
-            >
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
               <Button
                 asChild
                 size="lg"
@@ -82,7 +69,7 @@ export default function Hero() {
                   Explore Platform
                 </Link>
               </Button>
-            </motion.div>
+            </div>
 
             {/* Trust Markers */}
             <motion.div

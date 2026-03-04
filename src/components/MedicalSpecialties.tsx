@@ -62,7 +62,7 @@ export const MedicalSpecialties = () => {
     <section className="py-24 relative overflow-hidden">
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-16">
+        <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
           <div className="max-w-2xl space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
               Specialized Care <br />
@@ -72,8 +72,8 @@ export const MedicalSpecialties = () => {
               We've gathered the finest specialists across multiple disciplines to ensure you receive expert guidance no matter the concern.
             </p>
           </div>
-          <Link 
-            href="/specialists" 
+          <Link
+            href="/specialists"
             className="group flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary hover:opacity-80 transition-all"
           >
             View All Specialists
@@ -86,9 +86,9 @@ export const MedicalSpecialties = () => {
           {specialties.map((specialty, index) => (
             <motion.div
               key={specialty.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0.5, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -5 }}
               className="group relative p-8 rounded-3xl bg-card border border-border hover:border-primary/30 transition-all duration-500 shadow-sm hover:shadow-2xl hover:shadow-primary/5"
@@ -96,7 +96,7 @@ export const MedicalSpecialties = () => {
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${specialty.color} mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
                 {specialty.icon}
               </div>
-              
+
               <div className="space-y-3">
                 <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary">
                   {specialty.name}

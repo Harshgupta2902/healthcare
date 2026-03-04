@@ -36,4 +36,4 @@ trigger: always_on
 - ALWAYS use `Zod` schemas in Server Actions.
 - Ensure all forms use **React Hook Form** with Zod.
 - Refer to `DEVELOPMENT_RULES.md` for more details.
-- if new tables created or altered or need to insert data refer to the supabase_setup.sql and create new file updates.sql and add query to this file and next time remove this code and update new query in this so i can check and use and copy and paste this query to editor
+- if new tables created or altered or need to insert data refer to the supabase_setup.sql and create new file updates.sql and add query to this file and also update this supabase_setup.sql for the next reference and next time remove this code from updates.sql and update new query in this so i can check and use and copy and paste this query to editor

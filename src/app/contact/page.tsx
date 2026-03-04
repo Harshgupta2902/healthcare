@@ -1,75 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Clock, Send, Sparkles, MessageCircle } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Mail, Phone, MapPin, Clock, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { submitContactForm } from "@/features/contact/actions";
+import { contactSchema, type ContactFormValues } from "@/features/contact/schema";
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    subject: "",
-    message: "",
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      email: "",
+      subject: "",
+      message: "",
+    },
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+  const isSubmitting = form.formState.isSubmitting;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email.trim())) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  async function onSubmit(data: ContactFormValues) {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      toast.success("Message sent successfully! We'll get back to you soon.");
-      setFormData({ email: "", subject: "", message: "" });
-    } catch (error) {
-      toast.error("Failed to send message. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      const result = await submitContactForm(data);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
+      if (result.error) {
+        if (typeof result.error === "string") {
+          toast.error(result.error);
+        } else {
+          // Zod validation errors from server
+          toast.error("Validation failed. Please check your inputs.");
+        }
+        return;
+      }
+
+      toast.success("Message sent successfully! We'll get back to you soon.");
+      form.reset();
+    } catch (error) {
+      toast.error("An unexpected error occurred. Please try again.");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
       {/* Designer Background: Subtle texture across the whole page */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      
-      <Header />
-      
+
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
         <section className="relative w-full py-24 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
@@ -77,8 +73,8 @@ export default function ContactPage() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Contact our team</span>
             </motion.div>
-            
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -89,8 +85,8 @@ export default function ContactPage() {
                 Touch with Us
               </span>
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -157,55 +153,76 @@ export default function ContactPage() {
                       <p className="text-muted-foreground font-medium">Expected response time: Under 24 hours.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Email Address</label>
-                        <Input
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <FormField
+                          control={form.control}
                           name="email"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Email Address</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="your@email.com"
+                                  className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all font-bold"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs font-bold text-red-500 ml-1" />
+                            </FormItem>
+                          )}
                         />
-                      </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Subject Matter</label>
-                        <Input
+                        <FormField
+                          control={form.control}
                           name="subject"
-                          type="text"
-                          placeholder="How can we help?"
-                          value={formData.subject}
-                          onChange={handleChange}
-                          className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Subject Matter</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="How can we help?"
+                                  className="h-14 rounded-2xl border-border/50 bg-secondary/10 px-6 focus:bg-background transition-all font-bold"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs font-bold text-red-500 ml-1" />
+                            </FormItem>
+                          )}
                         />
-                      </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Your Message</label>
-                        <Textarea
+                        <FormField
+                          control={form.control}
                           name="message"
-                          placeholder="Provide as much detail as possible..."
-                          value={formData.message}
-                          onChange={handleChange}
-                          className="min-h-[200px] rounded-3xl border-border/50 bg-secondary/10 p-6 focus:bg-background transition-all resize-none"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Your Message</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Provide as much detail as possible..."
+                                  className="min-h-[200px] rounded-3xl border-border/50 bg-secondary/10 p-6 focus:bg-background transition-all resize-none font-bold"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs font-bold text-red-500 ml-1" />
+                            </FormItem>
+                          )}
                         />
-                      </div>
 
-                      <Button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full h-16 rounded-2xl text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all group"
-                      >
-                        {isSubmitting ? "Processing..." : (
-                          <>
-                            Send Message
-                            <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                          </>
-                        )}
-                      </Button>
-                    </form>
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="w-full h-16 rounded-2xl text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all group"
+                        >
+                          {isSubmitting ? "Processing..." : (
+                            <>
+                              Send Message
+                              <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
                   </div>
                 </div>
               </div>
@@ -213,8 +230,6 @@ export default function ContactPage() {
           </div>
         </section>
       </main>
-      
-      <Footer />
     </div>
   );
 }

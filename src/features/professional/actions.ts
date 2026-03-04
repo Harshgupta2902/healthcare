@@ -145,3 +145,18 @@ export async function updateAppointmentStatus(id: string, status: string) {
     if (error) throw new Error(error.message)
     return { success: true }
 }
+
+export async function updateConsultationRequestStatus(id: string, status: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+
+    const { error } = await supabase
+        .from('consultation_requests')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('professional_id', user.id)
+
+    if (error) throw new Error(error.message)
+    return { success: true }
+}
