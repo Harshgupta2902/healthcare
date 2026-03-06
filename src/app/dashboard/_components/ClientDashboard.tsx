@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -44,7 +44,9 @@ import {
     Camera,
     Shield,
     Activity,
-    Stethoscope
+    Stethoscope,
+    ExternalLink,
+    ShieldCheck
 } from "lucide-react";
 
 interface UserProfile {
@@ -138,6 +140,9 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [isLoadingDocs, setIsLoadingDocs] = useState(!initialData?.documents);
     const [isLoadingInsurance, setIsLoadingInsurance] = useState(!initialData?.insurance);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const documentInputRef = useRef<HTMLInputElement>(null);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<UserProfile>>(initialData?.profile || {});
@@ -424,13 +429,19 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     };
 
     const handleAddDocument = async () => {
-        if (!documentForm.documentName.trim() || !documentForm.fileUrl.trim()) {
-            toast.error("Please enter document name and file URL");
+        if (!documentForm.documentName.trim() || !selectedFile) {
+            toast.error("Please enter document name and select a file");
             return;
         }
         setIsSaving(true);
         try {
-            await addMedicalDocument(documentForm);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('documentName', documentForm.documentName);
+            formData.append('documentType', documentForm.documentType);
+            formData.append('notes', documentForm.notes);
+
+            await addMedicalDocument(formData);
             toast.success("Document added successfully");
             setShowAddDocument(false);
             setDocumentForm({
@@ -441,6 +452,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 uploadDate: new Date().toISOString().split('T')[0],
                 notes: ""
             });
+            setSelectedFile(null);
             fetchDocuments();
         } catch (error: any) {
             toast.error(error.message || "An error occurred");
@@ -626,6 +638,10 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                         <span className="font-black text-red-600">{profile?.bloodType || "N/A"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
+                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Gender</span>
+                                        <span className="font-black text-slate-900 capitalize">{profile?.gender || "N/A"}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
                                         <span className="text-slate-400 font-bold uppercase tracking-tighter">Weight</span>
                                         <span className="font-black text-slate-900">{profile?.weight ? `${profile.weight} kg` : "N/A"}</span>
                                     </div>
@@ -658,59 +674,175 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-4 sm:p-6 md:p-8">
-                                <div className="grid gap-8 md:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-black text-slate-500 uppercase">Emergency Contact</Label>
-                                        <Input
-                                            placeholder="Contact Name"
-                                            value={profileForm.emergencyContactName || ""}
-                                            onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
-                                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactName: e.target.value })}
-                                            disabled={!isEditingProfile}
-                                            className="rounded-xl border-slate-100 ring-0 focus:ring-slate-200"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-black text-slate-500 uppercase">Emergency Phone</Label>
-                                        <Input
-                                            placeholder="Phone Number"
-                                            value={profileForm.emergencyContactPhone || ""}
-                                            onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
-                                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })}
-                                            disabled={!isEditingProfile}
-                                            className="rounded-xl border-slate-100"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-black text-slate-500 uppercase">Primary Address</Label>
-                                        <Input
-                                            placeholder="Street Address"
-                                            value={profileForm.address || ""}
-                                            onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                                            disabled={!isEditingProfile}
-                                            className="rounded-xl border-slate-100"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black text-slate-500 uppercase">City</Label>
-                                            <Input
-                                                value={profileForm.city || ""}
-                                                onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
-                                                onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl border-slate-100"
-                                            />
+                                <div className="space-y-8">
+                                    {/* Personal & Health Stats */}
+                                    <div className="grid gap-6 md:grid-cols-2">
+                                        <div className="space-y-4">
+                                            <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Personal Details</Label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Date of Birth</Label>
+                                                    <Input
+                                                        type="date"
+                                                        max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
+                                                        value={profileForm.dateOfBirth || ""}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Gender</Label>
+                                                    <Select
+                                                        value={profileForm.gender || ""}
+                                                        onValueChange={(v) => setProfileForm({ ...profileForm, gender: v })}
+                                                        disabled={!isEditingProfile}
+                                                    >
+                                                        <SelectTrigger className="rounded-xl border-slate-100 h-10">
+                                                            <SelectValue placeholder="Select" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="male">Male</SelectItem>
+                                                            <SelectItem value="female">Female</SelectItem>
+                                                            <SelectItem value="other">Other</SelectItem>
+                                                            <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black text-slate-500 uppercase">Postal Code</Label>
-                                            <Input
-                                                value={profileForm.postalCode || ""}
-                                                onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
-                                                onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl border-slate-100"
-                                            />
+
+                                        <div className="space-y-4">
+                                            <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Health Metrics</Label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Blood</Label>
+                                                    <Select
+                                                        value={profileForm.bloodType || ""}
+                                                        onValueChange={(v) => setProfileForm({ ...profileForm, bloodType: v })}
+                                                        disabled={!isEditingProfile}
+                                                    >
+                                                        <SelectTrigger className="rounded-xl border-slate-100 h-10 px-2">
+                                                            <SelectValue placeholder="Type" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl">
+                                                            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(t => (
+                                                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Height(cm)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="175"
+                                                        value={profileForm.height || ""}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, height: parseFloat(e.target.value) || null })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100 h-10"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Weight(kg)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="70"
+                                                        value={profileForm.weight || ""}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, weight: parseFloat(e.target.value) || null })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100 h-10"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Location & Contact</Label>
+                                        <div className="grid gap-6 md:grid-cols-2">
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Primary Address</Label>
+                                                    <Input
+                                                        placeholder="Street Address"
+                                                        value={profileForm.address || ""}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">City</Label>
+                                                        <Input
+                                                            value={profileForm.city || ""}
+                                                            onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                                                            disabled={!isEditingProfile}
+                                                            className="rounded-xl border-slate-100"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">State</Label>
+                                                        <Input
+                                                            value={profileForm.state || ""}
+                                                            onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
+                                                            disabled={!isEditingProfile}
+                                                            className="rounded-xl border-slate-100"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Postal Code</Label>
+                                                    <Input
+                                                        value={profileForm.postalCode || ""}
+                                                        onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Emergency Contact Name</Label>
+                                                    <Input
+                                                        placeholder="Contact Name"
+                                                        value={profileForm.emergencyContactName || ""}
+                                                        onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
+                                                        onChange={(e) => setProfileForm({ ...profileForm, emergencyContactName: e.target.value })}
+                                                        disabled={!isEditingProfile}
+                                                        className="rounded-xl border-slate-100"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">Emergency Phone</Label>
+                                                        <Input
+                                                            placeholder="Phone Number"
+                                                            value={profileForm.emergencyContactPhone || ""}
+                                                            onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })}
+                                                            disabled={!isEditingProfile}
+                                                            className="rounded-xl border-slate-100"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">Relationship</Label>
+                                                        <Input
+                                                            placeholder="Spouse, Parent, etc."
+                                                            value={profileForm.emergencyContactRelationship || ""}
+                                                            onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
+                                                            onChange={(e) => setProfileForm({ ...profileForm, emergencyContactRelationship: e.target.value })}
+                                                            disabled={!isEditingProfile}
+                                                            className="rounded-xl border-slate-100"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -759,6 +891,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     <Label className="font-bold">Date of Diagnosis</Label>
                                                     <Input
                                                         type="date"
+                                                        max={new Date().toISOString().split('T')[0]}
                                                         value={conditionForm.diagnosisDate}
                                                         onChange={(e) => setConditionForm({ ...conditionForm, diagnosisDate: e.target.value })}
                                                         className="rounded-xl"
@@ -891,8 +1024,29 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     <Input placeholder="e.g. Twice Daily" value={medicationForm.frequency} onChange={e => setMedicationForm({ ...medicationForm, frequency: e.target.value })} className="rounded-xl" />
                                                 </div>
                                             </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="font-bold text-xs uppercase text-slate-500">Start Date *</Label>
+                                                    <Input
+                                                        type="date"
+                                                        max={new Date().toISOString().split('T')[0]}
+                                                        value={medicationForm.startDate}
+                                                        onChange={e => setMedicationForm({ ...medicationForm, startDate: e.target.value })}
+                                                        className="rounded-xl"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="font-bold text-xs uppercase text-slate-500">End Date</Label>
+                                                    <Input
+                                                        type="date"
+                                                        value={medicationForm.endDate}
+                                                        onChange={e => setMedicationForm({ ...medicationForm, endDate: e.target.value })}
+                                                        className="rounded-xl"
+                                                    />
+                                                </div>
+                                            </div>
                                             <div className="space-y-2">
-                                                <Label className="font-bold">Prescribing Doctor</Label>
+                                                <Label className="font-bold text-xs uppercase text-slate-500">Prescribing Doctor</Label>
                                                 <Input
                                                     value={medicationForm.prescribingDoctor}
                                                     onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
@@ -1007,11 +1161,50 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="font-bold">File URL (Mock)</Label>
-                                                <Input value={documentForm.fileUrl} onChange={e => setDocumentForm({ ...documentForm, fileUrl: e.target.value })} placeholder="https://..." className="rounded-xl" />
+                                            <div className="space-y-4">
+                                                <div
+                                                    className={`p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
+                                                        ${isDragging
+                                                            ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
+                                                            : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
+                                                        }`}
+                                                    onClick={() => documentInputRef.current?.click()}
+                                                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                                    onDragLeave={() => setIsDragging(false)}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        setIsDragging(false);
+                                                        const file = e.dataTransfer.files?.[0];
+                                                        if (file) setSelectedFile(file);
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="file"
+                                                        ref={documentInputRef}
+                                                        className="hidden"
+                                                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                                    />
+                                                    <div className="space-y-3">
+                                                        <div className={`h-20 w-20 rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500
+                                                            ${isDragging ? 'bg-indigo-600 text-white rotate-12' : 'bg-white text-indigo-500 group-hover:scale-110'}
+                                                        `}>
+                                                            <Upload className="h-10 w-10" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-slate-800 text-lg">
+                                                                {selectedFile ? selectedFile.name : "Drop your file here"}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">
+                                                                {selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : "or click to browse documents"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <Button onClick={handleAddDocument} className="w-full h-12 rounded-full bg-indigo-600 font-bold" disabled={isSaving}>Store in Vault</Button>
+                                            <Button onClick={handleAddDocument} className="w-full h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 font-black text-lg transition-all" disabled={isSaving}>
+                                                {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
+                                                Store in Vault
+                                            </Button>
                                         </div>
                                     </DialogContent>
                                 </Dialog>
@@ -1027,24 +1220,41 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <p className="text-slate-400 font-bold">Your document vault is empty.</p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {documents.map((doc) => (
-                                        <div key={doc.id} className="group bg-white border border-slate-50 rounded-2xl p-4 hover:shadow-xl transition-all duration-300">
-                                            <div className="bg-slate-50 h-32 rounded-xl flex items-center justify-center mb-4 relative overflow-hidden group-hover:bg-indigo-50 transition-colors">
-                                                <FileText className="h-12 w-12 text-slate-300 group-hover:text-indigo-400 transition-colors" />
-                                                <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                    <Button variant="secondary" size="sm" className="rounded-full font-bold shadow-2xl" asChild>
-                                                        <a href={doc.fileUrl} target="_blank" rel="noreferrer">Open File</a>
+                                        <div key={doc.id} className="group bg-white border border-slate-50 rounded-3xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                                            <div className="p-6">
+                                                <div className="flex items-start justify-between mb-4">
+                                                    <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                                        <FileText className="h-6 w-6" />
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                                                        onClick={() => handleDeleteDocument(doc.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                            </div>
-                                            <h5 className="font-extrabold text-slate-800 truncate text-sm mb-1">{doc.documentName}</h5>
-                                            <p className="text-[10px] uppercase font-black text-slate-400 mb-4">{doc.documentType}</p>
-                                            <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                                                <span className="text-[10px] font-bold text-slate-300">{mounted ? new Date(doc.uploadDate).toLocaleDateString('en-US') : ''}</span>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-red-300 hover:text-red-500 hover:bg-red-50" onClick={() => handleDeleteDocument(doc.id)}>
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
+                                                <h4 className="font-black text-slate-900 truncate uppercase tracking-tight">{doc.documentName}</h4>
+                                                <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mt-1">{doc.documentType}</p>
+                                                <div className="mt-4 flex items-center justify-between">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Size</span>
+                                                        <span className="text-xs font-black text-slate-700">
+                                                            {doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(2)} MB` : "N/A"}
+                                                        </span>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="rounded-full font-black text-[10px] uppercase tracking-widest border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                                                        onClick={() => window.open(doc.fileUrl, '_blank')}
+                                                    >
+                                                        <ExternalLink className="h-3 w-3 mr-1" /> View
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

@@ -65,8 +65,8 @@ export default function Hero() {
                 size="lg"
                 className="h-16 px-10 text-lg font-semibold rounded-2xl border-2 hover:bg-secondary/50 backdrop-blur-sm transition-all"
               >
-                <Link href="/how-it-works">
-                  Explore Platform
+                <Link href="/consultants">
+                  Find Specialists
                 </Link>
               </Button>
             </div>

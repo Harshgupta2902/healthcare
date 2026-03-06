@@ -2,6 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import fs from 'fs/promises'
+import path from 'path'
+import crypto from 'crypto'
 
 const profileSchema = z.object({
     specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
@@ -10,6 +13,7 @@ const profileSchema = z.object({
     yearsOfExperience: z.number().optional().nullable(),
     consultationFee: z.number().optional().nullable(),
     phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
+    city: z.string().optional().nullable(),
     profilePhotoUrl: z.string().optional().nullable(),
 })
 
@@ -17,7 +21,7 @@ const qualificationSchema = z.object({
     degree: z.string().min(1, "Degree is required").regex(/^[a-zA-Z\s\.]*$/, "Degree contains invalid characters"),
     institution: z.string().min(1, "Institution is required").regex(/^[a-zA-Z\s\.]*$/, "Institution contains invalid characters"),
     year: z.number().optional().nullable(),
-    documentUrl: z.string().optional().nullable(),
+    documentUrl: z.string().min(1, "Document URL is required"),
 })
 
 const availabilitySchema = z.object({
@@ -43,9 +47,9 @@ export async function updateProfessionalProfile(data: any) {
             bio: validatedData.bio,
             years_of_experience: validatedData.yearsOfExperience,
             consultation_fee: validatedData.consultationFee,
+            city: validatedData.city,
             updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
+        }, { onConflict: 'user_id' })
 
     if (error) throw new Error(error.message)
 
@@ -58,12 +62,44 @@ export async function updateProfessionalProfile(data: any) {
     return { success: true }
 }
 
-export async function addQualification(data: any) {
+export async function addQualification(formData: FormData) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
 
-    const validatedData = qualificationSchema.parse(data)
+    const file = formData.get('file') as File;
+    const degree = formData.get('degree') as string;
+    const institution = formData.get('institution') as string;
+    const year = parseInt(formData.get('year') as string);
+
+    if (!file || !degree || !institution) {
+        throw new Error("Required fields missing");
+    }
+
+    // Prepare filename and path
+    const fileExtension = path.extname(file.name);
+    const fileName = `${crypto.randomBytes(16).toString('hex')}${fileExtension}`;
+    const publicUploadPath = '/uploads/qualifications';
+    const uploadDir = path.join(process.cwd(), 'public', publicUploadPath);
+    const filePath = path.join(uploadDir, fileName);
+
+    // Ensure directory exists
+    try {
+        await fs.mkdir(uploadDir, { recursive: true });
+    } catch (err) { }
+
+    // Write file
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(filePath, buffer);
+
+    const documentUrl = `${publicUploadPath}/${fileName}`;
+
+    const validatedData = qualificationSchema.parse({
+        degree,
+        institution,
+        year,
+        documentUrl
+    })
 
     const { error } = await supabase
         .from('professional_qualifications')
@@ -76,13 +112,30 @@ export async function addQualification(data: any) {
         })
 
     if (error) throw new Error(error.message)
-    return { success: true }
+    return { success: true, documentUrl }
 }
 
 export async function deleteQualification(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
+
+    // Get the file path before deleting record
+    const { data: qual } = await supabase
+        .from('professional_qualifications')
+        .select('document_url')
+        .eq('id', id)
+        .eq('professional_id', user.id)
+        .single()
+
+    if (qual?.document_url) {
+        try {
+            const filePath = path.join(process.cwd(), 'public', qual.document_url)
+            await fs.unlink(filePath)
+        } catch (err) {
+            console.error("Failed to delete physical file:", err)
+        }
+    }
 
     const { error } = await supabase
         .from('professional_qualifications')
@@ -194,6 +247,7 @@ export async function getProfessionalDashboardData() {
             bio: profProfile?.bio || null,
             yearsOfExperience: profProfile?.years_of_experience || null,
             consultationFee: profProfile?.consultation_fee || null,
+            city: profProfile?.city || null,
             isVerified: profProfile?.is_verified || false,
             phone: coreProfile?.phone || null,
             profilePhotoUrl: coreProfile?.image || null,
@@ -270,12 +324,10 @@ export async function searchProfessionals(specialty?: string, city?: string) {
             years_of_experience,
             consultation_fee,
             is_verified,
+            city,
             users!inner (
                 name,
                 image
-            ),
-            client_medical_profiles (
-                city
             )
         `);
 
@@ -284,7 +336,7 @@ export async function searchProfessionals(specialty?: string, city?: string) {
     }
 
     if (city) {
-        query = query.ilike('client_medical_profiles.city', `%${city}%`);
+        query = query.ilike('city', `%${city}%`);
     }
 
     const { data, error } = await query;
@@ -299,7 +351,46 @@ export async function searchProfessionals(specialty?: string, city?: string) {
         yearsOfExperience: p.years_of_experience,
         consultationFee: p.consultation_fee,
         isVerified: p.is_verified,
-        city: p.client_medical_profiles?.city,
+        city: p.city,
         profilePhotoUrl: p.users?.image || null,
     }));
 }
+
+export async function getProfessionalById(id: string) {
+    const supabase = await createClient()
+
+    const [
+        { data: profProfile, error: profError },
+        { data: userCore, error: userError },
+        { data: qualifications, error: qualError },
+        { data: availability, error: availError }
+    ] = await Promise.all([
+        supabase.from('professional_profiles').select('*').eq('user_id', id).single(),
+        supabase.from('users').select('name, email, image, phone').eq('id', id).single(),
+        supabase.from('professional_qualifications').select('*').eq('professional_id', id).order('year', { ascending: false }),
+        supabase.from('professional_availability').select('*').eq('professional_id', id).order('day_of_week', { ascending: true })
+    ]);
+
+    if (profError || userError) {
+        console.error("Error fetching professional details:", profError || userError);
+        return null;
+    }
+
+    return {
+        id: profProfile.user_id,
+        name: userCore.name,
+        email: userCore.email,
+        phone: userCore.phone,
+        profilePhotoUrl: userCore.image,
+        specialization: profProfile.specialization,
+        licenseNumber: profProfile.license_number,
+        bio: profProfile.bio,
+        yearsOfExperience: profProfile.years_of_experience,
+        consultationFee: profProfile.consultation_fee,
+        city: profProfile.city,
+        isVerified: profProfile.is_verified,
+        qualifications: qualifications || [],
+        availability: availability || []
+    };
+}
+

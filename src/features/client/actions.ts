@@ -2,10 +2,19 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import fs from 'fs/promises'
+import path from 'path'
+import crypto from 'crypto'
 
 const medicalProfileSchema = z.object({
     phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
-    dateOfBirth: z.string().optional().nullable(),
+    dateOfBirth: z.string().optional().nullable().refine((date) => {
+        if (!date) return true;
+        const dob = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return dob < today;
+    }, "Date of birth must be in the past"),
     gender: z.string().optional().nullable(),
     bloodType: z.string().optional().nullable(),
     height: z.number().optional().nullable(),
@@ -22,7 +31,13 @@ const medicalProfileSchema = z.object({
 
 const conditionSchema = z.object({
     conditionName: z.string().min(1, "Condition name is required").regex(/^[a-zA-Z\s]*$/, "Condition name must contain only letters"),
-    diagnosisDate: z.string().optional().nullable(),
+    diagnosisDate: z.string().optional().nullable().refine((date) => {
+        if (!date) return true;
+        const diagDate = new Date(date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return diagDate <= today;
+    }, "Diagnosis date cannot be in the future"),
     status: z.string().default('active'),
     notes: z.string().optional().nullable(),
 })
@@ -31,7 +46,13 @@ const medicationSchema = z.object({
     medicationName: z.string().min(1, "Medication name is required").regex(/^[a-zA-Z0-9\s]*$/, "Medication name must be alphanumeric"),
     dosage: z.string().min(1, "Dosage is required"),
     frequency: z.string().min(1, "Frequency is required"),
-    startDate: z.string().min(1, "Start date is required"),
+    startDate: z.string().min(1, "Start date is required").refine((date) => {
+        if (!date) return true;
+        const sDate = new Date(date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return sDate <= today;
+    }, "Start date cannot be in the future"),
     endDate: z.string().optional().nullable(),
     prescribingDoctor: z.string().regex(/^[a-zA-Z\s\.]*$/, "Doctor name contains invalid characters").optional().nullable(),
     notes: z.string().optional().nullable(),
@@ -41,7 +62,7 @@ const medicationSchema = z.object({
 const documentSchema = z.object({
     documentName: z.string().min(1, "Document name is required").regex(/^[a-zA-Z0-9\s\.\-]*$/, "Invalid characters in name"),
     documentType: z.string().min(1, "Document type is required"),
-    fileUrl: z.string().url("Invalid file URL"),
+    fileUrl: z.string().min(1, "File URL is required"),
     fileSize: z.number().optional().nullable(),
     notes: z.string().optional().nullable(),
 })
@@ -80,8 +101,7 @@ export async function updateMedicalProfile(data: any) {
             emergency_contact_phone: validatedData.emergencyContactPhone,
             emergency_contact_relationship: validatedData.emergencyContactRelationship,
             updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
+        }, { onConflict: 'user_id' })
 
     if (error) throw new Error(error.message)
 
@@ -169,12 +189,47 @@ export async function deleteMedication(id: string) {
     return { success: true }
 }
 
-export async function addMedicalDocument(data: any) {
+export async function addMedicalDocument(formData: FormData) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
 
-    const validatedData = documentSchema.parse(data)
+    const file = formData.get('file') as File;
+    const documentName = formData.get('documentName') as string;
+    const documentType = formData.get('documentType') as string;
+    const notes = formData.get('notes') as string;
+
+    if (!file || !documentName) {
+        throw new Error("File and document name are required");
+    }
+
+    // Prepare filename and path
+    const fileExtension = path.extname(file.name);
+    const fileName = `${crypto.randomBytes(16).toString('hex')}${fileExtension}`;
+    const publicUploadPath = '/uploads';
+    const uploadDir = path.join(process.cwd(), 'public', publicUploadPath);
+    const filePath = path.join(uploadDir, fileName);
+
+    // Ensure directory exists
+    try {
+        await fs.mkdir(uploadDir, { recursive: true });
+    } catch (err) {
+        // ignore if exists
+    }
+
+    // Write file
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(filePath, buffer);
+
+    const fileUrl = `${publicUploadPath}/${fileName}`;
+
+    const validatedData = documentSchema.parse({
+        documentName,
+        documentType,
+        fileUrl,
+        fileSize: file.size,
+        notes,
+    })
 
     const { error } = await supabase
         .from('medical_documents')
@@ -188,13 +243,30 @@ export async function addMedicalDocument(data: any) {
         })
 
     if (error) throw new Error(error.message)
-    return { success: true }
+    return { success: true, fileUrl }
 }
 
 export async function deleteMedicalDocument(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Unauthorized')
+
+    // Get the file path before deleting record
+    const { data: doc } = await supabase
+        .from('medical_documents')
+        .select('file_url')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single()
+
+    if (doc?.file_url) {
+        try {
+            const filePath = path.join(process.cwd(), 'public', doc.file_url)
+            await fs.unlink(filePath)
+        } catch (err) {
+            console.error("Failed to delete physical file:", err)
+        }
+    }
 
     const { error } = await supabase
         .from('medical_documents')

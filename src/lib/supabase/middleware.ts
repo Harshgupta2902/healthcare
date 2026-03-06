@@ -35,11 +35,22 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Redirect professionals away from the public consultants directory
+    if (user && request.nextUrl.pathname.includes('/consultants')) {
+        const userRole = user.user_metadata?.role || user.app_metadata?.role;
+        if (userRole === 'professional') {
+            const url = request.nextUrl.clone();
+            url.pathname = '/';
+            return NextResponse.redirect(url);
+        }
+    }
+
     if (
         !user &&
         !request.nextUrl.pathname.startsWith('/login') &&
         !request.nextUrl.pathname.startsWith('/auth') &&
         !request.nextUrl.pathname.startsWith('/register') &&
+        !request.nextUrl.pathname.startsWith('/consultants') &&
         request.nextUrl.pathname !== '/'
     ) {
         // no user, potentially respond by redirecting the user to the login page

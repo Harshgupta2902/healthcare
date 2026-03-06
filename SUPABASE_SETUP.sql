@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS public.insurance (
   policy_holder_name TEXT NOT NULL,
   relationship_to_holder TEXT,
   expiration_date TEXT,
+  notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -156,6 +157,7 @@ ALTER TABLE public.professional_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.professional_qualifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.professional_availability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.insurance ENABLE ROW LEVEL SECURITY;
 
 -- Auth Sync Trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -186,6 +188,16 @@ CREATE POLICY "Users can view own medical info" ON public.client_medical_profile
 CREATE POLICY "Users can view own history" ON public.medical_history FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can view own medications" ON public.medications FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can view own documents" ON public.medical_documents FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own insurance" ON public.insurance FOR ALL USING (auth.uid() = user_id);
+
+-- Professional Policies
+CREATE POLICY "Public profiles are viewable by everyone" ON public.professional_profiles FOR SELECT USING (true);
+CREATE POLICY "Professionals can manage own profile" ON public.professional_profiles FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Public qualifications are viewable by everyone" ON public.professional_qualifications FOR SELECT USING (true);
+CREATE POLICY "Professionals can manage own qualifications" ON public.professional_qualifications FOR ALL USING (auth.uid() = professional_id);
+CREATE POLICY "Public availability is viewable by everyone" ON public.professional_availability FOR SELECT USING (true);
+CREATE POLICY "Professionals can manage own availability" ON public.professional_availability FOR ALL USING (auth.uid() = professional_id);
+CREATE POLICY "Users can view own appointments" ON public.appointments FOR ALL USING (auth.uid() = client_id OR auth.uid() = professional_id);
 
 -- 🌱 FULL SEED DATA
 DO $$ 

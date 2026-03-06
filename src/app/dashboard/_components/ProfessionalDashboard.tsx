@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -42,7 +42,8 @@ import {
     Save,
     FileText,
     Mail,
-    Info
+    Info,
+    Upload
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -51,6 +52,7 @@ interface ProfessionalProfile {
     userId: string;
     specialization: string;
     licenseNumber: string;
+    city: string | null;
     bio: string | null;
     yearsOfExperience: number | null;
     consultationFee: number | null;
@@ -159,9 +161,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [qualificationForm, setQualificationForm] = useState({
         degree: "",
         institution: "",
-        year: new Date().getFullYear(),
-        documentUrl: ""
+        year: new Date().getFullYear() as number | null,
     });
+    const [selectedQualFile, setSelectedQualFile] = useState<File | null>(null);
+    const [isDraggingQual, setIsDraggingQual] = useState(false);
+    const qualInputRef = useRef<HTMLInputElement>(null);
 
     const [availabilityForm, setAvailabilityForm] = useState({
         dayOfWeek: 1,
@@ -204,6 +208,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     bio: profProfile?.bio || null,
                     yearsOfExperience: profProfile?.years_of_experience || null,
                     consultationFee: profProfile?.consultation_fee || null,
+                    city: profProfile?.city || null,
                     isVerified: profProfile?.is_verified || false,
                     phone: coreProfile?.phone || null,
                     profilePhotoUrl: coreProfile?.image || null,
@@ -384,12 +389,23 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     };
 
     const handleAddQual = async () => {
+        if (!selectedQualFile || !qualificationForm.degree || !qualificationForm.institution) {
+            toast.error("Please fill all fields and select a verification document");
+            return;
+        }
         setIsSaving(true);
         try {
-            await addQualification(qualificationForm);
-            toast.success("Qualification added");
+            const formData = new FormData();
+            formData.append('file', selectedQualFile);
+            formData.append('degree', qualificationForm.degree);
+            formData.append('institution', qualificationForm.institution);
+            formData.append('year', qualificationForm.year?.toString() || "");
+
+            await addQualification(formData);
+            toast.success("Credential added to profile");
             setShowAddQualification(false);
-            setQualificationForm({ degree: "", institution: "", year: new Date().getFullYear(), documentUrl: "" });
+            setQualificationForm({ degree: "", institution: "", year: new Date().getFullYear() });
+            setSelectedQualFile(null);
             fetchQualifications();
         } catch (error: any) {
             toast.error(error.message || "Failed to add qualification");
@@ -666,36 +682,67 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             />
                                         </div>
                                         <div className="space-y-2">
+                                            <Label className="text-sm font-bold text-slate-600">City / Primary Practice Location</Label>
+                                            <Input
+                                                placeholder="e.g., Mumbai, Bangalore"
+                                                value={profileForm.city || ""}
+                                                onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                                                disabled={!isEditingProfile}
+                                                className="rounded-xl"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
                                             <Label className="text-sm font-bold text-slate-600">Contact Phone</Label>
                                             <Input
                                                 placeholder="Enter phone number"
                                                 value={profileForm.phone || ""}
+                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
                                                 onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl"
+                                                className="rounded-xl border-slate-100 h-12"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Years of Experience</Label>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <Label className="text-sm font-bold text-slate-600">Experience</Label>
+                                                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
+                                                    {profileForm.yearsOfExperience || 0} Years
+                                                </span>
+                                            </div>
                                             <Input
                                                 type="number"
-                                                placeholder="Enter years"
+                                                min="0"
+                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
+                                                placeholder="Total years of medical practice"
                                                 value={profileForm.yearsOfExperience || ""}
-                                                onChange={(e) => setProfileForm({ ...profileForm, yearsOfExperience: parseInt(e.target.value) || null })}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? null : parseInt(e.target.value);
+                                                    setProfileForm({ ...profileForm, yearsOfExperience: val });
+                                                }}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl"
+                                                className="rounded-xl border-slate-100 h-12 focus:ring-indigo-500"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Consultation Fee (paise)</Label>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <Label className="text-sm font-bold text-slate-600">Consultation Fee</Label>
+                                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
+                                                    ₹{((profileForm.consultationFee || 0) / 100).toLocaleString('en-IN')} INR
+                                                </span>
+                                            </div>
                                             <Input
                                                 type="number"
-                                                placeholder="Enter fee in paise (100 paise = 1 INR)"
+                                                min="0"
+                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
+                                                placeholder="Enter fee in paise (e.g. 50000 for ₹500)"
                                                 value={profileForm.consultationFee || ""}
-                                                onChange={(e) => setProfileForm({ ...profileForm, consultationFee: parseInt(e.target.value) || null })}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? null : parseInt(e.target.value);
+                                                    setProfileForm({ ...profileForm, consultationFee: val });
+                                                }}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl"
+                                                className="rounded-xl border-slate-100 h-12"
                                             />
                                         </div>
                                     </div>
@@ -763,20 +810,58 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     <Label className="font-bold text-slate-600">Year Awarded</Label>
                                                     <Input
                                                         type="number"
+                                                        min="1950"
+                                                        max={new Date().getFullYear()}
+                                                        onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
                                                         placeholder="YYYY"
-                                                        value={qualificationForm.year}
-                                                        onChange={(e) => setQualificationForm({ ...qualificationForm, year: parseInt(e.target.value) || new Date().getFullYear() })}
-                                                        className="rounded-xl"
+                                                        value={qualificationForm.year || ""}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value === "" ? null : parseInt(e.target.value);
+                                                            setQualificationForm({ ...qualificationForm, year: val });
+                                                        }}
+                                                        className="rounded-xl h-12"
                                                     />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <Label className="font-bold text-slate-600">Verification URL</Label>
-                                                    <Input
-                                                        placeholder="Link to digital certificate"
-                                                        value={qualificationForm.documentUrl}
-                                                        onChange={(e) => setQualificationForm({ ...qualificationForm, documentUrl: e.target.value })}
-                                                        className="rounded-xl"
-                                                    />
+                                                <div className="space-y-4">
+                                                    <div
+                                                        className={`p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
+                                                        ${isDraggingQual
+                                                                ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
+                                                                : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
+                                                            }`}
+                                                        onClick={() => qualInputRef.current?.click()}
+                                                        onDragOver={(e) => { e.preventDefault(); setIsDraggingQual(true); }}
+                                                        onDragLeave={() => setIsDraggingQual(false)}
+                                                        onDrop={(e) => {
+                                                            e.preventDefault();
+                                                            setIsDraggingQual(false);
+                                                            const file = e.dataTransfer.files?.[0];
+                                                            if (file) setSelectedQualFile(file);
+                                                        }}
+                                                    >
+                                                        <input
+                                                            type="file"
+                                                            ref={qualInputRef}
+                                                            className="hidden"
+                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            onChange={(e) => setSelectedQualFile(e.target.files?.[0] || null)}
+                                                        />
+                                                        <div className="space-y-3">
+                                                            <div className={`h-20 w-20 rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500
+                                                            ${isDraggingQual ? 'bg-indigo-600 text-white rotate-12' : 'bg-white text-indigo-500 group-hover:scale-110'}
+                                                        `}>
+                                                                <Upload className="h-10 w-10" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-black text-slate-800 text-lg">
+                                                                    {selectedQualFile ? selectedQualFile.name : "Drop Verification File"}
+                                                                </p>
+                                                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">
+                                                                    {selectedQualFile ? `${(selectedQualFile.size / 1024 / 1024).toFixed(2)} MB` : "PDF, JPG, PNG (Max 10MB)"}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <Button onClick={handleAddQual} className="w-full rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>

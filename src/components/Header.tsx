@@ -171,6 +171,11 @@ export default function Header({ className }: HeaderProps) {
             <Link href="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Services
             </Link>
+            {(!user || user.user_metadata?.role !== 'professional') && (
+              <Link href="/consultants" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Consultants
+              </Link>
+            )}
             <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               How it works
             </Link>
@@ -202,6 +207,9 @@ export default function Header({ className }: HeaderProps) {
         <div className="md:hidden border-t border-border bg-card">
           <nav className="px-2 py-4 space-y-2">
             <Link href="/services" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Services</Link>
+            {(!user || user.user_metadata?.role !== 'professional') && (
+              <Link href="/consultants" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Consultants</Link>
+            )}
             <Link href="/how-it-works" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>How it works</Link>
             <Link href="/support" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Support Center</Link>
             <Link href="/contact" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
