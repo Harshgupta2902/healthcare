@@ -90,8 +90,20 @@ function LoginContent() {
 
       toast.success("Welcome back! You've successfully logged in.");
 
-      const userRole = result.user?.user_metadata?.role || "client";
-      const redirectPath = searchParams.get("redirect") || "/dashboard";
+      // Fetch user role from database
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', result.user?.id)
+        .single();
+
+      const userRole = userData?.role || result.user?.user_metadata?.role || "client";
+      
+      // Redirect admin to admin panel, others to dashboard
+      let redirectPath = searchParams.get("redirect");
+      if (!redirectPath) {
+        redirectPath = userRole === 'admin' ? '/application/enter' : '/dashboard';
+      }
 
       router.push(redirectPath);
       router.refresh();

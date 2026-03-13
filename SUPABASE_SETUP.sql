@@ -269,4 +269,20 @@ BEGIN
   VALUES (pro_user_id, 'Cardiologist', 'MD-992288', 12, 15000, true)
   ON CONFLICT (user_id) DO NOTHING;
 
+  -- 9. Create Admin User
+  INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, role)
+  VALUES (
+    '22222222-2222-2222-2222-222222222222',
+    'admin@healthcare.com',
+    crypt('admin123', gen_salt('bf')),
+    now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"name":"Admin User","role":"admin"}',
+    'authenticated',
+    'authenticated'
+  ) ON CONFLICT (id) DO NOTHING;
+
+  -- Update admin role in public.users
+  UPDATE public.users SET role = 'admin' WHERE email = 'admin@healthcare.com';
+
 END $$;

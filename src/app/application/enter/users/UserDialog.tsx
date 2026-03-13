@@ -1,0 +1,198 @@
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useTransition } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { createUser, updateUser } from '@/features/admin/actions'
+import { toast } from 'sonner'
+
+const userSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  role: z.enum(['client', 'professional', 'admin']),
+  phone: z.string().optional().nullable(),
+  image: z.string().optional().nullable(),
+})
+
+type UserFormData = z.infer<typeof userSchema>
+
+interface UserDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  user?: {
+    id: string
+    name: string | null
+    email: string
+    role: string
+    phone: string | null
+    image: string | null
+  } | null
+  onSuccess: () => void
+}
+
+export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogProps) {
+  const [isPending, startTransition] = useTransition()
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: user?.name || '',
+      email: user?.email || '',
+      role: (user?.role as 'client' | 'professional' | 'admin') || 'client',
+      phone: user?.phone || '',
+      image: user?.image || '',
+    },
+  })
+
+  const onSubmit = (data: UserFormData) => {
+    startTransition(async () => {
+      try {
+        if (user) {
+          await updateUser(user.id, data)
+          toast.success('User updated successfully')
+        } else {
+          await createUser(data)
+          toast.success('User created successfully')
+        }
+        form.reset()
+        onSuccess()
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to save user')
+      }
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="rounded-2xl max-w-md">
+        <DialogHeader>
+          <DialogTitle>{user ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogDescription>
+            {user ? 'Update user information' : 'Create a new user account'}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} className="rounded-xl" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} className="rounded-xl" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ''} className="rounded-xl" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ''} className="rounded-xl" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-xl"
+              >
+                {isPending ? 'Saving...' : user ? 'Update' : 'Create'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -35,6 +35,28 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Admin route protection - check role from database
+    if (request.nextUrl.pathname.startsWith('/application/enter')) {
+        if (!user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/login'
+            return NextResponse.redirect(url)
+        }
+
+        // Check user role from database
+        const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (!userData || userData.role !== 'admin') {
+            const url = request.nextUrl.clone()
+            url.pathname = '/'
+            return NextResponse.redirect(url)
+        }
+    }
+
     // Redirect professionals away from the public consultants directory
     if (user && request.nextUrl.pathname.includes('/consultants')) {
         const userRole = user.user_metadata?.role || user.app_metadata?.role;
@@ -51,6 +73,7 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/auth') &&
         !request.nextUrl.pathname.startsWith('/register') &&
         !request.nextUrl.pathname.startsWith('/consultants') &&
+        !request.nextUrl.pathname.startsWith('/application/enter') &&
         request.nextUrl.pathname !== '/'
     ) {
         // no user, potentially respond by redirecting the user to the login page
