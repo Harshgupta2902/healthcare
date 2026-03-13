@@ -33,11 +33,6 @@ export default function Header({ className }: HeaderProps) {
   const pathname = usePathname();
   const supabase = createClient();
 
-  // Hide header on admin pages
-  if (pathname?.startsWith('/application/enter')) {
-    return null;
-  }
-
   const fetchSession = async () => {
     setIsPending(true);
     try {
@@ -63,6 +58,11 @@ export default function Header({ className }: HeaderProps) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Hide header on admin pages
+  if (pathname?.startsWith('/application/enter')) {
+    return null;
+  }
 
   const handleSignOut = async () => {
     setIsMobileMenuOpen(false);

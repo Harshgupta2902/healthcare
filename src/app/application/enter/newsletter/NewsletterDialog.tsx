@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email'),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(['active', 'inactive']),
 })
 
 type NewsletterFormData = z.infer<typeof newsletterSchema>

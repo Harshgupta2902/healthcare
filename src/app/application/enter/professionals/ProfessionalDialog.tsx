@@ -43,7 +43,7 @@ const professionalSchema = z.object({
   bio: z.string().optional().nullable(),
   years_of_experience: z.number().int().min(0).optional().nullable(),
   consultation_fee: z.number().int().min(0).optional().nullable(),
-  is_verified: z.boolean().default(false),
+  is_verified: z.boolean(),
   city: z.string().optional().nullable(),
 })
 

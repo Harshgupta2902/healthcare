@@ -38,7 +38,7 @@ const medicalHistorySchema = z.object({
   user_id: z.string().uuid('Invalid user ID'),
   condition_name: z.string().min(1, 'Condition name is required'),
   diagnosis_date: z.string().optional().nullable(),
-  status: z.string().default('active'),
+  status: z.string().min(1, 'Status is required'),
   notes: z.string().optional().nullable(),
 })
 

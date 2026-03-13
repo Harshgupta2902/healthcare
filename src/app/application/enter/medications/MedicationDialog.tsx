@@ -44,7 +44,7 @@ const medicationSchema = z.object({
   end_date: z.string().optional().nullable(),
   prescribing_doctor: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 
 type MedicationFormData = z.infer<typeof medicationSchema>
