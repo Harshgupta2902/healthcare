@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, CircleX, LogIn, LogOut, LayoutDashboard, Stethoscope } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -14,10 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
+import { signOut } from "@/features/profile/actions";
 
 interface HeaderProps {
   className?: string;
@@ -29,7 +30,13 @@ export default function Header({ className }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
+
+  // Hide header on admin pages
+  if (pathname?.startsWith('/application/enter')) {
+    return null;
+  }
 
   const fetchSession = async () => {
     setIsPending(true);
@@ -58,15 +65,8 @@ export default function Header({ className }: HeaderProps) {
   }, []);
 
   const handleSignOut = async () => {
-    try {
-      const { signOut } = await import("@/features/profile/actions");
-      await signOut();
-      setUser(null);
-      setIsMobileMenuOpen(false);
-      toast.success("Signed out successfully");
-    } catch (err) {
-      toast.error("An error occurred during sign out");
-    }
+    setIsMobileMenuOpen(false);
+    await signOut();
   };
 
   const handleDashboardClick = () => {
@@ -95,6 +95,7 @@ export default function Header({ className }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
+                  <AvatarImage src={user.user_metadata?.image} className="object-cover" />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {user.user_metadata?.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
@@ -220,6 +221,7 @@ export default function Header({ className }: HeaderProps) {
                 <>
                   <div className="px-3 py-2 flex items-center gap-2">
                     <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.image} className="object-cover" />
                       <AvatarFallback>{user.user_metadata?.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-sm font-medium">{user.user_metadata?.name || 'User'}</div>

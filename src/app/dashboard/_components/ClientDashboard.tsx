@@ -14,6 +14,7 @@ import {
     addInsurance,
     deleteInsurance
 } from "@/features/client/actions";
+import { uploadProfileImage } from "@/features/profile/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,6 +144,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const documentInputRef = useRef<HTMLInputElement>(null);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<UserProfile>>(initialData?.profile || {});
@@ -528,6 +531,29 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             toast.error(error.message || "Failed to delete insurance");
         }
     };
+    const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingImage(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const result = await uploadProfileImage(formData);
+            if (result.success) {
+                toast.success("Profile photo updated");
+                setProfileForm(prev => ({ ...prev, profilePhotoUrl: result.url }));
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to upload image");
+            }
+        } catch (error: any) {
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
 
     return (
         <div className="container py-8">
@@ -614,16 +640,32 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             <div className="h-24 bg-gradient-to-r from-blue-400 to-indigo-500" />
                             <CardContent className="relative pt-0 px-8 pb-8">
                                 <div className="flex justify-center -mt-12 mb-6">
-                                    <div className="relative">
-                                        <Avatar className="h-24 w-24 ring-4 ring-white shadow-2xl">
+                                    <div className="relative group">
+                                        <input
+                                            type="file"
+                                            ref={profileImageInputRef}
+                                            onChange={handleProfileImageUpload}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
+                                        <Avatar
+                                            className="h-24 w-24 ring-4 ring-white shadow-2xl relative overflow-hidden cursor-pointer"
+                                            onClick={() => !isUploadingImage && profileImageInputRef.current?.click()}
+                                        >
                                             <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
                                             <AvatarFallback className="bg-indigo-600 text-white text-3xl font-black">
                                                 {(user.user_metadata?.name || user.email)?.charAt(0).toUpperCase()}
                                             </AvatarFallback>
+                                            {isUploadingImage ? (
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                                </div>
+                                            ) : (
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                    <Camera className="h-6 w-6 text-white" />
+                                                </div>
+                                            )}
                                         </Avatar>
-                                        <div className="absolute bottom-0 right-0 p-1 bg-white rounded-full shadow-lg cursor-pointer hover:bg-slate-50 transition-colors">
-                                            <Camera className="h-4 w-4 text-slate-500" />
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-center space-y-1 mb-8">

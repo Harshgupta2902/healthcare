@@ -4,10 +4,11 @@ import { UsersTable } from './UsersTable'
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { page?: string; search?: string }
+  searchParams: Promise<{ page?: string; search?: string }>
 }) {
-  const page = parseInt(searchParams.page || '1')
-  const search = searchParams.search || ''
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
+  const search = params.search || ''
   const { data, count } = await getUsers(page, 10, search)
   const totalPages = Math.ceil((count || 0) / 10)
 

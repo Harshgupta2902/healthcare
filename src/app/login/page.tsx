@@ -90,15 +90,9 @@ function LoginContent() {
 
       toast.success("Welcome back! You've successfully logged in.");
 
-      // Fetch user role from database
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', result.user?.id)
-        .single();
+      // Use the role returned from the server action
+      const userRole = result.role || "client";
 
-      const userRole = userData?.role || result.user?.user_metadata?.role || "client";
-      
       // Redirect admin to admin panel, others to dashboard
       let redirectPath = searchParams.get("redirect");
       if (!redirectPath) {

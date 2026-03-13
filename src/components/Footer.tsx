@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { subscribeNewsletter } from '@/features/client/actions';
 
@@ -17,6 +18,12 @@ export default function Footer({ className }: FooterProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const pathname = usePathname();
+
+  // Hide footer on admin pages
+  if (pathname?.startsWith('/application/enter')) {
+    return null;
+  }
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

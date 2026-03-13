@@ -104,3 +104,41 @@ BEGIN
         USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
     END IF;
 END $$;
+
+-- 🔐 Enable RLS on users table (just in case)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- 🔐 Allow users to update their own records (Name, Phone, Image etc)
+DROP POLICY IF EXISTS "Users can update own record" ON public.users;
+CREATE POLICY "Users can update own record" ON public.users 
+FOR UPDATE USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
+-- 🔐 Allow users to view their own record
+DROP POLICY IF EXISTS "Users can view own record" ON public.users;
+CREATE POLICY "Users can view own record" ON public.users 
+FOR SELECT USING (auth.uid() = id);
+
+-- 📦 5. STORAGE BUCKETS
+-- Create buckets if they don't exist (Supabase specific functions)
+-- Note: These must be run in the SQL editor. If they fail, they might need to be created via the UI.
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('profiles', 'profiles', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('medical-documents', 'medical-documents', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- 🔐 STORAGE POLICIES
+-- Profiles Bucket
+CREATE POLICY "Public Profiles are viewable by everyone" ON storage.objects FOR SELECT USING (bucket_id = 'profiles');
+CREATE POLICY "Users can upload their own profile image" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'profiles' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can update their own profile image" ON storage.objects FOR UPDATE USING (bucket_id = 'profiles' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can delete their own profile image" ON storage.objects FOR DELETE USING (bucket_id = 'profiles' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Medical Documents Bucket
+CREATE POLICY "Public Medical Documents are viewable by everyone" ON storage.objects FOR SELECT USING (bucket_id = 'medical-documents');
+CREATE POLICY "Users can view own medical documents" ON storage.objects FOR SELECT USING (bucket_id = 'medical-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can upload own medical documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'medical-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+CREATE POLICY "Users can delete own medical documents" ON storage.objects FOR DELETE USING (bucket_id = 'medical-documents' AND auth.uid()::text = (storage.foldername(name))[1]);

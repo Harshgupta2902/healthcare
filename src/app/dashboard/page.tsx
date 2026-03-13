@@ -13,7 +13,19 @@ export default async function DashboardPage() {
     redirect("/login?redirect=/dashboard");
   }
 
-  const role = user.user_metadata?.role || 'client';
+  // Fetch user role from database
+  const { data: userData } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const role = userData?.role || 'client';
+
+  // Redirect admin to admin panel if they somehow land here
+  if (role === 'admin') {
+    redirect('/application/enter');
+  }
 
   let dashboardData: any = { user };
   try {

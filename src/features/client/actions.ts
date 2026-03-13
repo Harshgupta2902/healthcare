@@ -2,8 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import fs from 'fs/promises'
-import path from 'path'
+import sharp from 'sharp'
 import crypto from 'crypto'
 
 const medicalProfileSchema = z.object({
@@ -203,31 +202,48 @@ export async function addMedicalDocument(formData: FormData) {
         throw new Error("File and document name are required");
     }
 
-    // Prepare filename and path
-    const fileExtension = path.extname(file.name);
-    const fileName = `${crypto.randomBytes(16).toString('hex')}${fileExtension}`;
-    const publicUploadPath = '/uploads';
-    const uploadDir = path.join(process.cwd(), 'public', publicUploadPath);
-    const filePath = path.join(uploadDir, fileName);
+    // Optimize image if needed
+    const isImage = file.type.startsWith('image/');
+    const fileExt = isImage ? 'webp' : file.name.split('.').pop();
+    const fileName = `${crypto.randomBytes(16).toString('hex')}.${fileExt}`;
+    const filePath = `${user.id}/${fileName}`;
 
-    // Ensure directory exists
-    try {
-        await fs.mkdir(uploadDir, { recursive: true });
-    } catch (err) {
-        // ignore if exists
+    let uploadBuffer: Buffer | ArrayBuffer = await file.arrayBuffer();
+    let contentType = file.type;
+
+    if (isImage) {
+        try {
+            const buffer = Buffer.from(uploadBuffer as ArrayBuffer);
+            uploadBuffer = await sharp(buffer)
+                .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 80 })
+                .toBuffer();
+            contentType = 'image/webp';
+            console.log(`Document image optimized: ${(buffer.length / 1024).toFixed(2)}KB -> ${(uploadBuffer.length / 1024).toFixed(2)}KB`);
+        } catch (err) {
+            console.error("Optimization failed for document:", err);
+            uploadBuffer = await file.arrayBuffer(); // fallback to original
+        }
     }
 
-    // Write file
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
+    const { error: uploadError } = await supabase.storage
+        .from('medical-documents')
+        .upload(filePath, uploadBuffer, {
+            contentType,
+            upsert: true
+        });
 
-    const fileUrl = `${publicUploadPath}/${fileName}`;
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('medical-documents')
+        .getPublicUrl(filePath);
 
     const validatedData = documentSchema.parse({
         documentName,
         documentType,
-        fileUrl,
-        fileSize: file.size,
+        fileUrl: publicUrl,
+        fileSize: uploadBuffer instanceof Buffer ? uploadBuffer.length : file.size,
         notes,
     })
 
@@ -243,7 +259,7 @@ export async function addMedicalDocument(formData: FormData) {
         })
 
     if (error) throw new Error(error.message)
-    return { success: true, fileUrl }
+    return { success: true, fileUrl: publicUrl }
 }
 
 export async function deleteMedicalDocument(id: string) {
@@ -261,10 +277,15 @@ export async function deleteMedicalDocument(id: string) {
 
     if (doc?.file_url) {
         try {
-            const filePath = path.join(process.cwd(), 'public', doc.file_url)
-            await fs.unlink(filePath)
+            const pathParts = doc.file_url.split('/medical-documents/')
+            if (pathParts.length > 1) {
+                const storagePath = pathParts[1]
+                await supabase.storage
+                    .from('medical-documents')
+                    .remove([storagePath])
+            }
         } catch (err) {
-            console.error("Failed to delete physical file:", err)
+            console.error("Failed to delete from storage:", err)
         }
     }
 

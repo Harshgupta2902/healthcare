@@ -12,6 +12,7 @@ import {
     updateAppointmentStatus,
     updateConsultationRequestStatus
 } from "@/features/professional/actions";
+import { uploadProfileImage } from "@/features/profile/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,8 @@ import {
     FileText,
     Mail,
     Info,
-    Upload
+    Upload,
+    Camera
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -146,6 +148,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [isLoadingRequests, setIsLoadingRequests] = useState(!initialData?.consultationRequests);
     const [isLoadingPayments, setIsLoadingPayments] = useState(!initialData?.payments);
     const [isSaving, setIsSaving] = useState(false);
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>(initialData?.profile || {});
@@ -467,6 +471,29 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             toast.error(error.message || "Failed to update request");
         }
     };
+    const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingImage(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const result = await uploadProfileImage(formData);
+            if (result.success) {
+                toast.success("Profile photo updated");
+                setProfileForm(prev => ({ ...prev, profilePhotoUrl: result.url }));
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to upload image");
+            }
+        } catch (error: any) {
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
 
     const totalEarnings = payments.filter(p => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
     const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
@@ -599,12 +626,28 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             ) : (
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-8">
-                                        <div className="relative">
-                                            <Avatar className="h-32 w-32 ring-4 ring-white shadow-2xl">
+                                        <div className="relative group">
+                                            <input
+                                                type="file"
+                                                ref={profileImageInputRef}
+                                                onChange={handleProfileImageUpload}
+                                                accept="image/*"
+                                                className="hidden"
+                                            />
+                                            <Avatar className="h-32 w-32 ring-4 ring-white shadow-2xl relative overflow-hidden">
                                                 <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
                                                 <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-4xl font-black">
                                                     {(user.user_metadata?.name || user.email)?.slice(0, 2).toUpperCase()}
                                                 </AvatarFallback>
+                                                {isUploadingImage ? (
+                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer" onClick={() => profileImageInputRef.current?.click()}>
+                                                        <Camera className="h-8 w-8 text-white" />
+                                                    </div>
+                                                )}
                                             </Avatar>
                                             {!isEditingProfile && profile?.isVerified && (
                                                 <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-1.5 rounded-full border-4 border-white shadow-lg">
