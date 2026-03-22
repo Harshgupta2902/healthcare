@@ -1,3 +1,56 @@
+-- Base schema setup for guest appointments
+-- Run once when initializing the project. Subsequent changes go to updates.sql
+
+-- Create table: guest_appointments
+create table if not exists public.guest_appointments (
+  id uuid primary key default gen_random_uuid(),
+  first_name text not null,
+  last_name text not null,
+  age integer not null check (age >= 0 and age <= 120),
+  phone text not null,
+  email text not null,
+  category text not null,
+  state text not null,
+  city text not null,
+  appointment_date date not null,
+  appointment_time text not null,
+  message text,
+  created_at timestamptz not null default now(),
+  created_by uuid null
+);
+
+-- RLS
+alter table public.guest_appointments enable row level security;
+
+-- Policies:
+-- 1) Allow anyone to insert a guest appointment (no auth required)
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'guest_appointments' and policyname = 'Allow insert for all'
+  ) then
+    create policy "Allow insert for all"
+      on public.guest_appointments
+      for insert
+      to anon, authenticated
+      with check (true);
+  end if;
+end$$;
+
+-- 2) By default, no select for anonymous. Authenticated users can read only their own rows if created_by is set.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'guest_appointments' and policyname = 'Select own'
+  ) then
+    create policy "Select own"
+      on public.guest_appointments
+      for select
+      to authenticated
+      using (created_by = auth.uid());
+  end if;
+end$$;
+
 -- SUPABASE SETUP SCRIPT (Renamed profiles to users)
 -- Copy and paste this into the Supabase SQL Editor
 
