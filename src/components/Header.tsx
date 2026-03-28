@@ -169,21 +169,21 @@ export default function Header({ className }: HeaderProps) {
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/services" className={`text-sm transition-colors ${pathname === '/services' ? 'font-extrabold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
               Services
             </Link>
             {(!user || user.user_metadata?.role !== 'professional') && (
-              <Link href="/consultants" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/consultants" className={`text-sm transition-colors ${pathname === '/consultants' ? 'font-extrabold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                 Consultants
               </Link>
             )}
-            <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/how-it-works" className={`text-sm transition-colors ${pathname === '/how-it-works' ? 'font-extrabold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
               How it works
             </Link>
-            <Link href="/support" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/support" className={`text-sm transition-colors ${pathname?.startsWith('/support') ? 'font-extrabold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
               Support
             </Link>
-            <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/contact" className={`text-sm transition-colors ${pathname === '/contact' ? 'font-extrabold text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
               Contact Us
             </Link>
           </nav>
@@ -207,13 +207,13 @@ export default function Header({ className }: HeaderProps) {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-card">
           <nav className="px-2 py-4 space-y-2">
-            <Link href="/services" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Services</Link>
+            <Link href="/services" className={`block px-3 py-2 text-sm ${pathname === '/services' ? 'font-extrabold text-foreground' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Services</Link>
             {(!user || user.user_metadata?.role !== 'professional') && (
-              <Link href="/consultants" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Consultants</Link>
+              <Link href="/consultants" className={`block px-3 py-2 text-sm ${pathname === '/consultants' ? 'font-extrabold text-foreground' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Consultants</Link>
             )}
-            <Link href="/how-it-works" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>How it works</Link>
-            <Link href="/support" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Support Center</Link>
-            <Link href="/contact" className="block px-3 py-2 text-sm" onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
+            <Link href="/how-it-works" className={`block px-3 py-2 text-sm ${pathname === '/how-it-works' ? 'font-extrabold text-foreground' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>How it works</Link>
+            <Link href="/support" className={`block px-3 py-2 text-sm ${pathname?.startsWith('/support') ? 'font-extrabold text-foreground' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Support Center</Link>
+            <Link href="/contact" className={`block px-3 py-2 text-sm ${pathname === '/contact' ? 'font-extrabold text-foreground' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>Contact Us</Link>
 
             <div className="pt-2 mt-2 border-t border-border space-y-2">
 

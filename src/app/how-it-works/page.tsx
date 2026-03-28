@@ -17,7 +17,7 @@ export default function HowItWorksPage() {
 
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
-        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+        <section className="relative w-full pt-24 md:pt-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
@@ -66,7 +66,7 @@ export default function HowItWorksPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
-                  className="group p-8 rounded-3xl bg-background border border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 text-center"
+                  className="group p-8 rounded-3xl bg-background border border-primary/05 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 text-center"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-primary mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                     <benefit.icon className="h-6 w-6" />
@@ -85,7 +85,7 @@ export default function HowItWorksPage() {
             id: "video",
             icon: Video,
             title: "Video Consultations",
-            desc: "Connect face-to-face with licensed healthcare professionals through secure, high-quality video calls from the comfort of your home. Perfect for routine check-ups, follow-ups, and mental health sessions.",
+            desc: "Connect face‑to‑face with licensed healthcare professionals through secure, high‑quality video calls from the comfort of your home. Perfect for routine check‑ups, follow‑ups, and mental health sessions.",
             steps: ["Choose a convenient time slot", "Join the secure video call", "Discuss your health concerns", "Receive digital prescriptions"],
             img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
             dark: true
@@ -96,7 +96,7 @@ export default function HowItWorksPage() {
             title: "Text/Chat Support",
             desc: "Get expert medical advice through secure text messaging when you need quick answers or prefer written communication. Ideal for follow-ups and prescription refills.",
             steps: ["Send your health question", "Provider responds within hours", "Continue the conversation", "Access complete chat history"],
-            img: "https://images.unsplash.com/photo-1512428559083-a400a3b84c6e?w=800&q=80",
+            img: "https://media.istockphoto.com/id/1255861967/photo/woman-hand-typing-on-keyboard-laptop-with-mobile-smartphone-live-chat-chatting-on-application.webp?a=1&b=1&s=612x612&w=0&k=20&c=9fzWBEdNqrzgPiiPGa-13WSDPbnZBx0xUER2InECaeg=",
             dark: false
           },
           {
@@ -109,48 +109,64 @@ export default function HowItWorksPage() {
             dark: true
           }
         ].map((section, idx) => (
-          <section key={section.id} className={`py-32 relative overflow-hidden ${section.dark ? 'bg-secondary/20 border-y border-border/50' : 'bg-background'}`}>
+          <section
+            key={section.id}
+            className={`pt-32 relative overflow-hidden ${
+              section.dark ? 'bg-secondary/20 border-y border-border/50' : 'bg-background'
+            }`}
+          >
             {section.dark && <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />}
 
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className={`flex flex-col lg:items-center gap-16 ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}>
+                {/* Text Column */}
                 <div className="lg:w-1/2 space-y-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                      <section.icon className="w-7 h-7" />
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">{section.title}</h2>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
+                        {section.title}
+                      </span>
+                    </h2>
                   </div>
 
-                  <p className="text-xl text-muted-foreground font-medium leading-relaxed">
+                  <p className="text-xl text-muted-foreground font-medium leading-relaxed max-w-xl">
                     {section.desc}
                   </p>
 
+                  {/* Process Card */}
                   <div className="space-y-4 pt-4">
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary">The Process:</h4>
-                    <div className="grid gap-3">
+                    <div className="grid gap-3 p-6 rounded-2xl backdrop-blur-md bg-white/5 dark:bg-black/10 border border-white/15">
                       {section.steps.map((step, i) => (
                         <div key={i} className="flex items-center gap-3 group/step">
-                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary group-hover/step:bg-primary group-hover/step:text-white transition-colors">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary ring-1 ring-primary/20 group-hover/step:bg-primary group-hover/step:text-white transition-colors">
                             {i + 1}
                           </div>
-                          <span className="font-medium text-muted-foreground group-hover/step:text-foreground transition-colors">{step}</span>
+                          <span className="font-medium text-muted-foreground group-hover/step:text-foreground transition-colors">
+                            {step}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
 
+                  {/* CTA */}
                   <div className="pt-8">
-                    <Button size="lg" className="rounded-2xl h-14 px-8 font-black shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all group">
+                    <Button
+                      size="lg"
+                      className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all group bg-gradient-to-r from-primary to-blue-600 hover:from-primary/95 hover:to-blue-600/95"
+                    >
                       Get Started Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </div>
                 </div>
 
+                {/* Visual Column */}
                 <div className="lg:w-1/2">
                   <div className="relative group">
+                    {/* Decorative ring/glow */}
                     <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-80 transition-opacity duration-500" />
-                    <div className="relative rounded-[32px] overflow-hidden border border-border/50 shadow-2xl">
+                    <div className="relative rounded-[32px] overflow-hidden border border-white/20 bg-white/5 dark:bg-black/20 backdrop-blur-md shadow-2xl">
                       <img
                         src={section.img}
                         alt={section.title}
@@ -177,10 +193,15 @@ export default function HowItWorksPage() {
               We're not just another healthcare app. We're your dedicated health partner, available whenever and wherever you need us.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => router.push("/register")}>
+              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl cursor-pointer bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => router.push("/register")}>
                 Create Free Account
               </Button>
-              <Button variant="outline" size="lg" className="h-16 px-10 text-lg font-bold rounded-2xl border-2 hover:bg-secondary/50 transition-all" onClick={() => router.push("/specialists")}>
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 px-10 text-lg font-bold rounded-2xl border-2 transition-all cursor-pointer hover:bg-secondary/60 hover:text-primary hover:border-primary/60 hover:shadow-lg hover:-translate-y-0.5"
+                onClick={() => router.push("/consultants")}
+              >
                 Meet the Experts
               </Button>
             </div>

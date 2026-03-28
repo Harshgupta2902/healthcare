@@ -52,7 +52,7 @@ const services: Service[] = [
 
 export default function ServicesSection() {
   return (
-    <section className="py-32 relative overflow-hidden bg-secondary/30">
+    <section className="pt-12 relative overflow-hidden bg-secondary/30">
       {/* Decorative background element */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 

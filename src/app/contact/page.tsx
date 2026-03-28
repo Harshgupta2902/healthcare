@@ -115,7 +115,7 @@ export default function ContactPage() {
                     { icon: MapPin, title: "Headquarters", content: "Medical District, Mumbai, MH 400001" },
                     { icon: Clock, title: "Business Hours", content: "Mon - Fri: 9:00 AM - 6:00 PM" }
                   ].map((item, i) => (
-                    <div key={i} className="group flex items-start gap-4 p-6 rounded-3xl bg-secondary/20 border border-border/50 hover:border-primary/20 transition-all">
+                    <div key={i} className="group flex items-start gap-4 p-6 rounded-3xl bg-secondary/20 border border-primary/05 hover:border-primary/20 transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
                         <item.icon className="w-5 h-5" />
                       </div>
@@ -147,7 +147,7 @@ export default function ContactPage() {
               <div className="lg:col-span-7">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 pointer-events-none" />
-                  <div className="relative bg-background border border-border/50 rounded-[32px] p-8 md:p-12 shadow-2xl">
+                  <div className="relative bg-background border border-border/50 rounded-[32px] p-8 md:p-12">
                     <div className="space-y-2 mb-10">
                       <h3 className="text-3xl font-black tracking-tight">Direct Message</h3>
                       <p className="text-muted-foreground font-medium">Expected response time: Under 24 hours.</p>

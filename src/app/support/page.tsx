@@ -118,10 +118,9 @@ export default function SupportPage() {
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
               <div className="relative">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   placeholder="Search for articles, guides, or questions..."
-                  className="h-16 pl-14 pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-lg font-medium focus:bg-background transition-all"
+                  className="h-16 pl-6 pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-lg font-medium focus:bg-background transition-all"
                 />
               </div>
             </motion.div>
@@ -153,7 +152,7 @@ export default function SupportPage() {
         </section>
 
         {/* FAQs Section */}
-        <section className="py-32 relative overflow-hidden">
+        <section className="pt-32 relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="container mx-auto px-4 max-w-4xl">
@@ -231,7 +230,7 @@ export default function SupportPage() {
                   { icon: FileText, label: "Tutorials" },
                 ].map((item, i) => (
                   <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center space-y-4 hover:bg-white/10 transition-colors">
-                    <item.icon className="w-8 h-8 mx-auto text-primary" />
+                    <item.icon className="w-8 h-8 mx-auto text-white" />
                     <div className="text-sm font-black uppercase tracking-widest">{item.label}</div>
                   </div>
                 ))}

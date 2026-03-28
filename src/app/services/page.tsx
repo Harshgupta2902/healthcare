@@ -12,7 +12,7 @@ export default function ServicesPage() {
 
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
-        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+        <section className="relative w-full pt-24 md:pt-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
@@ -43,12 +43,12 @@ export default function ServicesPage() {
                 { icon: Users, label: "10,000+ Patients", sub: "Trusted by Many" }
               ].map((item, i) => (
                 <div key={i} className="flex flex-col items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-primary shadow-sm">
-                    <item.icon className="h-5 w-5" />
+                  <div className="w-20 h-20 rounded-xl bg-secondary flex items-center justify-center text-primary shadow-sm">
+                    <item.icon className="h-10 w-10" />
                   </div>
                   <div className="space-y-0.5">
-                    <div className="text-xs font-black uppercase tracking-wider">{item.label}</div>
-                    <div className="text-[10px] text-muted-foreground font-medium">{item.sub}</div>
+                    <div className="text-md font-black uppercase tracking-wider">{item.label}</div>
+                    <div className="text-sm text-muted-foreground font-medium">{item.sub}</div>
                   </div>
                 </div>
               ))}
@@ -97,7 +97,7 @@ export default function ServicesPage() {
                     desc: "From booking to follow-up, our platform is designed for simplicity. Get care without the complexity of traditional healthcare."
                   }
                 ].map((feature, i) => (
-                  <div key={i} className="group p-8 rounded-3xl bg-background border border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
+                  <div key={i} className="group p-8 rounded-3xl bg-background border border-primary/10 hover:border-primary/20 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5">
                     <h3 className="text-xl font-black mb-4 group-hover:text-primary transition-colors">{feature.title}</h3>
                     <p className="text-muted-foreground font-medium leading-relaxed">
                       {feature.desc}

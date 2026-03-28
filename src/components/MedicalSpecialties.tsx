@@ -59,13 +59,13 @@ const specialties: MedicalSpecialty[] = [
 
 export const MedicalSpecialties = () => {
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section className="relative overflow-hidden">
       <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
           <div className="max-w-2xl space-y-4">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
-              Specialized Care <br />
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground whitespace-nowrap md:whitespace-normal">
+              Specialized Care{ " "}
               <span className="text-primary">For Every Need</span>
             </h2>
             <p className="text-lg text-muted-foreground font-medium">
