@@ -107,7 +107,7 @@ export default function ContactPage() {
                   <h2 className="text-3xl font-black tracking-tighter">Connection Points</h2>
                   <p className="text-muted-foreground font-medium">Choose the most convenient way to reach us. Our support team is standing by.</p>
                 </div>
-
+                
                 <div className="grid gap-6">
                   {[
                     { icon: Mail, title: "Email Address", content: "care@healthhere.com", href: "mailto:care@healthhere.com" },
