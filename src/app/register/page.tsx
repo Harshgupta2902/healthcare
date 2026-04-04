@@ -3,60 +3,72 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Apple, Phone, Loader2, Eye, EyeOff, Sparkles, ChevronLeft, User, Stethoscope, CheckCircle2, Circle } from "lucide-react";
+import {
+  Mail,
+  Apple,
+  Phone,
+  Loader2,
+  Sparkles,
+  User,
+  Stethoscope,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 interface FormData {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   mobileNumber: string;
   email: string;
-  dateOfBirth: string;
-  gender: string;
   password: string;
   confirmPassword: string;
   role: "client" | "professional";
 }
 
 interface FormErrors {
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   mobileNumber?: string;
   email?: string;
-  dateOfBirth?: string;
-  gender?: string;
   password?: string;
   confirmPassword?: string;
 }
 
 function RegisterContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [formData, setFormData] = useState<FormData>({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     mobileNumber: "",
     email: "",
-    dateOfBirth: "",
-    gender: "",
     password: "",
     confirmPassword: "",
     role: "client",
   });
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const supabase = createClient();
 
+  // Password rules
   const passwordRules = {
-    length: formData.password.trim().length >= 8,
+    length: formData.password.length >= 8,
     lowercase: /[a-z]/.test(formData.password),
     uppercase: /[A-Z]/.test(formData.password),
     number: /[0-9]/.test(formData.password),
@@ -66,58 +78,46 @@ function RegisterContent() {
   const isPasswordValid = Object.values(passwordRules).every(Boolean);
 
   useEffect(() => {
-    if (isPasswordValid && errors.password) {
-      setErrors(prev => ({ ...prev, password: undefined }));
-    }
-  }, [isPasswordValid]);
-
-  useEffect(() => {
     const roleParam = searchParams.get("role");
-    if (roleParam === "professional" || roleParam === "client") {
-      setFormData(prev => ({ ...prev, role: roleParam as "client" | "professional" }));
+    if (roleParam === "client" || roleParam === "professional") {
+      setFormData(prev => ({ ...prev, role: roleParam }));
     }
   }, [searchParams]);
 
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
+    if (!formData.firstName.trim()) newErrors.firstName = "Required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Required";
     if (!formData.email) {
       newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
     }
 
+
     if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "At least 8 characters required";
+      newErrors.password = "Required";
     } else if (!isPasswordValid) {
-      const missing = [];
-      if (!passwordRules.lowercase) missing.push("small letter");
-      if (!passwordRules.uppercase) missing.push("capital letter");
-      if (!passwordRules.number) missing.push("number");
-      if (!passwordRules.symbol) missing.push("symbol");
-      newErrors.password = `Missing: ${missing.join(", ")}`;
+      newErrors.password = "Weak password";
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords match error";
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -125,77 +125,54 @@ function RegisterContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Client: handleSubmit triggered with formData:", { email: formData.email, name: formData.fullName, role: formData.role });
 
-    if (!validateForm()) {
-      console.log("Client: Form validation failed:", errors);
-      toast.error("Please fill in all required fields correctly.");
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      const messages = Object.values(validationErrors).filter(Boolean) as string[];
+      toast.error(messages.join(" • "));
       return;
     }
 
-    console.log("Client: Form validated successfully, initiating signUp...");
     setIsLoading(true);
+
+    const fullName = `${formData.firstName} ${formData.lastName}`;
 
     try {
       const { signUp } = await import("@/features/profile/actions");
+
       const result = await signUp(
         formData.email,
         formData.password,
-        formData.fullName,
+        fullName,
         formData.role
       );
 
-      console.log("Client: signUp result received:", result);
-
       if (result.error) {
-        console.error("Client: Registration Error:", result.error);
-        toast.error(result.error || "Registration failed. Try again.");
+        toast.error(result.error);
         return;
       }
 
-      if (result.needsConfirmation) {
-        console.log("Client: Confirmation required redirecting to login.");
-        toast.success("Account created! PLEASE CHECK YOUR EMAIL to confirm your account.");
-      } else {
-        console.log("Client: Auto-login successful, redirecting to dashboard.");
-        toast.success("Account created! You've been automatically logged in.");
-        // Redirect to dashboard immediately after auto-login sync
-        const redirectPath = "/dashboard";
-        router.push(redirectPath);
-        return;
-      }
+      toast.success("Account created!");
 
-      router.push("/login?registered=true");
-    } catch (error) {
-      console.error("Client: UNEXPECTED ERROR during registration:", error);
-      toast.error("An unexpected error occurred. Please check console.");
+      router.push("/dashboard");
+    } catch {
+      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
-      console.log("Client: handleSubmit finished.");
     }
   };
 
-
   return (
-    <div className="min-h-screen relative bg-background flex items-center justify-center p-4 py-12 selection:bg-primary selection:text-primary-foreground overflow-hidden">
-      {/* Designer Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="relative z-10 w-full max-w-xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative group"
-        >
-          <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-          <Card className="relative shadow-2xl border border-border/50 bg-background/80 backdrop-blur-xl rounded-[32px] overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 py-12">
+      <div className="w-full max-w-xl">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <Card className="rounded-[32px] shadow-2xl">
             <CardHeader className="space-y-4 text-center pt-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mx-auto mb-2">
                 <Sparkles className="w-3 h-3" />
                 <span>Join the network</span>
               </div>
+
               <CardTitle className="text-3xl font-black tracking-tight text-foreground">
                 Create Account
               </CardTitle>
@@ -207,6 +184,7 @@ function RegisterContent() {
             </CardHeader>
 
             <CardContent className="space-y-8 pb-10">
+              {/* ROLE */}
               <Tabs
                 value={formData.role}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as "client" | "professional" }))}
@@ -224,60 +202,85 @@ function RegisterContent() {
                 </TabsList>
               </Tabs>
 
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* FORM */}
+              <form
+                onSubmit={handleSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                {/* FIRST + LAST NAME */}
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Full Name</Label>
+                  <Label>First Name</Label>
                   <Input
-                    name="fullName"
-                    placeholder="John Doe"
-                    value={formData.fullName}
-                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.fullName ? "border-red-500/50 ring-red-500/20" : ""}`}
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
                   />
-                  {errors.fullName && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.fullName}</p>}
+                  {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Mobile Number</Label>
+                  <Label>Last Name</Label>
+                  <Input
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                  {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+                </div>
+
+                {/* MOBILE */}
+                <div className="space-y-2">
+                  <Label>Mobile</Label>
                   <Input
                     name="mobileNumber"
-                    placeholder="1234567890"
+                    placeholder="9876543210"
                     value={formData.mobileNumber}
-                    onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.mobileNumber ? "border-red-500/50 ring-red-500/20" : ""}`}
+                    onInput={(e: any) => {
+                      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    }}
+                    onChange={handleChange}
                   />
-                  {errors.mobileNumber && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.mobileNumber}</p>}
                 </div>
 
+                {/* EMAIL */}
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Email Address</Label>
+                  <Label>Email</Label>
                   <Input
                     name="email"
                     type="email"
-                    placeholder="john@example.com"
                     value={formData.email}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.email ? "border-red-500/50 ring-red-500/20" : ""}`}
+                    onChange={handleChange}
                   />
-                  {errors.email && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.email}</p>}
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Password</Label>
+                {/* PASSWORD */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Password</Label>
                   <Input
                     name="password"
                     type="password"
-                    placeholder="Enter your password"
                     value={formData.password}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.password ? "border-red-500/50 ring-red-500/20" : ""}`}
+                    onChange={handleChange}
                   />
-                  {errors.password && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.password}</p>}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Confirm Password</Label>
+                    <Input
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 text-xs">
+                        {errors.confirmPassword}
+                      </p>
+                    )}
+                  </div>
 
-                  {/* Password Validation Box */}
-                  <div className="mt-4 p-4 rounded-2xl bg-secondary/10 border border-border/50 space-y-2">
+                  {/* PASSWORD RULES */}
+                  <div className="mt-4 rounded-2xl space-y-2">
                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Password Security</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {[
@@ -296,45 +299,29 @@ function RegisterContent() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Confirm</Label>
-                  <Input
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Repeat password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.confirmPassword ? "border-red-500/50 ring-red-500/20" : ""}`}
-                  />
-                  {errors.confirmPassword && <p className="text-[10px] text-red-500 font-bold ml-2">{errors.confirmPassword}</p>}
-                </div>
+                {/* CONFIRM */}
+
 
                 <Button
                   type="submit"
-                  className="md:col-span-2 h-16 rounded-2xl bg-primary text-white text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all mt-4"
+                  className="md:col-span-2 h-14"
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : "Create Account"}
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    "Create Account"
+                  )}
                 </Button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><Separator /></div>
-                <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
-                  <span className="bg-background px-4 text-muted-foreground">Join with</span>
-                </div>
-              </div>
+              <Separator />
 
-              <div className="grid grid-cols-3 gap-4">
-                {[Mail, Apple, Phone].map((Icon, i) => (
-                  <Button key={i} variant="outline" className="h-14 rounded-2xl border-border/50 hover:bg-secondary/50 transition-all group">
-                    <Icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                  </Button>
-                ))}
-              </div>
-
-              <p className="text-center text-sm font-medium text-muted-foreground">
-                Already member? <Link href="/login" className="font-black text-primary hover:underline">Log In</Link>
+              <p className="text-center text-sm">
+                Already have account?{" "}
+                <Link href="/login" className="font-bold text-primary">
+                  Login
+                </Link>
               </p>
             </CardContent>
           </Card>
@@ -344,11 +331,10 @@ function RegisterContent() {
   );
 }
 
-export default function RegisterPage() {
+export default function Page() {
   return (
     <Suspense>
       <RegisterContent />
     </Suspense>
   );
 }
-

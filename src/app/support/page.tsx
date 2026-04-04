@@ -84,7 +84,7 @@ export default function SupportPage() {
 
       <main className="relative z-10">
         {/* Support Hero Section */}
-        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+        <section className="relative w-full py-16 md:py-32 overflow-hidden">
           {/* Atmospheric Glows */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
@@ -102,7 +102,7 @@ export default function SupportPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]"
+              className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight mb-6 md:mb-8 leading-[1.1]"
             >
               How can we <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
@@ -114,13 +114,13 @@ export default function SupportPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="max-w-2xl mx-auto relative group mt-12"
+              className="max-w-2xl mx-auto relative group mt-8 md:mt-12"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
               <div className="relative">
                 <Input
                   placeholder="Search for articles, guides, or questions..."
-                  className="h-16 pl-6 pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-lg font-medium focus:bg-background transition-all"
+                  className="h-12 md:h-16 pl-5 pr-5 md:pl-6 md:pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-base md:text-lg font-medium focus:bg-background transition-all"
                 />
               </div>
             </motion.div>
@@ -128,7 +128,7 @@ export default function SupportPage() {
         </section>
 
         {/* Category Grid */}
-        <section className="py-20 bg-secondary/5">
+        <section className="py-12 md:py-20">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((cat, i) => (
@@ -138,12 +138,12 @@ export default function SupportPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group p-8 rounded-[32px] bg-background border border-border/50 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer"
+                  className="group p-5 md:p-8 rounded-[32px] bg-background border border-primary/10 shadow-2xl shadow-primary/5 transition-all"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-secondary/50 flex items-center justify-center text-primary mb-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                    <cat.icon className="w-6 h-6" />
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 md:mb-6">
+                    <cat.icon className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{cat.title}</h3>
+                  <h3 className="text-lg md:text-xl font-bold mb-1.5 md:mb-2">{cat.title}</h3>
                   <p className="text-muted-foreground text-sm font-medium leading-relaxed">{cat.description}</p>
                 </motion.div>
               ))}
@@ -152,16 +152,16 @@ export default function SupportPage() {
         </section>
 
         {/* FAQs Section */}
-        <section className="pt-32 relative overflow-hidden">
+        <section className="lg:pt-32 py-8 md:py-10 relative overflow-hidden">
           <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="container mx-auto px-4 max-w-4xl">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-black tracking-tight mb-4 italic">Frequently Asked Questions</h2>
+            <div className="text-center mb-10 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-3 md:mb-4 italic">Frequently Asked Questions</h2>
               <div className="h-1.5 w-24 bg-gradient-to-r from-primary to-blue-600 mx-auto rounded-full" />
             </div>
 
-            <div className="space-y-16">
+            <div className="space-y-10 md:space-y-16">
               {faqs.map((group, groupIdx) => (
                 <div key={groupIdx} className="space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
@@ -169,17 +169,17 @@ export default function SupportPage() {
                     {group.category}
                   </h3>
 
-                  <Accordion type="single" collapsible className="w-full space-y-4">
+                  <Accordion type="single" collapsible className="w-full space-y-3 md:space-y-4">
                     {group.questions.map((faq, faqIdx) => (
                       <AccordionItem
                         key={faqIdx}
                         value={`${groupIdx}-${faqIdx}`}
-                        className="border border-border/50 rounded-2xl bg-background px-6 overflow-hidden transition-all data-[state=open]:border-primary/20 data-[state=open]:shadow-lg"
+                        className="border border-border/50 rounded-2xl bg-background px-4 md:px-6 overflow-hidden transition-all data-[state=open]:border-primary/20 data-[state=open]:shadow-lg"
                       >
-                        <AccordionTrigger className="text-lg font-bold py-6 hover:no-underline hover:text-primary transition-colors">
+                        <AccordionTrigger className="text-base md:text-lg font-bold py-4 md:py-6 hover:no-underline hover:text-primary transition-colors">
                           {faq.q}
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground font-medium text-base pb-6 leading-relaxed">
+                        <AccordionContent className="text-muted-foreground font-medium text-sm md:text-base pb-4 md:pb-6 leading-relaxed">
                           {faq.a}
                         </AccordionContent>
                       </AccordionItem>
@@ -192,46 +192,45 @@ export default function SupportPage() {
         </section>
 
         {/* Still Need Help? */}
-        <section className="py-32 container mx-auto px-4 max-w-6xl">
-          <div className="relative rounded-[48px] bg-foreground text-background p-12 md:p-20 overflow-hidden group">
+        <section className="lg:py-32 py-8 container mx-auto px-4 max-w-6xl">
+          <div className="relative lg:rounded-[48px] rounded-xl bg-foreground text-background p-5 md:p-8 lg:p-20 overflow-hidden group">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] opacity-50 group-hover:opacity-100 transition-opacity" />
 
-            <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
+            <div className="relative z-10 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
               <div>
-                <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6 leading-[1.1]">
-                  Still have <br />
-                  <span className="text-white italic">questions?</span>
+                <h2 className="text-3xl md:text-6xl font-black tracking-tighter text-white mb-4 md:mb-6 leading-[1.1]">
+                      Still have questions?
                 </h2>
-                <p className="text-background/70 text-lg md:text-xl font-medium mb-10 max-w-md">
+                <p className="text-background/70 text-base md:text-xl font-medium mb-6 md:mb-10 max-w-md">
                   Can't find the answer you're looking for? Please chat to our friendly team.
                 </p>
 
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3 md:gap-4">
                   <Link href="/contact">
-                    <button className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground font-black text-lg hover:scale-105 transition-transform flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5" />
+                    <button className="h-12 md:h-16 px-6 md:px-10 rounded-2xl bg-primary text-primary-foreground font-black text-base md:text-lg hover:scale-105 transition-transform flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 md:w-5 md:h-5" />
                       Contact Support
                     </button>
                   </Link>
                   <Link href="/services">
-                    <button className="h-16 px-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-lg hover:bg-white/20 transition-all flex items-center gap-2 group/btn">
+                    <button className="h-12 md:h-16 px-6 md:px-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-base md:text-lg hover:bg-white/20 transition-all flex items-center gap-2 group/btn">
                       Browse Services
-                      <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover/btn:translate-x-1 transition-transform" />
                     </button>
                   </Link>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {[
                   { icon: LifeBuoy, label: "24/7 Support" },
                   { icon: MessageSquare, label: "Live Chat" },
                   { icon: HelpCircle, label: "Help Guides" },
                   { icon: FileText, label: "Tutorials" },
                 ].map((item, i) => (
-                  <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center space-y-4 hover:bg-white/10 transition-colors">
-                    <item.icon className="w-8 h-8 mx-auto text-white" />
-                    <div className="text-sm font-black uppercase tracking-widest">{item.label}</div>
+                  <div key={i} className="p-5 md:p-8 rounded-3xl bg-white/5 border border-white/10 text-center space-y-3 md:space-y-4 hover:bg-white/10 transition-colors">
+                    <item.icon className="w-6 h-6 md:w-8 md:h-8 mx-auto text-white" />
+                    <div className="text-xs md:text-sm font-black uppercase tracking-widest">{item.label}</div>
                   </div>
                 ))}
               </div>

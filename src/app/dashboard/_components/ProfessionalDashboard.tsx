@@ -698,7 +698,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             ) : (
                                                 <div className="space-y-1">
                                                     <h3 className="text-2xl font-black text-slate-900">{user.user_metadata?.name || "Dr. Professional"}</h3>
-                                                    <p className="text-indigo-600 font-bold tracking-wide uppercase text-sm">{profile?.specialization || "General Medicine"}</p>
+                                                    <p className="text-indigo-600 font-bold tracking-wide uppercase text-sm">{profile?.specialization || "Not Specified"}</p>
                                                     {profile?.isVerified && (
                                                         <Badge className="bg-green-50 text-green-700 border-green-100 mt-2 font-bold px-3">Verified Medical Professional</Badge>
                                                     )}
@@ -1238,7 +1238,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         </Card>
 
                         <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
-                            <CardHeader className="bg-emerald-50/50">
+                            <CardHeader className="pt-4 bg-emerald-50/50">
                                 <CardTitle className="text-slate-900 font-black">Upcoming Appointments</CardTitle>
                                 <CardDescription>Confirmed consultations for the next 7 days</CardDescription>
                             </CardHeader>

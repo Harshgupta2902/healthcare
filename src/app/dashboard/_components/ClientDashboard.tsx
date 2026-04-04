@@ -699,7 +699,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                         </Card>
 
                         <Card className="lg:col-span-2 border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
-                            <CardHeader className="border-b border-slate-50/50">
+                            <CardHeader className="pt-4 border-b border-slate-50/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="text-xl font-black">Extended Medical Data</CardTitle>
@@ -896,7 +896,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 {/* History Tab */}
                 <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
-                        <CardHeader className="bg-red-50/30">
+                        <CardHeader className="pt-4 bg-red-50/30">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black flex items-center gap-2 text-red-900">
@@ -1034,7 +1034,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 {/* Medications Tab - Premium Grid */}
                 <TabsContent value="medications" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
-                        <CardHeader className="bg-blue-50/30">
+                        <CardHeader className="pt-4 bg-blue-50/30">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-blue-900">
                                     <Pill className="h-6 w-6" /> Current Medications
@@ -1161,7 +1161,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 {/* Documents - Modern File Explorer style */}
                 <TabsContent value="documents" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
-                        <CardHeader>
+                        <CardHeader className="pt-4">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black flex items-center gap-2">
@@ -1309,7 +1309,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 {/* Insurance Tab */}
                 <TabsContent value="insurance" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
-                        <CardHeader className="bg-emerald-50/30">
+                        <CardHeader className="pt-4 bg-emerald-50/30">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
                                     <Shield className="h-6 w-6" /> Insurance Plans
