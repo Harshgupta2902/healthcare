@@ -45,9 +45,13 @@ import {
     Mail,
     Info,
     Upload,
-    Camera
+    Camera,
+    Check,
+    ChevronsUpDown
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 interface ProfessionalProfile {
     id: string;
@@ -129,6 +133,30 @@ const DAYS_OF_WEEK = [
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 ];
 
+const SPECIALIZATIONS: string[] = [
+    "General Physician",
+    "Cardiologist",
+    "Dermatologist",
+    "Neurologist",
+    "Pediatrician",
+    "Psychiatrist",
+    "Orthopedic",
+    "Gynecologist",
+    "ENT Specialist",
+    "Ophthalmologist",
+    "Psychologist",
+    "Clinical psychologist",
+    "Clinical psychologist (Associate)",
+    "Rehabilitation psychologist",
+    "Rehabilitation counsellor",
+    "Radiologist",
+    "Ayurveda",
+    "Homeopathy",
+    "Naturopathy",
+    "Oncologist",
+    "General surgeon",
+];
+
 export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const user = initialData?.user;
     const router = useRouter();
@@ -154,6 +182,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>(initialData?.profile || {});
     const [mounted, setMounted] = useState(false);
+    const [isSpecializationOpen, setIsSpecializationOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -594,7 +623,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
-                        <CardHeader className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+                        <CardHeader className="pt-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl font-black text-slate-900">Professional Information</CardTitle>
@@ -691,30 +720,48 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-sm font-bold text-slate-600">Specialization *</Label>
-                                            <Select
-                                                value={profileForm.specialization || ""}
-                                                onValueChange={(value) => setProfileForm({ ...profileForm, specialization: value })}
-                                                disabled={!isEditingProfile}
-                                            >
-                                                <SelectTrigger className="rounded-xl">
-                                                    <SelectValue placeholder="Select specialization" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl">
-                                                    <SelectItem value="General Physician">General Physician</SelectItem>
-                                                    <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-                                                    <SelectItem value="Dermatologist">Dermatologist</SelectItem>
-                                                    <SelectItem value="Neurologist">Neurologist</SelectItem>
-                                                    <SelectItem value="Pediatrician">Pediatrician</SelectItem>
-                                                    <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
-                                                    <SelectItem value="Orthopedic">Orthopedic</SelectItem>
-                                                    <SelectItem value="Gynecologist">Gynecologist</SelectItem>
-                                                    <SelectItem value="ENT Specialist">ENT Specialist</SelectItem>
-                                                    <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Popover open={isSpecializationOpen} onOpenChange={setIsSpecializationOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        aria-expanded={isSpecializationOpen}
+                                                        className="rounded-xl w-full justify-between"
+                                                        disabled={!isEditingProfile}
+                                                    >
+                                                        {profileForm.specialization || "Select specialization"}
+                                                        <ChevronsUpDown className="opacity-50 ml-2 h-4 w-4 shrink-0" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="p-0 rounded-xl w-[--radix-popover-trigger-width]">
+                                                    <Command>
+                                                        <CommandInput placeholder="Search specialization..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>No specialization found.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {SPECIALIZATIONS.map((spec) => (
+                                                                    <CommandItem
+                                                                        key={spec}
+                                                                        value={spec}
+                                                                        onSelect={() => {
+                                                                            setProfileForm({ ...profileForm, specialization: spec });
+                                                                            setIsSpecializationOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={`mr-2 h-4 w-4 ${profileForm.specialization === spec ? "opacity-100" : "opacity-0"}`}
+                                                                        />
+                                                                        {spec}
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Medical License Number *</Label>
+                                            <Label className="text-sm font-bold text-slate-600">Medical License Number</Label>
                                             <Input
                                                 placeholder="Enter license number"
                                                 value={profileForm.licenseNumber || ""}
@@ -778,11 +825,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 type="number"
                                                 min="0"
                                                 onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
-                                                placeholder="Enter fee in paise (e.g. 50000 for ₹500)"
-                                                value={profileForm.consultationFee || ""}
+                                                placeholder="Enter fee in rupees (e.g. 500)"
+                                                value={profileForm.consultationFee !== null && profileForm.consultationFee !== undefined ? Math.floor((profileForm.consultationFee || 0) / 100) : ""}
                                                 onChange={(e) => {
                                                     const val = e.target.value === "" ? null : parseInt(e.target.value);
-                                                    setProfileForm({ ...profileForm, consultationFee: val });
+                                                    setProfileForm({ ...profileForm, consultationFee: val === null ? null : val * 100 });
                                                 }}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl border-slate-100 h-12"
@@ -809,7 +856,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="credentials" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
-                        <CardHeader>
+                        <CardHeader className="pt-4">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle>Qualifications & Licenses</CardTitle>
@@ -986,7 +1033,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="consultations" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
-                        <CardHeader>
+                        <CardHeader className="pt-4">
                             <CardTitle>Consultation Requests</CardTitle>
                             <CardDescription>Manage incoming video and text consultation requests from new clients</CardDescription>
                         </CardHeader>
@@ -1082,7 +1129,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="calendar" className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
                     <div className="grid gap-6 lg:grid-cols-2">
                         <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
-                            <CardHeader className="bg-indigo-50/50">
+                            <CardHeader className="pt-4 bg-indigo-50/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="text-slate-900 font-black">Weekly Availability</CardTitle>
@@ -1248,7 +1295,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="payments" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
-                        <CardHeader>
+                        <CardHeader className="pt-4">
                             <CardTitle>Financial Overview</CardTitle>
                             <CardDescription>Track your transaction history and upcoming payouts</CardDescription>
                         </CardHeader>
@@ -1300,7 +1347,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="clients" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
-                        <CardHeader>
+                        <CardHeader className="pt-4">
                             <CardTitle>Client Records</CardTitle>
                             <CardDescription>Comprehensive database of clients you have consulted with</CardDescription>
                         </CardHeader>
@@ -1379,7 +1426,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </div>
 
                 <Card className="border-none shadow-2xl bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
-                    <CardHeader className="bg-white/80 border-b border-slate-50">
+                    <CardHeader className="pt-4 bg-white/80 border-b border-slate-50">
                         <CardTitle>Schedule Visualization</CardTitle>
                         <CardDescription>Green indicates recurring availability, Blue represents specific day appointments.</CardDescription>
                     </CardHeader>

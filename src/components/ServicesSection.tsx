@@ -66,8 +66,7 @@ export default function ServicesSection() {
           </div>
 
           <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
-            Everything you need for <br />
-            <span className="text-primary">Superior Health</span>
+            Everything you need for Superior Health
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl font-medium animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
             We've built a comprehensive ecosystem that puts the most advanced medical tools and expertise directly in your hands.
@@ -82,7 +81,7 @@ export default function ServicesSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: index * 0.1 }}
-              className="group relative p-10 rounded-[40px] bg-card border border-border hover:border-primary/20 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl"
+              className="group relative p-10 rounded-xl lg:rounded-[40px] bg-card border border-border hover:border-primary/20 transition-all duration-500 overflow-hidden shadow-sm hover:shadow-2xl"
             >
               {/* Background Glow */}
               <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-700`} />
@@ -121,7 +120,7 @@ export default function ServicesSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="mt-20 p-8 md:p-12 rounded-[40px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
+          className="my-20 p-8 md:p-12 rounded-[40px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
         >
           <div className="space-y-2 text-center md:text-left">
             <h4 className="text-2xl font-bold text-white">Ready to take control?</h4>
