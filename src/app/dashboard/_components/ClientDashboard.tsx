@@ -391,6 +391,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             await fetchProfile();
             setIsEditingProfile(false);
             toast.success("Profile updated successfully");
+            await supabase.auth.refreshSession();
+            router.refresh();
         } catch (error: any) {
             toast.error(error.message || "Failed to update profile");
         } finally {
@@ -591,6 +593,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             if (result.success) {
                 toast.success("Profile photo updated");
                 setProfileForm(prev => ({ ...prev, profilePhotoUrl: result.url }));
+                await supabase.auth.refreshSession();
                 router.refresh();
             } else {
                 toast.error(result.error || "Failed to upload image");

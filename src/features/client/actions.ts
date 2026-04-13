@@ -5,6 +5,7 @@ import { z } from 'zod'
 import sharp from 'sharp'
 import crypto from 'crypto'
 import { zodFirstError } from '@/lib/server-action-result'
+import { syncUserSession } from '@/features/profile/actions'
 
 const medicalProfileSchema = z.object({
     phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
@@ -106,8 +107,35 @@ export async function updateMedicalProfile(data: any) {
 
     if (error) return { success: false as const, error: error.message }
 
+    const userPatch: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+    }
+    let didUpdateUsers = false
     if (parsed.data.phone) {
-        await supabase.from('users').update({ phone: parsed.data.phone }).eq('id', user.id)
+        userPatch.phone = parsed.data.phone
+        didUpdateUsers = true
+    }
+    if (parsed.data.profilePhotoUrl) {
+        userPatch.image = parsed.data.profilePhotoUrl
+        didUpdateUsers = true
+    }
+    if (didUpdateUsers) {
+        const { error: userErr } = await supabase.from('users').update(userPatch).eq('id', user.id)
+        if (userErr) return { success: false as const, error: userErr.message }
+
+        const { data: row } = await supabase
+            .from('users')
+            .select('name, image')
+            .eq('id', user.id)
+            .single()
+
+        await supabase.auth.updateUser({
+            data: {
+                name: row?.name ?? undefined,
+                image: row?.image ?? undefined,
+            },
+        })
+        await syncUserSession()
     }
 
     return { success: true as const }
