@@ -32,6 +32,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 
+/** Hide last 70% — show ~first 30% from the start (email). */
+function maskEmailLeading(email: string): string {
+    const s = email.trim();
+    if (!s) return "";
+    const n = s.length;
+    if (n <= 2) return "••";
+    const visible = Math.max(1, Math.round(n * 0.3));
+    const hidden = n - visible;
+    return s.slice(0, visible) + "•".repeat(Math.min(hidden, 20));
+}
+
+/** Hide first 70% — show ~last 30% from the end (phone). */
+function maskPhoneTrailing(phone: string): string {
+    const s = phone.trim();
+    if (!s) return "";
+    const n = s.length;
+    if (n <= 2) return "••";
+    const visible = Math.max(1, Math.round(n * 0.3));
+    const hidden = n - visible;
+    return "•".repeat(Math.min(hidden, 20)) + s.slice(-visible);
+}
+
 export default function ConsultantDetailClient({ prof }: { prof: any }) {
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -179,7 +201,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                                                                 <Button
                                                                     type="button"
                                                                     variant="link"
-                                                                    className="p-0 h-auto text-indigo-600 font-black text-sm"
+                                                                    className="p-0 h-auto text-indigo-600 font-black text-sm cursor-pointer"
                                                                     onClick={() => window.open(qual.document_url, "_blank")}
                                                                 >
                                                                     <FileText className="h-3.5 w-3.5 mr-1" />
@@ -229,7 +251,9 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                                                     <AtSign className="h-6 w-6" />
                                                 </div>
                                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
-                                                <p className="text-xl font-black text-slate-900">{prof.email}</p>
+                                                <p className="text-xl font-black text-slate-900 tracking-tight break-all">
+                                                    {maskEmailLeading(prof.email)}
+                                                </p>
                                             </div>
                                         )}
                                         {prof.phone && (
@@ -238,7 +262,9 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                                                     <Phone className="h-6 w-6" />
                                                 </div>
                                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
-                                                <p className="text-xl font-black text-slate-900">{prof.phone}</p>
+                                                <p className="text-xl font-black text-slate-900 tracking-tight break-all">
+                                                    {maskPhoneTrailing(prof.phone)}
+                                                </p>
                                             </div>
                                         )}
                                         <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm group hover:border-amber-200 transition-all">

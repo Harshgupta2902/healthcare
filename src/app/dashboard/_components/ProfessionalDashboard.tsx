@@ -1067,7 +1067,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             <Button
                                                                 size="sm"
                                                                 variant="link"
-                                                                className="p-0 h-auto text-indigo-500 font-bold"
+                                                                className="p-0 h-auto text-indigo-500 font-bold cursor-pointer"
                                                                 onClick={() => window.open(qual.documentUrl!, "_blank")}
                                                             >
                                                                 <FileText className="h-3 w-3 mr-1" />
