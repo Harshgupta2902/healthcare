@@ -7,6 +7,7 @@ import path from 'path'
 import crypto from 'crypto'
 import sharp from 'sharp'
 import { zodFirstError } from '@/lib/server-action-result'
+import { syncUserSession } from '@/features/profile/actions'
 
 const profileSchema = z.object({
     specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
@@ -96,8 +97,18 @@ export async function updateProfessionalProfile(data: any) {
 
     await supabase.from('users').update({
         phone: validatedData.phone,
-        image: validatedData.profilePhotoUrl
+        image: validatedData.profilePhotoUrl,
+        updated_at: new Date().toISOString(),
     }).eq('id', user.id)
+
+    const { data: row } = await supabase.from('users').select('name, image').eq('id', user.id).single()
+    await supabase.auth.updateUser({
+        data: {
+            name: row?.name ?? undefined,
+            image: row?.image ?? undefined,
+        },
+    })
+    await syncUserSession()
 
     return { success: true as const }
 }
