@@ -206,7 +206,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [qualificationForm, setQualificationForm] = useState({
         degree: "",
         institution: "",
-        year: new Date().getFullYear() as number | null,
+        year: null as number | null,
     });
     const [selectedQualFile, setSelectedQualFile] = useState<File | null>(null);
     const [isDraggingQual, setIsDraggingQual] = useState(false);
@@ -457,7 +457,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             }
             toast.success("Credential added to profile");
             setShowAddQualification(false);
-            setQualificationForm({ degree: "", institution: "", year: new Date().getFullYear() });
+            setQualificationForm({ degree: "", institution: "", year: null });
             setSelectedQualFile(null);
             fetchQualifications();
         } catch (error: any) {
@@ -909,7 +909,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             Add Credential
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="rounded-2xl">
+                                    <DialogContent className="rounded-2xl max-w-lg w-[calc(100vw-2rem)] sm:w-full overflow-hidden">
                                         <DialogHeader>
                                             <DialogTitle className="text-xl font-black">Add New Qualification</DialogTitle>
                                             <DialogDescription>Enter your educational or professional certification details</DialogDescription>
@@ -935,26 +935,37 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     className="rounded-xl"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-4 w-full min-w-0">
                                                 <div className="space-y-2">
                                                     <Label className="font-bold text-slate-600">Year Awarded</Label>
                                                     <Input
-                                                        type="number"
-                                                        min="1950"
-                                                        max={new Date().getFullYear()}
-                                                        onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        autoComplete="off"
+                                                        maxLength={4}
                                                         placeholder="YYYY"
-                                                        value={qualificationForm.year || ""}
+                                                        value={qualificationForm.year === null ? "" : String(qualificationForm.year)}
                                                         onChange={(e) => {
-                                                            const val = e.target.value === "" ? null : parseInt(e.target.value);
-                                                            setQualificationForm({ ...qualificationForm, year: val });
+                                                            const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                                            if (digits === "") {
+                                                                setQualificationForm({ ...qualificationForm, year: null });
+                                                                return;
+                                                            }
+                                                            let n = parseInt(digits, 10);
+                                                            const maxY = new Date().getFullYear();
+                                                            const minY = 1950;
+                                                            if (digits.length === 4) {
+                                                                if (n > maxY) n = maxY;
+                                                                if (n < minY) n = minY;
+                                                            }
+                                                            setQualificationForm({ ...qualificationForm, year: n });
                                                         }}
-                                                        className="rounded-xl h-12"
+                                                        className="rounded-xl h-12 w-full"
                                                     />
                                                 </div>
-                                                <div className="space-y-4">
+                                                <div className="w-full min-w-0">
                                                     <div
-                                                        className={`p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
+                                                        className={`p-8 sm:p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
                                                         ${isDraggingQual
                                                                 ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
                                                                 : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
@@ -976,14 +987,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             accept=".pdf,.jpg,.jpeg,.png"
                                                             onChange={(e) => setSelectedQualFile(e.target.files?.[0] || null)}
                                                         />
-                                                        <div className="space-y-3">
-                                                            <div className={`h-20 w-20 rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500
+                                                        <div className="space-y-3 min-w-0">
+                                                            <div className={`h-20 w-20 rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500 shrink-0
                                                             ${isDraggingQual ? 'bg-indigo-600 text-white rotate-12' : 'bg-white text-indigo-500 group-hover:scale-110'}
                                                         `}>
                                                                 <Upload className="h-10 w-10" />
                                                             </div>
-                                                            <div>
-                                                                <p className="font-black text-slate-800 text-lg">
+                                                            <div className="min-w-0 px-1">
+                                                                <p className="font-black text-slate-800 text-base sm:text-lg break-all">
                                                                     {selectedQualFile ? selectedQualFile.name : "Drop Verification File"}
                                                                 </p>
                                                                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">
