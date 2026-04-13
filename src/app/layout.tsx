@@ -17,10 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased min-h-screen flex flex-col" suppressHydrationWarning>
+      <body className="antialiased min-h-screen flex flex-col min-w-0" suppressHydrationWarning>
         <ErrorReporter />
         <Header />
-        <main className="flex-grow">
+        <main className="flex-grow min-w-0 overflow-x-clip">
           {children}
         </main>
         <Footer />

@@ -47,9 +47,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#eff4fb] relative">
+    <div className="min-h-screen bg-[#eff4fb] relative overflow-x-clip">
       {/* Premium Theme Gradient Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#eaf1ff] via-[#f3f6fb] to-[#d8e6ff] opacity-80" />
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-teal-100/30 rounded-full blur-[140px]" />
