@@ -118,9 +118,9 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
     },
     {
       key: 'consultation_fee',
-      label: 'Fee',
+      label: 'Fee (₹)',
       render: (professional: Professional) =>
-        professional.consultation_fee ? `$${(professional.consultation_fee / 100).toFixed(2)}` : 'N/A',
+        professional.consultation_fee ? `${(professional.consultation_fee / 100).toFixed(2)}` : 'N/A',
     },
     {
       key: 'created_at',

@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -62,13 +62,35 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
-      role: (user?.role as 'client' | 'professional' | 'admin') || 'client',
-      phone: user?.phone || '',
-      image: user?.image || '',
+      name: '',
+      email: '',
+      role: 'client',
+      phone: '',
+      image: '',
     },
   })
+
+  // defaultValues only run once on mount; reset when opening edit/add so fields populate
+  useEffect(() => {
+    if (!open) return
+    if (user) {
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        role: (user.role as 'client' | 'professional' | 'admin') || 'client',
+        phone: user.phone ?? '',
+        image: user.image ?? '',
+      })
+    } else {
+      form.reset({
+        name: '',
+        email: '',
+        role: 'client',
+        phone: '',
+        image: '',
+      })
+    }
+  }, [open, user, form])
 
   const onSubmit = (data: UserFormData) => {
     startTransition(async () => {
@@ -139,7 +161,7 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="Select role" />

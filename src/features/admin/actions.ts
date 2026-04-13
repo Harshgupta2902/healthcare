@@ -124,6 +124,7 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
   let query = supabase
     .from('users')
     .select('*', { count: 'exact' })
+    .neq('role', 'admin')
     .order('created_at', { ascending: false })
 
   if (search) {
