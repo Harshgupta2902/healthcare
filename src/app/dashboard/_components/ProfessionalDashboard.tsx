@@ -53,6 +53,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
+import { cn } from "@/lib/utils";
 
 interface ProfessionalProfile {
     id: string;
@@ -61,6 +63,8 @@ interface ProfessionalProfile {
     licenseNumber: string;
     city: string | null;
     bio: string | null;
+    /** Salutation stored in professional_profiles.name_title */
+    nameTitle: string | null;
     yearsOfExperience: number | null;
     consultationFee: number | null;
     isVerified: boolean;
@@ -256,6 +260,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 .eq('user_id', user.id)
                 .single();
 
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+
             if (coreProfile || profProfile) {
                 const merged: ProfessionalProfile = {
                     id: profProfile?.id || "",
@@ -263,6 +269,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     specialization: profProfile?.specialization || "",
                     licenseNumber: profProfile?.license_number || "",
                     bio: profProfile?.bio || null,
+                    nameTitle:
+                        profProfile?.name_title ??
+                        (authUser?.user_metadata?.name_title as string | undefined) ??
+                        null,
                     yearsOfExperience: profProfile?.years_of_experience || null,
                     consultationFee: profProfile?.consultation_fee || null,
                     city: profProfile?.city || null,
@@ -751,7 +761,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-1">
-                                                    <h3 className="text-2xl font-black text-slate-900">{user.user_metadata?.name || "Dr. Professional"}</h3>
+                                                    <h3 className="text-2xl font-black text-slate-900">
+                                                        {formatProfessionalDisplayName(
+                                                            user.user_metadata?.name || "",
+                                                            profile?.nameTitle
+                                                        ) || "Professional"}
+                                                    </h3>
                                                     <p className="text-indigo-600 font-bold tracking-wide uppercase text-sm">{profile?.specialization || "Not Specified"}</p>
                                                     {profile?.isVerified && (
                                                         <Badge className="bg-green-50 text-green-700 border-green-100 mt-2 font-bold px-3">Verified Medical Professional</Badge>
@@ -764,11 +779,58 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Separator className="bg-slate-100" />
 
                                     <div className="grid gap-6 md:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Full Name</Label>
-                                            <Input value={user.user_metadata?.name || ""} disabled className="bg-slate-50/50 rounded-xl border-none font-bold" />
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label className="text-sm font-bold text-slate-600">Title & full name</Label>
+                                            {isEditingProfile ? (
+                                                <div
+                                                    className={cn("flex ")}
+                                                >
+                                                    <Select
+                                                        value={profileForm.nameTitle ?? "_none_"}
+                                                        onValueChange={(v) =>
+                                                            setProfileForm({
+                                                                ...profileForm,
+                                                                nameTitle: v === "_none_" ? null : v,
+                                                            })
+                                                        }
+                                                    >
+                                                        <SelectTrigger
+                                                            className={cn(
+                                                                "shrink-0 rounded-xl border-0",
+                                                                "w-[6.5rem] sm:w-32",
+                                                                "focus:ring-0 focus:ring-offset-0"
+                                                            )}
+                                                            aria-label="Title"
+                                                        >
+                                                            <SelectValue placeholder="Title" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="_none_">None</SelectItem>
+                                                            {PROFESSIONAL_NAME_TITLES.map((t) => (
+                                                                <SelectItem key={t} value={t}>
+                                                                    {t}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Input
+                                                        value={user.user_metadata?.name || ""}
+                                                        disabled
+                                                        className="min-w-0 flex-1 rounded-none border-0 bg-slate-50/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex min-w-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30">
+                                                    <div className="flex h-12 w-[6.5rem] shrink-0 items-center border-r border-slate-200/80 bg-slate-50/50 px-3 text-sm font-bold text-slate-900 sm:w-32">
+                                                        {profileForm.nameTitle ?? "—"}
+                                                    </div>
+                                                    <div className="flex min-h-12 flex-1 items-center px-4 py-2 text-sm font-bold text-slate-900">
+                                                        {user.user_metadata?.name || ""}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 md:col-span-2">
                                             <Label className="text-sm font-bold text-slate-600">Email Address</Label>
                                             <Input value={user.email || ""} disabled className="bg-slate-50/50 rounded-xl border-none font-bold" />
                                         </div>

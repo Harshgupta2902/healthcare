@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS public.professional_profiles (
   specialization TEXT NOT NULL,
   license_number TEXT NOT NULL,
   bio TEXT,
+  name_title TEXT,
   years_of_experience INT,
   consultation_fee INT,
   is_verified BOOLEAN DEFAULT FALSE,

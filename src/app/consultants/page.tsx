@@ -20,10 +20,15 @@ export default async function ConsultantsPage({ searchParams }: PageProps) {
     // Filter by name server-side if query exists
     let filtered = professionals;
     if (q) {
-        filtered = professionals.filter(p =>
-            p.name.toLowerCase().includes(q.toLowerCase()) ||
-            p.specialization.toLowerCase().includes(q.toLowerCase())
-        );
+        const qLower = q.toLowerCase();
+        filtered = professionals.filter((p) => {
+            const display = (p.displayName ?? p.name ?? "").toLowerCase();
+            return (
+                p.name.toLowerCase().includes(qLower) ||
+                display.includes(qLower) ||
+                p.specialization.toLowerCase().includes(qLower)
+            );
+        });
     }
 
     return (

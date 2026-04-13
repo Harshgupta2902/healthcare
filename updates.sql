@@ -18,3 +18,8 @@ COMMENT ON COLUMN public.professional_qualifications.document_approved IS 'NULL 
 
 -- Optional: mark existing rows with a document as already approved
 -- UPDATE public.professional_qualifications SET document_approved = true WHERE document_url IS NOT NULL AND document_approved IS NULL;
+
+-- 2026-04-13: Professional salutation (Dr., Mr., Mrs., etc.) for public display
+ALTER TABLE public.professional_profiles
+  ADD COLUMN IF NOT EXISTS name_title TEXT;
+COMMENT ON COLUMN public.professional_profiles.name_title IS 'Salutation shown before legal name (e.g. Dr., Mr., Mrs.)';

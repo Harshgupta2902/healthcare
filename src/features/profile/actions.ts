@@ -118,16 +118,25 @@ export async function signIn(email: string, password: string) {
     return { success: true, user: data.user, role: syncedData?.role }
 }
 
-export async function signUp(email: string, password: string, name: string, role: string) {
-    console.log("ServerAction: signUp called with", { email, name, role });
+export async function signUp(
+    email: string,
+    password: string,
+    name: string,
+    role: string,
+    nameTitle?: string | null
+) {
+    console.log("ServerAction: signUp called with", { email, name, role, nameTitle });
     const supabase = await createClient()
+    const titleForMeta =
+        role === "professional" && nameTitle?.trim() ? nameTitle.trim() : undefined
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
             data: {
                 name,
-                role
+                role,
+                ...(titleForMeta ? { name_title: titleForMeta } : {}),
             }
         }
     })

@@ -13,9 +13,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (!prof) return { title: "Consultant Not Found" };
 
+    const display = prof.displayName ?? prof.name;
+
     return {
-        title: `Dr. ${prof.name} | ${prof.specialization} | HealthHere`,
-        description: `Book an appointment with Dr. ${prof.name}, a leading ${prof.specialization} in ${prof.city || 'your area'}. View qualifications, availability, and more.`,
+        title: `${display} | ${prof.specialization} | HealthHere`,
+        description: `Book an appointment with ${display}, a leading ${prof.specialization} in ${prof.city || 'your area'}. View qualifications, availability, and more.`,
     };
 }
 

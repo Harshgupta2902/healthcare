@@ -8,11 +8,13 @@ import crypto from 'crypto'
 import sharp from 'sharp'
 import { zodFirstError } from '@/lib/server-action-result'
 import { syncUserSession } from '@/features/profile/actions'
+import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES_ZOD } from '@/lib/professional-name-title'
 
 const profileSchema = z.object({
     specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
     licenseNumber: z.string().min(1, "License number is required").regex(/^[a-zA-Z0-9]*$/, "License number must be alphanumeric"),
     bio: z.string().optional().nullable(),
+    nameTitle: z.enum(PROFESSIONAL_NAME_TITLES_ZOD).optional().nullable(),
     yearsOfExperience: z.number().optional().nullable(),
     consultationFee: z.number().optional().nullable(),
     phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
@@ -87,6 +89,7 @@ export async function updateProfessionalProfile(data: any) {
             specialization: validatedData.specialization,
             license_number: validatedData.licenseNumber,
             bio: validatedData.bio,
+            name_title: validatedData.nameTitle ?? null,
             years_of_experience: validatedData.yearsOfExperience,
             consultation_fee: validatedData.consultationFee,
             city: validatedData.city,
@@ -106,6 +109,7 @@ export async function updateProfessionalProfile(data: any) {
         data: {
             name: row?.name ?? undefined,
             image: row?.image ?? undefined,
+            name_title: validatedData.nameTitle ?? undefined,
         },
     })
     await syncUserSession()
@@ -414,6 +418,10 @@ export async function getProfessionalDashboardData() {
             specialization: profProfile?.specialization || "",
             licenseNumber: profProfile?.license_number || "",
             bio: profProfile?.bio || null,
+            nameTitle:
+                profProfile?.name_title ??
+                (user.user_metadata?.name_title as string | undefined) ??
+                null,
             yearsOfExperience: profProfile?.years_of_experience || null,
             consultationFee: profProfile?.consultation_fee || null,
             city: profProfile?.city || null,
@@ -480,6 +488,7 @@ export async function searchProfessionals(specialty?: string, city?: string) {
         .from('professional_profiles')
         .select(`
             user_id,
+            name_title,
             specialization,
             bio,
             years_of_experience,
@@ -511,6 +520,8 @@ export async function searchProfessionals(specialty?: string, city?: string) {
         data: (data || []).map((p: any) => ({
             id: p.user_id,
             name: p.users?.name,
+            nameTitle: p.name_title ?? null,
+            displayName: formatProfessionalDisplayName(p.users?.name, p.name_title),
             specialization: p.specialization,
             bio: p.bio,
             yearsOfExperience: p.years_of_experience,
@@ -542,9 +553,13 @@ export async function getProfessionalById(id: string) {
         return null;
     }
 
+    const nameTitle = profProfile.name_title ?? null
+
     return {
         id: profProfile.user_id,
         name: userCore.name,
+        nameTitle,
+        displayName: formatProfessionalDisplayName(userCore.name, nameTitle),
         email: userCore.email,
         phone: userCore.phone,
         profilePhotoUrl: userCore.image,
