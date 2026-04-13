@@ -37,7 +37,20 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
   const [isUploading, setIsUploading] = useState(false)
 
   const handleLogout = async () => {
-    await signOut()
+    const supabase = createClient()
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      if (error) console.error(error)
+    } catch (e) {
+      console.error(e)
+    }
+    try {
+      await signOut()
+    } catch {
+      /* noop */
+    }
+    router.refresh()
+    router.replace('/')
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +65,8 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
       const result = await uploadProfileImage(formData)
       if (result.success) {
         toast.success('Profile image updated successfully')
+        const supabase = createClient()
+        await supabase.auth.refreshSession()
         router.refresh()
       } else {
         toast.error(result.error || 'Failed to upload image')
