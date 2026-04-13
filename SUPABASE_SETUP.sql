@@ -149,6 +149,8 @@ CREATE TABLE IF NOT EXISTS public.professional_qualifications (
   institution TEXT NOT NULL,
   year INT,
   document_url TEXT,
+  -- NULL = pending admin review; TRUE = verified (show document link); FALSE = not approved
+  document_approved BOOLEAN,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -22,7 +22,8 @@ import {
     Shield,
     Info,
     GraduationCap,
-    ArrowRight
+    ArrowRight,
+    FileText
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -172,7 +173,20 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                                                     <div className="space-y-1">
                                                         <h4 className="text-xl font-black text-slate-900">{qual.degree}</h4>
                                                         <p className="text-lg font-bold text-slate-400">{qual.institution}</p>
-                                                        {qual.year && <Badge className="mt-2 bg-slate-900 text-white border-none text-[10px] uppercase font-black px-3 py-1 rounded-full">{qual.year}</Badge>}
+                                                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                            {qual.year && <Badge className="bg-slate-900 text-white border-none text-[10px] uppercase font-black px-3 py-1 rounded-full">{qual.year}</Badge>}
+                                                            {qual.document_url && qual.document_approved === true && (
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="link"
+                                                                    className="p-0 h-auto text-indigo-600 font-black text-sm"
+                                                                    onClick={() => window.open(qual.document_url, "_blank")}
+                                                                >
+                                                                    <FileText className="h-3.5 w-3.5 mr-1" />
+                                                                    Verification document
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}

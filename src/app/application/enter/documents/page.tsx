@@ -1,18 +1,29 @@
-import { getDocuments } from '@/features/admin/actions'
-import { DocumentsTable } from './DocumentsTable'
+import { getDocuments, getQualificationCredentialsForAdmin } from '@/features/admin/actions'
+import { DocumentsManagementTabs } from './DocumentsManagementTabs'
 
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string }>
+  searchParams: Promise<{ page?: string; search?: string; qpage?: string; qsearch?: string }>
 }) {
   const params = await searchParams
-  const page = parseInt(params.page || '1')
+  const page = parseInt(params.page || '1', 10) || 1
   const search = params.search || ''
-  const result = await getDocuments(page, 10, search)
-  const data = result.success ? result.data : []
-  const count = result.success ? result.count : 0
-  const totalPages = Math.ceil((count || 0) / 10)
+  const qpage = parseInt(params.qpage || '1', 10) || 1
+  const qsearch = params.qsearch || ''
+
+  const [docsResult, qualsResult] = await Promise.all([
+    getDocuments(page, 10, search),
+    getQualificationCredentialsForAdmin(qpage, 10, qsearch),
+  ])
+
+  const medicalData = docsResult.success ? docsResult.data : []
+  const medicalCount = docsResult.success ? docsResult.count : 0
+  const medicalTotalPages = Math.ceil((medicalCount || 0) / 10)
+
+  const qualData = qualsResult.success ? qualsResult.data : []
+  const qualCount = qualsResult.success ? qualsResult.count : 0
+  const qualTotalPages = Math.ceil((qualCount || 0) / 10)
 
   return (
     <div className="space-y-6">
@@ -21,13 +32,26 @@ export default async function DocumentsPage({
           Documents Management
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage medical documents
+          Patient medical documents and professional qualification verification files
         </p>
       </div>
-      {!result.success && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
-      )}
-      <DocumentsTable initialData={data} initialPage={page} totalPages={totalPages} count={count || 0} />
+
+      <DocumentsManagementTabs
+        medical={{
+          data: medicalData,
+          page,
+          totalPages: medicalTotalPages,
+          count: medicalCount || 0,
+          error: docsResult.success ? null : docsResult.error,
+        }}
+        qualifications={{
+          data: qualData,
+          page: qpage,
+          totalPages: qualTotalPages,
+          count: qualCount || 0,
+          error: qualsResult.success ? null : qualsResult.error,
+        }}
+      />
     </div>
   )
 }

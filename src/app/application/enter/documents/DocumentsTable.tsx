@@ -11,7 +11,7 @@ import { deleteDocument } from '@/features/admin/actions'
 import { toast } from 'sonner'
 import { ExternalLink } from 'lucide-react'
 
-interface Document {
+export interface Document {
   id: string
   user_id: string
   document_name: string

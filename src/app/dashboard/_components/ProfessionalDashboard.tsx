@@ -7,6 +7,7 @@ import {
     updateProfessionalProfile,
     addQualification,
     deleteQualification,
+    getMyQualificationsSanitized,
     updateAvailability,
     deleteAvailability,
     updateAppointmentStatus,
@@ -75,7 +76,11 @@ interface Qualification {
     degree: string;
     institution: string;
     year: number | null;
+    /** Present when a verification file exists (URL itself is only set after approval). */
+    hasVerificationDocument: boolean;
     documentUrl: string | null;
+    /** null/undefined = in review, true = approved (link enabled), false = verification failed */
+    documentApproved?: boolean | null;
     createdAt: string;
 }
 
@@ -163,7 +168,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const supabase = createClient();
 
     const [profile, setProfile] = useState<ProfessionalProfile | null>(initialData?.profile || null);
-    const [qualifications, setQualifications] = useState<Qualification[]>(initialData?.qualifications || []);
+    const [qualifications, setQualifications] = useState<Qualification[]>(() => {
+        const raw = initialData?.qualifications || [];
+        return raw.map((q: any) => ({
+            ...q,
+            hasVerificationDocument:
+                q.hasVerificationDocument ?? !!(q.documentUrl || q.document_url),
+        }));
+    });
     const [availability, setAvailability] = useState<Availability[]>(initialData?.availability || []);
     const [appointments, setAppointments] = useState<Appointment[]>(initialData?.appointments || []);
     const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>(initialData?.consultationRequests || []);
@@ -272,22 +284,21 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const fetchQualifications = async () => {
         try {
-            const { data, error } = await supabase
-                .from('professional_qualifications')
-                .select('*')
-                .eq('professional_id', user.id)
-                .order('created_at', { ascending: false });
-
-            if (data) {
-                setQualifications(data.map(q => ({
-                    id: q.id,
-                    professionalId: q.professional_id,
-                    degree: q.degree,
-                    institution: q.institution,
-                    year: q.year,
-                    documentUrl: q.document_url,
-                    createdAt: q.created_at
-                })));
+            const result = await getMyQualificationsSanitized();
+            if (result.success) {
+                setQualifications(
+                    result.qualifications.map((q) => ({
+                        id: q.id,
+                        professionalId: q.professionalId,
+                        degree: q.degree,
+                        institution: q.institution,
+                        year: q.year,
+                        hasVerificationDocument: q.hasVerificationDocument,
+                        documentUrl: q.documentUrl,
+                        documentApproved: q.documentApproved,
+                        createdAt: q.createdAt,
+                    }))
+                );
             }
         } catch (error) {
             console.error("Qualifications fetch error:", error);
@@ -1052,7 +1063,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <Clock className="h-3 w-3" /> {qual.year}
                                                             </span>
                                                         )}
-                                                        {qual.documentUrl && (
+                                                        {qual.hasVerificationDocument && qual.documentApproved === true && qual.documentUrl && (
                                                             <Button
                                                                 size="sm"
                                                                 variant="link"
@@ -1062,6 +1073,38 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <FileText className="h-3 w-3 mr-1" />
                                                                 Verification Link
                                                             </Button>
+                                                        )}
+                                                        {qual.hasVerificationDocument && qual.documentApproved == null && (
+                                                            <span className="flex items-center gap-2 text-slate-400">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="link"
+                                                                    className="p-0 h-auto text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    disabled
+                                                                    tabIndex={-1}
+                                                                    aria-disabled
+                                                                >
+                                                                    <FileText className="h-3 w-3 mr-1" />
+                                                                    Verification Link
+                                                                </Button>
+                                                                <span className="text-xs font-black uppercase tracking-wider text-amber-600">(In Review)</span>
+                                                            </span>
+                                                        )}
+                                                        {qual.hasVerificationDocument && qual.documentApproved === false && (
+                                                            <span className="flex items-center gap-2 text-slate-400">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="link"
+                                                                    className="p-0 h-auto text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    disabled
+                                                                    tabIndex={-1}
+                                                                    aria-disabled
+                                                                >
+                                                                    <FileText className="h-3 w-3 mr-1" />
+                                                                    Verification Link
+                                                                </Button>
+                                                                <span className="text-xs font-black uppercase tracking-wider text-rose-600">(Verification failed)</span>
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>

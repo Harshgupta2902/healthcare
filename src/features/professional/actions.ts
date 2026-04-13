@@ -26,6 +26,42 @@ const qualificationSchema = z.object({
     documentUrl: z.string().url("Invalid document URL"),
 })
 
+export type SanitizedQualificationRow = {
+    id: string
+    professionalId: string
+    degree: string
+    institution: string
+    year: number | null
+    /** True when a file was uploaded (URL is hidden until approved). */
+    hasVerificationDocument: boolean
+    documentUrl: string | null
+    documentApproved: boolean | null
+    createdAt: string
+}
+
+function mapQualificationForProfessionalSelf(q: {
+    id: string
+    professional_id: string
+    degree: string
+    institution: string
+    year: number | null
+    document_url: string | null
+    document_approved: boolean | null
+    created_at: string
+}): SanitizedQualificationRow {
+    return {
+        id: q.id,
+        professionalId: q.professional_id,
+        degree: q.degree,
+        institution: q.institution,
+        year: q.year,
+        hasVerificationDocument: Boolean(q.document_url),
+        documentUrl: q.document_approved === true ? q.document_url : null,
+        documentApproved: q.document_approved ?? null,
+        createdAt: q.created_at,
+    }
+}
+
 const availabilitySchema = z.object({
     dayOfWeek: z.number().min(0).max(6),
     startTime: z.string().min(1),
@@ -168,6 +204,7 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
                 institution: parsed.data.institution,
                 year: parsed.data.year ?? null,
                 document_url: parsed.data.documentUrl,
+                document_approved: null,
             })
 
         if (insertError) {
@@ -187,6 +224,32 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
 export type DeleteQualificationResult =
     | { success: true }
     | { success: false; error: string }
+
+/** Returns qualifications without exposing document URLs until admin approval. */
+export async function getMyQualificationsSanitized(): Promise<
+    | { success: true; qualifications: SanitizedQualificationRow[] }
+    | { success: false; error: string }
+> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return { success: false, error: 'You must be signed in.' }
+    }
+
+    const { data, error } = await supabase
+        .from('professional_qualifications')
+        .select('*')
+        .eq('professional_id', user.id)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        return { success: false, error: error.message }
+    }
+    return {
+        success: true,
+        qualifications: (data || []).map(mapQualificationForProfessionalSelf),
+    }
+}
 
 export async function deleteQualification(id: string): Promise<DeleteQualificationResult> {
     try {
@@ -349,15 +412,7 @@ export async function getProfessionalDashboardData() {
             createdAt: profProfile?.created_at || "",
             updatedAt: profProfile?.updated_at || ""
         },
-        qualifications: qualifications?.map(q => ({
-            id: q.id,
-            professionalId: q.professional_id,
-            degree: q.degree,
-            institution: q.institution,
-            year: q.year,
-            documentUrl: q.document_url,
-            createdAt: q.created_at
-        })) || [],
+        qualifications: qualifications?.map((q: any) => mapQualificationForProfessionalSelf(q)) || [],
         availability: availability?.map(a => ({
             id: a.id,
             professionalId: a.professional_id,
@@ -489,7 +544,10 @@ export async function getProfessionalById(id: string) {
         consultationFee: profProfile.consultation_fee,
         city: profProfile.city,
         isVerified: profProfile.is_verified,
-        qualifications: qualifications || [],
+        qualifications: (qualifications || []).map((q: any) => ({
+            ...q,
+            document_url: q.document_approved === true ? q.document_url : null,
+        })),
         availability: availability || []
     };
 }

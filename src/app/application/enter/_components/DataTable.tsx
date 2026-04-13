@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Table,
   TableBody,
@@ -26,7 +26,7 @@ import { format } from 'date-fns'
 interface Column<T> {
   key: string
   label: string
-  render?: (item: T) => React.ReactNode
+  render?: (item: T) => ReactNode
 }
 
 interface DataTableProps<T> {
@@ -37,6 +37,8 @@ interface DataTableProps<T> {
   onAdd?: () => void
   onEdit?: (item: T) => void
   onDelete?: (item: T) => void
+  /** When set, renders the Actions column instead of default edit/delete buttons */
+  renderRowActions?: (item: T) => ReactNode
   addLabel?: string
   page?: number
   totalPages?: number
@@ -52,12 +54,14 @@ export function DataTable<T extends { id: string | number }>({
   onAdd,
   onEdit,
   onDelete,
+  renderRowActions,
   addLabel = 'Add New',
   page = 1,
   totalPages = 1,
   onPageChange,
   count = 0,
 }: DataTableProps<T>) {
+  const showActionsCol = Boolean(renderRowActions || onEdit || onDelete)
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleSearch = (value: string) => {
@@ -100,7 +104,7 @@ export function DataTable<T extends { id: string | number }>({
                   {column.label}
                 </TableHead>
               ))}
-              {(onEdit || onDelete) && (
+              {showActionsCol && (
                 <TableHead className="text-right font-semibold">Actions</TableHead>
               )}
             </TableRow>
@@ -109,7 +113,7 @@ export function DataTable<T extends { id: string | number }>({
             {data.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                  colSpan={columns.length + (showActionsCol ? 1 : 0)}
                   className="text-center text-gray-500 py-12"
                 >
                   No data found
@@ -125,30 +129,34 @@ export function DataTable<T extends { id: string | number }>({
                         : (item as any)[column.key] || 'N/A'}
                     </TableCell>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {showActionsCol && (
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {onEdit && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onEdit(item)}
-                            className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {onDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onDelete(item)}
-                            className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
+                      {renderRowActions ? (
+                        <div className="flex items-center justify-end gap-2">{renderRowActions(item)}</div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-2">
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onEdit(item)}
+                              className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onDelete(item)}
+                              className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>

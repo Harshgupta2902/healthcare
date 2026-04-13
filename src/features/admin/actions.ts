@@ -640,6 +640,79 @@ export async function deleteDocument(id: string) {
   return { success: true as const }
 }
 
+const qualificationDocumentApprovalSchema = z.object({
+  id: z.string().uuid('Invalid qualification id'),
+  documentApproved: z.boolean(),
+})
+
+/** Professional qualification rows that include a verification file (admin review queue). */
+export async function getQualificationCredentialsForAdmin(
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('professional_qualifications')
+    .select(
+      `
+      id,
+      professional_id,
+      degree,
+      institution,
+      year,
+      document_url,
+      document_approved,
+      created_at,
+      professional:professional_id(name, email)
+    `,
+      { count: 'exact' }
+    )
+    .not('document_url', 'is', null)
+    .order('created_at', { ascending: false })
+
+  if (search?.trim()) {
+    const q = search.trim().replace(/[%*,]/g, '')
+    if (q) {
+      query = query.or(`degree.ilike.%${q}%,institution.ilike.%${q}%`)
+    }
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  const { data, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
+}
+
+export async function setQualificationDocumentApproval(input: z.infer<typeof qualificationDocumentApprovalSchema>) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const supabase = await createClient()
+
+  const parsed = qualificationDocumentApprovalSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const { error } = await supabase
+    .from('professional_qualifications')
+    .update({
+      document_approved: parsed.data.documentApproved,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', parsed.data.id)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/documents')
+  revalidatePath('/dashboard')
+  revalidatePath('/consultants', 'layout')
+  return { success: true as const }
+}
+
 // ============================================
 // INSURANCE CRUD
 // ============================================
