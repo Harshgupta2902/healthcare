@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
+import { signIn } from "@/features/profile/actions";
 
 interface FormData {
   email: string;
@@ -31,11 +31,12 @@ function LoginContent() {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
+  /** idle → signing in → redirecting (stay on redirecting until page unmounts) */
+  const [authPhase, setAuthPhase] = useState<"idle" | "signing-in" | "redirecting">("idle");
   const [showPassword, setShowPassword] = useState(false);
+  const isBusy = authPhase !== "idle";
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -77,34 +78,33 @@ function LoginContent() {
 
     if (!validateForm()) return;
 
-    setIsLoading(true);
+    setAuthPhase("signing-in");
 
     try {
-      const { signIn } = await import("@/features/profile/actions");
       const result = await signIn(formData.email, formData.password);
 
       if (result.error) {
         toast.error(result.error || "Invalid email or password.");
+        setAuthPhase("idle");
         return;
       }
 
       toast.success("Welcome back! You've successfully logged in.");
 
-      // Use the role returned from the server action
       const userRole = result.role || "client";
 
-      // Redirect admin to admin panel, others to dashboard
       let redirectPath = searchParams.get("redirect");
       if (!redirectPath) {
-        redirectPath = userRole === 'admin' ? '/application/enter' : '/dashboard';
+        redirectPath = userRole === "admin" ? "/application/enter" : "/dashboard";
       }
 
+      // Keep UI in loading state through navigation (do not set idle on success)
+      setAuthPhase("redirecting");
       router.push(redirectPath);
       router.refresh();
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setAuthPhase("idle");
     }
   };
 
@@ -129,6 +129,18 @@ function LoginContent() {
           <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
           <Card className="relative shadow-2xl border border-border/50 bg-background/80 backdrop-blur-xl rounded-[32px] overflow-hidden">
+            {isBusy && (
+              <div
+                className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 rounded-[32px] bg-background/80 backdrop-blur-md px-6 text-center"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                  {authPhase === "signing-in" ? "Signing you in..." : "Taking you to your dashboard..."}
+                </p>
+              </div>
+            )}
             <CardHeader className="space-y-4 text-center pt-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mx-auto mb-2">
                 <Sparkles className="w-3 h-3" />
@@ -157,7 +169,7 @@ function LoginContent() {
                     onChange={handleInputChange}
                     className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.email ? "border-red-500/50" : ""
                       }`}
-                    disabled={isLoading}
+                    disabled={isBusy}
                   />
                   {errors.email && (
                     <p className="text-xs text-red-500 font-bold ml-1">{errors.email}</p>
@@ -178,14 +190,14 @@ function LoginContent() {
                       onChange={handleInputChange}
                       className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 pr-14 focus:bg-background transition-all font-bold ${errors.password ? "border-red-500/50" : ""
                         }`}
-                      disabled={isLoading}
+                      disabled={isBusy}
                       autoComplete="off"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                      disabled={isLoading}
+                      disabled={isBusy}
                     >
                       {showPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -208,7 +220,7 @@ function LoginContent() {
                       checked={formData.rememberMe}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-primary focus:ring-primary border-border/50 rounded cursor-pointer"
-                      disabled={isLoading}
+                      disabled={isBusy}
                     />
                     <Label htmlFor="rememberMe" className="text-xs font-bold text-muted-foreground cursor-pointer">
                       Remember me
@@ -222,12 +234,15 @@ function LoginContent() {
                 <Button
                   type="submit"
                   className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
-                  disabled={isLoading}
+                  disabled={isBusy}
                 >
-                  {isLoading ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
+                  {authPhase === "idle" ? (
                     "Log In"
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin shrink-0" />
+                      {authPhase === "signing-in" ? "Signing you in..." : "Redirecting..."}
+                    </span>
                   )}
                 </Button>
               </form>
@@ -254,7 +269,7 @@ function LoginContent() {
                     variant="outline"
                     onClick={() => handleSocialLogin(item.label)}
                     className="h-14 rounded-2xl border-border/50 hover:bg-secondary/50 transition-all group"
-                    disabled={isLoading}
+                    disabled={isBusy}
                   >
                     <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
                   </Button>
