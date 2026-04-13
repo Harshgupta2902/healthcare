@@ -6,6 +6,7 @@ import { DataTable } from '../_components/DataTable'
 import { UserDialog } from './UserDialog'
 import { DeleteDialog } from '../_components/DeleteDialog'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { format } from 'date-fns'
 import { createUser, updateUser, deleteUser } from '@/features/admin/actions'
 import { toast } from 'sonner'
@@ -25,6 +26,14 @@ interface UsersTableProps {
   initialPage: number
   totalPages: number
   count: number
+}
+
+function userInitialLetter(user: User): string {
+  const name = user.name?.trim()
+  if (name) return name[0].toUpperCase()
+  const email = user.email?.trim()
+  if (email) return email[0].toUpperCase()
+  return '?'
 }
 
 export function UsersTable({ initialData, initialPage, totalPages, count }: UsersTableProps) {
@@ -92,13 +101,12 @@ export function UsersTable({ initialData, initialPage, totalPages, count }: User
       label: 'Name',
       render: (user: User) => (
         <div className="flex items-center gap-3">
-          {user.image && (
-            <img
-              src={user.image}
-              alt={user.name || ''}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
+          <Avatar className="h-9 w-9 shrink-0 border border-teal-200/60 dark:border-gray-600">
+            <AvatarImage src={user.image || undefined} alt={user.name || user.email || 'User'} />
+            <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
+              {userInitialLetter(user)}
+            </AvatarFallback>
+          </Avatar>
           <span className="font-medium">{user.name || 'N/A'}</span>
         </div>
       ),
