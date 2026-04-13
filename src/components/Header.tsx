@@ -33,23 +33,13 @@ export default function Header({ className }: HeaderProps) {
   const pathname = usePathname();
   const supabase = createClient();
 
-  const fetchSession = async () => {
-    setIsPending(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    } catch (error) {
-      console.error("Failed to fetch session:", error);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
+  // Subscribe once; pathname-based refresh handles server-action login (no SIGNED_IN event in browser)
   useEffect(() => {
     setMounted(true);
-    fetchSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setIsPending(false);
     });
@@ -59,6 +49,32 @@ export default function Header({ className }: HeaderProps) {
     };
   }, []);
 
+  // Re-sync session when the route changes — Header stays mounted, so /login → /dashboard must re-read cookies
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!cancelled) {
+          setUser(session?.user ?? null);
+          setIsPending(false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch session:", error);
+        if (!cancelled) setIsPending(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, pathname]);
+
   // Hide header on admin pages
   if (pathname?.startsWith('/application/enter')) {
     return null;
@@ -66,7 +82,22 @@ export default function Header({ className }: HeaderProps) {
 
   const handleSignOut = async () => {
     setIsMobileMenuOpen(false);
-    await signOut();
+    try {
+      // Clear browser session first so Supabase client state matches cookies
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) console.error(error);
+    } catch (e) {
+      console.error(e);
+    }
+    setUser(null);
+    setIsPending(false);
+    try {
+      await signOut();
+    } catch {
+      /* server action may still complete */
+    }
+    router.refresh();
+    router.replace('/');
   };
 
   const handleDashboardClick = () => {
@@ -134,13 +165,13 @@ export default function Header({ className }: HeaderProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground cursor-pointer"
           onClick={() => router.push('/login')}
         >
           <LogIn className="h-4 w-4 mr-2" />
           Login
         </Button>
-        <Button size="sm" onClick={() => router.push('/register')}>
+        <Button size="sm" className="cursor-pointer" onClick={() => router.push('/register')}>
           Sign up
         </Button>
       </div>
@@ -235,10 +266,10 @@ export default function Header({ className }: HeaderProps) {
                 </>
               ) : mounted && !isPending ? (
                 <>
-                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { router.push('/login'); setIsMobileMenuOpen(false); }}>
+                  <Button variant="ghost" size="sm" className="w-full justify-start cursor-pointer" onClick={() => { router.push('/login'); setIsMobileMenuOpen(false); }}>
                     <LogIn className="h-4 w-4 mr-2" /> Login
                   </Button>
-                  <Button size="sm" className="w-full" onClick={() => { router.push('/register'); setIsMobileMenuOpen(false); }}>Sign up</Button>
+                  <Button size="sm" className="w-full cursor-pointer" onClick={() => { router.push('/register'); setIsMobileMenuOpen(false); }}>Sign up</Button>
                 </>
               ) : null}
             </div>

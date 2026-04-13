@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { zodFirstError } from '@/lib/server-action-result'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import sharp from 'sharp'
 
 const profileSchema = z.object({
@@ -159,15 +158,14 @@ export async function signOut() {
         const supabase = await createClient()
         await supabase.auth.signOut()
 
-        // Clear user data cookie
-        const cookieStore = await cookies();
-        cookieStore.delete('user_data');
-    } catch (error) {
-        console.error("Error during signOut action:", error);
-    }
+        const cookieStore = await cookies()
+        cookieStore.delete('user_data')
 
-    // Always redirect to home after sign out attempt
-    redirect('/')
+        return { success: true as const }
+    } catch (error) {
+        console.error('Error during signOut action:', error)
+        return { success: false as const, error: 'Sign out failed' }
+    }
 }
 export async function uploadProfileImage(formData: FormData) {
     try {
