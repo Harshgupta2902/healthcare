@@ -57,7 +57,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                         </div>
                         <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">Dr. {prof.name}</h1>
+                                <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{prof.name}</h1>
                                 {prof.isVerified && (
                                     <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-emerald-100">
                                         <ShieldCheck className="h-3 w-3" />

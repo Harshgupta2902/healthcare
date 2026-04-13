@@ -340,7 +340,7 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                                     <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
                                     <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase">Certified Choice</span>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 group-hover:text-primary transition-colors leading-tight">Dr. {prof.name}</h3>
+                                <h3 className="text-2xl font-black text-slate-900 group-hover:text-primary transition-colors leading-tight">{prof.name}</h3>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 pt-2">
