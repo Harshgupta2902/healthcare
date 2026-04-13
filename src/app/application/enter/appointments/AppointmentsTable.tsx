@@ -76,7 +76,11 @@ export function AppointmentsTable({ initialData, initialPage, totalPages, count 
 
     startTransition(async () => {
       try {
-        await deleteAppointment(selectedAppointment.id)
+        const result = await deleteAppointment(selectedAppointment.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Appointment deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

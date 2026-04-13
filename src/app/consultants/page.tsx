@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export default async function ConsultantsPage({ searchParams }: PageProps) {
     const { q, specialty } = await searchParams;
 
-    // Server-side fetching
-    const professionals = await searchProfessionals(specialty === "all" ? "" : specialty);
+    const searchResult = await searchProfessionals(specialty === "all" ? "" : specialty);
+    const professionals = searchResult.success ? searchResult.data : [];
 
     // Filter by name server-side if query exists
     let filtered = professionals;

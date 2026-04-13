@@ -49,6 +49,9 @@ export default function Footer({ className }: FooterProps) {
         setIsSuccess(true);
         setEmail('');
         toast.success('Thanks for subscribing! Check your email for confirmation.');
+      } else {
+        setError(result.error);
+        toast.error(result.error);
       }
 
       // Reset success state after 5 seconds

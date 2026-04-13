@@ -74,10 +74,18 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
     startTransition(async () => {
       try {
         if (user) {
-          await updateUser(user.id, data)
+          const result = await updateUser(user.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('User updated successfully')
         } else {
-          await createUser(data)
+          const result = await createUser(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('User created successfully')
         }
         form.reset()

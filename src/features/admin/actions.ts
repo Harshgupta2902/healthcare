@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { zodFirstError } from '@/lib/server-action-result'
 
 // ============================================
 // SCHEMAS
@@ -84,15 +85,18 @@ const newsletterSchema = z.object({
 })
 
 // ============================================
-// HELPER: Check Admin
+// HELPER: Admin session (never throws — returns message for clients in production)
 // ============================================
 
-async function checkAdmin() {
+async function requireAdmin(): Promise<
+  | { ok: true }
+  | { ok: false; error: string }
+> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
-    throw new Error('Unauthorized')
+    return { ok: false, error: 'You must be signed in.' }
   }
 
   const { data: userData } = await supabase
@@ -102,10 +106,10 @@ async function checkAdmin() {
     .single()
 
   if (!userData || userData.role !== 'admin') {
-    throw new Error('Forbidden: Admin access required')
+    return { ok: false, error: 'Admin access is required.' }
   }
 
-  return { supabase, user }
+  return { ok: true }
 }
 
 // ============================================
@@ -113,7 +117,8 @@ async function checkAdmin() {
 // ============================================
 
 export async function getUsers(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -130,56 +135,62 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createUser(data: z.infer<typeof userSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = userSchema.parse(data)
-  
+
+  const parsed = userSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('users')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/users')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateUser(id: string, data: Partial<z.infer<typeof userSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = userSchema.partial().parse(data)
-  
+
+  const parsed = userSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('users')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/users')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteUser(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('users')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/users')
+  return { success: true as const }
 }
 
 // ============================================
@@ -187,7 +198,8 @@ export async function deleteUser(id: string) {
 // ============================================
 
 export async function getProfessionals(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -213,56 +225,62 @@ export async function getProfessionals(page: number = 1, limit: number = 10, sea
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createProfessional(data: z.infer<typeof professionalSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = professionalSchema.parse(data)
-  
+
+  const parsed = professionalSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('professional_profiles')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateProfessional(id: string, data: Partial<z.infer<typeof professionalSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = professionalSchema.partial().parse(data)
-  
+
+  const parsed = professionalSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('professional_profiles')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteProfessional(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('professional_profiles')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
+  return { success: true as const }
 }
 
 // ============================================
@@ -270,7 +288,8 @@ export async function deleteProfessional(id: string) {
 // ============================================
 
 export async function getAppointments(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -299,56 +318,62 @@ export async function getAppointments(page: number = 1, limit: number = 10, sear
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createAppointment(data: z.infer<typeof appointmentSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = appointmentSchema.parse(data)
-  
+
+  const parsed = appointmentSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('appointments')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/appointments')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateAppointment(id: string, data: Partial<z.infer<typeof appointmentSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = appointmentSchema.partial().parse(data)
-  
+
+  const parsed = appointmentSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('appointments')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/appointments')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteAppointment(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('appointments')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/appointments')
+  return { success: true as const }
 }
 
 // ============================================
@@ -356,7 +381,8 @@ export async function deleteAppointment(id: string) {
 // ============================================
 
 export async function getMedicalHistory(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -380,56 +406,62 @@ export async function getMedicalHistory(page: number = 1, limit: number = 10, se
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createMedicalHistory(data: z.infer<typeof medicalHistorySchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = medicalHistorySchema.parse(data)
-  
+
+  const parsed = medicalHistorySchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medical_history')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medical-history')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateMedicalHistory(id: string, data: Partial<z.infer<typeof medicalHistorySchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = medicalHistorySchema.partial().parse(data)
-  
+
+  const parsed = medicalHistorySchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medical_history')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medical-history')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteMedicalHistory(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('medical_history')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medical-history')
+  return { success: true as const }
 }
 
 // ============================================
@@ -437,7 +469,8 @@ export async function deleteMedicalHistory(id: string) {
 // ============================================
 
 export async function getMedications(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -461,56 +494,62 @@ export async function getMedications(page: number = 1, limit: number = 10, searc
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createMedication(data: z.infer<typeof medicationSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = medicationSchema.parse(data)
-  
+
+  const parsed = medicationSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medications')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medications')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateMedication(id: string, data: Partial<z.infer<typeof medicationSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = medicationSchema.partial().parse(data)
-  
+
+  const parsed = medicationSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medications')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medications')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteMedication(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('medications')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/medications')
+  return { success: true as const }
 }
 
 // ============================================
@@ -518,7 +557,8 @@ export async function deleteMedication(id: string) {
 // ============================================
 
 export async function getDocuments(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -542,56 +582,62 @@ export async function getDocuments(page: number = 1, limit: number = 10, search?
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createDocument(data: z.infer<typeof documentSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = documentSchema.parse(data)
-  
+
+  const parsed = documentSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medical_documents')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/documents')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateDocument(id: string, data: Partial<z.infer<typeof documentSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = documentSchema.partial().parse(data)
-  
+
+  const parsed = documentSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('medical_documents')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/documents')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteDocument(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('medical_documents')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/documents')
+  return { success: true as const }
 }
 
 // ============================================
@@ -599,7 +645,8 @@ export async function deleteDocument(id: string) {
 // ============================================
 
 export async function getInsurance(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -623,56 +670,62 @@ export async function getInsurance(page: number = 1, limit: number = 10, search?
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createInsurance(data: z.infer<typeof insuranceSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = insuranceSchema.parse(data)
-  
+
+  const parsed = insuranceSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('insurance')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/insurance')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateInsurance(id: string, data: Partial<z.infer<typeof insuranceSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = insuranceSchema.partial().parse(data)
-  
+
+  const parsed = insuranceSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('insurance')
-    .update({ ...validated, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/insurance')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteInsurance(id: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('insurance')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/insurance')
+  return { success: true as const }
 }
 
 // ============================================
@@ -680,7 +733,8 @@ export async function deleteInsurance(id: string) {
 // ============================================
 
 export async function getNewsletterSubscribers(page: number = 1, limit: number = 10, search?: string) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
   let query = supabase
@@ -697,56 +751,62 @@ export async function getNewsletterSubscribers(page: number = 1, limit: number =
 
   const { data, error, count } = await query.range(from, to)
 
-  if (error) throw error
-  return { data: data || [], count: count || 0 }
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: data || [], count: count || 0 }
 }
 
 export async function createNewsletterSubscriber(data: z.infer<typeof newsletterSchema>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = newsletterSchema.parse(data)
-  
+
+  const parsed = newsletterSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('newsletter_subscribers')
-    .insert(validated)
+    .insert(parsed.data)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/newsletter')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function updateNewsletterSubscriber(id: number, data: Partial<z.infer<typeof newsletterSchema>>) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
-  const validated = newsletterSchema.partial().parse(data)
-  
+
+  const parsed = newsletterSchema.partial().safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
   const { data: result, error } = await supabase
     .from('newsletter_subscribers')
-    .update(validated)
+    .update(parsed.data)
     .eq('id', id)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/newsletter')
-  return result
+  return { success: true as const, data: result }
 }
 
 export async function deleteNewsletterSubscriber(id: number) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('newsletter_subscribers')
     .delete()
     .eq('id', id)
 
-  if (error) throw error
+  if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/newsletter')
+  return { success: true as const }
 }
 
 // ============================================
@@ -754,7 +814,8 @@ export async function deleteNewsletterSubscriber(id: number) {
 // ============================================
 
 export async function getDashboardStats() {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
 
   const [users, professionals, appointments, documents, newsletter] = await Promise.all([
@@ -766,6 +827,7 @@ export async function getDashboardStats() {
   ])
 
   return {
+    success: true as const,
     totalUsers: users.count || 0,
     totalProfessionals: professionals.count || 0,
     totalAppointments: appointments.count || 0,
@@ -775,7 +837,8 @@ export async function getDashboardStats() {
 }
 
 export async function getRecentAppointments(limit: number = 5) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] }
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -796,12 +859,13 @@ export async function getRecentAppointments(limit: number = 5) {
     .order('start_time', { ascending: false })
     .limit(limit)
 
-  if (error) throw error
-  return data || []
+  if (error) return { success: false as const, error: error.message, data: [] }
+  return { success: true as const, data: data || [] }
 }
 
 export async function getRecentUsers(limit: number = 5) {
-  await checkAdmin()
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] }
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -810,6 +874,6 @@ export async function getRecentUsers(limit: number = 5) {
     .order('created_at', { ascending: false })
     .limit(limit)
 
-  if (error) throw error
-  return data || []
+  if (error) return { success: false as const, error: error.message, data: [] }
+  return { success: true as const, data: data || [] }
 }

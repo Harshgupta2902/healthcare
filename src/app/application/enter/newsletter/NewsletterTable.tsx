@@ -69,7 +69,11 @@ export function NewsletterTable({ initialData, initialPage, totalPages, count }:
 
     startTransition(async () => {
       try {
-        await deleteNewsletterSubscriber(selectedSubscriber.id)
+        const result = await deleteNewsletterSubscriber(selectedSubscriber.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Subscriber deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

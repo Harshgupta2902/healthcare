@@ -15,8 +15,11 @@ export async function DELETE(
       )
     }
 
-    await deleteInsurance(id)
-    
+    const result = await deleteInsurance(id)
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+
     return NextResponse.json(
       { success: true, message: 'Insurance deleted successfully' },
       { status: 200 }

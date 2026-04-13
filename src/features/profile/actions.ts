@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { zodFirstError } from '@/lib/server-action-result'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import sharp from 'sharp'
@@ -17,12 +18,16 @@ export async function updateProfile(formData: unknown) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-        throw new Error("Unauthorized")
+        return { success: false as const, error: 'You must be signed in to update your profile.' }
     }
 
-    const validatedData = profileSchema.parse(formData)
+    const parsed = profileSchema.safeParse(formData)
+    if (!parsed.success) {
+        return { success: false as const, error: zodFirstError(parsed.error) }
+    }
 
-    // Update in Database via Supabase Client
+    const validatedData = parsed.data
+
     const { error: dbError } = await supabase
         .from('users')
         .update({
@@ -34,18 +39,16 @@ export async function updateProfile(formData: unknown) {
         .eq('id', user.id)
 
     if (dbError) {
-        throw new Error(dbError.message)
+        return { success: false as const, error: dbError.message }
     }
 
-    // Sync with Supabase Auth metadata for consistency
     await supabase.auth.updateUser({
         data: { name: validatedData.name }
     })
 
-    // Also sync the user session to cookies for convenience
     await syncUserSession();
 
-    return { success: true }
+    return { success: true as const }
 }
 
 export async function syncUserSession() {

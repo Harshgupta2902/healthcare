@@ -9,7 +9,9 @@ export default async function UsersPage({
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
-  const { data, count } = await getUsers(page, 10, search)
+  const result = await getUsers(page, 10, search)
+  const data = result.success ? result.data : []
+  const count = result.success ? result.count : 0
   const totalPages = Math.ceil((count || 0) / 10)
 
   return (
@@ -22,6 +24,9 @@ export default async function UsersPage({
           Manage all system users
         </p>
       </div>
+      {!result.success && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
+      )}
       <UsersTable initialData={data} initialPage={page} totalPages={totalPages} count={count || 0} />
     </div>
   )

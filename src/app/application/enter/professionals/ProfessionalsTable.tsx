@@ -79,7 +79,11 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
 
     startTransition(async () => {
       try {
-        await deleteProfessional(selectedProfessional.id)
+        const result = await deleteProfessional(selectedProfessional.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Professional deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

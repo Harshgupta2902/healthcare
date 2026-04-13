@@ -75,7 +75,11 @@ export function InsuranceTable({ initialData, initialPage, totalPages, count }: 
 
     startTransition(async () => {
       try {
-        await deleteInsurance(selectedInsurance.id)
+        const result = await deleteInsurance(selectedInsurance.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Insurance record deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

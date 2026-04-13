@@ -91,10 +91,18 @@ export function DocumentDialog({ open, onOpenChange, document, onSuccess }: Docu
     startTransition(async () => {
       try {
         if (document) {
-          await updateDocument(document.id, data)
+          const result = await updateDocument(document.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Document updated successfully')
         } else {
-          await createDocument(data)
+          const result = await createDocument(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Document created successfully')
         }
         form.reset()

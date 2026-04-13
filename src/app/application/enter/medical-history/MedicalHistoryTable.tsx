@@ -73,7 +73,11 @@ export function MedicalHistoryTable({ initialData, initialPage, totalPages, coun
 
     startTransition(async () => {
       try {
-        await deleteMedicalHistory(selectedRecord.id)
+        const result = await deleteMedicalHistory(selectedRecord.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Medical history record deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

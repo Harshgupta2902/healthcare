@@ -26,9 +26,10 @@ interface DashboardContentProps {
   stats: DashboardStats
   recentAppointments: any[]
   recentUsers: any[]
+  loadError?: string | null
 }
 
-export function DashboardContent({ stats, recentAppointments, recentUsers }: DashboardContentProps) {
+export function DashboardContent({ stats, recentAppointments, recentUsers, loadError }: DashboardContentProps) {
   const statCards = [
     {
       title: 'Total Users',
@@ -64,6 +65,11 @@ export function DashboardContent({ stats, recentAppointments, recentUsers }: Das
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {loadError}
+        </p>
+      )}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

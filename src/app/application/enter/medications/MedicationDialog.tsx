@@ -101,10 +101,18 @@ export function MedicationDialog({ open, onOpenChange, medication, onSuccess }: 
     startTransition(async () => {
       try {
         if (medication) {
-          await updateMedication(medication.id, data)
+          const result = await updateMedication(medication.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Medication updated successfully')
         } else {
-          await createMedication(data)
+          const result = await createMedication(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Medication created successfully')
         }
         form.reset()

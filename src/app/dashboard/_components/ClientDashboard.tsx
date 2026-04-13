@@ -155,6 +155,17 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
         setMounted(true);
     }, []);
 
+    useEffect(() => {
+        if (initialData?.dashboardError) {
+            toast.error(initialData.dashboardError);
+            setIsLoadingProfile(false);
+            setIsLoadingHistory(false);
+            setIsLoadingMeds(false);
+            setIsLoadingDocs(false);
+            setIsLoadingInsurance(false);
+        }
+    }, [initialData?.dashboardError]);
+
     const [showAddCondition, setShowAddCondition] = useState(false);
     const [showAddMedication, setShowAddMedication] = useState(false);
     const [showAddDocument, setShowAddDocument] = useState(false);
@@ -372,7 +383,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const handleSaveProfile = async () => {
         setIsSaving(true);
         try {
-            await updateMedicalProfile(profileForm);
+            const result = await updateMedicalProfile(profileForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             await fetchProfile();
             setIsEditingProfile(false);
             toast.success("Profile updated successfully");
@@ -390,7 +405,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
         }
         setIsSaving(true);
         try {
-            await addMedicalCondition(conditionForm);
+            const result = await addMedicalCondition(conditionForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Condition added successfully");
             setShowAddCondition(false);
             setConditionForm({ conditionName: "", diagnosisDate: "", status: "active", notes: "" });
@@ -410,7 +429,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
         }
         setIsSaving(true);
         try {
-            await addMedication(medicationForm);
+            const result = await addMedication(medicationForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Medication added successfully");
             setShowAddMedication(false);
             setMedicationForm({
@@ -444,7 +467,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             formData.append('documentType', documentForm.documentType);
             formData.append('notes', documentForm.notes);
 
-            await addMedicalDocument(formData);
+            const docResult = await addMedicalDocument(formData);
+            if (!docResult.success) {
+                toast.error(docResult.error);
+                return;
+            }
             toast.success("Document added successfully");
             setShowAddDocument(false);
             setDocumentForm({
@@ -472,7 +499,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
         }
         setIsSaving(true);
         try {
-            await addInsurance(insuranceForm);
+            const result = await addInsurance(insuranceForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Insurance added successfully");
             setShowAddInsurance(false);
             setInsuranceForm({
@@ -494,7 +525,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteCondition = async (id: string) => {
         try {
-            await deleteMedicalCondition(id);
+            const result = await deleteMedicalCondition(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Condition deleted");
             fetchMedicalHistory();
         } catch (error: any) {
@@ -504,7 +539,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteMedication = async (id: string) => {
         try {
-            await deleteMedication(id);
+            const result = await deleteMedication(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Medication deleted");
             fetchMedications();
         } catch (error: any) {
@@ -514,7 +553,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteDocument = async (id: string) => {
         try {
-            await deleteMedicalDocument(id);
+            const result = await deleteMedicalDocument(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Document deleted");
             fetchDocuments();
         } catch (error: any) {
@@ -524,7 +567,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteInsurance = async (id: string) => {
         try {
-            await deleteInsurance(id);
+            const result = await deleteInsurance(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Insurance deleted");
             fetchInsurance();
         } catch (error: any) {

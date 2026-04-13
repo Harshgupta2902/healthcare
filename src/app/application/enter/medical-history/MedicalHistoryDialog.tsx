@@ -88,10 +88,18 @@ export function MedicalHistoryDialog({ open, onOpenChange, record, onSuccess }: 
     startTransition(async () => {
       try {
         if (record) {
-          await updateMedicalHistory(record.id, data)
+          const result = await updateMedicalHistory(record.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Medical history updated successfully')
         } else {
-          await createMedicalHistory(data)
+          const result = await createMedicalHistory(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Medical history created successfully')
         }
         form.reset()

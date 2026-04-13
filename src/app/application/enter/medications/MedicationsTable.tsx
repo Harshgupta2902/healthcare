@@ -76,7 +76,11 @@ export function MedicationsTable({ initialData, initialPage, totalPages, count }
 
     startTransition(async () => {
       try {
-        await deleteMedication(selectedMedication.id)
+        const result = await deleteMedication(selectedMedication.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Medication deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

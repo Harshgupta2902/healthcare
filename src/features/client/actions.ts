@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import sharp from 'sharp'
 import crypto from 'crypto'
+import { zodFirstError } from '@/lib/server-action-result'
 
 const medicalProfileSchema = z.object({
     phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
@@ -79,64 +80,65 @@ const insuranceSchema = z.object({
 export async function updateMedicalProfile(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in to update your profile.' }
 
-    const validatedData = medicalProfileSchema.parse(data)
+    const parsed = medicalProfileSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
     const { error } = await supabase
         .from('client_medical_profiles')
         .upsert({
             user_id: user.id,
-            date_of_birth: validatedData.dateOfBirth,
-            gender: validatedData.gender,
-            blood_type: validatedData.bloodType,
-            height: validatedData.height?.toString(),
-            weight: validatedData.weight?.toString(),
-            address: validatedData.address,
-            city: validatedData.city,
-            state: validatedData.state,
-            postal_code: validatedData.postalCode,
-            emergency_contact_name: validatedData.emergencyContactName,
-            emergency_contact_phone: validatedData.emergencyContactPhone,
-            emergency_contact_relationship: validatedData.emergencyContactRelationship,
+            date_of_birth: parsed.data.dateOfBirth,
+            gender: parsed.data.gender,
+            blood_type: parsed.data.bloodType,
+            height: parsed.data.height?.toString(),
+            weight: parsed.data.weight?.toString(),
+            address: parsed.data.address,
+            city: parsed.data.city,
+            state: parsed.data.state,
+            postal_code: parsed.data.postalCode,
+            emergency_contact_name: parsed.data.emergencyContactName,
+            emergency_contact_phone: parsed.data.emergencyContactPhone,
+            emergency_contact_relationship: parsed.data.emergencyContactRelationship,
             updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' })
 
-    if (error) throw new Error(error.message)
+    if (error) return { success: false as const, error: error.message }
 
-    // Also update phone in users if provided
-    if (validatedData.phone) {
-        await supabase.from('users').update({ phone: validatedData.phone }).eq('id', user.id)
+    if (parsed.data.phone) {
+        await supabase.from('users').update({ phone: parsed.data.phone }).eq('id', user.id)
     }
 
-    return { success: true }
+    return { success: true as const }
 }
 
 export async function addMedicalCondition(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
-    const validatedData = conditionSchema.parse(data)
+    const parsed = conditionSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
     const { error } = await supabase
         .from('medical_history')
         .insert({
             user_id: user.id,
-            condition_name: validatedData.conditionName,
-            diagnosis_date: validatedData.diagnosisDate,
-            status: validatedData.status,
-            notes: validatedData.notes,
+            condition_name: parsed.data.conditionName,
+            diagnosis_date: parsed.data.diagnosisDate,
+            status: parsed.data.status,
+            notes: parsed.data.notes,
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function deleteMedicalCondition(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('medical_history')
@@ -144,39 +146,40 @@ export async function deleteMedicalCondition(id: string) {
         .eq('id', id)
         .eq('user_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function addMedication(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
-    const validatedData = medicationSchema.parse(data)
+    const parsed = medicationSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
     const { error } = await supabase
         .from('medications')
         .insert({
             user_id: user.id,
-            medication_name: validatedData.medicationName,
-            dosage: validatedData.dosage,
-            frequency: validatedData.frequency,
-            start_date: validatedData.startDate,
-            end_date: validatedData.endDate,
-            prescribing_doctor: validatedData.prescribingDoctor,
-            notes: validatedData.notes,
-            is_active: validatedData.isActive,
+            medication_name: parsed.data.medicationName,
+            dosage: parsed.data.dosage,
+            frequency: parsed.data.frequency,
+            start_date: parsed.data.startDate,
+            end_date: parsed.data.endDate,
+            prescribing_doctor: parsed.data.prescribingDoctor,
+            notes: parsed.data.notes,
+            is_active: parsed.data.isActive,
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function deleteMedication(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('medications')
@@ -184,90 +187,97 @@ export async function deleteMedication(id: string) {
         .eq('id', id)
         .eq('user_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
-export async function addMedicalDocument(formData: FormData) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+export type AddMedicalDocumentResult =
+    | { success: true; fileUrl: string }
+    | { success: false; error: string }
 
-    const file = formData.get('file') as File;
-    const documentName = formData.get('documentName') as string;
-    const documentType = formData.get('documentType') as string;
-    const notes = formData.get('notes') as string;
+export async function addMedicalDocument(formData: FormData): Promise<AddMedicalDocumentResult> {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { success: false, error: 'You must be signed in.' }
 
-    if (!file || !documentName) {
-        throw new Error("File and document name are required");
-    }
+        const file = formData.get('file') as File;
+        const documentName = formData.get('documentName') as string;
+        const documentType = formData.get('documentType') as string;
+        const notes = formData.get('notes') as string;
 
-    // Optimize image if needed
-    const isImage = file.type.startsWith('image/');
-    const fileExt = isImage ? 'webp' : file.name.split('.').pop();
-    const fileName = `${crypto.randomBytes(16).toString('hex')}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
-
-    let uploadBuffer: Buffer | ArrayBuffer = await file.arrayBuffer();
-    let contentType = file.type;
-
-    if (isImage) {
-        try {
-            const buffer = Buffer.from(uploadBuffer as ArrayBuffer);
-            uploadBuffer = await sharp(buffer)
-                .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-                .webp({ quality: 80 })
-                .toBuffer();
-            contentType = 'image/webp';
-            console.log(`Document image optimized: ${(buffer.length / 1024).toFixed(2)}KB -> ${(uploadBuffer.length / 1024).toFixed(2)}KB`);
-        } catch (err) {
-            console.error("Optimization failed for document:", err);
-            uploadBuffer = await file.arrayBuffer(); // fallback to original
+        if (!file || !documentName) {
+            return { success: false, error: 'File and document name are required.' }
         }
-    }
 
-    const { error: uploadError } = await supabase.storage
-        .from('medical-documents')
-        .upload(filePath, uploadBuffer, {
-            contentType,
-            upsert: true
-        });
+        const isImage = file.type.startsWith('image/');
+        const fileExt = isImage ? 'webp' : file.name.split('.').pop();
+        const fileName = `${crypto.randomBytes(16).toString('hex')}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
 
-    if (uploadError) throw new Error(uploadError.message);
+        let uploadBuffer: Buffer | ArrayBuffer = await file.arrayBuffer();
+        let contentType = file.type;
 
-    const { data: { publicUrl } } = supabase.storage
-        .from('medical-documents')
-        .getPublicUrl(filePath);
+        if (isImage) {
+            try {
+                const buffer = Buffer.from(uploadBuffer as ArrayBuffer);
+                uploadBuffer = await sharp(buffer)
+                    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+                contentType = 'image/webp';
+            } catch (err) {
+                console.error("Optimization failed for document:", err);
+                uploadBuffer = await file.arrayBuffer();
+            }
+        }
 
-    const validatedData = documentSchema.parse({
-        documentName,
-        documentType,
-        fileUrl: publicUrl,
-        fileSize: uploadBuffer instanceof Buffer ? uploadBuffer.length : file.size,
-        notes,
-    })
+        const { error: uploadError } = await supabase.storage
+            .from('medical-documents')
+            .upload(filePath, uploadBuffer, {
+                contentType,
+                upsert: true
+            });
 
-    const { error } = await supabase
-        .from('medical_documents')
-        .insert({
-            user_id: user.id,
-            document_name: validatedData.documentName,
-            document_type: validatedData.documentType,
-            file_url: validatedData.fileUrl,
-            file_size: validatedData.fileSize,
-            notes: validatedData.notes,
+        if (uploadError) return { success: false, error: uploadError.message };
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('medical-documents')
+            .getPublicUrl(filePath);
+
+        const parsed = documentSchema.safeParse({
+            documentName,
+            documentType,
+            fileUrl: publicUrl,
+            fileSize: uploadBuffer instanceof Buffer ? uploadBuffer.length : file.size,
+            notes,
         })
+        if (!parsed.success) return { success: false, error: zodFirstError(parsed.error) }
 
-    if (error) throw new Error(error.message)
-    return { success: true, fileUrl: publicUrl }
+        const { error } = await supabase
+            .from('medical_documents')
+            .insert({
+                user_id: user.id,
+                document_name: parsed.data.documentName,
+                document_type: parsed.data.documentType,
+                file_url: parsed.data.fileUrl,
+                file_size: parsed.data.fileSize,
+                notes: parsed.data.notes,
+            })
+
+        if (error) return { success: false, error: error.message }
+        return { success: true, fileUrl: publicUrl }
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : 'Failed to upload document.'
+        return { success: false, error: msg }
+    }
 }
 
 export async function deleteMedicalDocument(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
-    // Get the file path before deleting record
     const { data: doc } = await supabase
         .from('medical_documents')
         .select('file_url')
@@ -295,38 +305,39 @@ export async function deleteMedicalDocument(id: string) {
         .eq('id', id)
         .eq('user_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function addInsurance(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
-    const validatedData = insuranceSchema.parse(data)
+    const parsed = insuranceSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
     const { error } = await supabase
         .from('insurance')
         .insert({
             user_id: user.id,
-            provider_name: validatedData.providerName,
-            policy_number: validatedData.policyNumber,
-            group_number: validatedData.groupNumber,
-            policy_holder_name: validatedData.policyHolderName,
-            relationship_to_holder: validatedData.relationshipToHolder,
-            expiration_date: validatedData.expirationDate,
-            notes: validatedData.notes,
+            provider_name: parsed.data.providerName,
+            policy_number: parsed.data.policyNumber,
+            group_number: parsed.data.groupNumber,
+            policy_holder_name: parsed.data.policyHolderName,
+            relationship_to_holder: parsed.data.relationshipToHolder,
+            expiration_date: parsed.data.expirationDate,
+            notes: parsed.data.notes,
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function deleteInsurance(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('insurance')
@@ -334,14 +345,14 @@ export async function deleteInsurance(id: string) {
         .eq('id', id)
         .eq('user_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function getClientDashboardData() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in to view the dashboard.' }
 
     const [
         { data: coreProfile },
@@ -360,6 +371,7 @@ export async function getClientDashboardData() {
     ])
 
     return {
+        success: true as const,
         user,
         profile: {
             id: user.id,
@@ -439,12 +451,11 @@ export async function subscribeNewsletter(email: string) {
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
-        throw new Error("Invalid email format")
+        return { success: false as const, error: 'Please enter a valid email address.' }
     }
 
     const sanitizedEmail = email.trim().toLowerCase()
 
-    // Check existing
     const { data: existing } = await supabase
         .from('newsletter_subscribers')
         .select('*')
@@ -452,7 +463,7 @@ export async function subscribeNewsletter(email: string) {
         .single()
 
     if (existing) {
-        throw new Error("Already subscribed")
+        return { success: false as const, error: 'This email is already subscribed.' }
     }
 
     const { error } = await supabase
@@ -463,6 +474,6 @@ export async function subscribeNewsletter(email: string) {
             status: 'active'
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }

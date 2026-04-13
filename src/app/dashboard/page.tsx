@@ -28,14 +28,22 @@ export default async function DashboardPage() {
   }
 
   let dashboardData: any = { user };
-  try {
-    if (role === 'professional') {
-      dashboardData = await getProfessionalDashboardData();
+  if (role === "professional") {
+    const r = await getProfessionalDashboardData();
+    if (r.success) {
+      const { success: _s, ...rest } = r;
+      dashboardData = rest;
     } else {
-      dashboardData = await getClientDashboardData();
+      dashboardData = { user, dashboardError: r.error };
     }
-  } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+  } else {
+    const r = await getClientDashboardData();
+    if (r.success) {
+      const { success: _s, ...rest } = r;
+      dashboardData = rest;
+    } else {
+      dashboardData = { user, dashboardError: r.error };
+    }
   }
 
   return (

@@ -188,6 +188,18 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         setMounted(true);
     }, []);
 
+    useEffect(() => {
+        if (initialData?.dashboardError) {
+            toast.error(initialData.dashboardError);
+            setIsLoadingProfile(false);
+            setIsLoadingQuals(false);
+            setIsLoadingAvail(false);
+            setIsLoadingAppointments(false);
+            setIsLoadingRequests(false);
+            setIsLoadingPayments(false);
+        }
+    }, [initialData?.dashboardError]);
+
     const [showAddQualification, setShowAddQualification] = useState(false);
     const [showAddAvailability, setShowAddAvailability] = useState(false);
 
@@ -410,7 +422,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const handleSaveProfile = async () => {
         setIsSaving(true);
         try {
-            await updateProfessionalProfile(profileForm);
+            const result = await updateProfessionalProfile(profileForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             await fetchProfile();
             setIsEditingProfile(false);
             toast.success("Profile updated successfully");
@@ -434,7 +450,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             formData.append('institution', qualificationForm.institution);
             formData.append('year', qualificationForm.year?.toString() || "");
 
-            await addQualification(formData);
+            const result = await addQualification(formData);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Credential added to profile");
             setShowAddQualification(false);
             setQualificationForm({ degree: "", institution: "", year: new Date().getFullYear() });
@@ -450,7 +470,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const handleUpdateAvail = async () => {
         setIsSaving(true);
         try {
-            await updateAvailability(availabilityForm);
+            const result = await updateAvailability(availabilityForm);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Availability updated");
             setShowAddAvailability(false);
             fetchAvailability();
@@ -463,7 +487,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteQualification = async (id: string) => {
         try {
-            await deleteQualification(id);
+            const result = await deleteQualification(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Qualification deleted");
             fetchQualifications();
         } catch (error: any) {
@@ -473,7 +501,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const handleDeleteAvailability = async (id: string) => {
         try {
-            await deleteAvailability(id);
+            const result = await deleteAvailability(id);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success("Availability deleted");
             fetchAvailability();
         } catch (error: any) {
@@ -483,7 +515,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const handleUpdateAppointmentStatus = async (id: string, status: string) => {
         try {
-            await updateAppointmentStatus(id, status);
+            const result = await updateAppointmentStatus(id, status);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success(`Appointment ${status}`);
             fetchAppointments();
         } catch (error: any) {
@@ -493,7 +529,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const handleUpdateRequestStatus = async (id: string, status: string) => {
         try {
-            await updateConsultationRequestStatus(id, status);
+            const result = await updateConsultationRequestStatus(id, status);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
             toast.success(`Request ${status}`);
             fetchConsultationRequests();
         } catch (error: any) {

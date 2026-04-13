@@ -9,6 +9,7 @@ import { ArrowLeft, MapPin, Star, Clock, Search, Filter, User, Award, Sparkles, 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { searchProfessionals } from "@/features/professional/actions";
+import { toast } from "sonner";
 
 
 interface Professional {
@@ -107,10 +108,16 @@ function SpecialistsContent() {
   const fetchProfessionals = async (specialty: string, city: string) => {
     setLoading(true);
     try {
-      const data = await searchProfessionals(specialty, city);
-      setProfessionals(data || []);
+      const result = await searchProfessionals(specialty, city);
+      if (!result.success) {
+        toast.error(result.error);
+        setProfessionals([]);
+        return;
+      }
+      setProfessionals(result.data || []);
     } catch (error) {
       console.error("Error fetching professionals:", error);
+      toast.error("Could not load specialists. Please try again.");
     } finally {
       setLoading(false);
       setHasSearched(true);

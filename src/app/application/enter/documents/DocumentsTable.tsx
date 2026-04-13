@@ -75,7 +75,11 @@ export function DocumentsTable({ initialData, initialPage, totalPages, count }: 
 
     startTransition(async () => {
       try {
-        await deleteDocument(selectedDocument.id)
+        const result = await deleteDocument(selectedDocument.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('Document deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

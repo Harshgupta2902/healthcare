@@ -106,10 +106,18 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
           consultation_fee: data.consultation_fee ? Math.round(data.consultation_fee * 100) : null,
         }
         if (professional) {
-          await updateProfessional(professional.id, submitData)
+          const result = await updateProfessional(professional.id, submitData)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Professional updated successfully')
         } else {
-          await createProfessional(submitData)
+          const result = await createProfessional(submitData)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Professional created successfully')
         }
         form.reset()

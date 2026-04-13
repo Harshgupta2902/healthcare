@@ -9,7 +9,9 @@ export default async function ProfessionalsPage({
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
-  const { data, count } = await getProfessionals(page, 10, search)
+  const result = await getProfessionals(page, 10, search)
+  const data = result.success ? result.data : []
+  const count = result.success ? result.count : 0
   const totalPages = Math.ceil((count || 0) / 10)
 
   return (
@@ -22,6 +24,9 @@ export default async function ProfessionalsPage({
           Manage healthcare professionals
         </p>
       </div>
+      {!result.success && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
+      )}
       <ProfessionalsTable initialData={data} initialPage={page} totalPages={totalPages} count={count || 0} />
     </div>
   )

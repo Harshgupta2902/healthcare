@@ -53,7 +53,7 @@ export async function searchPlaces(input: string): Promise<PlacePrediction[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch predictions: ${response.status}`);
+      return [];
     }
 
     const data: PlacesAutocompleteResponse = await response.json();

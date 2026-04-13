@@ -5,6 +5,8 @@ import { z } from 'zod'
 import fs from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
+import sharp from 'sharp'
+import { zodFirstError } from '@/lib/server-action-result'
 
 const profileSchema = z.object({
     specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
@@ -18,10 +20,10 @@ const profileSchema = z.object({
 })
 
 const qualificationSchema = z.object({
-    degree: z.string().min(1, "Degree is required").regex(/^[a-zA-Z\s\.]*$/, "Degree contains invalid characters"),
-    institution: z.string().min(1, "Institution is required").regex(/^[a-zA-Z\s\.]*$/, "Institution contains invalid characters"),
-    year: z.number().optional().nullable(),
-    documentUrl: z.string().min(1, "Document URL is required"),
+    degree: z.string().min(1, "Degree is required").max(500),
+    institution: z.string().min(1, "Institution is required").max(500),
+    year: z.number().int().min(1900).max(2100).optional().nullable(),
+    documentUrl: z.string().url("Invalid document URL"),
 })
 
 const availabilitySchema = z.object({
@@ -34,9 +36,12 @@ const availabilitySchema = z.object({
 export async function updateProfessionalProfile(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in to update your profile.' }
 
-    const validatedData = profileSchema.parse(data)
+    const parsed = profileSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+    const validatedData = parsed.data
 
     const { error } = await supabase
         .from('professional_profiles')
@@ -51,108 +56,197 @@ export async function updateProfessionalProfile(data: any) {
             updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' })
 
-    if (error) throw new Error(error.message)
+    if (error) return { success: false as const, error: error.message }
 
-    // Sync with users table
     await supabase.from('users').update({
         phone: validatedData.phone,
         image: validatedData.profilePhotoUrl
     }).eq('id', user.id)
 
-    return { success: true }
+    return { success: true as const }
 }
 
-export async function addQualification(formData: FormData) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+export type AddQualificationResult =
+    | { success: true; documentUrl: string }
+    | { success: false; error: string }
 
-    const file = formData.get('file') as File;
-    const degree = formData.get('degree') as string;
-    const institution = formData.get('institution') as string;
-    const year = parseInt(formData.get('year') as string);
-
-    if (!file || !degree || !institution) {
-        throw new Error("Required fields missing");
-    }
-
-    // Prepare filename and path
-    const fileExtension = path.extname(file.name);
-    const fileName = `${crypto.randomBytes(16).toString('hex')}${fileExtension}`;
-    const publicUploadPath = '/uploads/qualifications';
-    const uploadDir = path.join(process.cwd(), 'public', publicUploadPath);
-    const filePath = path.join(uploadDir, fileName);
-
-    // Ensure directory exists
+/**
+ * Adds a qualification using Supabase Storage (works on serverless).
+ * Returns `{ success, error }` instead of throwing so production clients get real messages
+ * (Next.js omits thrown Server Action messages in production builds).
+ */
+export async function addQualification(formData: FormData): Promise<AddQualificationResult> {
     try {
-        await fs.mkdir(uploadDir, { recursive: true });
-    } catch (err) { }
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return { success: false, error: 'You must be signed in to add a credential.' }
+        }
 
-    // Write file
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
+        const file = formData.get('file') as File
+        const degree = (formData.get('degree') as string)?.trim()
+        const institution = (formData.get('institution') as string)?.trim()
+        const yearRaw = (formData.get('year') as string)?.trim()
 
-    const documentUrl = `${publicUploadPath}/${fileName}`;
+        if (!file || file.size === 0 || !degree || !institution) {
+            return { success: false, error: 'Please fill all required fields and attach a verification document.' }
+        }
 
-    const validatedData = qualificationSchema.parse({
-        degree,
-        institution,
-        year,
-        documentUrl
-    })
+        if (file.size > 10 * 1024 * 1024) {
+            return { success: false, error: 'File is too large (maximum 10 MB).' }
+        }
 
-    const { error } = await supabase
-        .from('professional_qualifications')
-        .insert({
-            professional_id: user.id,
-            degree: validatedData.degree,
-            institution: validatedData.institution,
-            year: validatedData.year,
-            document_url: validatedData.documentUrl,
+        let year: number | null = null
+        if (yearRaw) {
+            const y = parseInt(yearRaw, 10)
+            if (!Number.isFinite(y) || y < 1900 || y > 2100) {
+                return { success: false, error: 'Please enter a valid year between 1900 and 2100.' }
+            }
+            year = y
+        }
+
+        const isImage = file.type.startsWith('image/')
+        let uploadBody: Buffer | ArrayBuffer = await file.arrayBuffer()
+        let contentType = file.type || 'application/octet-stream'
+        let ext = path.extname(file.name) || (isImage ? '.jpg' : '.bin')
+
+        if (isImage) {
+            try {
+                const buffer = Buffer.from(uploadBody as ArrayBuffer)
+                uploadBody = await sharp(buffer)
+                    .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 85 })
+                    .toBuffer()
+                contentType = 'image/webp'
+                ext = '.webp'
+            } catch {
+                uploadBody = await file.arrayBuffer()
+            }
+        }
+
+        const storageFileName = `${crypto.randomBytes(16).toString('hex')}${ext}`
+        const storagePath = `${user.id}/${storageFileName}`
+
+        const { error: uploadError } = await supabase.storage
+            .from('qualifications')
+            .upload(storagePath, uploadBody, {
+                contentType,
+                upsert: false,
+            })
+
+        if (uploadError) {
+            console.error('Qualification storage upload failed:', uploadError)
+            return { success: false, error: uploadError.message }
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('qualifications')
+            .getPublicUrl(storagePath)
+
+        const parsed = qualificationSchema.safeParse({
+            degree,
+            institution,
+            year,
+            documentUrl: publicUrl,
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true, documentUrl }
+        if (!parsed.success) {
+            await supabase.storage.from('qualifications').remove([storagePath])
+            const msg = parsed.error.flatten().fieldErrors.degree?.[0]
+                ?? parsed.error.flatten().fieldErrors.institution?.[0]
+                ?? parsed.error.flatten().fieldErrors.year?.[0]
+                ?? parsed.error.flatten().fieldErrors.documentUrl?.[0]
+                ?? 'Invalid qualification data.'
+            return { success: false, error: msg }
+        }
+
+        const { error: insertError } = await supabase
+            .from('professional_qualifications')
+            .insert({
+                professional_id: user.id,
+                degree: parsed.data.degree,
+                institution: parsed.data.institution,
+                year: parsed.data.year ?? null,
+                document_url: parsed.data.documentUrl,
+            })
+
+        if (insertError) {
+            console.error('Qualification insert failed:', insertError)
+            await supabase.storage.from('qualifications').remove([storagePath])
+            return { success: false, error: insertError.message }
+        }
+
+        return { success: true, documentUrl: publicUrl }
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Something went wrong while saving your credential.'
+        console.error('addQualification:', e)
+        return { success: false, error: message }
+    }
 }
 
-export async function deleteQualification(id: string) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+export type DeleteQualificationResult =
+    | { success: true }
+    | { success: false; error: string }
 
-    // Get the file path before deleting record
-    const { data: qual } = await supabase
-        .from('professional_qualifications')
-        .select('document_url')
-        .eq('id', id)
-        .eq('professional_id', user.id)
-        .single()
-
-    if (qual?.document_url) {
-        try {
-            const filePath = path.join(process.cwd(), 'public', qual.document_url)
-            await fs.unlink(filePath)
-        } catch (err) {
-            console.error("Failed to delete physical file:", err)
+export async function deleteQualification(id: string): Promise<DeleteQualificationResult> {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return { success: false, error: 'You must be signed in.' }
         }
+
+        const { data: qual } = await supabase
+            .from('professional_qualifications')
+            .select('document_url')
+            .eq('id', id)
+            .eq('professional_id', user.id)
+            .single()
+
+        if (qual?.document_url) {
+            const url = qual.document_url
+            if (url.includes('/qualifications/')) {
+                const storagePath = url.split('/qualifications/')[1]
+                const { error: removeErr } = await supabase.storage
+                    .from('qualifications')
+                    .remove([storagePath])
+                if (removeErr) {
+                    console.error('Failed to remove qualification file from storage:', removeErr)
+                }
+            } else if (url.startsWith('/uploads/')) {
+                try {
+                    await fs.unlink(path.join(process.cwd(), 'public', url))
+                } catch (err) {
+                    console.error('Failed to delete legacy local file:', err)
+                }
+            }
+        }
+
+        const { error } = await supabase
+            .from('professional_qualifications')
+            .delete()
+            .eq('id', id)
+            .eq('professional_id', user.id)
+
+        if (error) {
+            return { success: false, error: error.message }
+        }
+        return { success: true }
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Failed to delete qualification.'
+        return { success: false, error: message }
     }
-
-    const { error } = await supabase
-        .from('professional_qualifications')
-        .delete()
-        .eq('id', id)
-        .eq('professional_id', user.id)
-
-    if (error) throw new Error(error.message)
-    return { success: true }
 }
 
 export async function updateAvailability(data: any) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
-    const validatedData = availabilitySchema.parse(data)
+    const parsed = availabilitySchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+    const validatedData = parsed.data
 
     const { error } = await supabase
         .from('professional_availability')
@@ -165,14 +259,14 @@ export async function updateAvailability(data: any) {
             updated_at: new Date().toISOString(),
         })
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function deleteAvailability(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('professional_availability')
@@ -180,14 +274,14 @@ export async function deleteAvailability(id: string) {
         .eq('id', id)
         .eq('professional_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function updateAppointmentStatus(id: string, status: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('appointments')
@@ -195,14 +289,14 @@ export async function updateAppointmentStatus(id: string, status: string) {
         .eq('id', id)
         .eq('professional_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function updateConsultationRequestStatus(id: string, status: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
 
     const { error } = await supabase
         .from('consultation_requests')
@@ -210,14 +304,14 @@ export async function updateConsultationRequestStatus(id: string, status: string
         .eq('id', id)
         .eq('professional_id', user.id)
 
-    if (error) throw new Error(error.message)
-    return { success: true }
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
 }
 
 export async function getProfessionalDashboardData() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) return { success: false as const, error: 'You must be signed in to view the dashboard.' }
 
     const [
         { data: coreProfile },
@@ -238,6 +332,7 @@ export async function getProfessionalDashboardData() {
     ])
 
     return {
+        success: true as const,
         user,
         profile: {
             id: profProfile?.id || "",
@@ -341,19 +436,24 @@ export async function searchProfessionals(specialty?: string, city?: string) {
 
     const { data, error } = await query;
 
-    if (error) throw new Error(error.message);
+    if (error) {
+        return { success: false as const, error: error.message, data: [] }
+    }
 
-    return (data || []).map((p: any) => ({
-        id: p.user_id,
-        name: p.users?.name,
-        specialization: p.specialization,
-        bio: p.bio,
-        yearsOfExperience: p.years_of_experience,
-        consultationFee: p.consultation_fee,
-        isVerified: p.is_verified,
-        city: p.city,
-        profilePhotoUrl: p.users?.image || null,
-    }));
+    return {
+        success: true as const,
+        data: (data || []).map((p: any) => ({
+            id: p.user_id,
+            name: p.users?.name,
+            specialization: p.specialization,
+            bio: p.bio,
+            yearsOfExperience: p.years_of_experience,
+            consultationFee: p.consultation_fee,
+            isVerified: p.is_verified,
+            city: p.city,
+            profilePhotoUrl: p.users?.image || null,
+        })),
+    }
 }
 
 export async function getProfessionalById(id: string) {

@@ -72,7 +72,11 @@ export function UsersTable({ initialData, initialPage, totalPages, count }: User
 
     startTransition(async () => {
       try {
-        await deleteUser(selectedUser.id)
+        const result = await deleteUser(selectedUser.id)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
         toast.success('User deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()

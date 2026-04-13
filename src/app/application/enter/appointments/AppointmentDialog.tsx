@@ -107,10 +107,18 @@ export function AppointmentDialog({ open, onOpenChange, appointment, onSuccess }
           end_time: new Date(data.end_time).toISOString(),
         }
         if (appointment) {
-          await updateAppointment(appointment.id, submitData)
+          const result = await updateAppointment(appointment.id, submitData)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Appointment updated successfully')
         } else {
-          await createAppointment(submitData)
+          const result = await createAppointment(submitData)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Appointment created successfully')
         }
         form.reset()

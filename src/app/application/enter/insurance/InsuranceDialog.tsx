@@ -97,10 +97,18 @@ export function InsuranceDialog({ open, onOpenChange, insurance, onSuccess }: In
     startTransition(async () => {
       try {
         if (insurance) {
-          await updateInsurance(insurance.id, data)
+          const result = await updateInsurance(insurance.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Insurance updated successfully')
         } else {
-          await createInsurance(data)
+          const result = await createInsurance(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Insurance created successfully')
         }
         form.reset()

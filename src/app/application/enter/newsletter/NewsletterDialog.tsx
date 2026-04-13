@@ -65,10 +65,18 @@ export function NewsletterDialog({ open, onOpenChange, subscriber, onSuccess }: 
     startTransition(async () => {
       try {
         if (subscriber) {
-          await updateNewsletterSubscriber(subscriber.id, data)
+          const result = await updateNewsletterSubscriber(subscriber.id, data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Subscriber updated successfully')
         } else {
-          await createNewsletterSubscriber(data)
+          const result = await createNewsletterSubscriber(data)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
           toast.success('Subscriber created successfully')
         }
         form.reset()
