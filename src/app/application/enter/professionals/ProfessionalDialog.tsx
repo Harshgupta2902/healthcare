@@ -87,16 +87,48 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
   const form = useForm<ProfessionalFormData>({
     resolver: zodResolver(professionalSchema),
     defaultValues: {
-      user_id: professional?.user_id || '',
-      specialization: professional?.specialization || '',
-      license_number: professional?.license_number || '',
-      bio: professional?.bio || '',
-      years_of_experience: professional?.years_of_experience || null,
-      consultation_fee: professional?.consultation_fee ? professional.consultation_fee / 100 : null,
-      is_verified: professional?.is_verified || false,
-      city: professional?.city || '',
+      user_id: '',
+      specialization: '',
+      license_number: '',
+      bio: '',
+      years_of_experience: null,
+      consultation_fee: null,
+      is_verified: false,
+      city: '',
     },
   })
+
+  const { reset } = form
+
+  // defaultValues only run once on mount — reset when dialog opens / row changes so edit is prefilled
+  useEffect(() => {
+    if (!open) return
+
+    if (professional) {
+      reset({
+        user_id: professional.user_id,
+        specialization: professional.specialization ?? '',
+        license_number: professional.license_number ?? '',
+        bio: professional.bio ?? '',
+        years_of_experience: professional.years_of_experience ?? null,
+        consultation_fee:
+          professional.consultation_fee != null ? professional.consultation_fee / 100 : null,
+        is_verified: Boolean(professional.is_verified),
+        city: professional.city ?? '',
+      })
+    } else {
+      reset({
+        user_id: '',
+        specialization: '',
+        license_number: '',
+        bio: '',
+        years_of_experience: null,
+        consultation_fee: null,
+        is_verified: false,
+        city: '',
+      })
+    }
+  }, [open, professional, reset])
 
   const onSubmit = (data: ProfessionalFormData) => {
     startTransition(async () => {
@@ -145,7 +177,10 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>User</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || undefined}
+                  >
                     <FormControl>
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="Select user" />
