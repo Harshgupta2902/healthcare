@@ -95,7 +95,7 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
               whileHover={{ scale: 1.05 }}
             >
               <Card className="border-teal-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-shadow rounded-2xl overflow-hidden">
-                <CardHeader className="pb-3">
+                <CardHeader className="pt-4">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-2`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
@@ -121,7 +121,7 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           <Card className="border-teal-200/50 dark:border-gray-700/50 shadow-lg rounded-2xl">
-            <CardHeader>
+            <CardHeader className="pt-4">
               <CardTitle>Recent Appointments</CardTitle>
               <CardDescription>Latest appointment bookings</CardDescription>
             </CardHeader>
@@ -185,7 +185,7 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
           transition={{ duration: 0.3, delay: 0.3 }}
         >
           <Card className="border-teal-200/50 dark:border-gray-700/50 shadow-lg rounded-2xl">
-            <CardHeader>
+            <CardHeader className="pt-4">
               <CardTitle>Recent User Registrations</CardTitle>
               <CardDescription>Newly registered users</CardDescription>
             </CardHeader>
