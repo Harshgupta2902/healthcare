@@ -99,18 +99,13 @@ export default function ServicesSection() {
                   {service.description}
                 </p>
 
-                <div className="flex flex-wrap gap-3 mb-10">
+                <div className="flex flex-wrap gap-3 mb-4">
                   {service.benefits.map((benefit) => (
                     <span key={benefit} className="px-4 py-1.5 rounded-full bg-secondary/50 text-secondary-foreground text-xs font-bold border border-border">
                       {benefit}
                     </span>
                   ))}
                 </div>
-
-                <Button variant="ghost" className="group/btn p-0 hover:bg-transparent font-bold text-primary flex items-center gap-2">
-                  Learn more about this
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
               </div>
             </motion.div>
           ))}
@@ -120,7 +115,7 @@ export default function ServicesSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="my-20 p-8 md:p-12 rounded-[40px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
+          className="mt-20 p-8 md:p-12 sm:rounded-[10px] rounded-[40px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
         >
           <div className="space-y-2 text-center md:text-left">
             <h4 className="text-2xl font-bold text-white">Ready to take control?</h4>
