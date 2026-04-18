@@ -5,7 +5,25 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, MapPin, Star, Clock, Search, Filter, User, Award, Sparkles, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Search,
+  User,
+  Award,
+  Sparkles,
+  ChevronRight,
+  HeartPulse,
+  Brain,
+  Zap,
+  Baby,
+  Eye,
+  ShieldCheck,
+  Bone,
+  Heart,
+  BrainCircuit,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { searchProfessionals } from "@/features/professional/actions";
@@ -29,6 +47,9 @@ interface Specialist {
   name: string;
   description: string;
   dealsWith: string;
+  icon: LucideIcon;
+  /** Matches MedicalSpecialties.tsx card icon treatment */
+  color: string;
 }
 
 const specialists: Specialist[] = [
@@ -36,62 +57,82 @@ const specialists: Specialist[] = [
     id: 1,
     name: "General Physician",
     description: "Provides primary healthcare, diagnosing and treating a wide range of common illnesses.",
-    dealsWith: "Infections, fevers, hypertension, diabetes, and general health checkups."
+    dealsWith: "Infections, fevers, hypertension, diabetes, and general health checkups.",
+    icon: HeartPulse,
+    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   },
   {
     id: 2,
     name: "Psychologist",
     description: "Focuses on understanding behavior, emotions, and mental processes through therapy and assessment.",
-    dealsWith: "Anxiety, depression, trauma, stress, and emotional regulation."
+    dealsWith: "Anxiety, depression, trauma, stress, and emotional regulation.",
+    icon: Brain,
+    color: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   },
   {
     id: 3,
     name: "Gynecologist",
     description: "Specializes in women's reproductive health, pregnancy, and hormonal concerns.",
-    dealsWith: "Menstrual issues, PCOS, fertility, pregnancy, and menopause."
+    dealsWith: "Menstrual issues, PCOS, fertility, pregnancy, and menopause.",
+    icon: Zap,
+    color: "bg-pink-500/10 text-pink-600 border-pink-500/20",
   },
   {
     id: 4,
     name: "Pediatrician",
     description: "Cares for the physical, emotional, and developmental health of infants and children.",
-    dealsWith: "Infections, vaccinations, growth concerns, and behavioral issues in kids."
+    dealsWith: "Infections, vaccinations, growth concerns, and behavioral issues in kids.",
+    icon: Baby,
+    color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   },
   {
     id: 5,
     name: "Ophthalmologist",
     description: "Treats eye-related diseases and performs vision correction and eye surgeries.",
-    dealsWith: "Cataracts, glaucoma, vision loss, and eye infections."
+    dealsWith: "Cataracts, glaucoma, vision loss, and eye infections.",
+    icon: Eye,
+    color: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   {
     id: 6,
     name: "Psychiatrist",
     description: "A medical doctor specializing in mental health using both therapy and medication.",
-    dealsWith: "Mood disorders, schizophrenia, addiction, and personality disorders."
+    dealsWith: "Mood disorders, schizophrenia, addiction, and personality disorders.",
+    icon: ShieldCheck,
+    color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
   },
   {
     id: 7,
     name: "Orthopedic",
     description: "Specializes in bones, joints, muscles, and the musculoskeletal system.",
-    dealsWith: "Fractures, arthritis, back pain, sports injuries, and joint replacements."
+    dealsWith: "Fractures, arthritis, back pain, sports injuries, and joint replacements.",
+    icon: Bone,
+    color: "bg-teal-500/10 text-teal-600 border-teal-500/20",
   },
   {
     id: 8,
     name: "Dermatologist",
     description: "Treats conditions related to the skin, hair, and nails.",
-    dealsWith: "Acne, eczema, psoriasis, and skin infections."
+    dealsWith: "Acne, eczema, psoriasis, and skin infections.",
+    icon: Sparkles,
+    color: "bg-rose-500/10 text-rose-600 border-rose-500/20",
   },
   {
     id: 9,
     name: "Cardiologist",
     description: "Focuses on the heart and circulatory system's health and diseases.",
-    dealsWith: "Chest pain, hypertension, arrhythmia, and heart attacks."
+    dealsWith: "Chest pain, hypertension, arrhythmia, and heart attacks.",
+    icon: Heart,
+    color: "bg-red-500/10 text-red-600 border-red-500/20",
   },
   {
     id: 10,
     name: "Neurologist",
     description: "Specializes in disorders of the brain, spinal cord, and nervous system.",
-    dealsWith: "Migraines, epilepsy, stroke, Parkinson's, and neuropathy."
-  }
+    dealsWith: "Migraines, epilepsy, stroke, Parkinson's, and neuropathy.",
+    icon: BrainCircuit,
+    color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  },
 ];
 
 function SpecialistsContent() {
@@ -144,11 +185,8 @@ function SpecialistsContent() {
 
       <main className="relative z-10 flex flex-col">
         {/* Modern Hero Section */}
-        <section className="relative w-full py-24 md:py-32 overflow-hidden">
+        <section className="relative w-full pt-24 md:pt-32 overflow-hidden">
           {/* Atmospheric Glows */}
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-
           <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="mb-16">
               <Link href={specialtyParam ? "/book-consultation" : "/"} className="inline-flex items-center text-sm font-black uppercase tracking-widest text-primary hover:gap-3 transition-all duration-300 gap-2 mb-8">
@@ -191,8 +229,7 @@ function SpecialistsContent() {
 
             {/* Premium Search Bar */}
             <div className="relative group mb-12">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-blue-500/20 to-indigo-500/20 rounded-[32px] blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative bg-background/80 backdrop-blur-xl border border-border/50 rounded-3xl p-6 md:p-4 shadow-2xl">
+              <div className="relative ">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/40" />
@@ -200,7 +237,7 @@ function SpecialistsContent() {
                       placeholder="Specialty (e.g. Cardiologist)"
                       value={searchSpecialty}
                       onChange={(e) => setSearchSpecialty(e.target.value)}
-                      className="pl-12 h-14 rounded-2xl border-none bg-secondary/20 focus:bg-background transition-all font-bold"
+                      className="pl-12 h-14 rounded-2xl border-primary/20 bg-secondary/20 focus:bg-background transition-all font-bold"
                     />
                   </div>
                   <div className="flex-1 relative">
@@ -209,10 +246,10 @@ function SpecialistsContent() {
                       placeholder="City (e.g. Mumbai)"
                       value={searchCity}
                       onChange={(e) => setSearchCity(e.target.value)}
-                      className="pl-12 h-14 rounded-2xl border-none bg-secondary/20 focus:bg-background transition-all font-bold"
+                      className="pl-12 h-14 rounded-2xl border-primary/20 bg-secondary/20 focus:bg-background transition-all font-bold"
                     />
                   </div>
-                  <Button onClick={handleSearch} className="h-14 px-10 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
+                  <Button onClick={handleSearch} className="h-14 px-10 rounded-2xl font-black text-lg hover:shadow-primary/40 transition-all">
                     Search Experts
                   </Button>
                 </div>
@@ -223,23 +260,8 @@ function SpecialistsContent() {
 
         {/* Dynamic Results Section */}
         {showFiltered && (
-          <section className="py-20 relative bg-secondary/10 border-y border-border/50 overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
+          <section className={`relative ${professionals.length > 0 ? "pb-16" : ""}`}>
             <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between mb-12">
-                <h2 className="text-3xl font-black tracking-tight flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <User className="h-6 w-6" />
-                  </div>
-                  Available Professionals
-                  {professionals.length > 0 && (
-                    <span className="text-sm font-bold bg-primary text-white px-3 py-1 rounded-full">
-                      {professionals.length}
-                    </span>
-                  )}
-                </h2>
-              </div>
-
               {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {[1, 2, 3].map((i) => (
@@ -251,7 +273,7 @@ function SpecialistsContent() {
                   {professionals.map((professional) => (
                     <div
                       key={professional.id}
-                      className="group bg-background border border-border/50 rounded-[32px] p-8 hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 relative overflow-hidden"
+                      className="group  rounded-[32px] p-8 hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
 
@@ -321,38 +343,52 @@ function SpecialistsContent() {
         )}
 
         {/* Directory Section */}
-        <section className="py-32 relative">
+        <section className="pb-32 relative">
           <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-16">
-              Browse by <span className="text-primary">Specialty</span>
+              Browse by Specialty
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {specialists.map((specialist) => (
-                <div
-                  key={specialist.id}
-                  className="group p-8 rounded-[32px] bg-secondary/20 border border-border/50 hover:bg-background hover:border-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5"
-                >
-                  <h3 className="text-2xl font-black mb-4 group-hover:text-primary transition-colors">
-                    {specialist.name}
-                  </h3>
-                  <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
-                    {specialist.description}
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {specialists.map((specialist) => {
+                const Icon = specialist.icon;
+                return (
+                  <div
+                    key={specialist.id}
+                    className="group relative flex h-full flex-col rounded-xl lg:rounded-3xl border border-border bg-card p-8 shadow-sm transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5"
+                  >
+                    <div
+                      className={`mb-6 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${specialist.color}`}
+                    >
+                      <Icon className="h-6 w-6" />
+                    </div>
 
-                  <div className="space-y-4 pt-8 border-t border-border/50">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">Expertise:</div>
-                    <p className="text-xs font-bold leading-relaxed line-clamp-2 italic">
-                      {specialist.dealsWith}
-                    </p>
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary">
+                        {specialist.name}
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed font-medium">
+                        {specialist.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-auto space-y-3 border-t border-border/50 pt-6">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">Expertise:</div>
+                      <p className="text-xs font-bold leading-relaxed line-clamp-2 italic text-foreground/90">
+                        {specialist.dealsWith}
+                      </p>
+                    </div>
+
+                    <Link
+                      href="/book-consultation"
+                      className="mt-6 flex w-full items-center justify-between rounded-2xl bg-secondary/40 p-4 font-black text-sm uppercase tracking-widest transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground"
+                    >
+                      <span>Book Expert</span>
+                      <ChevronRight className="h-5 w-5" />
+                    </Link>
                   </div>
-
-                  <Link href={`/book-consultation`} className="mt-8 flex items-center justify-between w-full p-4 rounded-2xl bg-background group-hover:bg-primary group-hover:text-white transition-all duration-500 font-black text-sm uppercase tracking-widest">
-                    <span>Book Expert</span>
-                    <ChevronRight className="w-5 h-5" />
-                  </Link>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
