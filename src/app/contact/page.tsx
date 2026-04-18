@@ -113,7 +113,7 @@ export default function ContactPage() {
                     { icon: Mail, title: "Email Address", content: "care@healthhere.com", href: "mailto:care@healthhere.com" },
                     { icon: Phone, title: "Direct Line", content: "+91 9981322736", href: "tel:+919981322736" },
                     { icon: MapPin, title: "Headquarters", content: "Medical District, Mumbai, MH 400001" },
-                    { icon: Clock, title: "Business Hours", content: "Mon - Fri: 9:00 AM - 6:00 PM" }
+                    { icon: Clock, title: "Business Hours", content: "Mon - Fri: 10:00 AM - 8:00 PM" }
                   ].map((item, i) => (
                     <div key={i} className="group flex items-start gap-4 p-6 rounded-3xl bg-secondary/20 border border-primary/05 hover:border-primary/20 transition-all">
                       <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
@@ -138,7 +138,7 @@ export default function ContactPage() {
                     Medical Emergency?
                   </div>
                   <p className="text-sm font-medium text-muted-foreground leading-relaxed">
-                    For urgent medical concerns, please call emergency services at <span className="text-foreground font-black">108</span> or visit your nearest hospital immediately.
+                    For urgent medical concerns, please call emergency services at <span className="text-foreground font-black">112</span> or visit your nearest hospital immediately.
                   </p>
                 </div>
               </div>
