@@ -57,19 +57,19 @@ export default function ServicesPage() {
         </section>
 
         {/* Services Section - Clean Layout */}
-        <section className="w-full py-12 relative">
+        <section className="w-full pt-12 relative">
           <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <ServicesSection />
           </div>
         </section>
 
         {/* Why Choose Us Section - Modern Grid */}
-        <section className="w-full py-32 relative overflow-hidden bg-secondary/20 border-y border-border/50">
+        <section className="w-full pb-32 relative overflow-x-hidden bg-secondary/20 border-y border-border/50">
           <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
 
           <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-16 items-start">
-              <div className="md:w-1/3 sticky top-32">
+              <div className="w-full shrink-0 md:w-1/3 md:sticky md:top-32 md:self-start">
                 <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-6 leading-tight">
                   Why settle for <br />
                   <span className="text-primary">ordinary?</span>
