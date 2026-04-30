@@ -15,11 +15,13 @@ create table if not exists public.guest_appointments (
   appointment_date date not null,
   appointment_time text not null,
   message text,
+  calendar_invite_url text,
   created_at timestamptz not null default now(),
   created_by uuid null,
   professional_id uuid null
 );
 comment on column public.guest_appointments.professional_id is 'Professional (public.users.id) requested via consultant deeplink (?cref); null for generic bookings.';
+comment on column public.guest_appointments.calendar_invite_url is 'Google Calendar TEMPLATE link generated in admin; copy-only after set.';
 
 -- RLS
 alter table public.guest_appointments enable row level security;
@@ -205,6 +207,29 @@ CREATE TABLE IF NOT EXISTS public.insurance (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.google_calendar_connections (
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  refresh_token TEXT NOT NULL,
+  access_token TEXT,
+  token_expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.google_meet_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  google_event_id TEXT NOT NULL,
+  meet_link TEXT NOT NULL,
+  html_link TEXT,
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  attendee_emails TEXT[] NOT NULL DEFAULT '{}',
+  guest_appointment_ids UUID[] NOT NULL DEFAULT '{}',
+  summary TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.client_medical_profiles ENABLE ROW LEVEL SECURITY;
@@ -216,6 +241,8 @@ ALTER TABLE public.professional_qualifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.professional_availability ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.insurance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.google_calendar_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.google_meet_events ENABLE ROW LEVEL SECURITY;
 
 -- Auth Sync Trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -337,6 +364,26 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'guest_appointments' AND policyname = 'Admins can manage all guest appointments') THEN
         CREATE POLICY "Admins can manage all guest appointments" ON public.guest_appointments FOR ALL
         USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+    END IF;
+
+    -- Google Calendar OAuth (admin connects own account)
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'google_calendar_connections' AND policyname = 'Admins store own Google calendar tokens') THEN
+        CREATE POLICY "Admins store own Google calendar tokens" ON public.google_calendar_connections FOR ALL TO authenticated
+        USING (
+            auth.uid() = user_id
+            AND (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+        )
+        WITH CHECK (
+            auth.uid() = user_id
+            AND (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+        );
+    END IF;
+
+    -- Google Meet events audit log
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'google_meet_events' AND policyname = 'Admins can manage all google meet events') THEN
+        CREATE POLICY "Admins can manage all google meet events" ON public.google_meet_events FOR ALL TO authenticated
+        USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+        WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
     END IF;
 END $$;
 

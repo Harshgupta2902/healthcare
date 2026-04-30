@@ -26,8 +26,9 @@ export default async function AppointmentsPage({
           Guest appointments
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Public booking requests from “Book consultation”. When a consultant is already linked, their details show;
-          otherwise assign a professional from the dropdown — it saves to the database.
+          Public booking requests from “Book consultation”. Assign a consultant when needed; once guest and
+          consultant emails exist, use the calendar icon in Actions to build a Google Calendar link (saved and copied).
+          After that, the copy icon reuses the stored link.
         </p>
       </div>
       {!apptRes.success && (

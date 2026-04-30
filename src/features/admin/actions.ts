@@ -89,6 +89,11 @@ const guestAppointmentProfessionalSchema = z.object({
   professionalId: z.union([z.string().uuid('Invalid professional id'), z.null()]),
 })
 
+const guestCalendarInviteSchema = z.object({
+  guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
+  url: z.string().url('Invalid URL').max(4000),
+})
+
 /** Guest row for admin list + merged `users` row for `professional_id`. */
 export type GuestAppointmentAdminRow = {
   id: string
@@ -107,13 +112,14 @@ export type GuestAppointmentAdminRow = {
   created_by: string | null
   professional_id: string | null
   professional: { id: string; name: string | null; email: string } | null
+  calendar_invite_url?: string | null
 }
 
 // ============================================
 // HELPER: Admin session (never throws — returns message for clients in production)
 // ============================================
 
-async function requireAdmin(): Promise<
+export async function requireAdmin(): Promise<
   | { ok: true }
   | { ok: false; error: string }
 > {
@@ -404,6 +410,37 @@ export async function updateGuestAppointmentProfessional(input: unknown) {
   const { error } = await supabase
     .from('guest_appointments')
     .update({ professional_id: professionalId })
+    .eq('id', guestAppointmentId)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/appointments')
+  return { success: true as const }
+}
+
+export async function saveGuestAppointmentCalendarInviteUrl(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const supabase = await createClient()
+
+  const parsed = guestCalendarInviteSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const { guestAppointmentId, url } = parsed.data
+
+  const { data: existing, error: readErr } = await supabase
+    .from('guest_appointments')
+    .select('calendar_invite_url')
+    .eq('id', guestAppointmentId)
+    .maybeSingle()
+
+  if (readErr) return { success: false as const, error: readErr.message }
+  if (existing?.calendar_invite_url) {
+    return { success: false as const, error: 'A calendar link is already saved for this appointment.' }
+  }
+
+  const { error } = await supabase
+    .from('guest_appointments')
+    .update({ calendar_invite_url: url })
     .eq('id', guestAppointmentId)
 
   if (error) return { success: false as const, error: error.message }

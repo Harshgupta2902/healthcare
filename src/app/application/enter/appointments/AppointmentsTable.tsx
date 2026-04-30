@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DataTable } from '../_components/DataTable'
 import { DeleteDialog } from '../_components/DeleteDialog'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -14,10 +15,13 @@ import {
 import {
   deleteAppointment,
   updateGuestAppointmentProfessional,
+  saveGuestAppointmentCalendarInviteUrl,
   type GuestAppointmentAdminRow,
 } from '@/features/admin/actions'
+import { generateGoogleCalendarLink, guestSlotToUtcDates } from '@/lib/calendar/generateGoogleCalendarLink'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { CalendarCheck, Copy, Trash2 } from 'lucide-react'
 
 type GuestAppointmentRow = GuestAppointmentAdminRow
 
@@ -89,6 +93,112 @@ function GuestProfessionalSelect({
   )
 }
 
+function GuestTableRowActions({
+  row,
+  onDelete,
+  calendarBusyId,
+  setCalendarBusyId,
+  onCalendarDone,
+}: {
+  row: GuestAppointmentRow
+  onDelete: (row: GuestAppointmentRow) => void
+  calendarBusyId: string | null
+  setCalendarBusyId: (id: string | null) => void
+  onCalendarDone: () => void
+}) {
+  const hasLink = Boolean(row.calendar_invite_url?.trim())
+  const guestEmail = row.email?.trim()
+  const profEmail = row.professional?.email?.trim()
+  const canBuild = Boolean(guestEmail && profEmail && !hasLink)
+
+  const copyText = async (text: string) => {
+    await navigator.clipboard.writeText(text)
+  }
+
+  const handleCreateAndCopy = async () => {
+    if (!guestEmail || !profEmail) return
+    setCalendarBusyId(row.id)
+    try {
+      const { start, end } = guestSlotToUtcDates(row.appointment_date, row.appointment_time)
+      const url = generateGoogleCalendarLink({
+        title: 'Consultation Meeting',
+        start,
+        end,
+        attendeeEmails: [guestEmail, profEmail],
+      })
+      const res = await saveGuestAppointmentCalendarInviteUrl({
+        guestAppointmentId: row.id,
+        url,
+      })
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      await copyText(url)
+      toast.success('Calendar link created and copied')
+      onCalendarDone()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not build calendar link')
+    } finally {
+      setCalendarBusyId(null)
+    }
+  }
+
+  const handleCopySaved = async () => {
+    const u = row.calendar_invite_url?.trim()
+    if (!u) return
+    try {
+      await copyText(u)
+      toast.success('Link copied')
+    } catch {
+      toast.error('Could not copy to clipboard')
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {hasLink ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-lg"
+          title="Copy calendar link"
+          onClick={handleCopySaved}
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-lg"
+          disabled={!canBuild || calendarBusyId === row.id}
+          title={
+            canBuild
+              ? 'Create Google Calendar link and copy to clipboard'
+              : 'Assign a consultant (with email) to enable calendar link'
+          }
+          onClick={handleCreateAndCopy}
+        >
+          <CalendarCheck className="h-4 w-4" />
+        </Button>
+      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => onDelete(row)}
+        className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+        title="Delete"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
+
 interface AppointmentsTableProps {
   initialData: GuestAppointmentRow[]
   initialPage: number
@@ -110,6 +220,7 @@ export function AppointmentsTable({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<GuestAppointmentRow | null>(null)
   const [pendingRowId, setPendingRowId] = useState<string | null>(null)
+  const [calendarBusyId, setCalendarBusyId] = useState<string | null>(null)
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -230,7 +341,15 @@ export function AppointmentsTable({
         columns={columns}
         searchPlaceholder="Search name, email, phone, city, category…"
         onSearch={handleSearch}
-        onDelete={handleDelete}
+        renderRowActions={(row) => (
+          <GuestTableRowActions
+            row={row}
+            onDelete={handleDelete}
+            calendarBusyId={calendarBusyId}
+            setCalendarBusyId={setCalendarBusyId}
+            onCalendarDone={() => router.refresh()}
+          />
+        )}
         page={initialPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
