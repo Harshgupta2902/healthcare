@@ -76,9 +76,11 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/application/enter') &&
         request.nextUrl.pathname !== '/'
     ) {
-        // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()
         url.pathname = '/login'
+        url.search = ''
+        const returnTo = request.nextUrl.pathname + request.nextUrl.search
+        url.searchParams.set('redirect', returnTo)
         return NextResponse.redirect(url)
     }
 

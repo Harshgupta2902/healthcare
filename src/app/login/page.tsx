@@ -24,6 +24,13 @@ interface FormErrors {
   password?: string;
 }
 
+/** Same-origin path only — blocks open redirects (e.g. ?redirect=https://evil.com). */
+function safeInternalRedirect(raw: string | null): string | null {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+  if (raw.includes("://") || raw.includes("\\")) return null;
+  return raw;
+}
+
 function LoginContent() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -93,7 +100,7 @@ function LoginContent() {
 
       const userRole = result.role || "client";
 
-      let redirectPath = searchParams.get("redirect");
+      let redirectPath = safeInternalRedirect(searchParams.get("redirect"));
       if (!redirectPath) {
         redirectPath = userRole === "admin" ? "/application/enter" : "/dashboard";
       }
