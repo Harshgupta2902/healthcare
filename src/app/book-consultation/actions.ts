@@ -119,6 +119,8 @@ const guestAppointmentSchema = z.object({
   date: z.string().min(1), // yyyy-mm-dd
   time: z.string().min(1), // HH:mm
   message: z.string().optional().nullable(),
+  /** From `?cref=` — professional `users.id`; omit or null for generic booking */
+  professionalId: z.string().uuid().nullish(),
 });
 
 export async function submitGuestAppointment(form: unknown) {
@@ -145,6 +147,7 @@ export async function submitGuestAppointment(form: unknown) {
     appointment_time: validated.data.time,
     message: validated.data.message ?? null,
     created_by: user?.id ?? null,
+    professional_id: validated.data.professionalId ?? null,
   };
 
   const { data, error } = await supabase.from("guest_appointments").insert(payload).select("id").single();

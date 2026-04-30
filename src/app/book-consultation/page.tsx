@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
-import { ArrowRight, MapPin, Stethoscope, Brain, Baby, Eye, Heart, Activity, Bone, Pill, Smile, Users, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowRight, MapPin, Stethoscope, Brain, Baby, Eye, Heart, Activity, Bone, Pill, Smile, Users, Check, ChevronsUpDown, Loader2, IndianRupee, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -96,6 +99,8 @@ const healthConcerns: HealthConcern[] = [
 ];
 
 import { searchPlaces, submitGuestAppointment } from "./actions";
+import { getProfessionalById } from "@/features/professional/actions";
+import { decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
 
 interface PlacePrediction {
   place_id: string;
@@ -107,8 +112,38 @@ interface PlacePrediction {
 }
 
 
-export default function BookConsultationPage() {
-  const router = useRouter();
+function BookConsultationPageInner() {
+  const searchParams = useSearchParams();
+  const cref = searchParams.get("cref");
+  const decodedConsultantId = useMemo(
+    () => (cref?.trim() ? decodeConsultantIdRef(cref) : null),
+    [cref]
+  );
+  const [bookingConsultant, setBookingConsultant] = useState<
+    Awaited<ReturnType<typeof getProfessionalById>> | undefined
+  >(undefined);
+  const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
+
+  useEffect(() => {
+    if (!decodedConsultantId) {
+      setBookingConsultant(undefined);
+      setBookingConsultantLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setBookingConsultantLoading(true);
+    getProfessionalById(decodedConsultantId)
+      .then((data) => {
+        if (!cancelled) setBookingConsultant(data ?? undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setBookingConsultantLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [decodedConsultantId]);
+
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [open, setOpen] = useState(false);
@@ -189,6 +224,13 @@ export default function BookConsultationPage() {
     }
   });
 
+  useEffect(() => {
+    const raw = bookingConsultant?.city?.trim();
+    if (!raw) return;
+    setCity(raw);
+    setValue("city", raw, { shouldValidate: true });
+  }, [bookingConsultant, setValue]);
+
   // single-page form: no stepper
 
   const parseIndianLocation = (description: string) => {
@@ -263,6 +305,7 @@ export default function BookConsultationPage() {
       date: data.date,
       time: data.time,
       message: data.message ?? "",
+      professionalId: decodedConsultantId ?? undefined,
     });
     if ((res as any)?.error) {
       toast.error("Failed to book appointment", {
@@ -282,6 +325,87 @@ export default function BookConsultationPage() {
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold mb-4">Make an Appointment</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Fill your details and pick appointment preferences.</p>
         </div>
+
+        {decodedConsultantId && (bookingConsultantLoading || bookingConsultant) && (
+          <div className="max-w-xl mx-auto mb-4">
+            {bookingConsultantLoading ? (
+              <Card className="border-2 rounded-2xl shadow-md overflow-hidden">
+                <CardContent className="p-0">
+                  <div
+                    className="flex gap-4 p-5 items-center"
+                    aria-busy="true"
+                    aria-live="polite"
+                    aria-label="Loading consultant"
+                  >
+                    <Skeleton className="h-20 w-20 shrink-0 rounded-xl" />
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <Skeleton className="h-6 w-[min(100%,220px)]" />
+                      <Skeleton className="h-4 w-[min(100%,280px)]" />
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 pt-0.5">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : bookingConsultant ? (
+              <Card className="border-2 rounded-2xl shadow-md overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex gap-4 p-4 items-center">
+                    <div className="relative h-26 w-26 shrink-0 rounded-xl overflow-hidden bg-muted">
+                      {bookingConsultant.profilePhotoUrl ? (
+                        <Image
+                          src={bookingConsultant.profilePhotoUrl}
+                          alt={bookingConsultant.displayName ?? bookingConsultant.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-lg font-bold bg-primary/10 text-primary">
+                          {bookingConsultant.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-lg truncate">
+                          {bookingConsultant.displayName ?? bookingConsultant.name}
+                        </p>
+                        {bookingConsultant.isVerified && (
+                          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" aria-label="Verified" />
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium truncate">
+                        {bookingConsultant.specialization}
+                      </p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          {bookingConsultant.city || "Online"}
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
+                          <IndianRupee className="h-3.5 w-3.5 shrink-0" />
+                          {((bookingConsultant.consultationFee || 0) / 100).toLocaleString()}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/consultants/${bookingConsultant.id}`}
+                        className="text-xs font-semibold text-primary hover:underline inline-block pt-1 cursor-pointer"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View full profile
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+        )}
 
         <form className="max-w-xl mx-auto space-y-7 pt-2" onSubmit={handleSubmit(onSubmit)}>
 
@@ -303,7 +427,7 @@ export default function BookConsultationPage() {
                     {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
                   </div>
                   <div className="space-y-1.5">
-                    <Input placeholder="Age" type="number" min={0} max={100} {...register("age")} />
+                    <Input placeholder="Age" type="number" min={0} max={100} maxLength={2} {...register("age")} />
                     {errors.age && <p className="text-xs text-destructive">{errors.age.message}</p>}
                   </div>
                   <div className="space-y-1.5">
@@ -451,7 +575,7 @@ export default function BookConsultationPage() {
                 </div>
 
                 <Button type="submit" className="w-full py-6 text-lg mt-4" size="lg">
-                  Find Specialists
+                  Book Appointment
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </CardContent>
@@ -460,5 +584,19 @@ export default function BookConsultationPage() {
       </main>
 
     </div>
+  );
+}
+
+export default function BookConsultationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center pt-24">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <BookConsultationPageInner />
+    </Suspense>
   );
 }
