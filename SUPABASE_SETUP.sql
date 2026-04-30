@@ -16,8 +16,10 @@ create table if not exists public.guest_appointments (
   appointment_time text not null,
   message text,
   created_at timestamptz not null default now(),
-  created_by uuid null
+  created_by uuid null,
+  professional_id uuid null
 );
+comment on column public.guest_appointments.professional_id is 'Professional (public.users.id) requested via consultant deeplink (?cref); null for generic bookings.';
 
 -- RLS
 alter table public.guest_appointments enable row level security;

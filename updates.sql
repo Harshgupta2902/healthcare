@@ -23,3 +23,8 @@ COMMENT ON COLUMN public.professional_qualifications.document_approved IS 'NULL 
 ALTER TABLE public.professional_profiles
   ADD COLUMN IF NOT EXISTS name_title TEXT;
 COMMENT ON COLUMN public.professional_profiles.name_title IS 'Salutation shown before legal name (e.g. Dr., Mr., Mrs.)';
+
+-- 2026-04-30: Guest appointment → which professional was requested (book-consultation ?cref= decoded user id)
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS professional_id uuid null REFERENCES public.users (id);
+COMMENT ON COLUMN public.guest_appointments.professional_id IS 'Professional (users.id) the patient requested when booking via consultant deeplink; null for generic bookings.';
