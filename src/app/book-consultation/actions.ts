@@ -2,12 +2,13 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import indianCities from "@/data/indian-cities.json";
 
 const placesSearchSchema = z.object({
   input: z.string().min(1, "Input is required").max(100, "Input too long"),
 });
 
-interface PlacePrediction {
+export interface PlacePrediction {
   place_id: string;
   description: string;
   structured_formatting?: {
@@ -16,91 +17,64 @@ interface PlacePrediction {
   };
 }
 
-interface PlacesAutocompleteResponse {
-  predictions: PlacePrediction[];
-  status: string;
+type IndianCityRow = (typeof indianCities)[number];
+
+function toPlacePrediction(c: IndianCityRow): PlacePrediction {
+  return {
+    place_id: `in-city-${c.id}`,
+    description: `${c.name}, ${c.state}, India`,
+    structured_formatting: {
+      main_text: c.name,
+      secondary_text: c.state,
+    },
+  };
 }
 
-function buildUrl(params: Record<string, string>) {
-  const usp = new URLSearchParams(params);
-  return `https://maps.googleapis.com/maps/api/place/autocomplete/json?${usp.toString()}`;
-}
+const MAX_RESULTS = 25;
 
+/** Local search over bundled Indian cities (no external Places API). */
 export async function searchPlaces(input: string): Promise<PlacePrediction[]> {
-  
-  // Validate input
   const validation = placesSearchSchema.safeParse({ input });
   if (!validation.success) {
     return [];
   }
 
-  const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-  
-  if (!GOOGLE_PLACES_API_KEY || !input.trim()) {
+  const q = validation.data.input.trim().toLowerCase();
+  if (!q) {
     return [];
   }
 
-  const apiUrl = buildUrl({
-    input,
-    key: GOOGLE_PLACES_API_KEY,
-    components: "country:in",
-    types: "(cities)",
+  const scored: { row: IndianCityRow; score: number }[] = [];
+
+  for (const row of indianCities) {
+    const name = row.name.toLowerCase();
+    const state = row.state.toLowerCase();
+    let score = 0;
+    if (name === q) score = 100;
+    else if (name.startsWith(q)) score = 80;
+    else if (name.includes(q)) score = 60;
+    else if (state.startsWith(q)) score = 40;
+    else if (state.includes(q)) score = 20;
+    else continue;
+    scored.push({ row, score });
+  }
+
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.row.name.localeCompare(b.row.name);
   });
 
-  try {
-    const response = await fetch(apiUrl, {
-      next: { revalidate: 0 }, // Don't cache
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data: PlacesAutocompleteResponse = await response.json();
-
-    if (data.status === "OK" || data.status === "ZERO_RESULTS") {
-      const predictions = data.predictions || [];
-      return predictions;
-    }
-
-    return [];
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function searchStates(input: string): Promise<PlacePrediction[]> {
-
-  const validation = placesSearchSchema.safeParse({ input });
-  if (!validation.success) {
-    return [];
+  const seen = new Set<string>();
+  const out: PlacePrediction[] = [];
+  for (const { row } of scored) {
+    const key = `${row.name}\0${row.state}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(toPlacePrediction(row));
+    if (out.length >= MAX_RESULTS) break;
   }
 
-  const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-  if (!GOOGLE_PLACES_API_KEY || !input.trim()) {
-    return [];
-  }
-
-  const apiUrl = buildUrl({
-    input,
-    key: GOOGLE_PLACES_API_KEY,
-    components: "country:in",
-    types: "(regions)",
-  });
-
-  try {
-    const response = await fetch(apiUrl, { next: { revalidate: 0 } });
-    if (!response.ok) {
-      return [];
-    }
-    const data: PlacesAutocompleteResponse = await response.json();
-    if (data.status === "OK" || data.status === "ZERO_RESULTS") {
-      return data.predictions || [];
-    }
-    return [];
-  } catch (error) {
-    return [];
-  }
+  return out;
 }
 
 // ============================================

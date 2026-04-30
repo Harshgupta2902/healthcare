@@ -98,19 +98,9 @@ const healthConcerns: HealthConcern[] = [
   }
 ];
 
-import { searchPlaces, submitGuestAppointment } from "./actions";
+import { searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
-
-interface PlacePrediction {
-  place_id: string;
-  description: string;
-  structured_formatting?: {
-    main_text: string;
-    secondary_text: string;
-  };
-}
-
 
 function BookConsultationPageInner() {
   const searchParams = useSearchParams();
@@ -153,7 +143,6 @@ function BookConsultationPageInner() {
   // state & city are parsed from a single location input
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceStateRef = useRef<NodeJS.Timeout | null>(null);
   const [categoryOpen, setCategoryOpen] = useState(false);
 
   const appointmentSchema = z
@@ -273,10 +262,7 @@ function BookConsultationPageInner() {
     setIsLoading(true);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const startTime = Date.now();
-        // General city/location search
         const results = await searchPlaces(searchQuery);
-        const duration = Date.now() - startTime;
         setPredictions(results);
       } catch (error) {
         setPredictions([]);
