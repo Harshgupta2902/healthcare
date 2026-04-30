@@ -26,6 +26,10 @@ import {
     FileText
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { buildBookConsultationHref } from "@/lib/consultant-booking-ref";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +59,26 @@ function maskPhoneTrailing(phone: string): string {
 }
 
 export default function ConsultantDetailClient({ prof }: { prof: any }) {
+    const router = useRouter();
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const bookConsultationPath = buildBookConsultationHref(prof.id);
+
+    const handleBookAppointment = () => {
+        void (async () => {
+            const supabase = createClient();
+            const {
+                data: { user },
+                error,
+            } = await supabase.auth.getUser();
+            if (error || !user) {
+                router.push(
+                    `/login?redirect=${encodeURIComponent(bookConsultationPath)}`
+                );
+                return;
+            }
+            router.push(bookConsultationPath);
+        })();
+    };
 
     return (
         <div className="min-h-screen bg-[#fcfdff] pb-20 pt-24">
@@ -64,12 +87,14 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-12">
                     <div className="flex items-start gap-6">
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl overflow-hidden border-4 border-white shadow-2xl shrink-0 group">
+                        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-3xl overflow-hidden border-4 border-white shadow-2xl shrink-0 group">
                             {prof.profilePhotoUrl ? (
-                                <img
+                                <Image
                                     src={prof.profilePhotoUrl}
                                     alt={prof.displayName ?? prof.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    fill
+                                    sizes="(max-width: 768px) 96px, 128px"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                             ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-primary flex items-center justify-center">
@@ -99,9 +124,13 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                     </div>
 
                     <div className="flex gap-4">
-                        <Button className="h-14 px-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-lg transition-all active:scale-95 shadow-xl shadow-slate-200 group/btn">
+                        <Button
+                            type="button"
+                            onClick={handleBookAppointment}
+                            className="h-14 px-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-lg transition-all active:scale-95 shadow-xl shadow-slate-200 group/btn cursor-pointer"
+                        >
                             Book Appointment
-                            <ArrowRight className="ml-2 h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
+                            <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>
                     </div>
                 </div>

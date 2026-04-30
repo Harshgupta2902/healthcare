@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
     Search,
     Grid,
@@ -33,6 +33,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -95,8 +96,9 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
 
     return (
         <div className="min-h-screen bg-[#f8fafc]">
-            {/* Tickertape Style Main Filter Bar */}
-            <div className="sticky top-[4.5rem] z-30 w-full bg-white border-b border-slate-200 shadow-sm">
+            {/* In-flow spacer: visible gap under header at rest; scrolls away so sticky bar meets header flush */}
+            <div className="h-2 shrink-0 sm:h-3" aria-hidden />
+            <div className="sticky top-16 z-30 w-full bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center divide-x divide-slate-100">
 
                     {/* City Switcher */}
@@ -300,14 +302,20 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                 )}>
                     {/* Visual Section */}
                     <div className={cn(
-                        "relative bg-slate-50 overflow-hidden",
+                        "relative bg-slate-50 overflow-hidden", 
                         mode === "grid" ? "aspect-square w-full" : "h-40 w-40 rounded-2xl shrink-0"
                     )}>
                         {prof.profilePhotoUrl ? (
-                            <img
+                            <Image
                                 src={prof.profilePhotoUrl}
                                 alt={prof.displayName ?? prof.name}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                fill
+                                sizes={
+                                    mode === "grid"
+                                        ? "(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                        : "160px"
+                                }
+                                className="object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                         ) : (
                             <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center">
@@ -316,7 +324,7 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                         )}
 
                         {/* Status Overlays */}
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
                             <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-slate-200 font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
                                 {prof.specialization}
                             </Badge>
@@ -343,7 +351,7 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                                 <h3 className="text-2xl font-black text-slate-900 group-hover:text-primary transition-colors leading-tight">{prof.displayName ?? prof.name}</h3>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-slate-50/80 p-3 rounded-2xl">
                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Exp.</p>
                                     <div className="flex items-center gap-2">
@@ -366,11 +374,11 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                             </div>
                         </div>
 
-                        <div className="pt-6 mt-auto">
+                        <div className="pt-2 mt-auto">
                             <div className="flex items-center justify-between group/row">
                                 <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Connect Specialist</span>
                                 <div className="h-10 w-10 rounded-full bg-slate-900 group-hover:bg-primary flex items-center justify-center text-white transition-all shadow-xl shadow-slate-100">
-                                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight className="h-5 w-5" />
                                 </div>
                             </div>
                         </div>
