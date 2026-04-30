@@ -332,6 +332,12 @@ BEGIN
         CREATE POLICY "Admins can manage all subscribers" ON public.newsletter_subscribers FOR ALL 
         USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
     END IF;
+
+    -- Guest appointments (public booking requests)
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'guest_appointments' AND policyname = 'Admins can manage all guest appointments') THEN
+        CREATE POLICY "Admins can manage all guest appointments" ON public.guest_appointments FOR ALL
+        USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+    END IF;
 END $$;
 
 -- 🌱 FULL SEED DATA

@@ -1,4 +1,4 @@
-import { getAppointments } from '@/features/admin/actions'
+import { getAppointments, getProfessionalsForDropdown } from '@/features/admin/actions'
 import { AppointmentsTable } from './AppointmentsTable'
 
 export default async function AppointmentsPage({
@@ -9,25 +9,42 @@ export default async function AppointmentsPage({
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
-  const result = await getAppointments(page, 10, search)
-  const data = result.success ? result.data : []
-  const count = result.success ? result.count : 0
+  const [apptRes, prosRes] = await Promise.all([
+    getAppointments(page, 10, search),
+    getProfessionalsForDropdown(),
+  ])
+
+  const data = apptRes.success ? apptRes.data : []
+  const count = apptRes.success ? apptRes.count : 0
   const totalPages = Math.ceil((count || 0) / 10)
+  const professionals = prosRes.success ? prosRes.data : []
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          Appointments Management
+          Guest appointments
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage all appointments
+          Public booking requests from “Book consultation”. When a consultant is already linked, their details show;
+          otherwise assign a professional from the dropdown — it saves to the database.
         </p>
       </div>
-      {!result.success && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
+      {!apptRes.success && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">{apptRes.error}</p>
       )}
-      <AppointmentsTable initialData={data} initialPage={page} totalPages={totalPages} count={count || 0} />
+      {!prosRes.success && (
+        <p role="alert" className="text-sm text-amber-700 dark:text-amber-400">
+          Could not load professional list: {prosRes.error}
+        </p>
+      )}
+      <AppointmentsTable
+        initialData={data}
+        initialPage={page}
+        totalPages={totalPages}
+        count={count || 0}
+        professionals={professionals}
+      />
     </div>
   )
 }

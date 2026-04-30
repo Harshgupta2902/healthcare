@@ -28,3 +28,15 @@ COMMENT ON COLUMN public.professional_profiles.name_title IS 'Salutation shown b
 ALTER TABLE public.guest_appointments
   ADD COLUMN IF NOT EXISTS professional_id uuid null REFERENCES public.users (id);
 COMMENT ON COLUMN public.guest_appointments.professional_id IS 'Professional (users.id) the patient requested when booking via consultant deeplink; null for generic bookings.';
+
+-- 2026-04-30: Admin panel — list/update guest appointments (RLS)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'guest_appointments' AND policyname = 'Admins can manage all guest appointments'
+  ) THEN
+    CREATE POLICY "Admins can manage all guest appointments" ON public.guest_appointments FOR ALL
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;

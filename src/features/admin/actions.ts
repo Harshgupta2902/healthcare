@@ -84,6 +84,31 @@ const newsletterSchema = z.object({
   status: z.enum(['active', 'inactive']).default('active'),
 })
 
+const guestAppointmentProfessionalSchema = z.object({
+  guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
+  professionalId: z.union([z.string().uuid('Invalid professional id'), z.null()]),
+})
+
+/** Guest row for admin list + merged `users` row for `professional_id`. */
+export type GuestAppointmentAdminRow = {
+  id: string
+  first_name: string
+  last_name: string
+  age: number
+  phone: string
+  email: string
+  category: string
+  state: string
+  city: string
+  appointment_date: string
+  appointment_time: string
+  message: string | null
+  created_at: string
+  created_by: string | null
+  professional_id: string | null
+  professional: { id: string; name: string | null; email: string } | null
+}
+
 // ============================================
 // HELPER: Admin session (never throws — returns message for clients in production)
 // ============================================
@@ -288,39 +313,102 @@ export async function deleteProfessional(id: string) {
 // APPOINTMENTS CRUD
 // ============================================
 
+export async function getProfessionalsForDropdown() {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] as { id: string; name: string; email: string }[] }
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, email')
+    .eq('role', 'professional')
+    .order('name', { ascending: true })
+
+  if (error) return { success: false as const, error: error.message, data: [] }
+  return { success: true as const, data: (data || []) as { id: string; name: string; email: string }[] }
+}
+
 export async function getAppointments(page: number = 1, limit: number = 10, search?: string) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
-  let query = supabase
-    .from('appointments')
-    .select(`
-      *,
-      client:client_id (
-        id,
-        name,
-        email
-      ),
-      professional:professional_id (
-        id,
-        name,
-        email
-      )
-    `, { count: 'exact' })
-    .order('start_time', { ascending: false })
+  let query = supabase.from('guest_appointments').select('*', { count: 'exact' }).order('created_at', { ascending: false })
 
-  if (search) {
-    query = query.or(`appointment_type.ilike.%${search}%,status.ilike.%${search}%`)
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      query = query.or(
+        `first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term},phone.ilike.${term},city.ilike.${term},state.ilike.${term},category.ilike.${term}`
+      )
+    }
   }
 
   const from = (page - 1) * limit
   const to = from + limit - 1
 
-  const { data, error, count } = await query.range(from, to)
+  const { data: rows, error, count } = await query.range(from, to)
 
   if (error) return { success: false as const, error: error.message, data: [], count: 0 }
-  return { success: true as const, data: data || [], count: count || 0 }
+
+  type GuestRow = Record<string, unknown> & { id: string; professional_id: string | null }
+  const list = (rows ?? []) as GuestRow[]
+  const profIds = [...new Set(list.map((r) => r.professional_id).filter((x): x is string => Boolean(x)))]
+
+  const profMap = new Map<string, { id: string; name: string | null; email: string }>()
+  if (profIds.length) {
+    const { data: profs, error: profErr } = await supabase.from('users').select('id, name, email').in('id', profIds)
+    if (!profErr && profs) {
+      for (const p of profs) {
+        profMap.set(p.id, { id: p.id, name: p.name, email: p.email })
+      }
+    }
+  }
+
+  const data: GuestAppointmentAdminRow[] = list.map((r) => {
+    const base = r as unknown as Omit<GuestAppointmentAdminRow, 'professional'>
+    return {
+      ...base,
+      professional: r.professional_id ? profMap.get(r.professional_id) ?? null : null,
+    }
+  })
+
+  return { success: true as const, data, count: count || 0 }
+}
+
+export async function updateGuestAppointmentProfessional(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const supabase = await createClient()
+
+  const parsed = guestAppointmentProfessionalSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const { guestAppointmentId, professionalId } = parsed.data
+
+  if (professionalId) {
+    const { data: pro, error: proErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', professionalId)
+      .eq('role', 'professional')
+      .maybeSingle()
+
+    if (proErr || !pro) {
+      return { success: false as const, error: 'That user is not a valid professional.' }
+    }
+  }
+
+  const { error } = await supabase
+    .from('guest_appointments')
+    .update({ professional_id: professionalId })
+    .eq('id', guestAppointmentId)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/appointments')
+  return { success: true as const }
 }
 
 export async function createAppointment(data: z.infer<typeof appointmentSchema>) {
@@ -367,10 +455,7 @@ export async function deleteAppointment(id: string) {
   if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('appointments')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.from('guest_appointments').delete().eq('id', id)
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/appointments')
