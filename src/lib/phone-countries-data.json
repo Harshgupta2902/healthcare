@@ -1,0 +1,1703 @@
+[
+    {
+        "name": "Afghanistan",
+        "iso2": "AF",
+        "dialDigits": "93",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Åland Islands",
+        "iso2": "AX",
+        "dialDigits": "358",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Albania",
+        "iso2": "AL",
+        "dialDigits": "355",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Algeria",
+        "iso2": "DZ",
+        "dialDigits": "213",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "American Samoa",
+        "iso2": "AS",
+        "dialDigits": "1684",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Andorra",
+        "iso2": "AD",
+        "dialDigits": "376",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Angola",
+        "iso2": "AO",
+        "dialDigits": "244",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Anguilla",
+        "iso2": "AI",
+        "dialDigits": "1264",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Antarctica",
+        "iso2": "AQ",
+        "dialDigits": "672",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Antigua and Barbuda",
+        "iso2": "AG",
+        "dialDigits": "1268",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Argentina",
+        "iso2": "AR",
+        "dialDigits": "54",
+        "minLength": 12,
+        "maxLength": 12
+    },
+    {
+        "name": "Armenia",
+        "iso2": "AM",
+        "dialDigits": "374",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Aruba",
+        "iso2": "AW",
+        "dialDigits": "297",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Australia",
+        "iso2": "AU",
+        "dialDigits": "61",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Austria",
+        "iso2": "AT",
+        "dialDigits": "43",
+        "minLength": 13,
+        "maxLength": 13
+    },
+    {
+        "name": "Azerbaijan",
+        "iso2": "AZ",
+        "dialDigits": "994",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Bahamas",
+        "iso2": "BS",
+        "dialDigits": "1242",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Bahrain",
+        "iso2": "BH",
+        "dialDigits": "973",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Bangladesh",
+        "iso2": "BD",
+        "dialDigits": "880",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Barbados",
+        "iso2": "BB",
+        "dialDigits": "1246",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Belarus",
+        "iso2": "BY",
+        "dialDigits": "375",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Belgium",
+        "iso2": "BE",
+        "dialDigits": "32",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Belize",
+        "iso2": "BZ",
+        "dialDigits": "501",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Benin",
+        "iso2": "BJ",
+        "dialDigits": "229",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Bermuda",
+        "iso2": "BM",
+        "dialDigits": "1441",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Bhutan",
+        "iso2": "BT",
+        "dialDigits": "975",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Bolivia, Plurinational State of bolivia",
+        "iso2": "BO",
+        "dialDigits": "591",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Bosnia and Herzegovina",
+        "iso2": "BA",
+        "dialDigits": "387",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Botswana",
+        "iso2": "BW",
+        "dialDigits": "267",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Bouvet Island",
+        "iso2": "BV",
+        "dialDigits": "47",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Brazil",
+        "iso2": "BR",
+        "dialDigits": "55",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "British Indian Ocean Territory",
+        "iso2": "IO",
+        "dialDigits": "246",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Brunei Darussalam",
+        "iso2": "BN",
+        "dialDigits": "673",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Bulgaria",
+        "iso2": "BG",
+        "dialDigits": "359",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Burkina Faso",
+        "iso2": "BF",
+        "dialDigits": "226",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Burundi",
+        "iso2": "BI",
+        "dialDigits": "257",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Cambodia",
+        "iso2": "KH",
+        "dialDigits": "855",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Cameroon",
+        "iso2": "CM",
+        "dialDigits": "237",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Canada",
+        "iso2": "CA",
+        "dialDigits": "1",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Cayman Islands",
+        "iso2": "KY",
+        "dialDigits": "345",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Central African Republic",
+        "iso2": "CF",
+        "dialDigits": "236",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Chad",
+        "iso2": "TD",
+        "dialDigits": "235",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Chile",
+        "iso2": "CL",
+        "dialDigits": "56",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "China",
+        "iso2": "CN",
+        "dialDigits": "86",
+        "minLength": 11,
+        "maxLength": 12
+    },
+    {
+        "name": "Christmas Island",
+        "iso2": "CX",
+        "dialDigits": "61",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Cocos (Keeling) Islands",
+        "iso2": "CC",
+        "dialDigits": "61",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Colombia",
+        "iso2": "CO",
+        "dialDigits": "57",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Comoros",
+        "iso2": "KM",
+        "dialDigits": "269",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Congo",
+        "iso2": "CG",
+        "dialDigits": "242",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Congo, The Democratic Republic of the Congo",
+        "iso2": "CD",
+        "dialDigits": "243",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Cook Islands",
+        "iso2": "CK",
+        "dialDigits": "682",
+        "minLength": 5,
+        "maxLength": 5
+    },
+    {
+        "name": "Costa Rica",
+        "iso2": "CR",
+        "dialDigits": "506",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Côte d'Ivoire",
+        "iso2": "CI",
+        "dialDigits": "225",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Croatia",
+        "iso2": "HR",
+        "dialDigits": "385",
+        "minLength": 12,
+        "maxLength": 12
+    },
+    {
+        "name": "Cuba",
+        "iso2": "CU",
+        "dialDigits": "53",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Cyprus",
+        "iso2": "CY",
+        "dialDigits": "357",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Czech Republic",
+        "iso2": "CZ",
+        "dialDigits": "420",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Denmark",
+        "iso2": "DK",
+        "dialDigits": "45",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Djibouti",
+        "iso2": "DJ",
+        "dialDigits": "253",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Dominica",
+        "iso2": "DM",
+        "dialDigits": "1767",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Dominican Republic",
+        "iso2": "DO",
+        "dialDigits": "1",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Ecuador",
+        "iso2": "EC",
+        "dialDigits": "593",
+        "minLength": 8,
+        "maxLength": 9
+    },
+    {
+        "name": "Egypt",
+        "iso2": "EG",
+        "dialDigits": "20",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "El Salvador",
+        "iso2": "SV",
+        "dialDigits": "503",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "Equatorial Guinea",
+        "iso2": "GQ",
+        "dialDigits": "240",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Eritrea",
+        "iso2": "ER",
+        "dialDigits": "291",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Estonia",
+        "iso2": "EE",
+        "dialDigits": "372",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Ethiopia",
+        "iso2": "ET",
+        "dialDigits": "251",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Falkland Islands (Malvinas)",
+        "iso2": "FK",
+        "dialDigits": "500",
+        "minLength": 5,
+        "maxLength": 5
+    },
+    {
+        "name": "Faroe Islands",
+        "iso2": "FO",
+        "dialDigits": "298",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Fiji",
+        "iso2": "FJ",
+        "dialDigits": "679",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Finland",
+        "iso2": "FI",
+        "dialDigits": "358",
+        "minLength": 12,
+        "maxLength": 12
+    },
+    {
+        "name": "France",
+        "iso2": "FR",
+        "dialDigits": "33",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "French Guiana",
+        "iso2": "GF",
+        "dialDigits": "594",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "French Polynesia",
+        "iso2": "PF",
+        "dialDigits": "689",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "French Southern Territories",
+        "iso2": "TF",
+        "dialDigits": "262",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Gabon",
+        "iso2": "GA",
+        "dialDigits": "241",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Gambia",
+        "iso2": "GM",
+        "dialDigits": "220",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Georgia",
+        "iso2": "GE",
+        "dialDigits": "995",
+        "minLength": 8,
+        "maxLength": 9
+    },
+    {
+        "name": "Germany",
+        "iso2": "DE",
+        "dialDigits": "49",
+        "minLength": 9,
+        "maxLength": 13
+    },
+    {
+        "name": "Ghana",
+        "iso2": "GH",
+        "dialDigits": "233",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Gibraltar",
+        "iso2": "GI",
+        "dialDigits": "350",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Greece",
+        "iso2": "GR",
+        "dialDigits": "30",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Greenland",
+        "iso2": "GL",
+        "dialDigits": "299",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Grenada",
+        "iso2": "GD",
+        "dialDigits": "1473",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Guadeloupe",
+        "iso2": "GP",
+        "dialDigits": "590",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Guam",
+        "iso2": "GU",
+        "dialDigits": "1671",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Guatemala",
+        "iso2": "GT",
+        "dialDigits": "502",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Guernsey",
+        "iso2": "GG",
+        "dialDigits": "44",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Guinea",
+        "iso2": "GN",
+        "dialDigits": "224",
+        "minLength": 8,
+        "maxLength": 9
+    },
+    {
+        "name": "Guinea-Bissau",
+        "iso2": "GW",
+        "dialDigits": "245",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Guyana",
+        "iso2": "GY",
+        "dialDigits": "592",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Haiti",
+        "iso2": "HT",
+        "dialDigits": "509",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Heard Island and Mcdonald Islands",
+        "iso2": "HM",
+        "dialDigits": "672",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Holy See (Vatican City State)",
+        "iso2": "VA",
+        "dialDigits": "379",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Honduras",
+        "iso2": "HN",
+        "dialDigits": "504",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Hong Kong",
+        "iso2": "HK",
+        "dialDigits": "852",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Hungary",
+        "iso2": "HU",
+        "dialDigits": "36",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Iceland",
+        "iso2": "IS",
+        "dialDigits": "354",
+        "minLength": 7,
+        "maxLength": 9
+    },
+    {
+        "name": "India",
+        "iso2": "IN",
+        "dialDigits": "91",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Indonesia",
+        "iso2": "ID",
+        "dialDigits": "62",
+        "minLength": 10,
+        "maxLength": 13
+    },
+    {
+        "name": "Iran, Islamic Republic of Persian Gulf",
+        "iso2": "IR",
+        "dialDigits": "98",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Iraq",
+        "iso2": "IQ",
+        "dialDigits": "964",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Ireland",
+        "iso2": "IE",
+        "dialDigits": "353",
+        "minLength": 7,
+        "maxLength": 9
+    },
+    {
+        "name": "Isle of Man",
+        "iso2": "IM",
+        "dialDigits": "44",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Israel",
+        "iso2": "IL",
+        "dialDigits": "972",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Campione d'Italia",
+        "iso2": "IT",
+        "dialDigits": "39",
+        "minLength": 9,
+        "maxLength": 10
+    },
+    {
+        "name": "Jamaica",
+        "iso2": "JM",
+        "dialDigits": "1876",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Japan",
+        "iso2": "JP",
+        "dialDigits": "81",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Jersey",
+        "iso2": "JE",
+        "dialDigits": "44",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Jordan",
+        "iso2": "JO",
+        "dialDigits": "962",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Kazakhstan",
+        "iso2": "KZ",
+        "dialDigits": "7",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Kenya",
+        "iso2": "KE",
+        "dialDigits": "254",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Kiribati",
+        "iso2": "KI",
+        "dialDigits": "686",
+        "minLength": 5,
+        "maxLength": 5
+    },
+    {
+        "name": "Korea, Democratic People's Republic of Korea",
+        "iso2": "KP",
+        "dialDigits": "850",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Korea, Republic of South Korea",
+        "iso2": "KR",
+        "dialDigits": "82",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "Kuwait",
+        "iso2": "KW",
+        "dialDigits": "965",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Kyrgyzstan",
+        "iso2": "KG",
+        "dialDigits": "996",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Laos",
+        "iso2": "LA",
+        "dialDigits": "856",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Latvia",
+        "iso2": "LV",
+        "dialDigits": "371",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Lebanon",
+        "iso2": "LB",
+        "dialDigits": "961",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Lesotho",
+        "iso2": "LS",
+        "dialDigits": "266",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Liberia",
+        "iso2": "LR",
+        "dialDigits": "231",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Libyan Arab Jamahiriya",
+        "iso2": "LY",
+        "dialDigits": "218",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Liechtenstein",
+        "iso2": "LI",
+        "dialDigits": "423",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Lithuania",
+        "iso2": "LT",
+        "dialDigits": "370",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Luxembourg",
+        "iso2": "LU",
+        "dialDigits": "352",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "Macao",
+        "iso2": "MO",
+        "dialDigits": "853",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Macedonia",
+        "iso2": "MK",
+        "dialDigits": "389",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Madagascar",
+        "iso2": "MG",
+        "dialDigits": "261",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Malawi",
+        "iso2": "MW",
+        "dialDigits": "265",
+        "minLength": 7,
+        "maxLength": 9
+    },
+    {
+        "name": "Malaysia",
+        "iso2": "MY",
+        "dialDigits": "60",
+        "minLength": 9,
+        "maxLength": 10
+    },
+    {
+        "name": "Maldives",
+        "iso2": "MV",
+        "dialDigits": "960",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Mali",
+        "iso2": "ML",
+        "dialDigits": "223",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Malta",
+        "iso2": "MT",
+        "dialDigits": "356",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Marshall Islands",
+        "iso2": "MH",
+        "dialDigits": "692",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Martinique",
+        "iso2": "MQ",
+        "dialDigits": "596",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Mauritania",
+        "iso2": "MR",
+        "dialDigits": "222",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Mauritius",
+        "iso2": "MU",
+        "dialDigits": "230",
+        "minLength": 7,
+        "maxLength": 8
+    },
+    {
+        "name": "Mayotte",
+        "iso2": "YT",
+        "dialDigits": "262",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Mexico",
+        "iso2": "MX",
+        "dialDigits": "52",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Micronesia, Federated States of Micronesia",
+        "iso2": "FM",
+        "dialDigits": "691",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Moldova",
+        "iso2": "MD",
+        "dialDigits": "373",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Monaco",
+        "iso2": "MC",
+        "dialDigits": "377",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Mongolia",
+        "iso2": "MN",
+        "dialDigits": "976",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Montenegro",
+        "iso2": "ME",
+        "dialDigits": "382",
+        "minLength": 12,
+        "maxLength": 12
+    },
+    {
+        "name": "Montserrat",
+        "iso2": "MS",
+        "dialDigits": "1664",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Morocco",
+        "iso2": "MA",
+        "dialDigits": "212",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Mozambique",
+        "iso2": "MZ",
+        "dialDigits": "258",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Myanmar",
+        "iso2": "MM",
+        "dialDigits": "95",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Namibia",
+        "iso2": "NA",
+        "dialDigits": "264",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Nauru",
+        "iso2": "NR",
+        "dialDigits": "674",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Nepal",
+        "iso2": "NP",
+        "dialDigits": "977",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Netherlands",
+        "iso2": "NL",
+        "dialDigits": "31",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "New Caledonia",
+        "iso2": "NC",
+        "dialDigits": "687",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "New Zealand",
+        "iso2": "NZ",
+        "dialDigits": "64",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Nicaragua",
+        "iso2": "NI",
+        "dialDigits": "505",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Niger",
+        "iso2": "NE",
+        "dialDigits": "227",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Nigeria",
+        "iso2": "NG",
+        "dialDigits": "234",
+        "minLength": 10,
+        "maxLength": 11
+    },
+    {
+        "name": "Niue",
+        "iso2": "NU",
+        "dialDigits": "683",
+        "minLength": 4,
+        "maxLength": 4
+    },
+    {
+        "name": "Norfolk Island",
+        "iso2": "NF",
+        "dialDigits": "672",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Northern Mariana Islands",
+        "iso2": "MP",
+        "dialDigits": "1670",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Norway",
+        "iso2": "NO",
+        "dialDigits": "47",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Oman",
+        "iso2": "OM",
+        "dialDigits": "968",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Pakistan",
+        "iso2": "PK",
+        "dialDigits": "92",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Palau",
+        "iso2": "PW",
+        "dialDigits": "680",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Palestinian Territory, Occupied",
+        "iso2": "PS",
+        "dialDigits": "970",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Panama",
+        "iso2": "PA",
+        "dialDigits": "507",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Papua New Guinea",
+        "iso2": "PG",
+        "dialDigits": "675",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "Paraguay",
+        "iso2": "PY",
+        "dialDigits": "595",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Peru",
+        "iso2": "PE",
+        "dialDigits": "51",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Philippines",
+        "iso2": "PH",
+        "dialDigits": "63",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Pitcairn",
+        "iso2": "PN",
+        "dialDigits": "64",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Poland",
+        "iso2": "PL",
+        "dialDigits": "48",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Portugal",
+        "iso2": "PT",
+        "dialDigits": "351",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Puerto Rico",
+        "iso2": "PR",
+        "dialDigits": "1939",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Qatar",
+        "iso2": "QA",
+        "dialDigits": "974",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Romania",
+        "iso2": "RO",
+        "dialDigits": "40",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Russia",
+        "iso2": "RU",
+        "dialDigits": "7",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Rwanda",
+        "iso2": "RW",
+        "dialDigits": "250",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Reunion",
+        "iso2": "RE",
+        "dialDigits": "262",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Saint Barthelemy",
+        "iso2": "BL",
+        "dialDigits": "590",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Saint Helena, Ascension and Tristan Da Cunha",
+        "iso2": "SH",
+        "dialDigits": "290",
+        "minLength": 4,
+        "maxLength": 4
+    },
+    {
+        "name": "Saint Kitts and Nevis",
+        "iso2": "KN",
+        "dialDigits": "1869",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Saint Lucia",
+        "iso2": "LC",
+        "dialDigits": "1758",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Saint Martin",
+        "iso2": "MF",
+        "dialDigits": "590",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Saint Pierre and Miquelon",
+        "iso2": "PM",
+        "dialDigits": "508",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Saint Vincent and the Grenadines",
+        "iso2": "VC",
+        "dialDigits": "1784",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Samoa",
+        "iso2": "WS",
+        "dialDigits": "685",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "San Marino",
+        "iso2": "SM",
+        "dialDigits": "378",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Sao Tome and Principe",
+        "iso2": "ST",
+        "dialDigits": "239",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Saudi Arabia",
+        "iso2": "SA",
+        "dialDigits": "966",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Senegal",
+        "iso2": "SN",
+        "dialDigits": "221",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Serbia",
+        "iso2": "RS",
+        "dialDigits": "381",
+        "minLength": 12,
+        "maxLength": 12
+    },
+    {
+        "name": "Seychelles",
+        "iso2": "SC",
+        "dialDigits": "248",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Sierra Leone",
+        "iso2": "SL",
+        "dialDigits": "232",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Singapore",
+        "iso2": "SG",
+        "dialDigits": "65",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Slovakia",
+        "iso2": "SK",
+        "dialDigits": "421",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Slovenia",
+        "iso2": "SI",
+        "dialDigits": "386",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Solomon Islands",
+        "iso2": "SB",
+        "dialDigits": "677",
+        "minLength": 5,
+        "maxLength": 5
+    },
+    {
+        "name": "Somalia",
+        "iso2": "SO",
+        "dialDigits": "252",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "South Africa",
+        "iso2": "ZA",
+        "dialDigits": "27",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "South Sudan",
+        "iso2": "SS",
+        "dialDigits": "211",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "South Georgia and the South Sandwich Islands",
+        "iso2": "GS",
+        "dialDigits": "500",
+        "minLength": 15,
+        "maxLength": 15
+    },
+    {
+        "name": "Spain",
+        "iso2": "ES",
+        "dialDigits": "34",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Sri Lanka",
+        "iso2": "LK",
+        "dialDigits": "94",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Sudan",
+        "iso2": "SD",
+        "dialDigits": "249",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Suriname",
+        "iso2": "SR",
+        "dialDigits": "597",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Svalbard and Jan Mayen",
+        "iso2": "SJ",
+        "dialDigits": "47",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Eswatini",
+        "iso2": "SZ",
+        "dialDigits": "268",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Sweden",
+        "iso2": "SE",
+        "dialDigits": "46",
+        "minLength": 7,
+        "maxLength": 13
+    },
+    {
+        "name": "Switzerland",
+        "iso2": "CH",
+        "dialDigits": "41",
+        "minLength": 9,
+        "maxLength": 12
+    },
+    {
+        "name": "Syrian Arab Republic",
+        "iso2": "SY",
+        "dialDigits": "963",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Taiwan",
+        "iso2": "TW",
+        "dialDigits": "886",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Tajikistan",
+        "iso2": "TJ",
+        "dialDigits": "992",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Tanzania, United Republic of Tanzania",
+        "iso2": "TZ",
+        "dialDigits": "255",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Thailand",
+        "iso2": "TH",
+        "dialDigits": "66",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Timor-Leste",
+        "iso2": "TL",
+        "dialDigits": "670",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Togo",
+        "iso2": "TG",
+        "dialDigits": "228",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Tokelau",
+        "iso2": "TK",
+        "dialDigits": "690",
+        "minLength": 4,
+        "maxLength": 4
+    },
+    {
+        "name": "Tonga",
+        "iso2": "TO",
+        "dialDigits": "676",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Trinidad and Tobago",
+        "iso2": "TT",
+        "dialDigits": "1868",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Tunisia",
+        "iso2": "TN",
+        "dialDigits": "216",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Turkey",
+        "iso2": "TR",
+        "dialDigits": "90",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Turkmenistan",
+        "iso2": "TM",
+        "dialDigits": "993",
+        "minLength": 8,
+        "maxLength": 8
+    },
+    {
+        "name": "Turks and Caicos Islands",
+        "iso2": "TC",
+        "dialDigits": "1649",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Tuvalu",
+        "iso2": "TV",
+        "dialDigits": "688",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Uganda",
+        "iso2": "UG",
+        "dialDigits": "256",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Ukraine",
+        "iso2": "UA",
+        "dialDigits": "380",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "United Arab Emirates",
+        "iso2": "AE",
+        "dialDigits": "971",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "United Kingdom",
+        "iso2": "GB",
+        "dialDigits": "44",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "United States",
+        "iso2": "US",
+        "dialDigits": "1",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Uruguay",
+        "iso2": "UY",
+        "dialDigits": "598",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Uzbekistan",
+        "iso2": "UZ",
+        "dialDigits": "998",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Vanuatu",
+        "iso2": "VU",
+        "dialDigits": "678",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Venezuela, Bolivarian Republic of Venezuela",
+        "iso2": "VE",
+        "dialDigits": "58",
+        "minLength": 10,
+        "maxLength": 10
+    },
+    {
+        "name": "Vietnam",
+        "iso2": "VN",
+        "dialDigits": "84",
+        "minLength": 11,
+        "maxLength": 11
+    },
+    {
+        "name": "Virgin Islands, British",
+        "iso2": "VG",
+        "dialDigits": "1284",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Virgin Islands, U.S.",
+        "iso2": "VI",
+        "dialDigits": "1340",
+        "minLength": 7,
+        "maxLength": 7
+    },
+    {
+        "name": "Wallis and Futuna",
+        "iso2": "WF",
+        "dialDigits": "681",
+        "minLength": 6,
+        "maxLength": 6
+    },
+    {
+        "name": "Yemen",
+        "iso2": "YE",
+        "dialDigits": "967",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Zambia",
+        "iso2": "ZM",
+        "dialDigits": "260",
+        "minLength": 9,
+        "maxLength": 9
+    },
+    {
+        "name": "Zimbabwe",
+        "iso2": "ZW",
+        "dialDigits": "263",
+        "minLength": 9,
+        "maxLength": 9
+    }
+]
