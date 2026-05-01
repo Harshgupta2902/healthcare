@@ -123,52 +123,38 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
           <Card className="border-teal-200/50 dark:border-gray-700/50 shadow-lg rounded-2xl">
             <CardHeader className="pt-4">
               <CardTitle>Recent Appointments</CardTitle>
-              <CardDescription>Latest appointment bookings</CardDescription>
+              <CardDescription>Registered bookings and guest consultation requests</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Professional</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>With</TableHead>
+                    <TableHead>When</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentAppointments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-gray-500 py-8">
+                      <TableCell colSpan={3} className="text-center text-gray-500 py-8">
                         No appointments found
                       </TableCell>
                     </TableRow>
                   ) : (
                     recentAppointments.map((appointment: any) => (
-                      <TableRow key={appointment.id}>
+                      <TableRow key={`${appointment.kind ?? 'registered'}-${appointment.id}`}>
                         <TableCell className="font-medium">
-                          {appointment.client?.name || 'N/A'}
+                          <span>{appointment.client?.name || 'N/A'}</span>
+                          {appointment.kind === 'guest' && (
+                            <Badge variant="outline" className="ml-2 capitalize text-xs">
+                              Guest
+                            </Badge>
+                          )}
                         </TableCell>
-                        <TableCell>
-                          {appointment.professional?.name || 'N/A'}
-                        </TableCell>
+                        <TableCell>{appointment.professional?.name || '—'}</TableCell>
                         <TableCell>
                           {format(new Date(appointment.start_time), 'MMM dd, yyyy HH:mm')}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              appointment.status === 'completed'
-                                ? 'default'
-                                : appointment.status === 'confirmed'
-                                ? 'default'
-                                : appointment.status === 'cancelled'
-                                ? 'destructive'
-                                : 'secondary'
-                            }
-                            className="capitalize"
-                          >
-                            {appointment.status}
-                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))

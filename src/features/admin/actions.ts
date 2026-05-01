@@ -1094,31 +1094,92 @@ export async function getDashboardStats() {
   }
 }
 
+function guestAppointmentSlotIso(row: { appointment_date: string; appointment_time: string }): string {
+  const date = String(row.appointment_date).slice(0, 10)
+  let time = String(row.appointment_time ?? '').trim()
+  if (!time) return `${date}T00:00:00`
+  if (/^\d{1,2}:\d{2}$/.test(time)) time = `${time}:00`
+  return `${date}T${time}`
+}
+
+export type RecentAdminAppointmentRow = {
+  id: string
+  kind: 'registered' | 'guest'
+  client: { name: string; email?: string | null } | null
+  professional: { name: string; email?: string | null } | null
+  /** Scheduled start (registered: DB timestamptz; guest: date + time from booking form). */
+  start_time: string
+  created_at: string
+}
+
 export async function getRecentAppointments(limit: number = 5) {
   const auth = await requireAdmin()
-  if (!auth.ok) return { success: false as const, error: auth.error, data: [] }
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] as RecentAdminAppointmentRow[] }
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      *,
-      client:client_id (
-        id,
-        name,
-        email
-      ),
-      professional:professional_id (
-        id,
-        name,
-        email
+  const n = Math.max(1, limit)
+  const [{ data: apts, error: aptErr }, { data: guests, error: guestErr }] = await Promise.all([
+    supabase
+      .from('appointments')
+      .select(
+        `*, client:users!appointments_client_id_fkey(id,name,email), professional:users!appointments_professional_id_fkey(id,name,email)`,
       )
-    `)
-    .order('start_time', { ascending: false })
-    .limit(limit)
+      .order('created_at', { ascending: false })
+      .limit(n),
+    supabase.from('guest_appointments').select('*').order('created_at', { ascending: false }).limit(n),
+  ])
 
-  if (error) return { success: false as const, error: error.message, data: [] }
-  return { success: true as const, data: data || [] }
+  if (aptErr) return { success: false as const, error: aptErr.message, data: [] }
+  if (guestErr) return { success: false as const, error: guestErr.message, data: [] }
+
+  const guestList = guests ?? []
+  const profIds = [...new Set(guestList.map((g: { professional_id?: string | null }) => g.professional_id).filter((x): x is string => Boolean(x)))]
+  const profMap = new Map<string, { name: string }>()
+  if (profIds.length) {
+    const { data: profs, error: profErr } = await supabase.from('users').select('id, name').in('id', profIds)
+    if (profErr) return { success: false as const, error: profErr.message, data: [] }
+    for (const p of profs ?? []) profMap.set(p.id, { name: p.name })
+  }
+
+  const registered: RecentAdminAppointmentRow[] = (apts ?? []).map((a: Record<string, unknown>) => ({
+    id: a.id as string,
+    kind: 'registered' as const,
+    client: (a.client as { name?: string; email?: string } | null)
+      ? { name: String((a.client as { name?: string }).name ?? ''), email: (a.client as { email?: string }).email }
+      : null,
+    professional: (a.professional as { name?: string; email?: string } | null)
+      ? {
+          name: String((a.professional as { name?: string }).name ?? ''),
+          email: (a.professional as { email?: string }).email,
+        }
+      : null,
+    start_time: String(a.start_time),
+    created_at: String(a.created_at),
+  }))
+
+  const guestRows: RecentAdminAppointmentRow[] = guestList.map((g: Record<string, unknown>) => {
+    const fn = String(g.first_name ?? '').trim()
+    const ln = String(g.last_name ?? '').trim()
+    const name = [fn, ln].filter(Boolean).join(' ') || 'Guest'
+    const pid = g.professional_id as string | null | undefined
+    return {
+      id: g.id as string,
+      kind: 'guest' as const,
+      client: { name, email: (g.email as string) ?? null },
+      professional: pid ? { name: profMap.get(pid)?.name ?? '—' } : { name: '—' },
+      start_time: guestAppointmentSlotIso({
+        appointment_date: String(g.appointment_date),
+        appointment_time: String(g.appointment_time ?? ''),
+      }),
+      created_at: String(g.created_at),
+    }
+  })
+
+  const merged = [...registered, ...guestRows]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, n)
+
+  return { success: true as const, data: merged }
 }
 
 export async function getRecentUsers(limit: number = 5) {
