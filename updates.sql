@@ -1,6 +1,12 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-01: Split contact phone — E.164 country prefix + national digits (users.phone stays national only).
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS phone_country_code TEXT;
+COMMENT ON COLUMN public.users.phone_country_code IS 'E.164 dial prefix, e.g. +91; national number stored in phone.';
+COMMENT ON COLUMN public.users.phone IS 'National subscriber number (digits only), without country code.';
+
 -- 2026-04-13: Storage bucket for professional qualification verification uploads (used by addQualification server action)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('qualifications', 'qualifications', true)

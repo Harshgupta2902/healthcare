@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   image TEXT,
   role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('client', 'professional', 'admin')),
   phone TEXT,
+  phone_country_code TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
