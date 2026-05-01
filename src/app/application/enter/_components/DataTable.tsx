@@ -39,6 +39,8 @@ interface DataTableProps<T> {
   onDelete?: (item: T) => void
   /** When set, renders the Actions column instead of default edit/delete buttons */
   renderRowActions?: (item: T) => ReactNode
+  /** Stable row key (defaults to `String(item.id)`). Use when `id` is not unique or absent. */
+  getRowKey?: (item: T) => string | number
   addLabel?: string
   page?: number
   totalPages?: number
@@ -55,6 +57,7 @@ export function DataTable<T extends { id: string | number }>({
   onEdit,
   onDelete,
   renderRowActions,
+  getRowKey,
   addLabel = 'Add New',
   page = 1,
   totalPages = 1,
@@ -121,7 +124,10 @@ export function DataTable<T extends { id: string | number }>({
               </TableRow>
             ) : (
               data.map((item) => (
-                <TableRow key={item.id} className="hover:bg-teal-50/30 dark:hover:bg-gray-800/30">
+                <TableRow
+                  key={getRowKey ? String(getRowKey(item)) : String(item.id)}
+                  className="hover:bg-teal-50/30 dark:hover:bg-gray-800/30"
+                >
                   {columns.map((column) => (
                     <TableCell key={column.key}>
                       {column.render
