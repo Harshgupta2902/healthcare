@@ -881,7 +881,6 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             <Input
                                                 placeholder="Enter license number"
                                                 value={profileForm.licenseNumber || ""}
-                                                onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '')}
                                                 onChange={(e) => setProfileForm({ ...profileForm, licenseNumber: e.target.value })}
                                                 disabled={!isEditingProfile}
                                                 className="rounded-xl"

@@ -12,7 +12,7 @@ import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES_ZOD } from '@/l
 
 const profileSchema = z.object({
     specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
-    licenseNumber: z.string().min(1, "License number is required").regex(/^[a-zA-Z0-9]*$/, "License number must be alphanumeric"),
+    licenseNumber: z.string().min(1, "License number is required").max(200, "License number is too long"),
     bio: z.string().optional().nullable(),
     nameTitle: z.enum(PROFESSIONAL_NAME_TITLES_ZOD).optional().nullable(),
     yearsOfExperience: z.number().optional().nullable(),
