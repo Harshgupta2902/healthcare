@@ -54,6 +54,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
+import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     getPhoneCountryOptionByIso2,
@@ -1018,7 +1019,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             Add Credential
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="rounded-2xl max-w-lg w-[calc(100vw-2rem)] sm:w-full overflow-hidden">
+                                    <DialogContent className="rounded-2xl max-w-lg w-[calc(100vw-2rem)] sm:w-full overflow-visible">
                                         <DialogHeader>
                                             <DialogTitle className="text-xl font-black">Add New Qualification</DialogTitle>
                                             <DialogDescription>Enter your educational or professional certification details</DialogDescription>
@@ -1030,18 +1031,21 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     placeholder="e.g., MD Cardiology, Board Certified"
                                                     value={qualificationForm.degree}
                                                     onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
-                                                    onChange={(e) => setQualificationForm({ ...qualificationForm, degree: e.target.value })}
+                                                    onChange={(e) =>
+                                                        setQualificationForm((prev) => ({ ...prev, degree: e.target.value }))
+                                                    }
                                                     className="rounded-xl"
                                                 />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="font-bold text-slate-600">Issuing Institution *</Label>
-                                                <Input
-                                                    placeholder="e.g., Johns Hopkins Hospital"
+                                                <QualificationInstitutionInput
+                                                    active={showAddQualification}
                                                     value={qualificationForm.institution}
-                                                    onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
-                                                    onChange={(e) => setQualificationForm({ ...qualificationForm, institution: e.target.value })}
-                                                    className="rounded-xl"
+                                                    onChange={(institution) =>
+                                                        setQualificationForm((prev) => ({ ...prev, institution }))
+                                                    }
+                                                    disabled={isSaving}
                                                 />
                                             </div>
                                             <div className="space-y-4 w-full min-w-0">
@@ -1057,7 +1061,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         onChange={(e) => {
                                                             const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
                                                             if (digits === "") {
-                                                                setQualificationForm({ ...qualificationForm, year: null });
+                                                                setQualificationForm((prev) => ({ ...prev, year: null }));
                                                                 return;
                                                             }
                                                             let n = parseInt(digits, 10);
@@ -1067,7 +1071,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 if (n > maxY) n = maxY;
                                                                 if (n < minY) n = minY;
                                                             }
-                                                            setQualificationForm({ ...qualificationForm, year: n });
+                                                            setQualificationForm((prev) => ({ ...prev, year: n }));
                                                         }}
                                                         className="rounded-xl h-12 w-full"
                                                     />

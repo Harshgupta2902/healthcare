@@ -16,6 +16,7 @@ import {
     isKnownPhoneCountryDial,
     normalizePhoneCountryCode,
 } from '@/lib/phone-country-options'
+import { getUniversitiesNames, searchUniversityNames } from '@/lib/universities-gist'
 
 const profileSchema = z
     .object({
@@ -166,6 +167,37 @@ export async function updateProfessionalProfile(data: any) {
 export type AddQualificationResult =
     | { success: true; documentUrl: string }
     | { success: false; error: string }
+
+const searchUniversitiesInputSchema = z.object({
+    query: z.string().min(2).max(200),
+})
+
+export type SearchUniversitiesResult =
+    | { success: true; results: string[] }
+    | { success: false; error: string; results: [] }
+
+/**
+ * Search issuing institutions against the public universities gist (cached on the server).
+ * Clients can still submit any institution string if nothing matches.
+ */
+export async function searchUniversities(input: unknown): Promise<SearchUniversitiesResult> {
+    const parsed = searchUniversitiesInputSchema.safeParse(input)
+    if (!parsed.success) {
+        return { success: false, error: 'Enter at least 2 characters to search.', results: [] }
+    }
+    try {
+        const names = await getUniversitiesNames()
+        const results = searchUniversityNames(names, parsed.data.query)
+        return { success: true, results }
+    } catch (e) {
+        console.error('[searchUniversities] error', e)
+        return {
+            success: false,
+            error: 'Could not load the institution directory. You can still type the name manually.',
+            results: [],
+        }
+    }
+}
 
 /**
  * Adds a qualification using Supabase Storage (works on serverless).
