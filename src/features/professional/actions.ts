@@ -17,6 +17,8 @@ import {
     normalizePhoneCountryCode,
 } from '@/lib/phone-country-options'
 import { getUniversitiesNames, searchUniversityNames } from '@/lib/universities-gist'
+import { recordProfessionalActivity, weekdayLong } from '@/lib/admin-notifications'
+import type { FieldChange } from '@/lib/admin-notifications'
 
 const profileSchema = z
     .object({
@@ -124,6 +126,18 @@ export async function updateProfessionalProfile(data: any) {
 
     const validatedData = parsed.data
 
+    const { data: priorCore } = await supabase
+        .from('users')
+        .select('name, phone, phone_country_code, image, role')
+        .eq('id', user.id)
+        .single()
+
+    const { data: priorProf } = await supabase
+        .from('professional_profiles')
+        .select('specialization, license_number, bio, name_title, years_of_experience, consultation_fee, city')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
     const { error } = await supabase
         .from('professional_profiles')
         .upsert({
@@ -160,6 +174,55 @@ export async function updateProfessionalProfile(data: any) {
         },
     })
     await syncUserSession()
+
+    const eqStr = (a: unknown, b: unknown) => String(a ?? '').trim() === String(b ?? '').trim()
+    const eqNum = (a: unknown, b: unknown) => (a ?? null) === (b ?? null)
+
+    const oldPhone = [priorCore?.phone_country_code, priorCore?.phone].filter(Boolean).join(' ').trim() || '—'
+    const newPhone = [dial, nationalDigits].filter(Boolean).join(' ').trim() || '—'
+
+    const profileChanges: FieldChange[] = []
+    if (!eqStr(priorProf?.specialization, validatedData.specialization)) {
+        profileChanges.push({ label: 'specialization', from: priorProf?.specialization, to: validatedData.specialization })
+    }
+    if (!eqStr(priorProf?.license_number, validatedData.licenseNumber)) {
+        profileChanges.push({ label: 'license number', from: priorProf?.license_number, to: validatedData.licenseNumber })
+    }
+    if (!eqStr(priorProf?.bio ?? '', validatedData.bio ?? '')) {
+        profileChanges.push({ label: 'bio', from: priorProf?.bio, to: validatedData.bio })
+    }
+    if (!eqStr(priorProf?.name_title, validatedData.nameTitle ?? null)) {
+        profileChanges.push({ label: 'name title (salutation)', from: priorProf?.name_title, to: validatedData.nameTitle })
+    }
+    if (!eqNum(priorProf?.years_of_experience, validatedData.yearsOfExperience)) {
+        profileChanges.push({ label: 'years of experience', from: priorProf?.years_of_experience, to: validatedData.yearsOfExperience })
+    }
+    if (!eqNum(priorProf?.consultation_fee, validatedData.consultationFee)) {
+        profileChanges.push({ label: 'consultation fee', from: priorProf?.consultation_fee, to: validatedData.consultationFee })
+    }
+    if (!eqStr(priorProf?.city, validatedData.city)) {
+        profileChanges.push({ label: 'city', from: priorProf?.city, to: validatedData.city })
+    }
+    if (oldPhone !== newPhone) {
+        profileChanges.push({ label: 'phone', from: oldPhone, to: newPhone })
+    }
+    const newImage = validatedData.profilePhotoUrl ?? null
+    if (!eqStr(priorCore?.image, newImage)) {
+        profileChanges.push({ label: 'profile photo URL', from: priorCore?.image ? 'set' : '—', to: newImage ? 'updated' : 'cleared' })
+    }
+
+    const actorNameForFallback = (priorCore?.name || 'User').trim() || 'User'
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.profile_updated',
+        title: priorCore?.role === 'professional' ? 'Professional: profile updated' : 'User: profile updated',
+        changes: profileChanges,
+        body:
+            profileChanges.length > 0
+                ? undefined
+                : `${actorNameForFallback} saved their professional profile (no field differences detected).`,
+        metadata: { section: 'profile' },
+    })
 
     return { success: true as const }
 }
@@ -306,6 +369,21 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
             return { success: false, error: insertError.message }
         }
 
+        const { data: actorRow } = await supabase.from('users').select('name').eq('id', user.id).single()
+        const actorName = (actorRow?.name || 'Professional').trim() || 'Professional'
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.qualification_uploaded',
+            title: 'Credentials: new qualification',
+            body: `${actorName} added a credential: ${parsed.data.degree} — ${parsed.data.institution}${parsed.data.year != null ? ` (${parsed.data.year})` : ''}.`,
+            metadata: {
+                section: 'credentials',
+                degree: parsed.data.degree,
+                institution: parsed.data.institution,
+                year: parsed.data.year,
+            },
+        })
+
         return { success: true, documentUrl: publicUrl }
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'Something went wrong while saving your credential.'
@@ -352,9 +430,12 @@ export async function deleteQualification(id: string): Promise<DeleteQualificati
             return { success: false, error: 'You must be signed in.' }
         }
 
+        const { data: actorNameRow } = await supabase.from('users').select('name').eq('id', user.id).single()
+        const actorDisplayName = (actorNameRow?.name || 'Professional').trim() || 'Professional'
+
         const { data: qual } = await supabase
             .from('professional_qualifications')
-            .select('document_url')
+            .select('document_url, degree, institution, year')
             .eq('id', id)
             .eq('professional_id', user.id)
             .single()
@@ -387,6 +468,17 @@ export async function deleteQualification(id: string): Promise<DeleteQualificati
         if (error) {
             return { success: false, error: error.message }
         }
+
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.qualification_removed',
+            title: 'Credentials: qualification removed',
+            body: qual?.degree
+                ? `${actorDisplayName} removed credential: ${qual.degree} — ${qual.institution}.`
+                : `${actorDisplayName} removed a credential record.`,
+            metadata: { section: 'credentials', degree: qual?.degree, institution: qual?.institution },
+        })
+
         return { success: true }
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'Failed to delete qualification.'
@@ -404,6 +496,15 @@ export async function updateAvailability(data: any) {
 
     const validatedData = parsed.data
 
+    const { data: existing } = await supabase
+        .from('professional_availability')
+        .select('id, day_of_week, start_time, end_time, is_available')
+        .eq('professional_id', user.id)
+        .eq('day_of_week', validatedData.dayOfWeek)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
     const { error } = await supabase
         .from('professional_availability')
         .upsert({
@@ -416,6 +517,44 @@ export async function updateAvailability(data: any) {
         })
 
     if (error) return { success: false as const, error: error.message }
+
+    const dayLabel = `Calendar · ${weekdayLong(validatedData.dayOfWeek)}`
+    const slotLabel = `${validatedData.startTime}–${validatedData.endTime}${validatedData.isAvailable ? '' : ' (marked unavailable)'}`
+
+    if (!existing) {
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.calendar_slot_added',
+            title: 'Calendar: new weekly slot',
+            changes: [{ label: dayLabel, from: '—', to: slotLabel }],
+            metadata: { section: 'calendar', day_of_week: validatedData.dayOfWeek },
+        })
+    } else {
+        const calChanges: FieldChange[] = []
+        if (String(existing.start_time) !== String(validatedData.startTime)) {
+            calChanges.push({ label: `${dayLabel} · start time`, from: existing.start_time, to: validatedData.startTime })
+        }
+        if (String(existing.end_time) !== String(validatedData.endTime)) {
+            calChanges.push({ label: `${dayLabel} · end time`, from: existing.end_time, to: validatedData.endTime })
+        }
+        if (Boolean(existing.is_available) !== Boolean(validatedData.isAvailable)) {
+            calChanges.push({
+                label: `${dayLabel} · availability`,
+                from: existing.is_available ? 'available' : 'unavailable',
+                to: validatedData.isAvailable ? 'available' : 'unavailable',
+            })
+        }
+        if (calChanges.length > 0) {
+            await recordProfessionalActivity(supabase, {
+                actorUserId: user.id,
+                type: 'professional.calendar_slot_updated',
+                title: 'Calendar: weekly slot updated',
+                changes: calChanges,
+                metadata: { section: 'calendar', day_of_week: validatedData.dayOfWeek },
+            })
+        }
+    }
+
     return { success: true as const }
 }
 
@@ -424,6 +563,16 @@ export async function deleteAvailability(id: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false as const, error: 'You must be signed in.' }
 
+    const { data: actorNameRow } = await supabase.from('users').select('name').eq('id', user.id).single()
+    const actorDisplayName = (actorNameRow?.name || 'Professional').trim() || 'Professional'
+
+    const { data: slot } = await supabase
+        .from('professional_availability')
+        .select('day_of_week, start_time, end_time')
+        .eq('id', id)
+        .eq('professional_id', user.id)
+        .maybeSingle()
+
     const { error } = await supabase
         .from('professional_availability')
         .delete()
@@ -431,6 +580,17 @@ export async function deleteAvailability(id: string) {
         .eq('professional_id', user.id)
 
     if (error) return { success: false as const, error: error.message }
+
+    if (slot) {
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.calendar_slot_removed',
+            title: 'Calendar: weekly slot removed',
+            body: `${actorDisplayName} removed ${weekdayLong(slot.day_of_week)} ${slot.start_time}–${slot.end_time}.`,
+            metadata: { section: 'calendar', day_of_week: slot.day_of_week },
+        })
+    }
+
     return { success: true as const }
 }
 
@@ -439,6 +599,23 @@ export async function updateAppointmentStatus(id: string, status: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false as const, error: 'You must be signed in.' }
 
+    const { data: ap, error: fetchErr } = await supabase
+        .from('appointments')
+        .select('status, start_time, client:users!appointments_client_id_fkey(name)')
+        .eq('id', id)
+        .eq('professional_id', user.id)
+        .single()
+
+    if (fetchErr || !ap) {
+        return { success: false as const, error: fetchErr?.message || 'Appointment not found.' }
+    }
+
+    if (ap.status === status) {
+        return { success: true as const }
+    }
+
+    const clientName = (ap.client as { name?: string } | null)?.name ?? 'Client'
+
     const { error } = await supabase
         .from('appointments')
         .update({ status, updated_at: new Date().toISOString() })
@@ -446,6 +623,21 @@ export async function updateAppointmentStatus(id: string, status: string) {
         .eq('professional_id', user.id)
 
     if (error) return { success: false as const, error: error.message }
+
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.appointment_status_updated',
+        title: 'Clients: appointment status updated',
+        changes: [
+            {
+                label: `appointment with ${clientName} (${new Date(ap.start_time as string).toISOString().slice(0, 16).replace('T', ' ')})`,
+                from: ap.status,
+                to: status,
+            },
+        ],
+        metadata: { section: 'clients', appointment_id: id },
+    })
+
     return { success: true as const }
 }
 
@@ -454,6 +646,23 @@ export async function updateConsultationRequestStatus(id: string, status: string
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false as const, error: 'You must be signed in.' }
 
+    const { data: req, error: fetchErr } = await supabase
+        .from('consultation_requests')
+        .select('status, client:users!consultation_requests_client_id_fkey(name)')
+        .eq('id', id)
+        .eq('professional_id', user.id)
+        .single()
+
+    if (fetchErr || !req) {
+        return { success: false as const, error: fetchErr?.message || 'Consultation request not found.' }
+    }
+
+    if (req.status === status) {
+        return { success: true as const }
+    }
+
+    const clientName = (req.client as { name?: string } | null)?.name ?? 'Client'
+
     const { error } = await supabase
         .from('consultation_requests')
         .update({ status, updated_at: new Date().toISOString() })
@@ -461,6 +670,21 @@ export async function updateConsultationRequestStatus(id: string, status: string
         .eq('professional_id', user.id)
 
     if (error) return { success: false as const, error: error.message }
+
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.consultation_request_updated',
+        title: 'Consultations: request status updated',
+        changes: [
+            {
+                label: `consultation request from ${clientName}`,
+                from: req.status,
+                to: status,
+            },
+        ],
+        metadata: { section: 'consultations', consultation_request_id: id },
+    })
+
     return { success: true as const }
 }
 

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from './_components/AdminSidebar'
 import { AdminNavbar } from './_components/AdminNavbar'
+import { getAdminUnreadNotificationCount } from '@/features/admin/actions'
 
 export default async function AdminLayout({
   children,
@@ -25,12 +26,14 @@ export default async function AdminLayout({
     redirect('/')
   }
 
+  const unreadNotificationCount = await getAdminUnreadNotificationCount()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-x-clip">
       <div className="flex h-screen overflow-hidden min-w-0">
         <AdminSidebar />
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <AdminNavbar user={userData} />
+          <AdminNavbar user={userData} unreadNotificationCount={unreadNotificationCount} />
           <main className="flex-1 min-w-0 overflow-y-auto overflow-x-clip p-6 md:p-8">
             {children}
           </main>

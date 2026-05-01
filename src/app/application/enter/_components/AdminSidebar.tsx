@@ -13,11 +13,13 @@ import {
   FileCheck,
   Shield,
   Mail,
+  Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/application/enter', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/application/enter/notifications', label: 'Notifications', icon: Bell },
   { href: '/application/enter/users', label: 'Users', icon: Users },
   { href: '/application/enter/professionals', label: 'Professionals', icon: UserCheck },
   { href: '/application/enter/appointments', label: 'Appointments', icon: Calendar },

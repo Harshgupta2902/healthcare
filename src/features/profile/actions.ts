@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { zodFirstError } from '@/lib/server-action-result'
+import { recordAdminNotification } from '@/lib/admin-notifications'
 import { cookies } from 'next/headers'
 import sharp from 'sharp'
 
@@ -46,6 +47,14 @@ export async function updateProfile(formData: unknown) {
     })
 
     await syncUserSession();
+
+    await recordAdminNotification(supabase, {
+        actorUserId: user.id,
+        type: 'user.profile_updated',
+        title: 'User profile updated',
+        body: 'Name, phone, or profile image URL was saved.',
+        metadata: { hasImage: Boolean(validatedData.image) },
+    })
 
     return { success: true as const }
 }
@@ -277,6 +286,14 @@ export async function uploadProfileImage(formData: FormData) {
         })
 
         await syncUserSession();
+
+        await recordAdminNotification(supabase, {
+            actorUserId: user.id,
+            type: 'user.profile_image_updated',
+            title: 'Profile photo updated',
+            body: 'A user uploaded or changed their profile image.',
+            metadata: {},
+        })
 
         return { success: true, url: publicUrl }
     } catch (error: any) {

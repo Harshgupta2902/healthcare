@@ -1196,3 +1196,114 @@ export async function getRecentUsers(limit: number = 5) {
   if (error) return { success: false as const, error: error.message, data: [] }
   return { success: true as const, data: data || [] }
 }
+
+// ============================================
+// ADMIN NOTIFICATIONS
+// ============================================
+
+export type AdminNotificationRow = {
+  id: string
+  type: string
+  title: string
+  body: string | null
+  actor_user_id: string | null
+  metadata: Record<string, unknown>
+  read_at: string | null
+  created_at: string
+  actor?: { id: string; name: string; email: string; role: string } | null
+}
+
+export async function getAdminUnreadNotificationCount(): Promise<number> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return 0
+  const supabase = await createClient()
+  const { count, error } = await supabase
+    .from('admin_notifications')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null)
+  if (error) {
+    console.error('getAdminUnreadNotificationCount:', error.message)
+    return 0
+  }
+  return count ?? 0
+}
+
+export async function getAdminNotifications(limit: number = 100): Promise<
+  | { success: true; data: AdminNotificationRow[] }
+  | { success: false; error: string; data: [] }
+> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error, data: [] }
+  const supabase = await createClient()
+
+  const { data: rows, error } = await supabase
+    .from('admin_notifications')
+    .select('id, type, title, body, actor_user_id, metadata, read_at, created_at')
+    .order('created_at', { ascending: false })
+    .limit(Math.min(500, Math.max(1, limit)))
+
+  if (error) return { success: false, error: error.message, data: [] }
+
+  const list = rows ?? []
+  const actorIds = [...new Set(list.map((r) => r.actor_user_id).filter((x): x is string => Boolean(x)))]
+  const actorMap = new Map<string, { id: string; name: string; email: string; role: string }>()
+  if (actorIds.length) {
+    const { data: users, error: uErr } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .in('id', actorIds)
+    if (!uErr && users) {
+      for (const u of users) {
+        actorMap.set(u.id, u)
+      }
+    }
+  }
+
+  const data: AdminNotificationRow[] = list.map((r) => ({
+    ...r,
+    metadata: (r.metadata as Record<string, unknown>) ?? {},
+    actor: r.actor_user_id ? actorMap.get(r.actor_user_id) ?? null : null,
+  }))
+
+  return { success: true, data }
+}
+
+const markNotificationReadSchema = z.object({
+  id: z.string().uuid('Invalid notification id'),
+})
+
+export async function markAdminNotificationRead(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = markNotificationReadSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('admin_notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', parsed.data.id)
+    .is('read_at', null)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter')
+  revalidatePath('/application/enter/notifications')
+  return { success: true as const }
+}
+
+export async function markAllAdminNotificationsRead() {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('admin_notifications')
+    .update({ read_at: new Date().toISOString() })
+    .is('read_at', null)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter')
+  revalidatePath('/application/enter/notifications')
+  return { success: true as const }
+}

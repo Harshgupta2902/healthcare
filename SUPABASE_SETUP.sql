@@ -388,6 +388,114 @@ BEGIN
     END IF;
 END $$;
 
+-- Admin activity notifications (see updates.sql for incremental apply)
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT,
+  actor_user_id UUID REFERENCES public.users (id) ON DELETE SET NULL,
+  metadata JSONB NOT NULL DEFAULT '{}',
+  read_at TIMESTAMPTZ NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_created_at ON public.admin_notifications (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_unread ON public.admin_notifications (created_at DESC) WHERE read_at IS NULL;
+
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE ON public.admin_notifications TO authenticated;
+GRANT ALL ON public.admin_notifications TO service_role;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_notifications' AND policyname = 'Admins can read notifications'
+  ) THEN
+    CREATE POLICY "Admins can read notifications" ON public.admin_notifications FOR SELECT TO authenticated
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_notifications' AND policyname = 'Admins can update notifications'
+  ) THEN
+    CREATE POLICY "Admins can update notifications" ON public.admin_notifications FOR UPDATE TO authenticated
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+    WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_notifications' AND policyname = 'Users insert own admin notification rows'
+  ) THEN
+    CREATE POLICY "Users insert own admin notification rows" ON public.admin_notifications FOR INSERT TO authenticated
+    WITH CHECK (actor_user_id IS NOT NULL AND actor_user_id = auth.uid());
+  END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION public.admin_notify_on_user_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.role = 'admin' THEN
+    RETURN NEW;
+  END IF;
+  INSERT INTO public.admin_notifications (type, title, body, actor_user_id, metadata)
+  VALUES (
+    'user.registered',
+    'New user registered',
+    concat(NEW.name, ' (', NEW.role, ')'),
+    NEW.id,
+    jsonb_build_object('user_id', NEW.id, 'email', NEW.email, 'role', NEW.role)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_admin_notify_new_user ON public.users;
+CREATE TRIGGER trg_admin_notify_new_user
+  AFTER INSERT ON public.users
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.admin_notify_on_user_insert();
+
+CREATE OR REPLACE FUNCTION public.admin_notify_on_guest_appointment_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.admin_notifications (type, title, body, actor_user_id, metadata)
+  VALUES (
+    'guest.appointment_request',
+    'Guest consultation request',
+    concat(trim(NEW.first_name), ' ', trim(NEW.last_name), ' — ', to_char(NEW.appointment_date, 'YYYY-MM-DD'), ' ', NEW.appointment_time),
+    NEW.created_by,
+    jsonb_build_object(
+      'guest_appointment_id', NEW.id,
+      'email', NEW.email,
+      'city', NEW.city,
+      'state', NEW.state,
+      'category', NEW.category,
+      'professional_id', NEW.professional_id
+    )
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_admin_notify_guest_appointment ON public.guest_appointments;
+CREATE TRIGGER trg_admin_notify_guest_appointment
+  AFTER INSERT ON public.guest_appointments
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.admin_notify_on_guest_appointment_insert();
+
 -- 🌱 FULL SEED DATA
 DO $$ 
 DECLARE 

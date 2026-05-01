@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -27,9 +28,10 @@ interface AdminNavbarProps {
     email: string | null
     image: string | null
   }
+  unreadNotificationCount?: number
 }
 
-export function AdminNavbar({ user }: AdminNavbarProps) {
+export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -106,13 +108,19 @@ export function AdminNavbar({ user }: AdminNavbarProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative rounded-xl hover:bg-teal-50 dark:hover:bg-gray-800"
-          >
-            <Bell className="w-5 h-5" />
-            <Badge className="absolute top-1 right-1 w-2 h-2 p-0 bg-red-500" />
+          <Button variant="ghost" size="icon" className="relative rounded-xl p-0 hover:bg-teal-50 dark:hover:bg-gray-800" asChild>
+            <Link
+              href="/application/enter/notifications"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotificationCount > 0 ? (
+                <Badge className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-5 px-1 flex items-center justify-center text-[10px] bg-red-500 hover:bg-red-500 border-0 pointer-events-none">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </Badge>
+              ) : null}
+            </Link>
           </Button>
 
           <DropdownMenu>
