@@ -13,6 +13,8 @@ import {
   Stethoscope,
   CheckCircle2,
   Circle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -65,6 +67,8 @@ function RegisterContent() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Password rules
   const passwordRules = {
@@ -258,19 +262,38 @@ function RegisterContent() {
                 {/* PASSWORD */}
                 <div className="space-y-2 md:col-span-2">
                   <Label>Password</Label>
-                  <Input
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                  />
+                  <div className="relative">
+                    <Input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="pr-11"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" aria-hidden />
+                      ) : (
+                        <Eye className="h-4 w-4" aria-hidden />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-xs">{errors.password}</p>
+                  )}
                   <div className="space-y-2 md:col-span-2">
                     <Label>Confirm Password</Label>
-                    <Input
-                      name="confirmPassword"
+                      <Input
+                        name="confirmPassword"
                       type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
                     />
                     {errors.confirmPassword && (
                       <p className="text-red-500 text-xs">
