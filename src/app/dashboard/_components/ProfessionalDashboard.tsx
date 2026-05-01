@@ -54,7 +54,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
+import {
+    DEFAULT_PHONE_COUNTRY_CODE,
+    getPhoneCountryOptionByIso2,
+    normalizePhoneCountryCode,
+    resolveCountryIsoFromDialCode,
+} from "@/lib/phone-country-options";
 import { cn } from "@/lib/utils";
+import { PhoneCountryFields } from "@/components/PhoneCountryFields";
 
 interface ProfessionalProfile {
     id: string;
@@ -69,6 +76,10 @@ interface ProfessionalProfile {
     consultationFee: number | null;
     isVerified: boolean;
     phone: string | null;
+    /** E.164 dial prefix, e.g. +91 */
+    phoneCountryCode: string;
+    /** Client-only; disambiguates shared dials (e.g. +1) until ISO is stored in DB. */
+    phoneCountryIso?: string;
     profilePhotoUrl: string | null;
     createdAt: string;
     updatedAt: string;
@@ -263,6 +274,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             const { data: { user: authUser } } = await supabase.auth.getUser();
 
             if (coreProfile || profProfile) {
+                const dial =
+                    normalizePhoneCountryCode(
+                        (coreProfile as { phone_country_code?: string | null })?.phone_country_code
+                    ) ?? DEFAULT_PHONE_COUNTRY_CODE;
                 const merged: ProfessionalProfile = {
                     id: profProfile?.id || "",
                     userId: user.id,
@@ -278,6 +293,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     city: profProfile?.city || null,
                     isVerified: profProfile?.is_verified || false,
                     phone: coreProfile?.phone || null,
+                    phoneCountryCode: dial,
                     profilePhotoUrl: coreProfile?.image || null,
                     createdAt: profProfile?.created_at || "",
                     updatedAt: profProfile?.updated_at || ""
@@ -898,14 +914,32 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-sm font-bold text-slate-600">Contact Phone</Label>
-                                            <Input
-                                                placeholder="Enter phone number"
-                                                value={profileForm.phone || ""}
-                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
-                                                onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
-                                                onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                                            <PhoneCountryFields
+                                                countryIso={
+                                                    profileForm.phoneCountryIso ??
+                                                    resolveCountryIsoFromDialCode(
+                                                        normalizePhoneCountryCode(profileForm.phoneCountryCode) ??
+                                                            DEFAULT_PHONE_COUNTRY_CODE
+                                                    )
+                                                }
+                                                nationalNumber={(profileForm.phone || "").replace(/\D/g, "")}
+                                                onCountryIsoChange={(iso) => {
+                                                    const row = getPhoneCountryOptionByIso2(iso);
+                                                    if (!row) return;
+                                                    const digits = (profileForm.phone || "")
+                                                        .replace(/\D/g, "")
+                                                        .slice(0, row.maxLength);
+                                                    setProfileForm({
+                                                        ...profileForm,
+                                                        phoneCountryIso: row.iso2,
+                                                        phoneCountryCode: row.dialCode,
+                                                        phone: digits,
+                                                    });
+                                                }}
+                                                onNationalChange={(digits) =>
+                                                    setProfileForm({ ...profileForm, phone: digits })
+                                                }
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl border-slate-100 h-12"
                                             />
                                         </div>
                                         <div className="space-y-2">

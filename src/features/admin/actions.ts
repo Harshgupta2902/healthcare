@@ -241,7 +241,7 @@ export async function getProfessionals(page: number = 1, limit: number = 10, sea
   // Users with role professional always list here; profiles loaded separately.
   let usersQuery = supabase
     .from('users')
-    .select('id, name, email, phone, image, created_at', { count: 'exact' })
+    .select('id, name, email, phone, phone_country_code, image, created_at', { count: 'exact' })
     .eq('role', 'professional')
     .order('created_at', { ascending: false })
 
@@ -288,6 +288,7 @@ export async function getProfessionals(page: number = 1, limit: number = 10, sea
       name: u.name as string | null,
       email: u.email as string,
       phone: (u.phone as string | null) ?? null,
+      phone_country_code: (u.phone_country_code as string | null) ?? null,
       image: (u.image as string | null) ?? null,
       specialization: (prof?.specialization as string | undefined) ?? '',
       license_number: (prof?.license_number as string | undefined) ?? '',

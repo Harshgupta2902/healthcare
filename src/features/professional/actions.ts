@@ -9,18 +9,59 @@ import sharp from 'sharp'
 import { zodFirstError } from '@/lib/server-action-result'
 import { syncUserSession } from '@/features/profile/actions'
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES_ZOD } from '@/lib/professional-name-title'
+import {
+    combineInternationalPhone,
+    DEFAULT_PHONE_COUNTRY_CODE,
+    getPhoneCountryOptionForValidation,
+    isKnownPhoneCountryDial,
+    normalizePhoneCountryCode,
+} from '@/lib/phone-country-options'
 
-const profileSchema = z.object({
-    specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
-    licenseNumber: z.string().min(1, "License number is required").max(200, "License number is too long"),
-    bio: z.string().optional().nullable(),
-    nameTitle: z.enum(PROFESSIONAL_NAME_TITLES_ZOD).optional().nullable(),
-    yearsOfExperience: z.number().optional().nullable(),
-    consultationFee: z.number().optional().nullable(),
-    phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
-    city: z.string().optional().nullable(),
-    profilePhotoUrl: z.string().optional().nullable(),
-})
+const profileSchema = z
+    .object({
+        specialization: z.string().min(1, "Specialization is required").regex(/^[a-zA-Z\s]*$/, "Specialization must contain only letters"),
+        licenseNumber: z.string().min(1, "License number is required").max(200, "License number is too long"),
+        bio: z.string().optional().nullable(),
+        nameTitle: z.enum(PROFESSIONAL_NAME_TITLES_ZOD).optional().nullable(),
+        yearsOfExperience: z.number().optional().nullable(),
+        consultationFee: z.number().optional().nullable(),
+        phoneCountryCode: z.string().optional().nullable(),
+        phoneCountryIso: z.string().length(2).optional().nullable(),
+        phone: z.string().optional().nullable(),
+        city: z.string().optional().nullable(),
+        profilePhotoUrl: z.string().optional().nullable(),
+    })
+    .superRefine((data, ctx) => {
+        const national = (data.phone ?? '').replace(/\D/g, '')
+        const code = normalizePhoneCountryCode(data.phoneCountryCode ?? undefined)
+        if (national.length > 0 && !code) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Select a country code for your phone number.',
+                path: ['phoneCountryCode'],
+            })
+        }
+        if (national.length > 0 && code && !isKnownPhoneCountryDial(code)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Invalid country calling code.',
+                path: ['phoneCountryCode'],
+            })
+        } else if (national.length > 0 && code && isKnownPhoneCountryDial(code)) {
+            const opt = getPhoneCountryOptionForValidation(code, data.phoneCountryIso ?? undefined)
+            if (opt && (national.length < opt.minLength || national.length > opt.maxLength)) {
+                const lenMsg =
+                    opt.minLength === opt.maxLength
+                        ? `Phone number must be ${opt.minLength} digits for ${opt.name}.`
+                        : `Phone number must be ${opt.minLength}–${opt.maxLength} digits for ${opt.name}.`
+                ctx.addIssue({
+                    code: 'custom',
+                    message: lenMsg,
+                    path: ['phone'],
+                })
+            }
+        }
+    })
 
 const qualificationSchema = z.object({
     degree: z.string().min(1, "Degree is required").max(500),
@@ -98,8 +139,13 @@ export async function updateProfessionalProfile(data: any) {
 
     if (error) return { success: false as const, error: error.message }
 
+    const nationalDigits = (validatedData.phone ?? '').replace(/\D/g, '') || null
+    let dial = normalizePhoneCountryCode(validatedData.phoneCountryCode ?? undefined)
+    if (nationalDigits && !dial) dial = DEFAULT_PHONE_COUNTRY_CODE
+
     await supabase.from('users').update({
-        phone: validatedData.phone,
+        phone: nationalDigits,
+        phone_country_code: dial,
         image: validatedData.profilePhotoUrl,
         updated_at: new Date().toISOString(),
     }).eq('id', user.id)
@@ -409,6 +455,11 @@ export async function getProfessionalDashboardData() {
         supabase.from('payments').select(`*, client:users!payments_client_id_fkey(name)`).eq('professional_id', user.id).order('created_at', { ascending: false })
     ])
 
+    const profDial =
+        normalizePhoneCountryCode(
+            (coreProfile as { phone_country_code?: string | null })?.phone_country_code
+        ) ?? DEFAULT_PHONE_COUNTRY_CODE
+
     return {
         success: true as const,
         user,
@@ -427,6 +478,7 @@ export async function getProfessionalDashboardData() {
             city: profProfile?.city || null,
             isVerified: profProfile?.is_verified || false,
             phone: coreProfile?.phone || null,
+            phoneCountryCode: profDial,
             profilePhotoUrl: coreProfile?.image || null,
             createdAt: profProfile?.created_at || "",
             updatedAt: profProfile?.updated_at || ""
@@ -543,7 +595,7 @@ export async function getProfessionalById(id: string) {
         { data: availability, error: availError }
     ] = await Promise.all([
         supabase.from('professional_profiles').select('*').eq('user_id', id).single(),
-        supabase.from('users').select('name, email, image, phone').eq('id', id).single(),
+        supabase.from('users').select('name, email, image, phone, phone_country_code').eq('id', id).single(),
         supabase.from('professional_qualifications').select('*').eq('professional_id', id).order('year', { ascending: false }),
         supabase.from('professional_availability').select('*').eq('professional_id', id).order('day_of_week', { ascending: true })
     ]);
@@ -561,7 +613,10 @@ export async function getProfessionalById(id: string) {
         nameTitle,
         displayName: formatProfessionalDisplayName(userCore.name, nameTitle),
         email: userCore.email,
-        phone: userCore.phone,
+        phone: combineInternationalPhone(
+            (userCore as { phone_country_code?: string | null }).phone_country_code,
+            userCore.phone
+        ),
         profilePhotoUrl: userCore.image,
         specialization: profProfile.specialization,
         licenseNumber: profProfile.license_number,

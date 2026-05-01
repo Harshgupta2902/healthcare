@@ -15,6 +15,13 @@ import {
     deleteInsurance
 } from "@/features/client/actions";
 import { uploadProfileImage } from "@/features/profile/actions";
+import { PhoneCountryFields } from "@/components/PhoneCountryFields";
+import {
+    DEFAULT_PHONE_COUNTRY_CODE,
+    getPhoneCountryOptionByIso2,
+    normalizePhoneCountryCode,
+    resolveCountryIsoFromDialCode,
+} from "@/lib/phone-country-options";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +61,9 @@ interface UserProfile {
     id: string;
     userId: string;
     phone: string | null;
+    phoneCountryCode: string;
+    /** Client-only; disambiguates shared dials (e.g. +1) until ISO is stored in DB. */
+    phoneCountryIso?: string;
     dateOfBirth: string | null;
     gender: string | null;
     bloodType: string | null;
@@ -233,10 +243,15 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 .single();
 
             if (coreProfile || medProfile) {
+                const dial =
+                    normalizePhoneCountryCode(
+                        (coreProfile as { phone_country_code?: string | null })?.phone_country_code
+                    ) ?? DEFAULT_PHONE_COUNTRY_CODE;
                 const merged: UserProfile = {
                     id: user.id,
                     userId: user.id,
                     phone: coreProfile?.phone || null,
+                    phoneCountryCode: dial,
                     profilePhotoUrl: coreProfile?.image || null,
                     dateOfBirth: medProfile?.date_of_birth || null,
                     gender: medProfile?.gender || null,
@@ -894,6 +909,36 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
                                                         disabled={!isEditingProfile}
                                                         className="rounded-xl border-slate-100"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Mobile phone</Label>
+                                                    <PhoneCountryFields
+                                                        countryIso={
+                                                            profileForm.phoneCountryIso ??
+                                                            resolveCountryIsoFromDialCode(
+                                                                normalizePhoneCountryCode(profileForm.phoneCountryCode) ??
+                                                                    DEFAULT_PHONE_COUNTRY_CODE
+                                                            )
+                                                        }
+                                                        nationalNumber={(profileForm.phone || "").replace(/\D/g, "")}
+                                                        onCountryIsoChange={(iso) => {
+                                                            const row = getPhoneCountryOptionByIso2(iso);
+                                                            if (!row) return;
+                                                            const digits = (profileForm.phone || "")
+                                                                .replace(/\D/g, "")
+                                                                .slice(0, row.maxLength);
+                                                            setProfileForm({
+                                                                ...profileForm,
+                                                                phoneCountryIso: row.iso2,
+                                                                phoneCountryCode: row.dialCode,
+                                                                phone: digits,
+                                                            });
+                                                        }}
+                                                        onNationalChange={(digits) =>
+                                                            setProfileForm({ ...profileForm, phone: digits })
+                                                        }
+                                                        disabled={!isEditingProfile}
                                                     />
                                                 </div>
                                             </div>

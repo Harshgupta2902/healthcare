@@ -6,9 +6,19 @@ import sharp from 'sharp'
 import crypto from 'crypto'
 import { zodFirstError } from '@/lib/server-action-result'
 import { syncUserSession } from '@/features/profile/actions'
+import {
+    DEFAULT_PHONE_COUNTRY_CODE,
+    getPhoneCountryOptionForValidation,
+    isKnownPhoneCountryDial,
+    normalizePhoneCountryCode,
+} from '@/lib/phone-country-options'
 
-const medicalProfileSchema = z.object({
-    phone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
+const medicalProfileSchema = z
+    .object({
+        phoneCountryCode: z.string().optional().nullable(),
+        /** Matches selected row when dial is shared (e.g. +1); used only for national length rules. */
+        phoneCountryIso: z.string().length(2).optional().nullable(),
+        phone: z.string().optional().nullable(),
     dateOfBirth: z.string().optional().nullable().refine((date) => {
         if (!date) return true;
         const dob = new Date(date);
@@ -28,7 +38,38 @@ const medicalProfileSchema = z.object({
     emergencyContactPhone: z.string().regex(/^\d*$/, "Phone must contain only numbers").optional().nullable(),
     emergencyContactRelationship: z.string().regex(/^[a-zA-Z\s]*$/, "Relationship must contain only letters").optional().nullable(),
     profilePhotoUrl: z.string().optional().nullable(),
-})
+    })
+    .superRefine((data, ctx) => {
+        const national = (data.phone ?? '').replace(/\D/g, '')
+        const code = normalizePhoneCountryCode(data.phoneCountryCode ?? undefined)
+        if (national.length > 0 && !code) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Select a country code for your phone number.',
+                path: ['phoneCountryCode'],
+            })
+        }
+        if (national.length > 0 && code && !isKnownPhoneCountryDial(code)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Invalid country calling code.',
+                path: ['phoneCountryCode'],
+            })
+        } else if (national.length > 0 && code && isKnownPhoneCountryDial(code)) {
+            const opt = getPhoneCountryOptionForValidation(code, data.phoneCountryIso ?? undefined)
+            if (opt && (national.length < opt.minLength || national.length > opt.maxLength)) {
+                const lenMsg =
+                    opt.minLength === opt.maxLength
+                        ? `Phone number must be ${opt.minLength} digits for ${opt.name}.`
+                        : `Phone number must be ${opt.minLength}–${opt.maxLength} digits for ${opt.name}.`
+                ctx.addIssue({
+                    code: 'custom',
+                    message: lenMsg,
+                    path: ['phone'],
+                })
+            }
+        }
+    })
 
 const conditionSchema = z.object({
     conditionName: z.string().min(1, "Condition name is required").regex(/^[a-zA-Z\s]*$/, "Condition name must contain only letters"),
@@ -111,10 +152,12 @@ export async function updateMedicalProfile(data: any) {
         updated_at: new Date().toISOString(),
     }
     let didUpdateUsers = false
-    if (parsed.data.phone) {
-        userPatch.phone = parsed.data.phone
-        didUpdateUsers = true
-    }
+    const nationalDigits = (parsed.data.phone ?? '').replace(/\D/g, '') || null
+    let dial = normalizePhoneCountryCode(parsed.data.phoneCountryCode ?? undefined)
+    if (nationalDigits && !dial) dial = DEFAULT_PHONE_COUNTRY_CODE
+    userPatch.phone = nationalDigits
+    userPatch.phone_country_code = nationalDigits ? dial : null
+    didUpdateUsers = true
     if (parsed.data.profilePhotoUrl) {
         userPatch.image = parsed.data.profilePhotoUrl
         didUpdateUsers = true
@@ -398,6 +441,11 @@ export async function getClientDashboardData() {
         supabase.from('insurance').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     ])
 
+    const clientDial =
+        normalizePhoneCountryCode(
+            (coreProfile as { phone_country_code?: string | null })?.phone_country_code
+        ) ?? DEFAULT_PHONE_COUNTRY_CODE
+
     return {
         success: true as const,
         user,
@@ -405,6 +453,7 @@ export async function getClientDashboardData() {
             id: user.id,
             userId: user.id,
             phone: coreProfile?.phone || null,
+            phoneCountryCode: clientDial,
             profilePhotoUrl: coreProfile?.image || null,
             dateOfBirth: medProfile?.date_of_birth || null,
             gender: medProfile?.gender || null,

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { format } from 'date-fns'
 import { deleteProfessional, deleteUser, setProfessionalVerified } from '@/features/admin/actions'
+import { combineInternationalPhone } from '@/lib/phone-country-options'
 import { toast } from 'sonner'
 import { Edit, Trash2, ShieldCheck, Loader2, Ban } from 'lucide-react'
 
@@ -19,6 +20,7 @@ interface Professional {
   name: string | null
   email: string
   phone: string | null
+  phone_country_code: string | null
   image: string | null
   specialization: string
   license_number: string
@@ -164,8 +166,14 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
     {
       key: 'phone',
       label: 'Phone',
-      render: (professional: Professional) =>
-        professional.phone?.trim() ? professional.phone : <span className="text-muted-foreground">N/A</span>,
+      render: (professional: Professional) => {
+        const display = combineInternationalPhone(professional.phone_country_code, professional.phone)
+        return display ? (
+          <span className="text-sm tabular-nums">{display}</span>
+        ) : (
+          <span className="text-muted-foreground">N/A</span>
+        )
+      },
     },
     {
       key: 'specialization',
