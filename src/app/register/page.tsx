@@ -291,7 +291,7 @@ function RegisterContent() {
                     <Label>Confirm Password</Label>
                       <Input
                         name="confirmPassword"
-                      type="password"
+                        type="password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
                     />
