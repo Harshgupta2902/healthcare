@@ -6,13 +6,20 @@ import { DataTable } from '../_components/DataTable'
 import { ProfessionalDialog } from './ProfessionalDialog'
 import { DeleteDialog } from '../_components/DeleteDialog'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { format } from 'date-fns'
-import { deleteProfessional } from '@/features/admin/actions'
+import { deleteProfessional, deleteUser, setProfessionalVerified } from '@/features/admin/actions'
 import { toast } from 'sonner'
+import { Edit, Trash2, ShieldCheck, Loader2, Ban } from 'lucide-react'
 
 interface Professional {
   id: string
   user_id: string
+  name: string | null
+  email: string
+  phone: string | null
+  image: string | null
   specialization: string
   license_number: string
   bio: string | null
@@ -21,10 +28,14 @@ interface Professional {
   is_verified: boolean
   city: string | null
   created_at: string
-  users?: {
-    name: string | null
-    email: string
-  }
+}
+
+function professionalInitialLetter(p: Professional): string {
+  const name = p.name?.trim()
+  if (name) return name[0].toUpperCase()
+  const email = p.email?.trim()
+  if (email) return email[0].toUpperCase()
+  return '?'
 }
 
 interface ProfessionalsTableProps {
@@ -38,9 +49,12 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
+  const [verifyMutatingId, setVerifyMutatingId] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+
+  const hasProfileRow = (p: Professional) => Boolean(p.id)
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -74,47 +88,96 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
     setIsDeleteOpen(true)
   }
 
+  const runVerifyToggle = (professional: Professional, verified: boolean) => {
+    if (!professional.id) return
+    setVerifyMutatingId(professional.id)
+    startTransition(async () => {
+      try {
+        const result = await setProfessionalVerified(professional.id, verified)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        toast.success(verified ? 'Professional verified' : 'Professional unverified')
+        router.refresh()
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : 'Update failed')
+      } finally {
+        setVerifyMutatingId(null)
+      }
+    })
+  }
+
   const handleDeleteConfirm = async () => {
     if (!selectedProfessional) return
 
     startTransition(async () => {
       try {
-        const result = await deleteProfessional(selectedProfessional.id)
-        if (!result.success) {
-          toast.error(result.error)
-          return
+        if (hasProfileRow(selectedProfessional)) {
+          const result = await deleteProfessional(selectedProfessional.id)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
+          toast.success('Professional profile deleted')
+        } else {
+          const result = await deleteUser(selectedProfessional.user_id)
+          if (!result.success) {
+            toast.error(result.error)
+            return
+          }
+          toast.success('User removed')
         }
-        toast.success('Professional deleted successfully')
         setIsDeleteOpen(false)
         router.refresh()
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to delete professional')
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : 'Delete failed')
       }
     })
   }
 
   const columns = [
     {
-      key: 'users',
+      key: 'name',
       label: 'Name',
-      render: (professional: Professional) => professional.users?.name || 'N/A',
+      render: (professional: Professional) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="h-9 w-9 shrink-0 border border-teal-200/60 dark:border-gray-600">
+            <AvatarImage src={professional.image || undefined} alt={professional.name || professional.email} />
+            <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
+              {professionalInitialLetter(professional)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium truncate">{professional.name || 'N/A'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (professional: Professional) => (
+        <span className="text-sm truncate max-w-[220px] inline-block" title={professional.email}>
+          {professional.email}
+        </span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (professional: Professional) =>
+        professional.phone?.trim() ? professional.phone : <span className="text-muted-foreground">N/A</span>,
     },
     {
       key: 'specialization',
       label: 'Specialization',
+      render: (professional: Professional) =>
+        professional.specialization?.trim() ? professional.specialization : '—',
     },
     {
       key: 'license_number',
       label: 'License',
-    },
-    {
-      key: 'is_verified',
-      label: 'Status',
-      render: (professional: Professional) => (
-        <Badge variant={professional.is_verified ? 'default' : 'secondary'}>
-          {professional.is_verified ? 'Verified' : 'Pending'}
-        </Badge>
-      ),
+      render: (professional: Professional) =>
+        professional.license_number?.trim() ? professional.license_number : '—',
     },
     {
       key: 'consultation_fee',
@@ -134,11 +197,79 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
       <DataTable
         data={initialData}
         columns={columns}
-        searchPlaceholder="Search professionals..."
+        searchPlaceholder="Search by name or email..."
         onSearch={handleSearch}
         onAdd={handleAdd}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        getRowKey={(p) => p.user_id}
+        renderRowActions={(professional) => (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {hasProfileRow(professional) && professional.is_verified ? (
+              <>
+                <Badge
+                  variant="default"
+                  className="rounded-lg gap-1 pl-2 pr-2.5 py-1 font-semibold bg-emerald-600 hover:bg-emerald-600"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                  Verified
+                </Badge>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-lg font-semibold cursor-pointer"
+                  disabled={isPending && verifyMutatingId === professional.id}
+                  onClick={() => runVerifyToggle(professional, false)}
+                  aria-label="Unverify professional"
+                >
+                  {isPending && verifyMutatingId === professional.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                  ) : (
+                    <Ban className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
+                </Button>
+              </>
+            ) : null}
+            {hasProfileRow(professional) && !professional.is_verified ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-lg font-semibold border-teal-300 text-teal-800 hover:bg-teal-50 gap-1.5"
+                disabled={isPending && verifyMutatingId === professional.id}
+                onClick={() => runVerifyToggle(professional, true)}
+              >
+                {isPending && verifyMutatingId === professional.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                ) : null}
+                Verify User
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEdit(professional)}
+              className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+              aria-label="Edit professional"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDelete(professional)}
+              className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+              aria-label={
+                hasProfileRow(professional)
+                  ? 'Delete professional profile'
+                  : 'Delete provider user'
+              }
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
         addLabel="Add Professional"
         page={initialPage}
         totalPages={totalPages}
@@ -148,7 +279,21 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
       <ProfessionalDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        professional={selectedProfessional}
+        professional={
+          selectedProfessional
+            ? {
+                id: selectedProfessional.id || undefined,
+                user_id: selectedProfessional.user_id,
+                specialization: selectedProfessional.specialization,
+                license_number: selectedProfessional.license_number,
+                bio: selectedProfessional.bio,
+                years_of_experience: selectedProfessional.years_of_experience,
+                consultation_fee: selectedProfessional.consultation_fee,
+                is_verified: selectedProfessional.is_verified,
+                city: selectedProfessional.city,
+              }
+            : null
+        }
         onSuccess={() => {
           setIsDialogOpen(false)
           router.refresh()
@@ -158,8 +303,16 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Professional"
-        description={`Are you sure you want to delete this professional? This action cannot be undone.`}
+        title={
+          selectedProfessional && hasProfileRow(selectedProfessional)
+            ? 'Delete professional profile'
+            : 'Delete provider user'
+        }
+        description={
+          selectedProfessional && hasProfileRow(selectedProfessional)
+            ? 'Removes only the provider profile row. The account remains in Users until you delete it there.'
+            : 'Removes this row from public.users. If it fails (FK), delete the user from Supabase Authentication first.'
+        }
         isPending={isPending}
       />
     </>

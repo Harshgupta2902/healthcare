@@ -53,7 +53,8 @@ interface ProfessionalDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   professional?: {
-    id: string
+    /** `professional_profiles` row id — omit when this user has role professional but no profile row yet */
+    id?: string
     user_id: string
     specialization: string
     license_number: string
@@ -137,7 +138,7 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
           ...data,
           consultation_fee: data.consultation_fee ? Math.round(data.consultation_fee * 100) : null,
         }
-        if (professional) {
+        if (professional?.id) {
           const result = await updateProfessional(professional.id, submitData)
           if (!result.success) {
             toast.error(result.error)
@@ -164,9 +165,19 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{professional ? 'Edit Professional' : 'Add New Professional'}</DialogTitle>
+          <DialogTitle>
+            {professional?.id
+              ? 'Edit Professional'
+              : professional
+                ? 'Add professional profile'
+                : 'Add New Professional'}
+          </DialogTitle>
           <DialogDescription>
-            {professional ? 'Update professional information' : 'Create a new professional profile'}
+            {professional?.id
+              ? 'Update professional information'
+              : professional
+                ? 'This user is registered as a provider but has no profile row yet. Fill in details below.'
+                : 'Create a new professional profile'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -180,6 +191,7 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
                   <Select
                     onValueChange={field.onChange}
                     value={field.value || undefined}
+                    disabled={Boolean(professional && !professional.id)}
                   >
                     <FormControl>
                       <SelectTrigger className="rounded-xl">
