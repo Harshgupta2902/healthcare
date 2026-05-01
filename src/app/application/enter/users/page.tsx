@@ -21,7 +21,7 @@ export default async function UsersPage({
           Users Management
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage all system users
+          Manage client (patient) accounts. Providers are under Professionals.
         </p>
       </div>
       {!result.success && (

@@ -35,7 +35,8 @@ import { toast } from 'sonner'
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email'),
-  role: z.enum(['client', 'professional', 'admin']),
+  /** This screen only manages patient accounts; use Professionals for providers. */
+  role: z.literal('client'),
   phone: z.string().optional().nullable(),
   image: z.string().optional().nullable(),
 })
@@ -77,7 +78,7 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
       form.reset({
         name: user.name || '',
         email: user.email || '',
-        role: (user.role as 'client' | 'professional' | 'admin') || 'client',
+        role: 'client',
         phone: user.phone ?? '',
         image: user.image ?? '',
       })
@@ -168,9 +169,7 @@ export function UserDialog({ open, onOpenChange, user, onSuccess }: UserDialogPr
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="client">Client</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="client">Client (patient)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
