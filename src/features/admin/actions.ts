@@ -152,10 +152,11 @@ export async function getUsers(page: number = 1, limit: number = 10, search?: st
   if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
+  // Clients only: admins never listed; professionals are managed on /application/enter/professionals
   let query = supabase
     .from('users')
     .select('*', { count: 'exact' })
-    .neq('role', 'admin')
+    .eq('role', 'client')
     .order('created_at', { ascending: false })
 
   if (search) {
@@ -222,6 +223,8 @@ export async function deleteUser(id: string) {
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/users')
+  revalidatePath('/application/enter/professionals')
+  revalidatePath('/consultants', 'layout')
   return { success: true as const }
 }
 
@@ -234,31 +237,70 @@ export async function getProfessionals(page: number = 1, limit: number = 10, sea
   if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
 
-  let query = supabase
-    .from('professional_profiles')
-    .select(`
-      *,
-      users:user_id (
-        id,
-        name,
-        email,
-        phone,
-        image
-      )
-    `, { count: 'exact' })
+  // Two-step load: nested embed can fail if FK hint / optional columns differ per DB.
+  // Users with role professional always list here; profiles loaded separately.
+  let usersQuery = supabase
+    .from('users')
+    .select('id, name, email, phone, image, created_at', { count: 'exact' })
+    .eq('role', 'professional')
     .order('created_at', { ascending: false })
 
-  if (search) {
-    query = query.or(`specialization.ilike.%${search}%,license_number.ilike.%${search}%`)
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      usersQuery = usersQuery.or(`name.ilike.${term},email.ilike.${term}`)
+    }
   }
 
   const from = (page - 1) * limit
   const to = from + limit - 1
 
-  const { data, error, count } = await query.range(from, to)
+  const { data: userRows, error, count } = await usersQuery.range(from, to)
 
   if (error) return { success: false as const, error: error.message, data: [], count: 0 }
-  return { success: true as const, data: data || [], count: count || 0 }
+
+  const users = userRows || []
+  const userIds = users.map((u) => u.id)
+
+  const profileMap = new Map<string, Record<string, unknown>>()
+  if (userIds.length > 0) {
+    const { data: profiles, error: profErr } = await supabase
+      .from('professional_profiles')
+      .select('*')
+      .in('user_id', userIds)
+
+    if (profErr) {
+      console.error('getProfessionals: professional_profiles load failed', profErr.message)
+    } else {
+      for (const p of profiles || []) {
+        profileMap.set(p.user_id as string, p as Record<string, unknown>)
+      }
+    }
+  }
+
+  const rows = users.map((u) => {
+    const prof = profileMap.get(u.id)
+    return {
+      id: (prof?.id as string | undefined) ?? '',
+      user_id: u.id,
+      name: u.name as string | null,
+      email: u.email as string,
+      phone: (u.phone as string | null) ?? null,
+      image: (u.image as string | null) ?? null,
+      specialization: (prof?.specialization as string | undefined) ?? '',
+      license_number: (prof?.license_number as string | undefined) ?? '',
+      bio: (prof?.bio as string | null | undefined) ?? null,
+      years_of_experience: (prof?.years_of_experience as number | null | undefined) ?? null,
+      consultation_fee: (prof?.consultation_fee as number | null | undefined) ?? null,
+      is_verified: Boolean(prof?.is_verified),
+      city: (prof?.city as string | null | undefined) ?? null,
+      created_at: (prof?.created_at as string | undefined) ?? (u.created_at as string),
+    }
+  })
+
+  return { success: true as const, data: rows, count: count || 0 }
 }
 
 export async function createProfessional(data: z.infer<typeof professionalSchema>) {
@@ -277,6 +319,7 @@ export async function createProfessional(data: z.infer<typeof professionalSchema
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
+  revalidatePath('/consultants', 'layout')
   return { success: true as const, data: result }
 }
 
@@ -297,7 +340,24 @@ export async function updateProfessional(id: string, data: Partial<z.infer<typeo
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
+  revalidatePath('/consultants', 'layout')
   return { success: true as const, data: result }
+}
+
+export async function setProfessionalVerified(profileRowId: string, isVerified: boolean) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('professional_profiles')
+    .update({ is_verified: isVerified, updated_at: new Date().toISOString() })
+    .eq('id', profileRowId)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/professionals')
+  revalidatePath('/consultants', 'layout')
+  return { success: true as const }
 }
 
 export async function deleteProfessional(id: string) {
@@ -312,6 +372,7 @@ export async function deleteProfessional(id: string) {
 
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/professionals')
+  revalidatePath('/consultants', 'layout')
   return { success: true as const }
 }
 
