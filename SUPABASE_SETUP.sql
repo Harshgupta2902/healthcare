@@ -194,6 +194,28 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   status TEXT NOT NULL DEFAULT 'active'
 );
 
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers' AND policyname = 'Allow public newsletter signup'
+  ) THEN
+    CREATE POLICY "Allow public newsletter signup"
+      ON public.newsletter_subscribers
+      FOR INSERT
+      TO anon, authenticated
+      WITH CHECK (
+        email IS NOT NULL
+        AND char_length(email) <= 320
+        AND email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+        AND coalesce(status, 'active') = 'active'
+      );
+  END IF;
+END$$;
+
 CREATE TABLE IF NOT EXISTS public.insurance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,

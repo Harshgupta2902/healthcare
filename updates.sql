@@ -1,6 +1,28 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-08: Newsletter footer signup — allow anon/authenticated INSERT (RLS); no broad SELECT for anon.
+ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers' AND policyname = 'Allow public newsletter signup'
+  ) THEN
+    CREATE POLICY "Allow public newsletter signup"
+      ON public.newsletter_subscribers
+      FOR INSERT
+      TO anon, authenticated
+      WITH CHECK (
+        email IS NOT NULL
+        AND char_length(email) <= 320
+        AND email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+        AND coalesce(status, 'active') = 'active'
+      );
+  END IF;
+END$$;
+
 -- 2026-05-01: Split contact phone — E.164 country prefix + national digits (users.phone stays national only).
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS phone_country_code TEXT;

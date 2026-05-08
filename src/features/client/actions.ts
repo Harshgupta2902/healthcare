@@ -533,16 +533,6 @@ export async function subscribeNewsletter(email: string) {
 
     const sanitizedEmail = email.trim().toLowerCase()
 
-    const { data: existing } = await supabase
-        .from('newsletter_subscribers')
-        .select('*')
-        .eq('email', sanitizedEmail)
-        .single()
-
-    if (existing) {
-        return { success: false as const, error: 'This email is already subscribed.' }
-    }
-
     const { error } = await supabase
         .from('newsletter_subscribers')
         .insert({
@@ -551,6 +541,9 @@ export async function subscribeNewsletter(email: string) {
             status: 'active'
         })
 
+    if (error?.code === '23505') {
+        return { success: false as const, error: 'This email is already subscribed.' }
+    }
     if (error) return { success: false as const, error: error.message }
     return { success: true as const }
 }
