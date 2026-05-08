@@ -11,7 +11,8 @@ import {
     updateAvailability,
     deleteAvailability,
     updateAppointmentStatus,
-    updateConsultationRequestStatus
+    updateConsultationRequestStatus,
+    type ProfessionalGuestBooking,
 } from "@/features/professional/actions";
 import { uploadProfileImage } from "@/features/profile/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -195,6 +196,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [availability, setAvailability] = useState<Availability[]>(initialData?.availability || []);
     const [appointments, setAppointments] = useState<Appointment[]>(initialData?.appointments || []);
     const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>(initialData?.consultationRequests || []);
+    const [guestAppointments, setGuestAppointments] = useState<ProfessionalGuestBooking[]>(initialData?.guestAppointments ?? []);
     const [payments, setPayments] = useState<Payment[]>(initialData?.payments || []);
 
     const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData?.profile);
@@ -202,6 +204,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [isLoadingAvail, setIsLoadingAvail] = useState(!initialData?.availability);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(!initialData?.appointments);
     const [isLoadingRequests, setIsLoadingRequests] = useState(!initialData?.consultationRequests);
+    const [isLoadingGuestBookings, setIsLoadingGuestBookings] = useState(!initialData?.guestAppointments);
     const [isLoadingPayments, setIsLoadingPayments] = useState(!initialData?.payments);
     const [isSaving, setIsSaving] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +227,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             setIsLoadingAvail(false);
             setIsLoadingAppointments(false);
             setIsLoadingRequests(false);
+            setIsLoadingGuestBookings(false);
             setIsLoadingPayments(false);
         }
     }, [initialData?.dashboardError]);
@@ -254,6 +258,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             fetchAvailability();
             fetchAppointments();
             fetchConsultationRequests();
+            fetchGuestBookings();
             fetchPayments();
         }
     }, [initialData, user]);
@@ -423,6 +428,40 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             console.error("Requests fetch error:", error);
         } finally {
             setIsLoadingRequests(false);
+        }
+    };
+
+    const fetchGuestBookings = async () => {
+        try {
+            const { data } = await supabase
+                .from("guest_appointments")
+                .select("*")
+                .eq("professional_id", user.id)
+                .order("created_at", { ascending: false });
+
+            if (data) {
+                setGuestAppointments(
+                    data.map((g: any) => ({
+                        id: g.id,
+                        firstName: g.first_name,
+                        lastName: g.last_name,
+                        email: g.email,
+                        phone: g.phone,
+                        category: g.category,
+                        state: g.state,
+                        city: g.city,
+                        appointmentDate: g.appointment_date,
+                        appointmentTime: g.appointment_time,
+                        message: g.message,
+                        createdAt: g.created_at,
+                        age: g.age,
+                    }))
+                );
+            }
+        } catch (error) {
+            console.error("Guest bookings fetch error:", error);
+        } finally {
+            setIsLoadingGuestBookings(false);
         }
     };
 
@@ -654,7 +693,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </div>
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Appointments</p>
-                                <p className="text-xl font-black text-slate-900">{appointments.length}</p>
+                                <p className="text-xl font-black text-slate-900">{appointments.length + guestAppointments.length}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -667,7 +706,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </div>
                             <div>
                                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Requests</p>
-                                <p className="text-xl font-black text-slate-900">{consultationRequests.filter(r => r.status === "pending").length}</p>
+                                <p className="text-xl font-black text-slate-900">
+                                    {consultationRequests.filter((r) => r.status === "pending").length + guestAppointments.length}
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -1234,88 +1275,142 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             <CardDescription>Manage incoming video and text consultation requests from new clients</CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 sm:p-6 md:p-8">
-                            {isLoadingRequests ? (
+                            {isLoadingRequests || isLoadingGuestBookings ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
-                            ) : consultationRequests.length === 0 ? (
+                            ) : consultationRequests.length === 0 && guestAppointments.length === 0 ? (
                                 <div className="text-center py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <MessageSquare className="h-10 w-10 text-slate-300" />
                                     </div>
                                     <h4 className="text-lg font-black text-slate-900">Quiet Inbox</h4>
-                                    <p className="text-slate-500 max-w-xs mx-auto mt-2">New consultation requests will appear here as clients find your profile.</p>
+                                    <p className="text-slate-500 max-w-xs mx-auto mt-2">Guest bookings from your public link and in-app requests will show here.</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-6">
-                                    {consultationRequests.map((request) => (
-                                        <div
-                                            key={request.id}
-                                            className="group p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all duration-300"
-                                        >
-                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                                <div className="flex-1 space-y-3">
-                                                    <div className="flex flex-wrap items-center gap-3">
-                                                        <div className={`p-2 rounded-xl ${request.requestType === "video" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"}`}>
-                                                            {request.requestType === "video" ? <Video className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+                                <div className="space-y-10">
+                                    {guestAppointments.length > 0 && (
+                                        <div className="space-y-4">
+                                            <div className="grid gap-4 lg:grid-cols-3">
+                                                {guestAppointments.map((g) => (
+                                                    <div
+                                                        key={g.id}
+                                                        className="group p-4 bg-white border border-indigo-100 rounded-2xl hover:shadow-xl transition-all duration-300"
+                                                    >
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
+                                                                {(g.firstName || "G").charAt(0)}
+                                                            </div>
+                                                            <p className="font-bold text-slate-800">
+                                                                {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
+                                                            </p>
+                                                            <span className="text-slate-400 text-sm">·</span>
+                                                            <span className="text-sm font-bold text-slate-600">Age {g.age}</span>
                                                         </div>
-                                                        <h4 className="font-black text-slate-900 text-lg uppercase tracking-tight">
-                                                            {request.requestType} Consulting
-                                                        </h4>
-                                                        <Badge className={`rounded-full px-3 py-1 font-black uppercase text-[10px] ${request.status === "pending" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                                                            request.status === "accepted" ? "bg-green-100 text-green-700 border-green-200" :
-                                                                "bg-red-100 text-red-700 border-red-200"
-                                                            }`}>
-                                                            {request.status}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
-                                                            {(request.clientName || "C").charAt(0)}
-                                                        </div>
-                                                        <p className="font-bold text-slate-800">
-                                                            {request.clientName || "Healthcare Client"}
+                                                        <p className="text-xs font-black uppercase tracking-wide text-slate-400 mt-2">
+                                                            {g.category} · {g.city}, {g.state}
                                                         </p>
-                                                    </div>
-                                                    {request.preferredDate && (
-                                                        <p className="text-sm font-bold text-indigo-600 flex items-center gap-2">
+                                                        <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mt-2">
                                                             <CalendarIcon className="h-4 w-4" />
-                                                            {mounted ? new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                                                            {request.preferredTime && <span className="text-slate-400">• {request.preferredTime}</span>}
+                                                            {mounted
+                                                                ? new Date(`${g.appointmentDate}T${g.appointmentTime || "00:00"}:00`).toLocaleString("en-US", {
+                                                                      weekday: "short",
+                                                                      year: "numeric",
+                                                                      month: "short",
+                                                                      day: "numeric",
+                                                                      hour: "numeric",
+                                                                      minute: "2-digit",
+                                                                  })
+                                                                : ""}
                                                         </p>
-                                                    )}
-                                                    {request.message && (
-                                                        <div className="relative mt-4">
-                                                            <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
-                                                            <p className="text-slate-600 italic text-sm pl-4 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">"{request.message}"</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {request.status === "pending" && (
-                                                    <div className="flex gap-3">
-                                                        <Button
-                                                            size="lg"
-                                                            className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-8"
-                                                            onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
-                                                        >
-                                                            <CheckCircle className="h-5 w-5 mr-2" />
-                                                            Accept
-                                                        </Button>
-                                                        <Button
-                                                            size="lg"
-                                                            variant="outline"
-                                                            className="rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-8"
-                                                            onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
-                                                        >
-                                                            <XCircle className="h-5 w-5 mr-2" />
-                                                            Decline
-                                                        </Button>
+                                                        {g.message && (
+                                                            <div className="relative mt-3">
+                                                                <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
+                                                                <p className="text-slate-600 italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
+                                                ))}
                                             </div>
                                         </div>
-                                    ))}
+                                    )}
+                                    {consultationRequests.length > 0 && (
+                                        <div className="space-y-4">
+                                            {guestAppointments.length > 0 && (
+                                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">In-app consultation requests</h3>
+                                            )}
+                                            <div className="grid gap-4 lg:grid-cols-3">
+                                                {consultationRequests.map((request) => (
+                                                    <div
+                                                        key={request.id}
+                                                        className="group p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all duration-300"
+                                                    >
+                                                        <div className="flex flex-col justify-between gap-4 h-full">
+                                                            <div className="flex-1 space-y-3">
+                                                                <div className="flex flex-wrap items-center gap-3">
+                                                                    <div className={`p-2 rounded-xl ${request.requestType === "video" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"}`}>
+                                                                        {request.requestType === "video" ? <Video className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+                                                                    </div>
+                                                                    <h4 className="font-black text-slate-900 text-lg uppercase tracking-tight">
+                                                                        {request.requestType} Consulting
+                                                                    </h4>
+                                                                    <Badge className={`rounded-full px-3 py-1 font-black uppercase text-[10px] ${request.status === "pending" ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                                                        request.status === "accepted" ? "bg-green-100 text-green-700 border-green-200" :
+                                                                            "bg-red-100 text-red-700 border-red-200"
+                                                                        }`}>
+                                                                        {request.status}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
+                                                                        {(request.clientName || "C").charAt(0)}
+                                                                    </div>
+                                                                    <p className="font-bold text-slate-800">
+                                                                        {request.clientName || "Healthcare Client"}
+                                                                    </p>
+                                                                </div>
+                                                                {request.preferredDate && (
+                                                                    <p className="text-sm font-bold text-indigo-600 flex items-center gap-2">
+                                                                        <CalendarIcon className="h-4 w-4" />
+                                                                        {mounted ? new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                                                                        {request.preferredTime && <span className="text-slate-400">• {request.preferredTime}</span>}
+                                                                    </p>
+                                                                )}
+                                                                {request.message && (
+                                                                    <div className="relative mt-4">
+                                                                        <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
+                                                                        <p className="text-slate-600 italic text-sm pl-4 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">"{request.message}"</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {request.status === "pending" && (
+                                                                <div className="flex gap-2 pt-1">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-5"
+                                                                        onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
+                                                                    >
+                                                                        <CheckCircle className="h-4 w-4 mr-1.5" />
+                                                                        Accept
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-5"
+                                                                        onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
+                                                                    >
+                                                                        <XCircle className="h-4 w-4 mr-1.5" />
+                                                                        Decline
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </CardContent>
@@ -1548,19 +1643,60 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             <CardDescription>Comprehensive database of clients you have consulted with</CardDescription>
                         </CardHeader>
                         <CardContent className="p-4 sm:p-6 md:p-8">
-                            {isLoadingAppointments ? (
+                            {isLoadingAppointments || isLoadingGuestBookings ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
-                            ) : appointments.length === 0 ? (
+                            ) : guestAppointments.length === 0 && [...new Set(appointments.map((a) => a.clientId))].length === 0 ? (
                                 <div className="text-center py-24 bg-slate-50/50 rounded-2xl">
                                     <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-500 font-bold">Your client list is currently empty.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {[...new Set(appointments.map(a => a.clientId))].map((clientId) => {
-                                        const clientAppointments = appointments.filter(a => a.clientId === clientId);
+                                    {guestAppointments.map((g) => (
+                                        <div
+                                            key={`guest-${g.id}`}
+                                            className="group p-4 sm:p-6 bg-white border border-indigo-100 rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
+                                        >
+                                            <div className="flex flex-col gap-5">
+                                                <div className="p-4 sm:p-5 flex items-center gap-4">
+                                                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl shadow-inner">
+                                                        {(g.firstName || "G").charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="overflow-hidden min-w-0">
+                                                        <Badge className="mb-1 rounded-full text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 border-0">Guest</Badge>
+                                                        <h4 className="font-black text-slate-900 truncate text-lg">
+                                                            {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
+                                                        </h4>
+                                                        <p className="text-xs font-bold text-slate-400 truncate mt-0.5">
+                                                            Guest booking
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 text-center pt-2">
+                                                    <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Requested</p>
+                                                        <p className="text-xs font-black text-slate-800 pt-1">
+                                                            {mounted
+                                                                ? new Date(`${g.appointmentDate}T${(g.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleDateString("en-US", {
+                                                                      month: "short",
+                                                                      day: "numeric",
+                                                                      year: "numeric",
+                                                                  })
+                                                                : ""}
+                                                        </p>
+                                                    </div>
+                                                    <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Category</p>
+                                                        <p className="text-xs font-black text-indigo-600 pt-1 truncate">{g.category}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {[...new Set(appointments.map((a) => a.clientId))].map((clientId) => {
+                                        const clientAppointments = appointments.filter((a) => a.clientId === clientId);
                                         const latestAppointment = clientAppointments[0];
                                         return (
                                             <div

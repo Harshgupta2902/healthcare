@@ -45,6 +45,24 @@ BEGIN
   END IF;
 END$$;
 
+-- 2026-05-08: Professionals can read guest_appointments rows assigned to them (book-consultation ?cref=).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'guest_appointments' AND policyname = 'Professionals read guest bookings assigned to them'
+  ) THEN
+    CREATE POLICY "Professionals read guest bookings assigned to them"
+      ON public.guest_appointments
+      FOR SELECT
+      TO authenticated
+      USING (
+        professional_id IS NOT NULL
+        AND professional_id = auth.uid()
+      );
+  END IF;
+END$$;
+
 -- 2026-05-08: Newsletter footer signup — allow anon/authenticated INSERT (RLS); no broad SELECT for anon.
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;

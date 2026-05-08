@@ -688,6 +688,22 @@ export async function updateConsultationRequestStatus(id: string, status: string
     return { success: true as const }
 }
 
+export type ProfessionalGuestBooking = {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+    category: string
+    state: string
+    city: string
+    appointmentDate: string
+    appointmentTime: string
+    message: string | null
+    createdAt: string
+    age: number
+}
+
 export async function getProfessionalDashboardData() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -700,7 +716,8 @@ export async function getProfessionalDashboardData() {
         { data: availability },
         { data: appointments },
         { data: requests },
-        { data: payments }
+        { data: payments },
+        { data: guestRows },
     ] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).single(),
         supabase.from('professional_profiles').select('*').eq('user_id', user.id).single(),
@@ -708,7 +725,8 @@ export async function getProfessionalDashboardData() {
         supabase.from('professional_availability').select('*').eq('professional_id', user.id).order('day_of_week', { ascending: true }),
         supabase.from('appointments').select(`*, client:users!appointments_client_id_fkey(name, email)`).eq('professional_id', user.id).order('start_time', { ascending: true }),
         supabase.from('consultation_requests').select(`*, client:users!consultation_requests_client_id_fkey(name, email)`).eq('professional_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('payments').select(`*, client:users!payments_client_id_fkey(name)`).eq('professional_id', user.id).order('created_at', { ascending: false })
+        supabase.from('payments').select(`*, client:users!payments_client_id_fkey(name)`).eq('professional_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('guest_appointments').select('*').eq('professional_id', user.id).order('created_at', { ascending: false }),
     ])
 
     const profDial =
@@ -785,7 +803,39 @@ export async function getProfessionalDashboardData() {
             transactionId: pay.transaction_id,
             createdAt: pay.created_at,
             clientName: pay.client?.name
-        })) || []
+        })) || [],
+        guestAppointments:
+            guestRows?.map(
+                (g: {
+                    id: string
+                    first_name: string
+                    last_name: string
+                    email: string
+                    phone: string
+                    category: string
+                    state: string
+                    city: string
+                    appointment_date: string
+                    appointment_time: string
+                    message: string | null
+                    created_at: string
+                    age: number
+                }) => ({
+                    id: g.id,
+                    firstName: g.first_name,
+                    lastName: g.last_name,
+                    email: g.email,
+                    phone: g.phone,
+                    category: g.category,
+                    state: g.state,
+                    city: g.city,
+                    appointmentDate: g.appointment_date,
+                    appointmentTime: g.appointment_time,
+                    message: g.message,
+                    createdAt: g.created_at,
+                    age: g.age,
+                })
+            ) || ([] as ProfessionalGuestBooking[]),
     }
 }
 

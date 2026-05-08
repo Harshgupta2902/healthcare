@@ -55,6 +55,23 @@ begin
   end if;
 end$$;
 
+-- 3) Professional sees guest bookings where they are the requested consultant (?cref=)
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'guest_appointments' and policyname = 'Professionals read guest bookings assigned to them'
+  ) then
+    create policy "Professionals read guest bookings assigned to them"
+      on public.guest_appointments
+      for select
+      to authenticated
+      using (
+        professional_id is not null
+        and professional_id = auth.uid()
+      );
+  end if;
+end$$;
+
 -- SUPABASE SETUP SCRIPT (Renamed profiles to users)
 -- Copy and paste this into the Supabase SQL Editor
 
