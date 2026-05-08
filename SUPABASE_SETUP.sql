@@ -216,6 +216,39 @@ BEGIN
   END IF;
 END$$;
 
+-- Public contact form submissions (admin reads in /application/enter/enquiries)
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON TABLE public.contact_messages TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'contact_messages' AND policyname = 'Allow public contact message insert'
+  ) THEN
+    CREATE POLICY "Allow public contact message insert"
+      ON public.contact_messages
+      FOR INSERT
+      TO anon, authenticated
+      WITH CHECK (
+        email IS NOT NULL
+        AND char_length(trim(email)) BETWEEN 3 AND 320
+        AND subject IS NOT NULL
+        AND char_length(trim(subject)) BETWEEN 3 AND 500
+        AND message IS NOT NULL
+        AND char_length(trim(message)) BETWEEN 10 AND 20000
+      );
+  END IF;
+END$$;
+
 CREATE TABLE IF NOT EXISTS public.insurance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -380,6 +413,12 @@ BEGIN
     -- Newsletter Subscribers
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'newsletter_subscribers' AND policyname = 'Admins can manage all subscribers') THEN
         CREATE POLICY "Admins can manage all subscribers" ON public.newsletter_subscribers FOR ALL 
+        USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+    END IF;
+
+    -- Contact messages (site contact form)
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'contact_messages' AND policyname = 'Admins can manage all contact messages') THEN
+        CREATE POLICY "Admins can manage all contact messages" ON public.contact_messages FOR ALL
         USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
     END IF;
 

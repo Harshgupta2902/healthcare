@@ -1068,6 +1068,60 @@ export async function deleteNewsletterSubscriber(id: number) {
 }
 
 // ============================================
+// CONTACT ENQUIRIES (contact_messages)
+// ============================================
+
+export type ContactMessageRow = {
+  id: string
+  email: string
+  subject: string
+  message: string
+  created_at: string
+}
+
+const contactMessageDeleteSchema = z.object({
+  id: z.string().uuid('Invalid message id'),
+})
+
+export async function getContactMessages(page: number = 1, limit: number = 10, search?: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('contact_messages')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  const q = search?.trim()
+  if (q) {
+    query = query.ilike('email', `%${q}%`)
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  const { data, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+  return { success: true as const, data: (data || []) as ContactMessageRow[], count: count || 0 }
+}
+
+export async function deleteContactMessage(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const parsed = contactMessageDeleteSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const supabase = await createClient()
+  const { error } = await supabase.from('contact_messages').delete().eq('id', parsed.data.id)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/enquiries')
+  return { success: true as const }
+}
+
+// ============================================
 // DASHBOARD STATS
 // ============================================
 

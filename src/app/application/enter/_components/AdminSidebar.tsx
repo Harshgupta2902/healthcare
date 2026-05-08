@@ -14,6 +14,7 @@ import {
   Shield,
   Mail,
   Bell,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/application/enter/documents', label: 'Documents', icon: FileCheck },
   { href: '/application/enter/insurance', label: 'Insurance', icon: Shield },
   { href: '/application/enter/newsletter', label: 'Newsletter', icon: Mail },
+  { href: '/application/enter/enquiries', label: 'Enquiries', icon: MessageSquare },
 ]
 
 export function AdminSidebar() {

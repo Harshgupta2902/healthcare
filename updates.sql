@@ -1,6 +1,50 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-08: Contact form messages — table + public INSERT + admin RLS (aligns with /contact and admin enquiries page).
+CREATE TABLE IF NOT EXISTS public.contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
+GRANT INSERT ON TABLE public.contact_messages TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'contact_messages' AND policyname = 'Allow public contact message insert'
+  ) THEN
+    CREATE POLICY "Allow public contact message insert"
+      ON public.contact_messages
+      FOR INSERT
+      TO anon, authenticated
+      WITH CHECK (
+        email IS NOT NULL
+        AND char_length(trim(email)) BETWEEN 3 AND 320
+        AND subject IS NOT NULL
+        AND char_length(trim(subject)) BETWEEN 3 AND 500
+        AND message IS NOT NULL
+        AND char_length(trim(message)) BETWEEN 10 AND 20000
+      );
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'contact_messages' AND policyname = 'Admins can manage all contact messages'
+  ) THEN
+    CREATE POLICY "Admins can manage all contact messages" ON public.contact_messages FOR ALL
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
 -- 2026-05-08: Newsletter footer signup — allow anon/authenticated INSERT (RLS); no broad SELECT for anon.
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;
