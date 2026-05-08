@@ -1657,10 +1657,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     {guestAppointments.map((g) => (
                                         <div
                                             key={`guest-${g.id}`}
-                                            className="group p-4 sm:p-6 bg-white border border-indigo-100 rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
+                                            className="group p-4 bg-white border border-indigo-100 rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
                                         >
-                                            <div className="flex flex-col gap-5">
-                                                <div className="p-4 sm:p-5 flex items-center gap-4">
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-4">
                                                     <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl shadow-inner">
                                                         {(g.firstName || "G").charAt(0).toUpperCase()}
                                                     </div>
