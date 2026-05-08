@@ -134,6 +134,26 @@ interface Insurance {
     updatedAt: string;
 }
 
+interface Appointment {
+    id: string;
+    professionalId: string | null;
+    firstName: string;
+    lastName: string;
+    age: number;
+    phone: string;
+    email: string;
+    category: string;
+    state: string;
+    city: string;
+    appointmentDate: string;
+    appointmentTime: string;
+    message: string | null;
+    calendarInviteUrl: string | null;
+    professionalName: string | null;
+    professionalEmail: string | null;
+    createdAt: string;
+}
+
 export function ClientDashboard({ initialData }: { initialData: any }) {
     const user = initialData?.user;
     const router = useRouter();
@@ -144,12 +164,14 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [medications, setMedications] = useState<Medication[]>(initialData?.medications || []);
     const [documents, setDocuments] = useState<MedicalDocument[]>(initialData?.documents || []);
     const [insuranceData, setInsuranceData] = useState<Insurance[]>(initialData?.insurance || []);
+    const [appointments, setAppointments] = useState<Appointment[]>(initialData?.appointments || []);
 
     const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData?.profile);
     const [isLoadingHistory, setIsLoadingHistory] = useState(!initialData?.medicalHistory);
     const [isLoadingMeds, setIsLoadingMeds] = useState(!initialData?.medications);
     const [isLoadingDocs, setIsLoadingDocs] = useState(!initialData?.documents);
     const [isLoadingInsurance, setIsLoadingInsurance] = useState(!initialData?.insurance);
+    const [isLoadingAppointments, setIsLoadingAppointments] = useState(!initialData?.appointments);
     const [isSaving, setIsSaving] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -173,6 +195,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             setIsLoadingMeds(false);
             setIsLoadingDocs(false);
             setIsLoadingInsurance(false);
+            setIsLoadingAppointments(false);
         }
     }, [initialData?.dashboardError]);
 
@@ -225,6 +248,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             fetchMedications();
             fetchDocuments();
             fetchInsurance();
+            fetchAppointments();
         }
     }, [initialData, user]);
 
@@ -392,6 +416,62 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             console.error("Error fetching insurance:", error);
         } finally {
             setIsLoadingInsurance(false);
+        }
+    };
+
+    const fetchAppointments = async () => {
+        try {
+            const { data } = await supabase
+                .from('guest_appointments')
+                .select('*')
+                .eq('created_by', user.id)
+                .order('appointment_date', { ascending: true })
+                .order('appointment_time', { ascending: true });
+
+            if (data) {
+                const professionalIds = Array.from(
+                    new Set(
+                        data
+                            .map((apt: any) => apt.professional_id)
+                            .filter((id: unknown): id is string => typeof id === 'string' && id.length > 0)
+                    )
+                )
+                const professionalMap: Record<string, { name: string | null; email: string | null }> = {}
+
+                if (professionalIds.length > 0) {
+                    const { data: professionals } = await supabase
+                        .from('users')
+                        .select('id, name, email')
+                        .in('id', professionalIds)
+                    for (const p of professionals || []) {
+                        professionalMap[p.id] = { name: p.name, email: p.email }
+                    }
+                }
+
+                setAppointments(data.map((apt: any) => ({
+                    id: apt.id,
+                    professionalId: apt.professional_id || null,
+                    firstName: apt.first_name,
+                    lastName: apt.last_name,
+                    age: apt.age,
+                    phone: apt.phone,
+                    email: apt.email,
+                    category: apt.category,
+                    state: apt.state,
+                    city: apt.city,
+                    appointmentDate: apt.appointment_date,
+                    appointmentTime: apt.appointment_time,
+                    message: apt.message,
+                    calendarInviteUrl: apt.calendar_invite_url || null,
+                    professionalName: apt.professional_id ? professionalMap[apt.professional_id]?.name || null : null,
+                    professionalEmail: apt.professional_id ? professionalMap[apt.professional_id]?.email || null : null,
+                    createdAt: apt.created_at,
+                })));
+            }
+        } catch (error) {
+            console.error("Error fetching appointments:", error);
+        } finally {
+            setIsLoadingAppointments(false);
         }
     };
 
@@ -695,6 +775,9 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                     </TabsTrigger>
                     <TabsTrigger value="insurance" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
                         <Shield className="h-4 w-4" /> Insurance
+                    </TabsTrigger>
+                    <TabsTrigger value="appointments" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                        <Calendar className="h-4 w-4" /> Appointments
                     </TabsTrigger>
                 </TabsList>
 
@@ -1500,6 +1583,90 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Appointments Tab */}
+                <TabsContent value="appointments" className="animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
+                        <CardHeader className="pt-4 bg-indigo-50/30">
+                            <CardTitle className="text-xl font-black flex items-center gap-2 text-indigo-900">
+                                <Calendar className="h-6 w-6" /> My Consultation Requests
+                            </CardTitle>
+                            <CardDescription>Requests submitted from the book consultation page</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 sm:p-6 md:p-8">
+                            {isLoadingAppointments ? (
+                                <div className="flex justify-center py-20">
+                                    <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+                                </div>
+                            ) : appointments.length === 0 ? (
+                                <div className="text-center py-24 bg-indigo-50/10 rounded-3xl border-2 border-dashed border-indigo-100">
+                                    <Calendar className="h-12 w-12 mx-auto mb-4 text-indigo-200" />
+                                    <h4 className="text-lg font-black text-slate-900">No requests yet</h4>
+                                    <p className="text-slate-400 mt-1">Your consultation requests will appear here.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {appointments.map((apt) => (
+                                        <div
+                                            key={apt.id}
+                                            className="group p-5 bg-white border border-slate-100 rounded-3xl hover:shadow-2xl transition-all duration-500"
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <Badge className="font-black text-[10px] uppercase rounded-full bg-amber-50 text-amber-700 border-amber-100">
+                                                    Submitted
+                                                </Badge>
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                    {apt.category}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-4 space-y-1">
+                                                <h4 className="font-black text-slate-900 truncate text-lg">
+                                                    {apt.professionalName || "Consultation Team"}
+                                                </h4>
+                                                <p className="text-xs text-slate-400 font-bold truncate uppercase tracking-wide">
+                                                    {apt.city}, {apt.state}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-4 p-3 rounded-2xl bg-indigo-50/40 border border-indigo-100/60">
+                                                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Schedule</p>
+                                                <p className="text-sm font-black text-indigo-700">
+                                                    {mounted
+                                                        ? new Date(`${apt.appointmentDate}T${(apt.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleString('en-US', {
+                                                            weekday: 'short',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                            hour: 'numeric',
+                                                            minute: '2-digit',
+                                                        })
+                                                        : ''}
+                                                </p>
+                                            </div>
+
+                                            {apt.message && (
+                                                <p className="mt-3 text-sm text-slate-500 italic line-clamp-2">"{apt.message}"</p>
+                                            )}
+
+                                            {/* {apt.calendarInviteUrl && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="mt-4 w-full rounded-full border-indigo-100 text-indigo-700 hover:bg-indigo-50 font-black"
+                                                    onClick={() => window.open(apt.calendarInviteUrl || '', '_blank')}
+                                                >
+                                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                                    Open Invite
+                                                </Button>
+                                            )} */}
                                         </div>
                                     ))}
                                 </div>

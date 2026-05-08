@@ -431,15 +431,41 @@ export async function getClientDashboardData() {
         { data: history },
         { data: medications },
         { data: documents },
-        { data: insurance }
+        { data: insurance },
+        { data: guestAppointments }
     ] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).single(),
         supabase.from('client_medical_profiles').select('*').eq('user_id', user.id).single(),
         supabase.from('medical_history').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('medications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('medical_documents').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('insurance').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+        supabase.from('insurance').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase
+            .from('guest_appointments')
+            .select('*')
+            .eq('created_by', user.id)
+            .order('appointment_date', { ascending: true })
+            .order('appointment_time', { ascending: true })
     ])
+
+    const professionalIds = Array.from(
+        new Set(
+            (guestAppointments || [])
+                .map((g: any) => g.professional_id)
+                .filter((id: unknown): id is string => typeof id === 'string' && id.length > 0)
+        )
+    )
+
+    const professionalsById: Record<string, { name: string | null; email: string | null }> = {}
+    if (professionalIds.length > 0) {
+        const { data: professionals } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .in('id', professionalIds)
+        for (const p of professionals || []) {
+            professionalsById[p.id] = { name: p.name, email: p.email }
+        }
+    }
 
     const clientDial =
         normalizePhoneCountryCode(
@@ -518,6 +544,25 @@ export async function getClientDashboardData() {
             notes: item.notes,
             createdAt: item.created_at,
             updatedAt: item.updated_at
+        })) || [],
+        appointments: guestAppointments?.map((apt: any) => ({
+            id: apt.id,
+            professionalId: apt.professional_id || null,
+            firstName: apt.first_name,
+            lastName: apt.last_name,
+            age: apt.age,
+            phone: apt.phone,
+            email: apt.email,
+            category: apt.category,
+            state: apt.state,
+            city: apt.city,
+            appointmentDate: apt.appointment_date,
+            appointmentTime: apt.appointment_time,
+            message: apt.message,
+            calendarInviteUrl: apt.calendar_invite_url || null,
+            professionalName: apt.professional_id ? professionalsById[apt.professional_id]?.name || null : null,
+            professionalEmail: apt.professional_id ? professionalsById[apt.professional_id]?.email || null : null,
+            createdAt: apt.created_at
         })) || []
     }
 }
