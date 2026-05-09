@@ -4,7 +4,7 @@ import ErrorReporter from "@/components/ErrorReporter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
-
+import { Analytics } from "@vercel/analytics/next"
 export const metadata: Metadata = {
   title: "HealthHere - Your Health, Our Priority",
   description: "Making quality healthcare accessible and convenient for everyone, wherever you are.",
@@ -19,6 +19,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col min-w-0" suppressHydrationWarning>
         <ErrorReporter />
+        <Analytics />
         <Header />
         <main className="flex-grow min-w-0 overflow-x-clip">
           {children}
