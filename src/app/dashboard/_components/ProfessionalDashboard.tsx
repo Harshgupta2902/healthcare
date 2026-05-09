@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import {
     updateProfessionalProfile,
@@ -12,6 +13,7 @@ import {
     deleteAvailability,
     updateAppointmentStatus,
     updateConsultationRequestStatus,
+    saveGuestPrescription,
     type ProfessionalGuestBooking,
 } from "@/features/professional/actions";
 import { uploadProfileImage } from "@/features/profile/actions";
@@ -64,6 +66,18 @@ import {
 } from "@/lib/phone-country-options";
 import { cn } from "@/lib/utils";
 import { PhoneCountryFields } from "@/components/PhoneCountryFields";
+
+const LexicalPrescriptionEditor = dynamic(
+    () => import("./LexicalPrescriptionEditor").then((mod) => mod.LexicalPrescriptionEditor),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex min-h-[520px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+                Loading editor…
+            </div>
+        ),
+    }
+);
 
 interface ProfessionalProfile {
     id: string;
@@ -234,6 +248,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const [showAddQualification, setShowAddQualification] = useState(false);
     const [showAddAvailability, setShowAddAvailability] = useState(false);
+    const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+    const [prescriptionModalRev, setPrescriptionModalRev] = useState(0);
+    const [selectedGuestForPrescription, setSelectedGuestForPrescription] = useState<ProfessionalGuestBooking | null>(null);
+    const [prescriptionHtml, setPrescriptionHtml] = useState("");
+    const [isSavingPrescription, setIsSavingPrescription] = useState(false);
 
     const [qualificationForm, setQualificationForm] = useState({
         degree: "",
@@ -455,6 +474,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         message: g.message,
                         createdAt: g.created_at,
                         age: g.age,
+                        prescriptionHtml: g.prescription_html || null,
+                        prescriptionUpdatedAt: g.prescription_updated_at || null,
                     }))
                 );
             }
@@ -617,6 +638,47 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             fetchConsultationRequests();
         } catch (error: any) {
             toast.error(error.message || "Failed to update request");
+        }
+    };
+
+    const openPrescriptionModal = (guest: ProfessionalGuestBooking) => {
+        const baseTemplate = `<h2>Medical Prescription</h2><p><strong>Patient:</strong> ${guest.firstName} ${guest.lastName}</p><p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p><p><br></p><p><strong>Diagnosis</strong></p><ul><li></li></ul><p><strong>Medicines</strong></p><ol><li></li></ol><p><strong>Instructions</strong></p><ul><li></li></ul>`;
+        setSelectedGuestForPrescription(guest);
+        setPrescriptionHtml(guest.prescriptionHtml || baseTemplate);
+        setPrescriptionModalRev((r) => r + 1);
+        setPrescriptionModalOpen(true);
+    };
+
+    const handleSavePrescription = async () => {
+        if (!selectedGuestForPrescription) return;
+        if (!prescriptionHtml.trim()) {
+            toast.error("Prescription content is required.");
+            return;
+        }
+        setIsSavingPrescription(true);
+        try {
+            const result = await saveGuestPrescription({
+                guestAppointmentId: selectedGuestForPrescription.id,
+                prescriptionHtml,
+            });
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+            setGuestAppointments((prev) =>
+                prev.map((g) =>
+                    g.id === selectedGuestForPrescription.id
+                        ? { ...g, prescriptionHtml, prescriptionUpdatedAt: new Date().toISOString() }
+                        : g
+                )
+            );
+            toast.success("Prescription saved.");
+            setPrescriptionModalOpen(false);
+            setSelectedGuestForPrescription(null);
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to save prescription.");
+        } finally {
+            setIsSavingPrescription(false);
         }
     };
     const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1329,6 +1391,26 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <p className="text-slate-600 italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
                                                             </div>
                                                         )}
+                                                        <div className="mt-3 flex items-center gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant={g.prescriptionHtml ? "outline" : "default"}
+                                                                className={cn(
+                                                                    "rounded-full font-black",
+                                                                    g.prescriptionHtml
+                                                                        ? "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                                                                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                                                                )}
+                                                                onClick={() => openPrescriptionModal(g)}
+                                                            >
+                                                                {g.prescriptionHtml ? "Edit Prescription" : "Prescribe"}
+                                                            </Button>
+                                                            {g.prescriptionHtml && (
+                                                                <Badge className="bg-green-50 text-green-700 border-green-100 text-[10px] uppercase font-black">
+                                                                    Saved
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1415,6 +1497,56 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
+
+                    <Dialog
+                        open={prescriptionModalOpen}
+                        onOpenChange={(open) => {
+                            setPrescriptionModalOpen(open);
+                            if (!open) {
+                                setSelectedGuestForPrescription(null);
+                            }
+                        }}
+                    >
+                        <DialogContent className="w-[min(1400px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[min(1400px,calc(100vw-2rem))] rounded-2xl max-h-[min(92vh,960px)] overflow-y-auto sm:p-8">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {selectedGuestForPrescription
+                                        ? `Prescription - ${selectedGuestForPrescription.firstName} ${selectedGuestForPrescription.lastName}`
+                                        : "Write Prescription"}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    Use rich text format for diagnosis, medicines and instructions.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                {selectedGuestForPrescription ? (
+                                    <LexicalPrescriptionEditor
+                                        key={`presc-${selectedGuestForPrescription.id}-${prescriptionModalRev}`}
+                                        initialHtml={prescriptionHtml}
+                                        onHtmlChange={setPrescriptionHtml}
+                                    />
+                                ) : null}
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-full"
+                                        onClick={() => setPrescriptionModalOpen(false)}
+                                        disabled={isSavingPrescription}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        className="rounded-full bg-indigo-600 hover:bg-indigo-700"
+                                        onClick={handleSavePrescription}
+                                        disabled={isSavingPrescription}
+                                    >
+                                        {isSavingPrescription ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                                        Save Prescription
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
 
                 <TabsContent value="calendar" className="animate-in fade-in slide-in-from-bottom-2 space-y-6">

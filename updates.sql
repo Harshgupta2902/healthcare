@@ -1,6 +1,58 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-08 (rev 2): Widen patient SELECT — match on guest email = account email for ALL rows (not only created_by null).
+-- Fixes: two bookings same email (one created_by set, one null) but only one appeared on client dashboard.
+DROP POLICY IF EXISTS "Select by matching account email if unclaimed" ON public.guest_appointments;
+DROP POLICY IF EXISTS "Select guest bookings matching patient email" ON public.guest_appointments;
+CREATE POLICY "Select guest bookings matching patient email"
+  ON public.guest_appointments
+  FOR SELECT
+  TO authenticated
+  USING (
+    guest_appointments.email IS NOT NULL
+    AND (SELECT u.email FROM public.users u WHERE u.id = auth.uid()) IS NOT NULL
+    AND lower(btrim(guest_appointments.email)) = lower(btrim(
+      (SELECT u.email FROM public.users u WHERE u.id = auth.uid())
+    ))
+  );
+
+-- Optional one-time backfill (run manually in SQL editor if you already have orphan rows):
+-- UPDATE public.guest_appointments ga
+-- SET created_by = u.id
+-- FROM public.users u
+-- WHERE ga.created_by IS NULL
+--   AND lower(btrim(ga.email)) = lower(btrim(u.email));
+
+-- 2026-05-08: Guest appointment prescriptions (professional writes TinyMCE HTML; client views PDF).
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS prescription_html TEXT,
+  ADD COLUMN IF NOT EXISTS prescription_updated_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN public.guest_appointments.prescription_html IS 'Rich HTML prescription written by assigned professional.';
+COMMENT ON COLUMN public.guest_appointments.prescription_updated_at IS 'Timestamp when prescription_html was last updated.';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'guest_appointments' AND policyname = 'Professionals update own guest bookings'
+  ) THEN
+    CREATE POLICY "Professionals update own guest bookings"
+      ON public.guest_appointments
+      FOR UPDATE
+      TO authenticated
+      USING (
+        professional_id IS NOT NULL
+        AND professional_id = auth.uid()
+      )
+      WITH CHECK (
+        professional_id IS NOT NULL
+        AND professional_id = auth.uid()
+      );
+  END IF;
+END$$;
+
 -- 2026-05-08: Contact form messages — table + public INSERT + admin RLS (aligns with /contact and admin enquiries page).
 CREATE TABLE IF NOT EXISTS public.contact_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

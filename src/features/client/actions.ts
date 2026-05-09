@@ -12,6 +12,7 @@ import {
     isKnownPhoneCountryDial,
     normalizePhoneCountryCode,
 } from '@/lib/phone-country-options'
+import { fetchGuestAppointmentProfessionalMeta } from '@/lib/guest-appointment-professional-meta'
 
 const medicalProfileSchema = z
     .object({
@@ -456,16 +457,7 @@ export async function getClientDashboardData() {
         )
     )
 
-    const professionalsById: Record<string, { name: string | null; email: string | null }> = {}
-    if (professionalIds.length > 0) {
-        const { data: professionals } = await supabase
-            .from('users')
-            .select('id, name, email')
-            .in('id', professionalIds)
-        for (const p of professionals || []) {
-            professionalsById[p.id] = { name: p.name, email: p.email }
-        }
-    }
+    const professionalMeta = await fetchGuestAppointmentProfessionalMeta(supabase, professionalIds)
 
     const clientDial =
         normalizePhoneCountryCode(
@@ -545,25 +537,32 @@ export async function getClientDashboardData() {
             createdAt: item.created_at,
             updatedAt: item.updated_at
         })) || [],
-        appointments: guestAppointments?.map((apt: any) => ({
-            id: apt.id,
-            professionalId: apt.professional_id || null,
-            firstName: apt.first_name,
-            lastName: apt.last_name,
-            age: apt.age,
-            phone: apt.phone,
-            email: apt.email,
-            category: apt.category,
-            state: apt.state,
-            city: apt.city,
-            appointmentDate: apt.appointment_date,
-            appointmentTime: apt.appointment_time,
-            message: apt.message,
-            calendarInviteUrl: apt.calendar_invite_url || null,
-            professionalName: apt.professional_id ? professionalsById[apt.professional_id]?.name || null : null,
-            professionalEmail: apt.professional_id ? professionalsById[apt.professional_id]?.email || null : null,
-            createdAt: apt.created_at
-        })) || []
+        appointments: guestAppointments?.map((apt: any) => {
+            const meta = apt.professional_id ? professionalMeta[apt.professional_id] : undefined
+            return {
+                id: apt.id,
+                professionalId: apt.professional_id || null,
+                firstName: apt.first_name,
+                lastName: apt.last_name,
+                age: apt.age,
+                phone: apt.phone,
+                email: apt.email,
+                category: apt.category,
+                state: apt.state,
+                city: apt.city,
+                appointmentDate: apt.appointment_date,
+                appointmentTime: apt.appointment_time,
+                message: apt.message,
+                calendarInviteUrl: apt.calendar_invite_url || null,
+                prescriptionHtml: apt.prescription_html || null,
+                prescriptionUpdatedAt: apt.prescription_updated_at || null,
+                professionalName: meta?.name ?? null,
+                professionalEmail: meta?.email ?? null,
+                professionalSpecialization: meta?.specialization ?? null,
+                professionalQualificationsSummary: meta?.qualificationsSummary ?? null,
+                createdAt: apt.created_at,
+            }
+        }) || []
     }
 }
 

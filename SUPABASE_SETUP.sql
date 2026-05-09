@@ -16,12 +16,16 @@ create table if not exists public.guest_appointments (
   appointment_time text not null,
   message text,
   calendar_invite_url text,
+  prescription_html text,
+  prescription_updated_at timestamptz,
   created_at timestamptz not null default now(),
   created_by uuid null,
   professional_id uuid null
 );
 comment on column public.guest_appointments.professional_id is 'Professional (public.users.id) requested via consultant deeplink (?cref); null for generic bookings.';
 comment on column public.guest_appointments.calendar_invite_url is 'Google Calendar TEMPLATE link generated in admin; copy-only after set.';
+comment on column public.guest_appointments.prescription_html is 'Rich HTML prescription written by assigned professional.';
+comment on column public.guest_appointments.prescription_updated_at is 'Timestamp when prescription_html was last updated.';
 
 -- RLS
 alter table public.guest_appointments enable row level security;
@@ -55,6 +59,27 @@ begin
   end if;
 end$$;
 
+-- 2b) Patient dashboard: also allow SELECT when guest row email matches account email (not only when created_by is null).
+--     So all bookings for harsh.ixora@gmail.com show for that user, including one row with created_by set and one orphan row.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'guest_appointments' and policyname = 'Select guest bookings matching patient email'
+  ) then
+    create policy "Select guest bookings matching patient email"
+      on public.guest_appointments
+      for select
+      to authenticated
+      using (
+        guest_appointments.email is not null
+        and (select u.email from public.users u where u.id = auth.uid()) is not null
+        and lower(btrim(guest_appointments.email)) = lower(btrim(
+          (select u.email from public.users u where u.id = auth.uid())
+        ))
+      );
+  end if;
+end$$;
+
 -- 3) Professional sees guest bookings where they are the requested consultant (?cref=)
 do $$
 begin
@@ -66,6 +91,27 @@ begin
       for select
       to authenticated
       using (
+        professional_id is not null
+        and professional_id = auth.uid()
+      );
+  end if;
+end$$;
+
+-- 4) Assigned professional can update prescription fields on own guest bookings
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'guest_appointments' and policyname = 'Professionals update own guest bookings'
+  ) then
+    create policy "Professionals update own guest bookings"
+      on public.guest_appointments
+      for update
+      to authenticated
+      using (
+        professional_id is not null
+        and professional_id = auth.uid()
+      )
+      with check (
         professional_id is not null
         and professional_id = auth.uid()
       );

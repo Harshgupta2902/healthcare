@@ -688,6 +688,45 @@ export async function updateConsultationRequestStatus(id: string, status: string
     return { success: true as const }
 }
 
+const guestPrescriptionSchema = z.object({
+    guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
+    prescriptionHtml: z.string().min(1, 'Prescription content is required').max(200000, 'Prescription is too large'),
+})
+
+export async function saveGuestPrescription(input: unknown) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
+
+    const parsed = guestPrescriptionSchema.safeParse(input)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+    const { data: row, error: rowErr } = await supabase
+        .from('guest_appointments')
+        .select('id, professional_id')
+        .eq('id', parsed.data.guestAppointmentId)
+        .single()
+
+    if (rowErr || !row) {
+        return { success: false as const, error: rowErr?.message || 'Guest appointment not found.' }
+    }
+
+    if (row.professional_id !== user.id) {
+        return { success: false as const, error: 'You are not allowed to prescribe for this request.' }
+    }
+
+    const { error } = await supabase
+        .from('guest_appointments')
+        .update({
+            prescription_html: parsed.data.prescriptionHtml,
+            prescription_updated_at: new Date().toISOString(),
+        })
+        .eq('id', parsed.data.guestAppointmentId)
+
+    if (error) return { success: false as const, error: error.message }
+    return { success: true as const }
+}
+
 export type ProfessionalGuestBooking = {
     id: string
     firstName: string
@@ -702,6 +741,8 @@ export type ProfessionalGuestBooking = {
     message: string | null
     createdAt: string
     age: number
+    prescriptionHtml: string | null
+    prescriptionUpdatedAt: string | null
 }
 
 export async function getProfessionalDashboardData() {
@@ -820,6 +861,8 @@ export async function getProfessionalDashboardData() {
                     message: string | null
                     created_at: string
                     age: number
+                    prescription_html: string | null
+                    prescription_updated_at: string | null
                 }) => ({
                     id: g.id,
                     firstName: g.first_name,
@@ -834,6 +877,8 @@ export async function getProfessionalDashboardData() {
                     message: g.message,
                     createdAt: g.created_at,
                     age: g.age,
+                    prescriptionHtml: g.prescription_html || null,
+                    prescriptionUpdatedAt: g.prescription_updated_at || null,
                 })
             ) || ([] as ProfessionalGuestBooking[]),
     }

@@ -3,6 +3,23 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
+import {
+    attachPrescriptionPdfStylesToHead,
+    buildPrescriptionPdfDocumentHtml,
+    buildQualificationLine,
+    detachPrescriptionPdfStyles,
+    attachPrescriptionPdfLoadingMask,
+    detachPrescriptionPdfLoadingMask,
+    flushPrescriptionPdfShellLayout,
+    formatDoctorDisplayName,
+    importPrescriptionPdfShellFromHtml,
+    openPrescriptionPdfBlobInNewTab,
+    preparePrescriptionPdfShellForRaster,
+    rasterizePrescriptionShellToPdfBlobUrl,
+    removeJspdfHtmlOverlaysFromBody,
+    stripPrescriptionBodyForPdfEngine,
+} from "@/lib/prescription-pdf-html";
 import {
     updateMedicalProfile,
     addMedicalCondition,
@@ -149,8 +166,12 @@ interface Appointment {
     appointmentTime: string;
     message: string | null;
     calendarInviteUrl: string | null;
+    prescriptionHtml: string | null;
+    prescriptionUpdatedAt: string | null;
     professionalName: string | null;
     professionalEmail: string | null;
+    professionalSpecialization: string | null;
+    professionalQualificationsSummary: string | null;
     createdAt: string;
 }
 
@@ -173,6 +194,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [isLoadingInsurance, setIsLoadingInsurance] = useState(!initialData?.insurance);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(!initialData?.appointments);
     const [isSaving, setIsSaving] = useState(false);
+    const [prescriptionPdfLoadingAppointmentId, setPrescriptionPdfLoadingAppointmentId] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const documentInputRef = useRef<HTMLInputElement>(null);
@@ -421,52 +443,53 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const fetchAppointments = async () => {
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('guest_appointments')
                 .select('*')
-                .eq('created_by', user.id)
                 .order('appointment_date', { ascending: true })
                 .order('appointment_time', { ascending: true });
+            if (error) {
+                console.error('Error fetching guest appointments:', error);
+            }
 
             if (data) {
                 const professionalIds = Array.from(
                     new Set(
                         data
                             .map((apt: any) => apt.professional_id)
-                            .filter((id: unknown): id is string => typeof id === 'string' && id.length > 0)
+                            .filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
                     )
-                )
-                const professionalMap: Record<string, { name: string | null; email: string | null }> = {}
+                );
+                const professionalMeta = await fetchGuestAppointmentProfessionalMeta(supabase, professionalIds);
 
-                if (professionalIds.length > 0) {
-                    const { data: professionals } = await supabase
-                        .from('users')
-                        .select('id, name, email')
-                        .in('id', professionalIds)
-                    for (const p of professionals || []) {
-                        professionalMap[p.id] = { name: p.name, email: p.email }
-                    }
-                }
-
-                setAppointments(data.map((apt: any) => ({
-                    id: apt.id,
-                    professionalId: apt.professional_id || null,
-                    firstName: apt.first_name,
-                    lastName: apt.last_name,
-                    age: apt.age,
-                    phone: apt.phone,
-                    email: apt.email,
-                    category: apt.category,
-                    state: apt.state,
-                    city: apt.city,
-                    appointmentDate: apt.appointment_date,
-                    appointmentTime: apt.appointment_time,
-                    message: apt.message,
-                    calendarInviteUrl: apt.calendar_invite_url || null,
-                    professionalName: apt.professional_id ? professionalMap[apt.professional_id]?.name || null : null,
-                    professionalEmail: apt.professional_id ? professionalMap[apt.professional_id]?.email || null : null,
-                    createdAt: apt.created_at,
-                })));
+                setAppointments(
+                    data.map((apt: any) => {
+                        const meta = apt.professional_id ? professionalMeta[apt.professional_id] : undefined;
+                        return {
+                            id: apt.id,
+                            professionalId: apt.professional_id || null,
+                            firstName: apt.first_name,
+                            lastName: apt.last_name,
+                            age: apt.age,
+                            phone: apt.phone,
+                            email: apt.email,
+                            category: apt.category,
+                            state: apt.state,
+                            city: apt.city,
+                            appointmentDate: apt.appointment_date,
+                            appointmentTime: apt.appointment_time,
+                            message: apt.message,
+                            calendarInviteUrl: apt.calendar_invite_url || null,
+                            prescriptionHtml: apt.prescription_html || null,
+                            prescriptionUpdatedAt: apt.prescription_updated_at || null,
+                            professionalName: meta?.name ?? null,
+                            professionalEmail: meta?.email ?? null,
+                            professionalSpecialization: meta?.specialization ?? null,
+                            professionalQualificationsSummary: meta?.qualificationsSummary ?? null,
+                            createdAt: apt.created_at,
+                        };
+                    })
+                );
             }
         } catch (error) {
             console.error("Error fetching appointments:", error);
@@ -697,6 +720,63 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             toast.error("An unexpected error occurred");
         } finally {
             setIsUploadingImage(false);
+        }
+    };
+
+    const handleViewPrescriptionPdf = async (appointment: Appointment) => {
+        if (!appointment.prescriptionHtml) {
+            toast.error("Prescription not available yet.");
+            return;
+        }
+        const doctorName = formatDoctorDisplayName(appointment.professionalName);
+        const qualificationLine = buildQualificationLine(
+            appointment.professionalSpecialization,
+            appointment.professionalQualificationsSummary
+        );
+        const patientFullName = `${appointment.firstName} ${appointment.lastName}`.trim();
+        const issueDateDisplay = new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+        const fullHtml = buildPrescriptionPdfDocumentHtml({
+            prescriptionHtml: appointment.prescriptionHtml,
+            doctorDisplayName: doctorName,
+            qualificationLine,
+            patientFullName,
+            issueDateDisplay,
+            patientAge: appointment.age,
+            diagnosisCategory: appointment.category?.trim() || "—",
+        });
+
+        setPrescriptionPdfLoadingAppointmentId(appointment.id);
+
+        // html2canvas on the live shell (not jsPDF doc.html overlay) avoids blank leading pages + header shift.
+        let headStyle: HTMLStyleElement | null = null;
+        let shell: HTMLElement | null = null;
+        let loadingMask: HTMLDivElement | null = null;
+        try {
+            headStyle = attachPrescriptionPdfStylesToHead();
+            shell = importPrescriptionPdfShellFromHtml(fullHtml);
+            preparePrescriptionPdfShellForRaster(shell);
+            document.body.appendChild(shell);
+            loadingMask = attachPrescriptionPdfLoadingMask();
+            stripPrescriptionBodyForPdfEngine(shell);
+            void shell.offsetHeight;
+            await flushPrescriptionPdfShellLayout();
+
+            const url = await rasterizePrescriptionShellToPdfBlobUrl(shell);
+            openPrescriptionPdfBlobInNewTab(url);
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to render prescription PDF.");
+        } finally {
+            detachPrescriptionPdfLoadingMask(loadingMask);
+            if (shell?.parentNode) {
+                shell.parentNode.removeChild(shell);
+            }
+            detachPrescriptionPdfStyles(headStyle);
+            removeJspdfHtmlOverlaysFromBody();
+            setPrescriptionPdfLoadingAppointmentId(null);
         }
     };
 
@@ -1654,6 +1734,36 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                                             {apt.message && (
                                                 <p className="mt-3 text-sm text-slate-500 italic line-clamp-2">"{apt.message}"</p>
+                                            )}
+
+                                            {apt.prescriptionUpdatedAt && (
+                                                <p className="mt-2 text-[11px] font-black uppercase tracking-wider text-emerald-600">
+                                                    Prescription updated{" "}
+                                                    {mounted
+                                                        ? new Date(apt.prescriptionUpdatedAt).toLocaleDateString("en-US", {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            year: "numeric",
+                                                        })
+                                                        : ""}
+                                                </p>
+                                            )}
+
+                                            {apt.prescriptionHtml && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => void handleViewPrescriptionPdf(apt)}
+                                                    disabled={prescriptionPdfLoadingAppointmentId === apt.id}
+                                                    className="mt-3 w-full rounded-full border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-black"
+                                                    >
+                                                    {prescriptionPdfLoadingAppointmentId === apt.id ? (
+                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    ) : (
+                                                        <FileText className="h-4 w-4 mr-2" />
+                                                    )}
+                                                    {prescriptionPdfLoadingAppointmentId === apt.id ? "Preparing PDF…" : "View PDF"}
+                                                </Button>
                                             )}
 
                                             {/* {apt.calendarInviteUrl && (
