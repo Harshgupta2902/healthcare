@@ -96,7 +96,6 @@ export function QualificationReviewDialog({
               />
             )}
             {kind === 'image' && (
-              // eslint-disable-next-line @next/next/no-img-element -- admin preview of user-uploaded storage URL
               <img
                 src={row.document_url}
                 alt="Qualification document"
