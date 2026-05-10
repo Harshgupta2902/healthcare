@@ -13,6 +13,7 @@ import {
   FileCheck,
   Shield,
   Mail,
+  Send,
   Bell,
   MessageSquare,
 } from 'lucide-react'
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/application/enter/documents', label: 'Documents', icon: FileCheck },
   { href: '/application/enter/insurance', label: 'Insurance', icon: Shield },
   { href: '/application/enter/newsletter', label: 'Newsletter', icon: Mail },
+  { href: '/application/enter/newsletter/campaigns', label: 'Campaigns', icon: Send },
   { href: '/application/enter/enquiries', label: 'Enquiries', icon: MessageSquare },
 ]
 
@@ -53,7 +55,13 @@ export function AdminSidebar() {
 
       <nav className="p-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/application/enter' && pathname.startsWith(item.href))
+          // Pick the longest matching prefix so /newsletter/campaigns highlights "Campaigns", not "Newsletter".
+          const matches = navItems
+            .filter((n) => pathname === n.href || (n.href !== '/application/enter' && pathname.startsWith(n.href + '/')))
+          const longest = matches.sort((a, b) => b.href.length - a.href.length)[0]
+          const isActive = longest
+            ? longest.href === item.href
+            : item.href === '/application/enter' && pathname === '/application/enter'
           const Icon = item.icon
 
           return (
