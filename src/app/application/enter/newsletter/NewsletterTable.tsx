@@ -8,7 +8,11 @@ import { DeleteDialog } from '../_components/DeleteDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
-import { deleteNewsletterSubscriber } from '@/features/admin/actions'
+import { Ban, Edit, Trash2 } from 'lucide-react'
+import {
+  deleteNewsletterSubscriber,
+  updateNewsletterSubscriber,
+} from '@/features/admin/actions'
 import { toast } from 'sonner'
 import { NewsletterSendDialog } from './NewsletterSendDialog'
 
@@ -93,6 +97,25 @@ export function NewsletterTable({
     })
   }
 
+  const handleUnsubscribe = (subscriber: NewsletterSubscriber) => {
+    startTransition(async () => {
+      try {
+        const result = await updateNewsletterSubscriber(subscriber.id, {
+          email: subscriber.email,
+          status: 'unsubscribed',
+        })
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        toast.success(`${subscriber.email} unsubscribed`)
+        router.refresh()
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to unsubscribe')
+      }
+    })
+  }
+
   const columns = [
     {
       key: 'email',
@@ -145,13 +168,49 @@ export function NewsletterTable({
           </Button>
         }
         onAdd={handleAdd}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         addLabel="Add Subscriber"
         page={initialPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
         count={count}
+        renderRowActions={(subscriber) => {
+          const isUnsubscribed = subscriber.status === 'unsubscribed'
+          return (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleEdit(subscriber)}
+                className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+                aria-label="Edit subscriber"
+                title="Edit"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleUnsubscribe(subscriber)}
+                disabled={isUnsubscribed || isPending}
+                className="rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Unsubscribe"
+                title={isUnsubscribed ? 'Already unsubscribed' : 'Unsubscribe'}
+              >
+                <Ban className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(subscriber)}
+                className="rounded-lg text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20"
+                aria-label="Delete subscriber"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )
+        }}
       />
       <NewsletterSendDialog
         open={isSendOpen}
