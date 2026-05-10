@@ -145,3 +145,57 @@ export async function sendNewsletterEmail(
 
     console.log('[mailer] Newsletter email sent:', info.messageId)
 }
+
+/**
+ * Admin broadcast: rich HTML from Lexical (body fragment) wrapped in a simple shell
+ * with a per-recipient one-click unsubscribe link and RFC 8058 headers.
+ */
+export async function sendNewsletterBroadcastEmail(
+    to: string,
+    subject: string,
+    innerContentHtml: string
+): Promise<void> {
+    const t = getTransporter()
+    const unsubscribeUrl = buildUnsubscribeUrl(to)
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;font-family: Arial, Helvetica, sans-serif; background:#f4f4f4;">
+  <table width="100%" cellspacing="0" cellpadding="0" role="presentation">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table width="600" cellspacing="0" cellpadding="0" role="presentation"
+          style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 28px;">
+              <div style="color:#1f2937;font-size:16px;line-height:1.6;">
+                ${innerContentHtml}
+              </div>
+              <p style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.5;">
+                You received this email because you subscribed to HealthHere updates.
+                <a href="${unsubscribeUrl}" style="color:#0f766e;">Unsubscribe</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+
+    const info = await t.sendMail({
+        from: getFromAddress(),
+        to,
+        subject,
+        html,
+        headers: {
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+    })
+
+    console.log('[mailer] Broadcast sent:', info.messageId, '→', to)
+}

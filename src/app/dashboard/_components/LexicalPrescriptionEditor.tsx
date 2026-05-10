@@ -333,11 +333,18 @@ export type LexicalPrescriptionEditorProps = {
     initialHtml: string;
     onHtmlChange: (html: string) => void;
     className?: string;
+    /** Use a shorter editing area (e.g. admin newsletter modal). */
+    compact?: boolean;
 };
 
-export function LexicalPrescriptionEditor({ initialHtml, onHtmlChange, className }: LexicalPrescriptionEditorProps) {
+export function LexicalPrescriptionEditor({
+    initialHtml,
+    onHtmlChange,
+    className,
+    compact = false,
+}: LexicalPrescriptionEditorProps) {
     const initialConfig = {
-        namespace: "PrescriptionEditor",
+        namespace: compact ? "NewsletterEditor" : "PrescriptionEditor",
         theme,
         onError: (error: Error) => {
             console.error(error);
@@ -355,12 +362,19 @@ export function LexicalPrescriptionEditor({ initialHtml, onHtmlChange, className
                     <RichTextPlugin
                         contentEditable={
                             <ContentEditable
-                                className="min-h-[520px] px-3 py-2 outline-none prose prose-sm max-w-none"
-                                aria-placeholder="Enter diagnosis, medicines and instructions…"
+                                className={cn(
+                                    "px-3 py-2 outline-none prose prose-sm max-w-none",
+                                    compact ? "min-h-[280px]" : "min-h-[520px]"
+                                )}
+                                aria-placeholder={
+                                    compact ? "Write your newsletter content…" : "Enter diagnosis, medicines and instructions…"
+                                }
                                 placeholder={(isEditable) =>
                                     isEditable ? (
                                         <div className="pointer-events-none absolute left-3 top-2 text-slate-400 text-sm select-none">
-                                            Enter diagnosis, medicines and instructions…
+                                            {compact
+                                                ? "Write your newsletter content…"
+                                                : "Enter diagnosis, medicines and instructions…"}
                                         </div>
                                     ) : null
                                 }

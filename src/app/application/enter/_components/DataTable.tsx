@@ -34,6 +34,8 @@ interface DataTableProps<T> {
   columns: Column<T>[]
   searchPlaceholder?: string
   onSearch?: (query: string) => void
+  /** Renders next to the Add button (e.g. secondary actions). */
+  headerExtra?: ReactNode
   onAdd?: () => void
   onEdit?: (item: T) => void
   onDelete?: (item: T) => void
@@ -53,6 +55,7 @@ export function DataTable<T extends { id: string | number }>({
   columns,
   searchPlaceholder = 'Search...',
   onSearch,
+  headerExtra,
   onAdd,
   onEdit,
   onDelete,
@@ -87,15 +90,18 @@ export function DataTable<T extends { id: string | number }>({
             />
           </div>
         </div>
-        {onAdd && (
-          <Button
-            onClick={onAdd}
-            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-xl shadow-lg"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {addLabel}
-          </Button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {headerExtra}
+          {onAdd && (
+            <Button
+              onClick={onAdd}
+              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-xl shadow-lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {addLabel}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-teal-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg overflow-hidden">
