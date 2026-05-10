@@ -902,7 +902,9 @@ export async function searchProfessionals(specialty?: string, city?: string) {
                 name,
                 image
             )
-        `);
+        `)
+        // Public consultant listings (/consultants, /specialists) only show admin-verified profiles.
+        .eq('is_verified', true);
 
     if (specialty) {
         query = query.ilike('specialization', `%${specialty}%`);
