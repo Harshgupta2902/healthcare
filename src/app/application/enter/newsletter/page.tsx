@@ -3,9 +3,10 @@ import { Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getNewsletterSubscribers, getNewsletterActiveRecipientCount } from '@/features/admin/actions'
 import { NewsletterTable } from './NewsletterTable'
+import type { SubscriberStatus } from './StatusFilter'
 
-const ALLOWED_STATUSES = ['active', 'resubscribed', 'unsubscribed'] as const
-const DEFAULT_STATUSES = ['active', 'resubscribed']
+const ALLOWED_STATUSES = ['active', 'resubscribed', 'unsubscribed'] as const satisfies readonly SubscriberStatus[]
+const DEFAULT_STATUSES: SubscriberStatus[] = ['active', 'resubscribed']
 
 export default async function NewsletterPage({
   searchParams,
@@ -15,16 +16,16 @@ export default async function NewsletterPage({
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
-  const parsedStatuses =
+  const parsedStatuses: SubscriberStatus[] =
     typeof params.statuses === 'string' && params.statuses.length > 0
       ? params.statuses
           .split(',')
           .map((s) => s.trim())
-          .filter((s): s is (typeof ALLOWED_STATUSES)[number] =>
+          .filter((s): s is SubscriberStatus =>
             (ALLOWED_STATUSES as readonly string[]).includes(s),
           )
       : DEFAULT_STATUSES
-  const statuses = parsedStatuses.length > 0 ? parsedStatuses : DEFAULT_STATUSES
+  const statuses: SubscriberStatus[] = parsedStatuses.length > 0 ? parsedStatuses : DEFAULT_STATUSES
   const [result, countRes] = await Promise.all([
     getNewsletterSubscribers(page, 10, search, statuses),
     getNewsletterActiveRecipientCount(),
