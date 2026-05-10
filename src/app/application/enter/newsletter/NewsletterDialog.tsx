@@ -34,10 +34,16 @@ import { toast } from 'sonner'
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email'),
-  status: z.enum(['active', 'inactive']),
+  status: z.enum(['active', 'resubscribed', 'unsubscribed']),
 })
 
 type NewsletterFormData = z.infer<typeof newsletterSchema>
+
+function normalizeSubscriberStatus(s?: string): 'active' | 'resubscribed' | 'unsubscribed' {
+  if (s === 'resubscribed' || s === 'unsubscribed') return s
+  if (s === 'inactive') return 'unsubscribed'
+  return 'active'
+}
 
 interface NewsletterDialogProps {
   open: boolean
@@ -57,7 +63,7 @@ export function NewsletterDialog({ open, onOpenChange, subscriber, onSuccess }: 
     resolver: zodResolver(newsletterSchema),
     defaultValues: {
       email: subscriber?.email || '',
-      status: (subscriber?.status as 'active' | 'inactive') || 'active',
+      status: normalizeSubscriberStatus(subscriber?.status),
     },
   })
 
@@ -125,7 +131,8 @@ export function NewsletterDialog({ open, onOpenChange, subscriber, onSuccess }: 
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="resubscribed">Resubscribed</SelectItem>
+                      <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

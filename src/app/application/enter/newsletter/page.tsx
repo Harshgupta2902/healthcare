@@ -1,4 +1,7 @@
-import { getNewsletterSubscribers } from '@/features/admin/actions'
+import Link from 'next/link'
+import { Send } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { getNewsletterSubscribers, getNewsletterActiveRecipientCount } from '@/features/admin/actions'
 import { NewsletterTable } from './NewsletterTable'
 
 export default async function NewsletterPage({
@@ -9,25 +12,48 @@ export default async function NewsletterPage({
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
-  const result = await getNewsletterSubscribers(page, 10, search)
+  const [result, countRes] = await Promise.all([
+    getNewsletterSubscribers(page, 10, search),
+    getNewsletterActiveRecipientCount(),
+  ])
   const data = result.success ? result.data : []
   const count = result.success ? result.count : 0
   const totalPages = Math.ceil((count || 0) / 10)
+  const activeRecipientCount = countRes.success ? countRes.count : 0
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          Newsletter Subscribers
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage newsletter subscribers
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+            Newsletter Subscribers
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Manage newsletter subscribers and send broadcasts to active contacts.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="rounded-xl gap-2">
+          <Link href="/application/enter/newsletter/campaigns">
+            <Send className="w-4 h-4" />
+            View campaigns
+          </Link>
+        </Button>
       </div>
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}
-      <NewsletterTable initialData={data} initialPage={page} totalPages={totalPages} count={count || 0} />
+      {!countRes.success && (
+        <p role="alert" className="text-sm text-amber-600 dark:text-amber-400">
+          Could not load recipient count: {countRes.error}
+        </p>
+      )}
+      <NewsletterTable
+        initialData={data}
+        initialPage={page}
+        totalPages={totalPages}
+        count={count || 0}
+        activeRecipientCount={activeRecipientCount}
+      />
     </div>
   )
 }

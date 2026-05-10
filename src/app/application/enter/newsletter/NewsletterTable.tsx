@@ -6,9 +6,11 @@ import { DataTable } from '../_components/DataTable'
 import { NewsletterDialog } from './NewsletterDialog'
 import { DeleteDialog } from '../_components/DeleteDialog'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { deleteNewsletterSubscriber } from '@/features/admin/actions'
 import { toast } from 'sonner'
+import { NewsletterSendDialog } from './NewsletterSendDialog'
 
 interface NewsletterSubscriber {
   id: number
@@ -22,13 +24,21 @@ interface NewsletterTableProps {
   initialPage: number
   totalPages: number
   count: number
+  activeRecipientCount: number
 }
 
-export function NewsletterTable({ initialData, initialPage, totalPages, count }: NewsletterTableProps) {
+export function NewsletterTable({
+  initialData,
+  initialPage,
+  totalPages,
+  count,
+  activeRecipientCount,
+}: NewsletterTableProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSendOpen, setIsSendOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedSubscriber, setSelectedSubscriber] = useState<NewsletterSubscriber | null>(null)
 
@@ -91,11 +101,24 @@ export function NewsletterTable({ initialData, initialPage, totalPages, count }:
     {
       key: 'status',
       label: 'Status',
-      render: (subscriber: NewsletterSubscriber) => (
-        <Badge variant={subscriber.status === 'active' ? 'default' : 'secondary'} className="capitalize">
-          {subscriber.status}
-        </Badge>
-      ),
+      render: (subscriber: NewsletterSubscriber) => {
+        const s = subscriber.status
+        const label =
+          s === 'resubscribed'
+            ? 'Resubscribed'
+            : s.replace(/_/g, ' ')
+        const variant =
+          s === 'active'
+            ? 'default'
+            : s === 'resubscribed'
+              ? 'secondary'
+              : 'outline'
+        return (
+          <Badge variant={variant} className="capitalize">
+            {label}
+          </Badge>
+        )
+      },
     },
     {
       key: 'subscribed_at',
@@ -111,6 +134,16 @@ export function NewsletterTable({ initialData, initialPage, totalPages, count }:
         columns={columns}
         searchPlaceholder="Search subscribers..."
         onSearch={handleSearch}
+        headerExtra={
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl border-teal-300 dark:border-teal-700 gap-2"
+            onClick={() => setIsSendOpen(true)}
+          >
+            Send newsletter
+          </Button>
+        }
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -119,6 +152,12 @@ export function NewsletterTable({ initialData, initialPage, totalPages, count }:
         totalPages={totalPages}
         onPageChange={handlePageChange}
         count={count}
+      />
+      <NewsletterSendDialog
+        open={isSendOpen}
+        onOpenChange={setIsSendOpen}
+        activeRecipientCount={activeRecipientCount}
+        onQueued={() => router.refresh()}
       />
       <NewsletterDialog
         open={isDialogOpen}
