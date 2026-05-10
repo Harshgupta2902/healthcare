@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { zodFirstError } from '@/lib/server-action-result'
 
 // ============================================
@@ -81,7 +82,12 @@ const insuranceSchema = z.object({
 
 const newsletterSchema = z.object({
   email: z.string().email('Invalid email'),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(['active', 'resubscribed', 'unsubscribed']).default('active'),
+})
+
+const newsletterBroadcastSchema = z.object({
+  subject: z.string().min(1, 'Subject is required').max(300),
+  htmlBody: z.string().min(1, 'Content is required').max(800_000),
 })
 
 const guestAppointmentProfessionalSchema = z.object({
@@ -1067,6 +1073,175 @@ export async function deleteNewsletterSubscriber(id: number) {
   return { success: true as const }
 }
 
+/** Count of subscribers who receive newsletter broadcasts (active + resubscribed). */
+export async function getNewsletterActiveRecipientCount() {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, count: 0 }
+  const supabase = await createClient()
+
+  const { count, error } = await supabase
+    .from('newsletter_subscribers')
+    .select('*', { count: 'exact', head: true })
+    .in('status', ['active', 'resubscribed'])
+
+  if (error) return { success: false as const, error: error.message, count: 0 }
+  return { success: true as const, count: count ?? 0 }
+}
+
+/**
+ * Queue an HTML newsletter to all active subscribers and store the campaign as ONE row,
+ * with `recipient_ids` holding the list of newsletter_subscribers.id values it was sent to.
+ * Emails are looked up at render time by joining recipient_ids back to newsletter_subscribers.
+ *
+ * SMTP delivery happens in after() so the action returns instantly.
+ */
+export async function sendNewsletterBroadcast(data: z.infer<typeof newsletterBroadcastSchema>) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = newsletterBroadcastSchema.safeParse(data)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: rows, error } = await supabase
+    .from('newsletter_subscribers')
+    .select('id, email')
+    .in('status', ['active', 'resubscribed'])
+
+  if (error) return { success: false as const, error: error.message }
+
+  // De-dupe by email (case-insensitive) but keep the matching subscriber id.
+  const seen = new Set<string>()
+  const recipients: { id: number; email: string }[] = []
+  for (const r of rows ?? []) {
+    const norm = (r.email || '').trim().toLowerCase()
+    if (!norm || seen.has(norm)) continue
+    seen.add(norm)
+    recipients.push({ id: r.id as number, email: r.email as string })
+  }
+
+  if (recipients.length === 0) {
+    return { success: false as const, error: 'No active subscribers to send to.' }
+  }
+
+  const { subject, htmlBody } = parsed.data
+  const recipientIds = recipients.map((r) => r.id)
+
+  const { data: campaign, error: campaignErr } = await supabase
+    .from('newsletter_campaigns')
+    .insert({
+      subject,
+      body_html: htmlBody,
+      sent_by: user?.id ?? null,
+      recipient_ids: recipientIds,
+    })
+    .select('id')
+    .single()
+
+  if (campaignErr || !campaign) {
+    console.error('[sendNewsletterBroadcast] failed to record campaign:', campaignErr)
+    return { success: false as const, error: campaignErr?.message || 'Failed to record campaign.' }
+  }
+
+  after(async () => {
+    const { sendNewsletterBroadcastEmail } = await import('@/lib/mailer')
+    for (const r of recipients) {
+      try {
+        await sendNewsletterBroadcastEmail(r.email, subject, htmlBody)
+        await new Promise((res) => setTimeout(res, 350))
+      } catch (e) {
+        console.error('[sendNewsletterBroadcast] failed for', r.email, e)
+      }
+    }
+  })
+
+  revalidatePath('/application/enter/newsletter/campaigns')
+  return { success: true as const, queued: recipients.length, campaignId: campaign.id }
+}
+
+// ---------------------------------------------------------------------------
+// Newsletter campaigns (sent log) — single-table read APIs
+// ---------------------------------------------------------------------------
+
+export type NewsletterCampaignRow = {
+  id: string
+  subject: string
+  body_html: string
+  sent_by: string | null
+  recipient_ids: number[]
+  created_at: string
+}
+
+export async function getNewsletterCampaigns(page: number = 1, limit: number = 10, search?: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] as NewsletterCampaignRow[], count: 0 }
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('newsletter_campaigns')
+    .select('id, subject, body_html, sent_by, recipient_ids, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  const q = search?.trim()
+  if (q) query = query.ilike('subject', `%${q}%`)
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  const { data, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [] as NewsletterCampaignRow[], count: 0 }
+  return { success: true as const, data: (data || []) as NewsletterCampaignRow[], count: count || 0 }
+}
+
+export type CampaignRecipientEmail = {
+  id: number
+  email: string
+  status: string // 'active' | 'resubscribed' | 'unsubscribed' (current status — best-effort)
+}
+
+/**
+ * Resolve the recipient_ids stored on a campaign back to subscriber rows so we can show
+ * the comma-separated email list in the admin UI.
+ */
+export async function getCampaignRecipientEmails(campaignId: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [] as CampaignRecipientEmail[] }
+  const supabase = await createClient()
+
+  const { data: campaign, error: campaignErr } = await supabase
+    .from('newsletter_campaigns')
+    .select('recipient_ids')
+    .eq('id', campaignId)
+    .maybeSingle()
+
+  if (campaignErr) return { success: false as const, error: campaignErr.message, data: [] as CampaignRecipientEmail[] }
+  const ids = (campaign?.recipient_ids ?? []) as number[]
+  if (ids.length === 0) return { success: true as const, data: [] as CampaignRecipientEmail[] }
+
+  const { data, error } = await supabase
+    .from('newsletter_subscribers')
+    .select('id, email, status')
+    .in('id', ids)
+    .order('email', { ascending: true })
+
+  if (error) return { success: false as const, error: error.message, data: [] as CampaignRecipientEmail[] }
+  return { success: true as const, data: (data || []) as CampaignRecipientEmail[] }
+}
+
+export async function deleteNewsletterCampaign(id: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('newsletter_campaigns').delete().eq('id', id)
+  if (error) return { success: false as const, error: error.message }
+
+  revalidatePath('/application/enter/newsletter/campaigns')
+  return { success: true as const }
+}
+
 // ============================================
 // CONTACT ENQUIRIES (contact_messages)
 // ============================================
@@ -1130,11 +1305,11 @@ export async function getDashboardStats() {
   if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
 
-  const [users, professionals, appointments, documents, newsletter] = await Promise.all([
+  const [users, professionals, appointments, enquiries, newsletter] = await Promise.all([
     supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase.from('professional_profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('appointments').select('*', { count: 'exact', head: true }),
-    supabase.from('medical_documents').select('*', { count: 'exact', head: true }),
+    supabase.from('guest_appointments').select('*', { count: 'exact', head: true }),
+    supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
     supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
   ])
 
@@ -1143,7 +1318,7 @@ export async function getDashboardStats() {
     totalUsers: users.count || 0,
     totalProfessionals: professionals.count || 0,
     totalAppointments: appointments.count || 0,
-    totalDocuments: documents.count || 0,
+    totalEnquiries: enquiries.count || 0,
     newsletterSubscribers: newsletter.count || 0,
   }
 }
