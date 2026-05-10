@@ -1315,21 +1315,54 @@ export async function getDashboardStats() {
   if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
 
-  const [users, professionals, appointments, enquiries, newsletter] = await Promise.all([
+  const [
+    users,
+    clientUsers,
+    professionals,
+    verifiedProfessionals,
+    appointments,
+    enquiries,
+    newsletter,
+    newsletterActive,
+    newsletterResubscribed,
+    newsletterUnsubscribed,
+  ] = await Promise.all([
     supabase.from('users').select('*', { count: 'exact', head: true }),
+    supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'client'),
     supabase.from('professional_profiles').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('professional_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_verified', true),
     supabase.from('guest_appointments').select('*', { count: 'exact', head: true }),
     supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
     supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('newsletter_subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active'),
+    supabase
+      .from('newsletter_subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'resubscribed'),
+    supabase
+      .from('newsletter_subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'unsubscribed'),
   ])
 
   return {
     success: true as const,
     totalUsers: users.count || 0,
+    clientUsers: clientUsers.count || 0,
     totalProfessionals: professionals.count || 0,
+    verifiedProfessionals: verifiedProfessionals.count || 0,
     totalAppointments: appointments.count || 0,
     totalEnquiries: enquiries.count || 0,
     newsletterSubscribers: newsletter.count || 0,
+    newsletterActive: newsletterActive.count || 0,
+    newsletterResubscribed: newsletterResubscribed.count || 0,
+    newsletterUnsubscribed: newsletterUnsubscribed.count || 0,
   }
 }
 

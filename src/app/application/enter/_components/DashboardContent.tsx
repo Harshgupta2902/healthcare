@@ -16,10 +16,15 @@ import { motion } from 'framer-motion'
 
 interface DashboardStats {
   totalUsers: number
+  clientUsers: number
   totalProfessionals: number
+  verifiedProfessionals: number
   totalAppointments: number
   totalEnquiries: number
   newsletterSubscribers: number
+  newsletterActive: number
+  newsletterResubscribed: number
+  newsletterUnsubscribed: number
 }
 
 interface DashboardContentProps {
@@ -30,38 +35,51 @@ interface DashboardContentProps {
 }
 
 export function DashboardContent({ stats, recentAppointments, recentUsers, loadError }: DashboardContentProps) {
-  const statCards = [
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: Users,
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      title: 'Total Professionals',
-      value: stats.totalProfessionals,
-      icon: UserCheck,
-      color: 'from-teal-500 to-emerald-500',
-    },
-    {
-      title: 'Total Appointments',
-      value: stats.totalAppointments,
-      icon: Calendar,
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      title: 'Total Enquiries',
-      value: stats.totalEnquiries,
-      icon: MessageSquare,
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      title: 'Newsletter Subscribers',
-      value: stats.newsletterSubscribers,
-      icon: Mail,
-      color: 'from-indigo-500 to-blue-500',
-    },
-  ]
+  const statCards: {
+    title: string
+    value: number
+    icon: typeof Users
+    color: string
+    breakdown?: { label: string; value: number }[]
+  }[] = [
+      {
+        title: 'Total Users',
+        value: stats.totalUsers,
+        icon: Users,
+        color: 'from-blue-500 to-cyan-500',
+        breakdown: [
+          { label: 'Total Users', value: stats.totalUsers },
+          { label: 'Users', value: stats.clientUsers },
+          { label: 'Professionals', value: stats.totalProfessionals },
+          { label: 'Verified Professionals', value: stats.verifiedProfessionals },
+        ],
+      },
+      {
+        title: 'Newsletter Subscribers',
+        value: stats.newsletterSubscribers,
+        icon: Mail,
+        color: 'from-indigo-500 to-blue-500',
+        breakdown: [
+          { label: 'Total Subscribers', value: stats.newsletterSubscribers },
+          { label: 'Subscribed', value: stats.newsletterActive },
+          { label: 'Unsubscribed', value: stats.newsletterUnsubscribed },
+          { label: 'Resubscribed', value: stats.newsletterResubscribed },
+        ],
+      },
+      {
+        title: 'Total Appointments',
+        value: stats.totalAppointments,
+        icon: Calendar,
+        color: 'from-purple-500 to-pink-500',
+      },
+      {
+        title: 'Total Enquiries',
+        value: stats.totalEnquiries,
+        icon: MessageSquare,
+        color: 'from-orange-500 to-red-500',
+      },
+
+    ]
 
   return (
     <div className="space-y-6">
@@ -99,14 +117,31 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-2`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <CardDescription className="text-gray-600 dark:text-gray-400">
+                  {!stat.breakdown && <CardDescription className="text-gray-600 dark:text-gray-400">
                     {stat.title}
-                  </CardDescription>
+                  </CardDescription>}
                 </CardHeader>
-                <CardContent>
-                  <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {stat.value.toLocaleString()}
-                  </CardTitle>
+                <CardContent className="pt-0">
+                  {!stat.breakdown &&
+                    <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {stat.value.toLocaleString()}
+                    </CardTitle>
+                  }
+                  {stat.breakdown && stat.breakdown.length > 0 && (
+                    <div className="pt-3 border-t border-teal-100 dark:border-gray-800 space-y-1.5">
+                      {stat.breakdown.map((row) => (
+                        <div
+                          key={row.label}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <span className="text-gray-500 dark:text-gray-400">{row.label}</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 tabular-nums">
+                            {row.value.toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -203,8 +238,8 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
                               user.role === 'admin'
                                 ? 'default'
                                 : user.role === 'professional'
-                                ? 'default'
-                                : 'secondary'
+                                  ? 'default'
+                                  : 'secondary'
                             }
                             className="capitalize"
                           >

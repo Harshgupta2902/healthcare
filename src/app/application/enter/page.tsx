@@ -9,17 +9,27 @@ export default async function AdminDashboard() {
   const stats = statsResult.success
     ? {
         totalUsers: statsResult.totalUsers,
+        clientUsers: statsResult.clientUsers,
         totalProfessionals: statsResult.totalProfessionals,
+        verifiedProfessionals: statsResult.verifiedProfessionals,
         totalAppointments: statsResult.totalAppointments,
         totalEnquiries: statsResult.totalEnquiries,
         newsletterSubscribers: statsResult.newsletterSubscribers,
+        newsletterActive: statsResult.newsletterActive,
+        newsletterResubscribed: statsResult.newsletterResubscribed,
+        newsletterUnsubscribed: statsResult.newsletterUnsubscribed,
       }
     : {
         totalUsers: 0,
+        clientUsers: 0,
         totalProfessionals: 0,
+        verifiedProfessionals: 0,
         totalAppointments: 0,
         totalEnquiries: 0,
         newsletterSubscribers: 0,
+        newsletterActive: 0,
+        newsletterResubscribed: 0,
+        newsletterUnsubscribed: 0,
       }
 
   const recentAppointments = recentAppointmentsResult.success ? recentAppointmentsResult.data : []
