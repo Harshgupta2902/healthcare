@@ -1,6 +1,48 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-10: Newsletter campaign archive — single table.
+-- Recipients are stored as an INT[] of newsletter_subscribers.id; emails are looked up at render time.
+-- Drop the older two-table layout (no-op if it never existed).
+DROP TABLE IF EXISTS public.newsletter_campaign_recipients;
+
+CREATE TABLE IF NOT EXISTS public.newsletter_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject TEXT NOT NULL,
+  body_html TEXT NOT NULL,
+  sent_by UUID NULL REFERENCES public.users (id) ON DELETE SET NULL,
+  recipient_ids INT[] NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Add the array column if the table existed from the previous migration shape.
+ALTER TABLE public.newsletter_campaigns
+  ADD COLUMN IF NOT EXISTS recipient_ids INT[] NOT NULL DEFAULT '{}';
+
+-- Drop the obsolete count columns left over from the previous migration shape.
+ALTER TABLE public.newsletter_campaigns DROP COLUMN IF EXISTS recipient_count;
+ALTER TABLE public.newsletter_campaigns DROP COLUMN IF EXISTS sent_count;
+ALTER TABLE public.newsletter_campaigns DROP COLUMN IF EXISTS failed_count;
+
+CREATE INDEX IF NOT EXISTS idx_newsletter_campaigns_created_at
+  ON public.newsletter_campaigns (created_at DESC);
+
+ALTER TABLE public.newsletter_campaigns ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_campaigns'
+      AND policyname = 'Admins manage all newsletter campaigns'
+  ) THEN
+    CREATE POLICY "Admins manage all newsletter campaigns"
+      ON public.newsletter_campaigns FOR ALL TO authenticated
+      USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+      WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
 -- 2026-05-10: Newsletter unsubscribe — RPC-based status flip (HMAC token verified at app level).
 -- SECURITY DEFINER bypasses RLS so we get a real row count back; safe because the function
 -- is locked to a fixed status enum and a single column update.

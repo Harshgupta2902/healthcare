@@ -298,6 +298,35 @@ BEGIN
   END IF;
 END$$;
 
+-- Newsletter campaign archive (subject + HTML body) and per-recipient delivery rows.
+-- Recipients are stored as INT[] of newsletter_subscribers.id; emails are looked up at render time.
+CREATE TABLE IF NOT EXISTS public.newsletter_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject TEXT NOT NULL,
+  body_html TEXT NOT NULL,
+  sent_by UUID NULL REFERENCES public.users (id) ON DELETE SET NULL,
+  recipient_ids INT[] NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_newsletter_campaigns_created_at
+  ON public.newsletter_campaigns (created_at DESC);
+
+ALTER TABLE public.newsletter_campaigns ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_campaigns'
+      AND policyname = 'Admins manage all newsletter campaigns'
+  ) THEN
+    CREATE POLICY "Admins manage all newsletter campaigns"
+      ON public.newsletter_campaigns FOR ALL TO authenticated
+      USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+      WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
 -- RPC used by /unsubscribe page (SECURITY DEFINER returns row count, bypasses RLS quirks).
 CREATE OR REPLACE FUNCTION public.set_newsletter_status(p_email TEXT, p_status TEXT)
 RETURNS INT
