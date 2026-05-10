@@ -1,6 +1,82 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-10: Newsletter unsubscribe — RPC-based status flip (HMAC token verified at app level).
+-- SECURITY DEFINER bypasses RLS so we get a real row count back; safe because the function
+-- is locked to a fixed status enum and a single column update.
+CREATE OR REPLACE FUNCTION public.set_newsletter_status(p_email TEXT, p_status TEXT)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  affected INT;
+BEGIN
+  IF p_status NOT IN ('active', 'unsubscribed') THEN
+    RAISE EXCEPTION 'Invalid newsletter status: %', p_status USING ERRCODE = '22023';
+  END IF;
+  IF p_email IS NULL OR length(trim(p_email)) = 0 THEN
+    RAISE EXCEPTION 'Email is required' USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.newsletter_subscribers
+     SET status = p_status
+   WHERE lower(email) = lower(trim(p_email));
+
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  RETURN affected;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.set_newsletter_status(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_newsletter_status(TEXT, TEXT) TO anon, authenticated;
+
+-- 2026-05-10: Read newsletter status (used by /unsubscribe page to show the right UI on revisit).
+-- SECURITY DEFINER so anon can read just the status of a verified-by-token email.
+CREATE OR REPLACE FUNCTION public.get_newsletter_status(p_email TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_status TEXT;
+BEGIN
+  IF p_email IS NULL OR length(trim(p_email)) = 0 THEN
+    RETURN NULL;
+  END IF;
+  SELECT status
+    INTO v_status
+    FROM public.newsletter_subscribers
+   WHERE lower(email) = lower(trim(p_email))
+   LIMIT 1;
+  RETURN v_status; -- NULL when email is not in the list
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_newsletter_status(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_newsletter_status(TEXT) TO anon, authenticated;
+
+-- (Legacy direct-UPDATE policy kept here as a fallback; safe to leave or drop.)
+GRANT UPDATE (status) ON TABLE public.newsletter_subscribers TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers'
+      AND policyname = 'Allow public newsletter status update'
+  ) THEN
+    CREATE POLICY "Allow public newsletter status update"
+      ON public.newsletter_subscribers
+      FOR UPDATE
+      TO anon, authenticated
+      USING (true)
+      WITH CHECK (status IN ('active', 'unsubscribed'));
+  END IF;
+END$$;
+
 -- 2026-05-10: Newsletter duplicate prevention — case-insensitive UNIQUE index on email.
 -- Existing UNIQUE(email) is case-sensitive; this guarantees Foo@Bar.com and foo@bar.com
 -- collide as duplicates even if any legacy rows weren't lowercased on insert.

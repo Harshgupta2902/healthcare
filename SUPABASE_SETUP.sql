@@ -263,6 +263,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_email_lower_uidx
 
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;
+-- Anon/authenticated may only flip the `status` column (used by /unsubscribe page with HMAC token).
+GRANT UPDATE (status) ON TABLE public.newsletter_subscribers TO anon, authenticated;
 
 DO $$
 BEGIN
@@ -281,7 +283,74 @@ BEGIN
         AND coalesce(status, 'active') = 'active'
       );
   END IF;
+
+  -- Newsletter unsubscribe / resubscribe (HMAC-signed tokens checked at app level).
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'newsletter_subscribers' AND policyname = 'Allow public newsletter status update'
+  ) THEN
+    CREATE POLICY "Allow public newsletter status update"
+      ON public.newsletter_subscribers
+      FOR UPDATE
+      TO anon, authenticated
+      USING (true)
+      WITH CHECK (status IN ('active', 'unsubscribed'));
+  END IF;
 END$$;
+
+-- RPC used by /unsubscribe page (SECURITY DEFINER returns row count, bypasses RLS quirks).
+CREATE OR REPLACE FUNCTION public.set_newsletter_status(p_email TEXT, p_status TEXT)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  affected INT;
+BEGIN
+  IF p_status NOT IN ('active', 'unsubscribed') THEN
+    RAISE EXCEPTION 'Invalid newsletter status: %', p_status USING ERRCODE = '22023';
+  END IF;
+  IF p_email IS NULL OR length(trim(p_email)) = 0 THEN
+    RAISE EXCEPTION 'Email is required' USING ERRCODE = '22023';
+  END IF;
+
+  UPDATE public.newsletter_subscribers
+     SET status = p_status
+   WHERE lower(email) = lower(trim(p_email));
+
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  RETURN affected;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.set_newsletter_status(TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_newsletter_status(TEXT, TEXT) TO anon, authenticated;
+
+-- Read current newsletter status (used by /unsubscribe page to render the right UI on revisit).
+CREATE OR REPLACE FUNCTION public.get_newsletter_status(p_email TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_status TEXT;
+BEGIN
+  IF p_email IS NULL OR length(trim(p_email)) = 0 THEN
+    RETURN NULL;
+  END IF;
+  SELECT status
+    INTO v_status
+    FROM public.newsletter_subscribers
+   WHERE lower(email) = lower(trim(p_email))
+   LIMIT 1;
+  RETURN v_status;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_newsletter_status(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_newsletter_status(TEXT) TO anon, authenticated;
 
 -- Public contact form submissions (admin reads in /application/enter/enquiries)
 CREATE TABLE IF NOT EXISTS public.contact_messages (

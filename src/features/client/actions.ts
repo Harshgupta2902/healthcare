@@ -15,6 +15,7 @@ import {
 } from '@/lib/phone-country-options'
 import { fetchGuestAppointmentProfessionalMeta } from '@/lib/guest-appointment-professional-meta'
 import { sendNewsletterEmail } from '@/lib/mailer'
+import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
 
 const medicalProfileSchema = z
     .object({
@@ -603,4 +604,70 @@ export async function subscribeNewsletter(email: string) {
     })
 
     return { success: true as const }
+}
+
+/**
+ * Set the newsletter status for a verified email via the SECURITY DEFINER RPC.
+ * Returns the number of affected rows (0 means email isn't in the list).
+ */
+async function setNewsletterStatus(email: string, status: 'active' | 'unsubscribed') {
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('set_newsletter_status', {
+        p_email: email,
+        p_status: status,
+    })
+    if (error) {
+        console.error('[setNewsletterStatus] RPC error:', error)
+        return { ok: false as const, error: error.message }
+    }
+    const affected = typeof data === 'number' ? data : Number(data ?? 0)
+    return { ok: true as const, affected }
+}
+
+/**
+ * Unsubscribe via signed token from the email link.
+ * Stateless verification — token is HMAC-signed by us, so we trust the email after verifyUnsubscribeToken().
+ */
+export async function unsubscribeNewsletter(token: string) {
+    const verified = verifyUnsubscribeToken(token)
+    if (!verified.ok) {
+        return { success: false as const, error: verified.error }
+    }
+
+    const result = await setNewsletterStatus(verified.email, 'unsubscribed')
+    if (!result.ok) return { success: false as const, error: result.error }
+    if (result.affected === 0) {
+        return {
+            success: false as const,
+            error: 'This email is not on our subscriber list.',
+        }
+    }
+    return { success: true as const, email: verified.email }
+}
+
+/**
+ * Read the current newsletter status for the email encoded in a signed token.
+ * Returns one of: 'active' | 'unsubscribed' | 'not_found' | 'invalid_token'.
+ */
+export async function getNewsletterStatusByToken(token: string) {
+    const verified = verifyUnsubscribeToken(token)
+    if (!verified.ok) {
+        return { ok: false as const, status: 'invalid_token' as const, error: verified.error }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('get_newsletter_status', {
+        p_email: verified.email,
+    })
+
+    if (error) {
+        console.error('[getNewsletterStatusByToken] RPC error:', error)
+        return { ok: false as const, status: 'invalid_token' as const, error: error.message }
+    }
+
+    const raw = (data ?? null) as string | null
+    const normalized: 'active' | 'unsubscribed' | 'not_found' =
+        raw === 'active' ? 'active' : raw === 'unsubscribed' ? 'unsubscribed' : 'not_found'
+
+    return { ok: true as const, status: normalized, email: verified.email }
 }

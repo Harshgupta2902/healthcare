@@ -1,6 +1,7 @@
 import 'server-only'
 
 import nodemailer, { type Transporter } from 'nodemailer'
+import { createUnsubscribeToken } from '@/lib/newsletter-token'
 
 /**
  * Singleton SMTP transporter.
@@ -42,13 +43,22 @@ function getFromAddress(): string {
     return `"${fromName}" <${user}>`
 }
 
+function getAppUrl(): string {
+    return process.env.APP_URL || 'https://healthhere.com'
+}
+
+function buildUnsubscribeUrl(email: string): string {
+    const token = createUnsubscribeToken(email)
+    return `${getAppUrl().replace(/\/+$/, '')}/unsubscribe?t=${encodeURIComponent(token)}`
+}
+
 /**
  * Newsletter welcome email template.
  * Returns the full HTML string. Kept separate so it is easy to tweak
  * without touching the send logic.
  */
-function newsletterWelcomeTemplate(userName: string): string {
-    const appUrl = process.env.APP_URL || 'https://healthhere.com'
+function newsletterWelcomeTemplate(userName: string, unsubscribeUrl: string): string {
+    const appUrl = getAppUrl()
 
     return `
         <!DOCTYPE html>
@@ -92,7 +102,10 @@ function newsletterWelcomeTemplate(userName: string): string {
                                     </a>
 
                                     <p style="margin-top:32px; color:#999; font-size:12px;">
-                                        You can unsubscribe anytime by replying to this email.
+                                        Don't want these emails?
+                                        <a href="${unsubscribeUrl}" style="color:#0f766e; text-decoration:underline;">
+                                            Unsubscribe in one click
+                                        </a>.
                                     </p>
                                 </td>
                             </tr>
@@ -116,12 +129,18 @@ export async function sendNewsletterEmail(
     const t = getTransporter()
 
     const safeName = (userName && userName.trim()) || userEmail.split('@')[0] || 'there'
+    const unsubscribeUrl = buildUnsubscribeUrl(userEmail)
 
     const info = await t.sendMail({
         from: getFromAddress(),
         to: userEmail,
         subject: 'Welcome to the HealthHere Newsletter 🎉',
-        html: newsletterWelcomeTemplate(safeName),
+        html: newsletterWelcomeTemplate(safeName, unsubscribeUrl),
+        // RFC 8058 — let Gmail / Apple Mail render a native one-click unsubscribe button.
+        headers: {
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
     })
 
     console.log('[mailer] Newsletter email sent:', info.messageId)
