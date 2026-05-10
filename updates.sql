@@ -32,6 +32,57 @@ $$;
 REVOKE ALL ON FUNCTION public.set_newsletter_status(TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_newsletter_status(TEXT, TEXT) TO anon, authenticated;
 
+-- 2026-05-10: Atomic subscribe — handles new subscribe, resubscribe (unsubscribed -> resubscribed),
+-- and reports already_active so the action can show the right toast/error.
+-- Status values:
+--   'active'        first-time subscriber (welcome email sent)
+--   'resubscribed'  came back after an unsubscribe (no welcome email re-sent)
+--   'unsubscribed'  opted out
+-- SECURITY DEFINER so we bypass the INSERT-only RLS for the resubscribe (UPDATE) path.
+CREATE OR REPLACE FUNCTION public.subscribe_newsletter(p_email TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_normalized TEXT;
+  v_existing_status TEXT;
+BEGIN
+  v_normalized := lower(trim(coalesce(p_email, '')));
+
+  IF length(v_normalized) = 0 OR length(v_normalized) > 320 THEN
+    RAISE EXCEPTION 'Invalid email' USING ERRCODE = '22023';
+  END IF;
+  IF v_normalized !~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN
+    RAISE EXCEPTION 'Invalid email' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT status
+    INTO v_existing_status
+    FROM public.newsletter_subscribers
+   WHERE lower(email) = v_normalized
+   LIMIT 1;
+
+  IF v_existing_status IN ('active', 'resubscribed') THEN
+    RETURN 'already_active';
+  ELSIF v_existing_status = 'unsubscribed' THEN
+    UPDATE public.newsletter_subscribers
+       SET status = 'resubscribed',
+           subscribed_at = NOW()
+     WHERE lower(email) = v_normalized;
+    RETURN 'resubscribed';
+  ELSE
+    INSERT INTO public.newsletter_subscribers (email, status, subscribed_at)
+    VALUES (v_normalized, 'active', NOW());
+    RETURN 'subscribed';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.subscribe_newsletter(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.subscribe_newsletter(TEXT) TO anon, authenticated;
+
 -- 2026-05-10: Read newsletter status (used by /unsubscribe page to show the right UI on revisit).
 -- SECURITY DEFINER so anon can read just the status of a verified-by-token email.
 CREATE OR REPLACE FUNCTION public.get_newsletter_status(p_email TEXT)
@@ -73,9 +124,18 @@ BEGIN
       FOR UPDATE
       TO anon, authenticated
       USING (true)
-      WITH CHECK (status IN ('active', 'unsubscribed'));
+      WITH CHECK (status IN ('active', 'unsubscribed', 'resubscribed'));
   END IF;
 END$$;
+
+-- 2026-05-10: If the policy already exists from an earlier migration, widen its WITH CHECK.
+DROP POLICY IF EXISTS "Allow public newsletter status update" ON public.newsletter_subscribers;
+CREATE POLICY "Allow public newsletter status update"
+  ON public.newsletter_subscribers
+  FOR UPDATE
+  TO anon, authenticated
+  USING (true)
+  WITH CHECK (status IN ('active', 'unsubscribed', 'resubscribed'));
 
 -- 2026-05-10: Newsletter duplicate prevention — case-insensitive UNIQUE index on email.
 -- Existing UNIQUE(email) is case-sensitive; this guarantees Foo@Bar.com and foo@bar.com

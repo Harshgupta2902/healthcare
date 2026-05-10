@@ -294,7 +294,7 @@ BEGIN
       FOR UPDATE
       TO anon, authenticated
       USING (true)
-      WITH CHECK (status IN ('active', 'unsubscribed'));
+      WITH CHECK (status IN ('active', 'unsubscribed', 'resubscribed'));
   END IF;
 END$$;
 
@@ -326,6 +326,51 @@ $$;
 
 REVOKE ALL ON FUNCTION public.set_newsletter_status(TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_newsletter_status(TEXT, TEXT) TO anon, authenticated;
+
+-- Atomic subscribe RPC: returns 'subscribed' | 'resubscribed' | 'already_active'.
+CREATE OR REPLACE FUNCTION public.subscribe_newsletter(p_email TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_normalized TEXT;
+  v_existing_status TEXT;
+BEGIN
+  v_normalized := lower(trim(coalesce(p_email, '')));
+
+  IF length(v_normalized) = 0 OR length(v_normalized) > 320 THEN
+    RAISE EXCEPTION 'Invalid email' USING ERRCODE = '22023';
+  END IF;
+  IF v_normalized !~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN
+    RAISE EXCEPTION 'Invalid email' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT status
+    INTO v_existing_status
+    FROM public.newsletter_subscribers
+   WHERE lower(email) = v_normalized
+   LIMIT 1;
+
+  IF v_existing_status IN ('active', 'resubscribed') THEN
+    RETURN 'already_active';
+  ELSIF v_existing_status = 'unsubscribed' THEN
+    UPDATE public.newsletter_subscribers
+       SET status = 'resubscribed',
+           subscribed_at = NOW()
+     WHERE lower(email) = v_normalized;
+    RETURN 'resubscribed';
+  ELSE
+    INSERT INTO public.newsletter_subscribers (email, status, subscribed_at)
+    VALUES (v_normalized, 'active', NOW());
+    RETURN 'subscribed';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.subscribe_newsletter(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.subscribe_newsletter(TEXT) TO anon, authenticated;
 
 -- Read current newsletter status (used by /unsubscribe page to render the right UI on revisit).
 CREATE OR REPLACE FUNCTION public.get_newsletter_status(p_email TEXT)

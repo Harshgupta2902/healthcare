@@ -48,7 +48,11 @@ export default function Footer({ className }: FooterProps) {
       if (result.success) {
         setIsSuccess(true);
         setEmail('');
-        toast.success('Thanks for subscribing! Check your email for confirmation.');
+        if (result.action === 'resubscribed') {
+          toast.success('Welcome back! You\u2019re subscribed again.');
+        } else {
+          toast.success('Thanks for subscribing! Check your email for confirmation.');
+        }
       } else {
         setError(result.error);
         toast.error(result.error);

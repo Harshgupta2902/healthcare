@@ -571,7 +571,6 @@ export async function getClientDashboardData() {
 
 
 export async function subscribeNewsletter(email: string) {
-    const supabase = await createClient()
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
@@ -579,31 +578,45 @@ export async function subscribeNewsletter(email: string) {
     }
 
     const sanitizedEmail = email.trim().toLowerCase()
+    const supabase = await createClient()
 
-    const { error } = await supabase
-        .from('newsletter_subscribers')
-        .insert({
-            email: sanitizedEmail,
-            subscribed_at: new Date().toISOString(),
-            status: 'active'
-        })
-
-    if (error?.code === '23505') {
-        return { success: false as const, error: 'This email is already subscribed.' }
-    }
-    if (error) return { success: false as const, error: error.message }
-
-    // Send the welcome email AFTER the response is returned so the user
-    // sees the success state instantly and isn't blocked on SMTP latency.
-    after(async () => {
-        try {
-            await sendNewsletterEmail(sanitizedEmail)
-        } catch (mailErr) {
-            console.error('[subscribeNewsletter] Failed to send welcome email:', mailErr)
-        }
+    const { data, error } = await supabase.rpc('subscribe_newsletter', {
+        p_email: sanitizedEmail,
     })
 
-    return { success: true as const }
+    if (error) {
+        console.error('[subscribeNewsletter] RPC error:', error)
+        return { success: false as const, error: error.message }
+    }
+
+    const result = (data ?? null) as
+        | 'subscribed'
+        | 'resubscribed'
+        | 'already_active'
+        | null
+
+    if (result === 'already_active') {
+        return { success: false as const, error: 'This email is already subscribed.' }
+    }
+
+    // Welcome email only for FIRST-time subscribers. Returning users
+    // (status flipped from 'unsubscribed' -> 'resubscribed') do not get re-emailed.
+    if (result === 'subscribed') {
+        after(async () => {
+            try {
+                await sendNewsletterEmail(sanitizedEmail)
+            } catch (mailErr) {
+                console.error('[subscribeNewsletter] Failed to send welcome email:', mailErr)
+            }
+        })
+    }
+
+    return {
+        success: true as const,
+        action: (result === 'resubscribed' ? 'resubscribed' : 'subscribed') as
+            | 'subscribed'
+            | 'resubscribed',
+    }
 }
 
 /**
@@ -666,8 +679,14 @@ export async function getNewsletterStatusByToken(token: string) {
     }
 
     const raw = (data ?? null) as string | null
+    // 'resubscribed' is treated the same as 'active' from the unsubscribe page's perspective —
+    // the user is currently subscribed and may opt out again.
     const normalized: 'active' | 'unsubscribed' | 'not_found' =
-        raw === 'active' ? 'active' : raw === 'unsubscribed' ? 'unsubscribed' : 'not_found'
+        raw === 'active' || raw === 'resubscribed'
+            ? 'active'
+            : raw === 'unsubscribed'
+                ? 'unsubscribed'
+                : 'not_found'
 
     return { ok: true as const, status: normalized, email: verified.email }
 }
