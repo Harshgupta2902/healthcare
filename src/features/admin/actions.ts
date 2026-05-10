@@ -996,7 +996,12 @@ export async function deleteInsurance(id: string) {
 // NEWSLETTER CRUD
 // ============================================
 
-export async function getNewsletterSubscribers(page: number = 1, limit: number = 10, search?: string) {
+export async function getNewsletterSubscribers(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  statuses?: string[],
+) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
   const supabase = await createClient()
@@ -1009,6 +1014,11 @@ export async function getNewsletterSubscribers(page: number = 1, limit: number =
   if (search) {
     query = query.ilike('email', `%${search}%`)
   }
+
+  // Default to active + resubscribed when no statuses param is supplied,
+  // matching the admin UI's "show currently subscribed" default view.
+  const statusFilter = statuses && statuses.length > 0 ? statuses : ['active', 'resubscribed']
+  query = query.in('status', statusFilter)
 
   const from = (page - 1) * limit
   const to = from + limit - 1

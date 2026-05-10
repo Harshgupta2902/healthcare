@@ -15,6 +15,15 @@ import {
 } from '@/features/admin/actions'
 import { toast } from 'sonner'
 import { NewsletterSendDialog } from './NewsletterSendDialog'
+import { StatusFilter, type SubscriberStatus } from './StatusFilter'
+
+const DEFAULT_STATUSES: SubscriberStatus[] = ['active', 'resubscribed']
+
+function statusesEqual(a: SubscriberStatus[], b: SubscriberStatus[]) {
+  if (a.length !== b.length) return false
+  const setB = new Set(b)
+  return a.every((s) => setB.has(s))
+}
 
 interface NewsletterSubscriber {
   id: number
@@ -29,6 +38,7 @@ interface NewsletterTableProps {
   totalPages: number
   count: number
   activeRecipientCount: number
+  selectedStatuses: SubscriberStatus[]
 }
 
 export function NewsletterTable({
@@ -37,6 +47,7 @@ export function NewsletterTable({
   totalPages,
   count,
   activeRecipientCount,
+  selectedStatuses,
 }: NewsletterTableProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -60,6 +71,17 @@ export function NewsletterTable({
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', page.toString())
+    router.push(`/application/enter/newsletter?${params.toString()}`)
+  }
+
+  const handleStatusFilterChange = (next: SubscriberStatus[]) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (statusesEqual(next, DEFAULT_STATUSES)) {
+      params.delete('statuses')
+    } else {
+      params.set('statuses', next.join(','))
+    }
+    params.set('page', '1')
     router.push(`/application/enter/newsletter?${params.toString()}`)
   }
 
@@ -157,6 +179,9 @@ export function NewsletterTable({
         columns={columns}
         searchPlaceholder="Search subscribers..."
         onSearch={handleSearch}
+        searchExtra={
+          <StatusFilter value={selectedStatuses} onChange={handleStatusFilterChange} />
+        }
         headerExtra={
           <Button
             type="button"

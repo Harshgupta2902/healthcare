@@ -34,6 +34,8 @@ interface DataTableProps<T> {
   columns: Column<T>[]
   searchPlaceholder?: string
   onSearch?: (query: string) => void
+  /** Rendered immediately after the search input (e.g. status filter). */
+  searchExtra?: ReactNode
   /** Renders next to the Add button (e.g. secondary actions). */
   headerExtra?: ReactNode
   onAdd?: () => void
@@ -55,6 +57,7 @@ export function DataTable<T extends { id: string | number }>({
   columns,
   searchPlaceholder = 'Search...',
   onSearch,
+  searchExtra,
   headerExtra,
   onAdd,
   onEdit,
@@ -78,8 +81,8 @@ export function DataTable<T extends { id: string | number }>({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 max-w-sm">
-          <div className="relative">
+        <div className="flex flex-1 items-center gap-2 max-w-xl min-w-0">
+          <div className="relative flex-1 min-w-0 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="search"
@@ -89,6 +92,7 @@ export function DataTable<T extends { id: string | number }>({
               className="pl-10 bg-white/50 dark:bg-gray-800/50 border-teal-200 dark:border-gray-700 rounded-xl"
             />
           </div>
+          {searchExtra}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {headerExtra}

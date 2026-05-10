@@ -4,16 +4,29 @@ import { Button } from '@/components/ui/button'
 import { getNewsletterSubscribers, getNewsletterActiveRecipientCount } from '@/features/admin/actions'
 import { NewsletterTable } from './NewsletterTable'
 
+const ALLOWED_STATUSES = ['active', 'resubscribed', 'unsubscribed'] as const
+const DEFAULT_STATUSES = ['active', 'resubscribed']
+
 export default async function NewsletterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string }>
+  searchParams: Promise<{ page?: string; search?: string; statuses?: string }>
 }) {
   const params = await searchParams
   const page = parseInt(params.page || '1')
   const search = params.search || ''
+  const parsedStatuses =
+    typeof params.statuses === 'string' && params.statuses.length > 0
+      ? params.statuses
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s): s is (typeof ALLOWED_STATUSES)[number] =>
+            (ALLOWED_STATUSES as readonly string[]).includes(s),
+          )
+      : DEFAULT_STATUSES
+  const statuses = parsedStatuses.length > 0 ? parsedStatuses : DEFAULT_STATUSES
   const [result, countRes] = await Promise.all([
-    getNewsletterSubscribers(page, 10, search),
+    getNewsletterSubscribers(page, 10, search, statuses),
     getNewsletterActiveRecipientCount(),
   ])
   const data = result.success ? result.data : []
@@ -53,6 +66,7 @@ export default async function NewsletterPage({
         totalPages={totalPages}
         count={count || 0}
         activeRecipientCount={activeRecipientCount}
+        selectedStatuses={statuses}
       />
     </div>
   )
