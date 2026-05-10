@@ -64,9 +64,7 @@ export default function ServicesPage() {
         </section>
 
         {/* Why Choose Us Section - Modern Grid */}
-        <section className="w-full pb-32 relative overflow-x-hidden bg-secondary/20 border-y border-border/50">
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />
-
+        <section className="w-full pb-32 relative overflow-x-hidden bg-secondary/20">
           <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row gap-16 items-start">
               <div className="w-full shrink-0 md:w-1/3 md:sticky md:top-32 md:self-start">
