@@ -1,5 +1,6 @@
 'use server'
 
+import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import sharp from 'sharp'
@@ -13,6 +14,7 @@ import {
     normalizePhoneCountryCode,
 } from '@/lib/phone-country-options'
 import { fetchGuestAppointmentProfessionalMeta } from '@/lib/guest-appointment-professional-meta'
+import { sendNewsletterEmail } from '@/lib/mailer'
 
 const medicalProfileSchema = z
     .object({
@@ -589,5 +591,16 @@ export async function subscribeNewsletter(email: string) {
         return { success: false as const, error: 'This email is already subscribed.' }
     }
     if (error) return { success: false as const, error: error.message }
+
+    // Send the welcome email AFTER the response is returned so the user
+    // sees the success state instantly and isn't blocked on SMTP latency.
+    after(async () => {
+        try {
+            await sendNewsletterEmail(sanitizedEmail)
+        } catch (mailErr) {
+            console.error('[subscribeNewsletter] Failed to send welcome email:', mailErr)
+        }
+    })
+
     return { success: true as const }
 }

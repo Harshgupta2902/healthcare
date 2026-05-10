@@ -257,6 +257,10 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   status TEXT NOT NULL DEFAULT 'active'
 );
 
+-- Case-insensitive duplicate guard (Foo@Bar.com == foo@bar.com).
+CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_email_lower_uidx
+  ON public.newsletter_subscribers ((lower(email)));
+
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 GRANT INSERT ON TABLE public.newsletter_subscribers TO anon, authenticated;
 

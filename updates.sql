@@ -1,6 +1,12 @@
 -- Put incremental SQL updates here. After applying on Supabase,
 -- fold these changes into SUPABASE_SETUP.sql for the next reference.
 
+-- 2026-05-10: Newsletter duplicate prevention — case-insensitive UNIQUE index on email.
+-- Existing UNIQUE(email) is case-sensitive; this guarantees Foo@Bar.com and foo@bar.com
+-- collide as duplicates even if any legacy rows weren't lowercased on insert.
+CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_email_lower_uidx
+  ON public.newsletter_subscribers ((lower(email)));
+
 -- 2026-05-08 (rev 2): Widen patient SELECT — match on guest email = account email for ALL rows (not only created_by null).
 -- Fixes: two bookings same email (one created_by set, one null) but only one appeared on client dashboard.
 DROP POLICY IF EXISTS "Select by matching account email if unclaimed" ON public.guest_appointments;
