@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, UserCheck, Calendar, FileCheck, Mail } from 'lucide-react'
+import { Users, UserCheck, Calendar, FileCheck, Mail, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -18,7 +18,7 @@ interface DashboardStats {
   totalUsers: number
   totalProfessionals: number
   totalAppointments: number
-  totalDocuments: number
+  totalEnquiries: number
   newsletterSubscribers: number
 }
 
@@ -50,9 +50,9 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
       color: 'from-purple-500 to-pink-500',
     },
     {
-      title: 'Total Documents',
-      value: stats.totalDocuments,
-      icon: FileCheck,
+      title: 'Total Enquiries',
+      value: stats.totalEnquiries,
+      icon: MessageSquare,
       color: 'from-orange-500 to-red-500',
     },
     {

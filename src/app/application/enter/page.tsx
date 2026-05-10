@@ -11,14 +11,14 @@ export default async function AdminDashboard() {
         totalUsers: statsResult.totalUsers,
         totalProfessionals: statsResult.totalProfessionals,
         totalAppointments: statsResult.totalAppointments,
-        totalDocuments: statsResult.totalDocuments,
+        totalEnquiries: statsResult.totalEnquiries,
         newsletterSubscribers: statsResult.newsletterSubscribers,
       }
     : {
         totalUsers: 0,
         totalProfessionals: 0,
         totalAppointments: 0,
-        totalDocuments: 0,
+        totalEnquiries: 0,
         newsletterSubscribers: 0,
       }
 
