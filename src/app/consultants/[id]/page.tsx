@@ -1,7 +1,7 @@
 import { getProfessionalById } from "@/features/professional/actions";
 import { notFound } from "next/navigation";
-import ConsultantDetailClient from "./ConsultantDetailClient";
 import { Metadata } from "next";
+import ConsultantDetailClient from "./ConsultantDetailClient";
 
 interface PageProps {
     params: Promise<{ id: string }>;

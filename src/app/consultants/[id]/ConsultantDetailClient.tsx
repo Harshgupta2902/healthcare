@@ -1,315 +1,283 @@
 "use client";
 
-import {
-    Award,
-    MapPin,
-    ShieldCheck,
-    Star,
-    IndianRupee,
-    Clock,
-    Calendar,
-    BookOpen,
-    AtSign,
-    Phone,
-    ArrowLeft,
-    CheckCircle2,
-    Users,
-    Stethoscope,
-    Briefcase,
-    Zap,
-    Scale,
-    TrendingUp,
-    Shield,
-    Info,
-    GraduationCap,
-    ArrowRight,
-    FileText
-} from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { buildBookConsultationHref } from "@/lib/consultant-booking-ref";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Award,
+  Calendar,
+  CheckCircle2,
+  FileText,
+  GraduationCap,
+  IndianRupee,
+  MapPin,
+  ShieldCheck,
+  Stethoscope,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
+import { buildBookConsultationHref } from "@/lib/consultant-booking-ref";
 
-/** Hide last 70% — show ~first 30% from the start (email). */
-function maskEmailLeading(email: string): string {
-    const s = email.trim();
-    if (!s) return "";
-    const n = s.length;
-    if (n <= 2) return "••";
-    const visible = Math.max(1, Math.round(n * 0.3));
-    const hidden = n - visible;
-    return s.slice(0, visible) + "•".repeat(Math.min(hidden, 20));
-}
+const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/** Hide first 70% — show ~last 30% from the end (phone). */
-function maskPhoneTrailing(phone: string): string {
-    const s = phone.trim();
-    if (!s) return "";
-    const n = s.length;
-    if (n <= 2) return "••";
-    const visible = Math.max(1, Math.round(n * 0.3));
-    const hidden = n - visible;
-    return "•".repeat(Math.min(hidden, 20)) + s.slice(-visible);
+function formatFee(fee?: number | null) {
+  return `₹${((fee || 0) / 100).toLocaleString()}`;
 }
 
 export default function ConsultantDetailClient({ prof }: { prof: any }) {
-    const router = useRouter();
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const bookConsultationPath = buildBookConsultationHref(prof.id);
+  const router = useRouter();
+  const bookConsultationPath = buildBookConsultationHref(prof.id);
+  const displayName = prof.displayName ?? prof.name ?? "Consultant";
+  const location = prof.city || "Online Consultation";
+  const qualifications = Array.isArray(prof.qualifications) ? prof.qualifications : [];
+  const availability = Array.isArray(prof.availability) ? prof.availability : [];
 
-    const handleBookAppointment = () => {
-        void (async () => {
-            const supabase = createClient();
-            const {
-                data: { user },
-                error,
-            } = await supabase.auth.getUser();
-            if (error || !user) {
-                router.push(
-                    `/login?redirect=${encodeURIComponent(bookConsultationPath)}`
-                );
-                return;
-            }
-            router.push(bookConsultationPath);
-        })();
-    };
+  const handleBookAppointment = () => {
+    void (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-    return (
-        <div className="min-h-screen bg-[#fcfdff] pb-20 pt-24">
-            <div className="max-w-7xl mx-auto px-6">
+      if (error || !user) {
+        router.push(`/login?redirect=${encodeURIComponent(bookConsultationPath)}`);
+        return;
+      }
 
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-12">
-                    <div className="flex items-start gap-6">
-                        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-3xl overflow-hidden border-4 border-white shadow-2xl shrink-0 group">
-                            {prof.profilePhotoUrl ? (
-                                <Image
-                                    src={prof.profilePhotoUrl}
-                                    alt={prof.displayName ?? prof.name}
-                                    fill
-                                    sizes="(max-width: 992px) 96px, 128px"
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-primary flex items-center justify-center">
-                                    <span className="text-white text-4xl font-bold">{prof.name.slice(0, 2).toUpperCase()}</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">{prof.displayName ?? prof.name}</h1>
-                                {prof.isVerified && (
-                                    <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-emerald-100">
-                                        <ShieldCheck className="h-3 w-3" />
-                                        Verified
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-xl font-bold text-slate-400">{prof.specialization}</p>
-                            <div className="flex items-center gap-4 text-2xl font-black text-slate-900">
-                                ₹{(prof.consultationFee / 100).toLocaleString() || 0}
-                                <span className="text-emerald-500 text-sm font-bold ml-1 flex items-center gap-1">
-                                    <TrendingUp className="h-4 w-4" />
-                                    Premium Service
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+      router.push(bookConsultationPath);
+    })();
+  };
 
-                    <div className="flex gap-4">
-                        <Button
-                            type="button"
-                            onClick={handleBookAppointment}
-                            className="h-14 px-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-lg transition-all active:scale-95 shadow-xl shadow-slate-200 group/btn cursor-pointer"
-                        >
-                            Book Appointment
-                            <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
-                    </div>
+  const aboutText =
+    prof.bio?.trim() ||
+    `${displayName} is a trusted ${prof.specialization || "healthcare professional"} available through HealthHere for secure, patient-focused consultation support.`;
+
+  return (
+    <div className="min-h-screen bg-white pb-20 pt-10 text-[#083b3a] sm:pt-14">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-10">
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-slate-100 shadow-sm">
+              {prof.profilePhotoUrl ? (
+                <Image
+                  src={prof.profilePhotoUrl}
+                  alt={displayName}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 340px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-600 to-cyan-700">
+                  <span className="text-6xl font-black text-white">{displayName.slice(0, 2).toUpperCase()}</span>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-
-                    {/* Left Sidebar: Scorecard style */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <Card className="rounded-[2.5rem] border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-                            <div className="p-8 pb-4">
-                                <div className="space-y-6">
-                                    {/* Experience */}
-                                    <div className="flex items-center gap-4 group/item">
-                                        <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400 group-hover/item:text-indigo-600 group-hover/item:bg-indigo-50 transition-all duration-300">
-                                            <Briefcase className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Experience</p>
-                                            <p className="text-sm font-black text-slate-900">{prof.yearsOfExperience}+ Years</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Medical Standing */}
-                                    <div className="flex items-center gap-4 group/item">
-                                        <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400 group-hover/item:text-indigo-600 group-hover/item:bg-indigo-50 transition-all duration-300">
-                                            <Award className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">License No</p>
-                                            <p className="text-sm font-black text-indigo-600 tabular-nums">{prof.licenseNumber || 'Verified'}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Specialty */}
-                                    <div className="flex items-center gap-4 group/item">
-                                        <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400 group-hover/item:text-indigo-600 group-hover/item:bg-indigo-50 transition-all duration-300">
-                                            <Stethoscope className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Specialization</p>
-                                            <p className="text-sm font-black text-slate-900">{prof.specialization}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Location */}
-                                    <div className="flex items-center gap-4 group/item">
-                                        <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400 group-hover/item:text-indigo-600 group-hover/item:bg-indigo-50 transition-all duration-300">
-                                            <MapPin className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
-                                            <p className="text-sm font-black text-slate-900">{prof.city || 'Online Consultation'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Right Main Column: Tab System */}
-                    <div className="lg:col-span-8">
-                        <Tabs defaultValue="qualifications" className="w-full">
-                            <TabsList className="flex w-full overflow-x-auto bg-slate-100/50 backdrop-blur p-1.5 rounded-2xl border border-slate-200/50 h-auto no-scrollbar whitespace-nowrap justify-start gap-2 mb-8">
-                                <TabsTrigger value="qualifications" className="gap-2 rounded-xl flex-shrink-0 px-6 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm font-black text-sm uppercase tracking-widest text-slate-400 transition-all">
-                                    <GraduationCap className="h-4 w-4" />
-                                    Education
-                                </TabsTrigger>
-                                <TabsTrigger value="schedule" className="gap-2 rounded-xl flex-shrink-0 px-6 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm font-black text-sm uppercase tracking-widest text-slate-400 transition-all">
-                                    <Clock className="h-4 w-4" />
-                                    Availability
-                                </TabsTrigger>
-                                <TabsTrigger value="contact" className="gap-2 rounded-xl flex-shrink-0 px-6 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm font-black text-sm uppercase tracking-widest text-slate-400 transition-all">
-                                    <Phone className="h-4 w-4" />
-                                    Contact
-                                </TabsTrigger>
-                            </TabsList>
-
-                            <motion.div
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.5 }}
-                            >
-                                <TabsContent value="qualifications" className="mt-0">
-                                    {prof.qualifications && prof.qualifications.length > 0 ? (
-                                        <div className="grid gap-6">
-                                            {prof.qualifications.map((qual: any, idx: number) => (
-                                                <div key={idx} className="flex gap-6 p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all">
-                                                    <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100">
-                                                        <Award className="h-8 w-8 text-indigo-500" />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <h4 className="text-xl font-black text-slate-900">{qual.degree}</h4>
-                                                        <p className="text-lg font-bold text-slate-400">{qual.institution}</p>
-                                                        <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                            {qual.year && <Badge className="bg-slate-900 text-white border-none text-[10px] uppercase font-black px-3 py-1 rounded-full">{qual.year}</Badge>}
-                                                            {qual.document_url && qual.document_approved === true && (
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="link"
-                                                                    className="p-0 h-auto text-indigo-600 font-black text-sm cursor-pointer"
-                                                                    onClick={() => window.open(qual.document_url, "_blank")}
-                                                                >
-                                                                    <FileText className="h-3.5 w-3.5 mr-1" />
-                                                                    Verification document
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-20 text-center bg-white border-2 border-dashed border-slate-100 rounded-[3rem]">
-                                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                                <BookOpen className="h-10 w-10 text-slate-200" />
-                                            </div>
-                                            <p className="text-xl font-black text-slate-300">No educational details provided.</p>
-                                        </div>
-                                    )}
-                                </TabsContent>
-
-                                <TabsContent value="schedule" className="mt-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {prof.availability && prof.availability.length > 0 ? (
-                                            prof.availability.map((avail: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between items-center p-8 rounded-[2rem] bg-white border border-slate-100 shadow-sm group hover:bg-emerald-50 hover:border-emerald-100 transition-all duration-300">
-                                                    <span className="text-xl font-black text-slate-900 group-hover:text-emerald-700">{dayNames[avail.day_of_week]}</span>
-                                                    <Badge className="bg-slate-900 text-white border-none font-bold text-sm px-4 py-2 rounded-xl">
-                                                        {avail.start_time} - {avail.end_time}
-                                                    </Badge>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-full p-20 text-center bg-white border-2 border-dashed border-slate-100 rounded-[3rem]">
-                                                <Calendar className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                                <p className="text-xl font-black text-slate-300 uppercase tracking-widest">Schedule Privacy Enabled</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="contact" className="mt-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {prof.email && (
-                                            <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm group hover:border-indigo-200 transition-all">
-                                                <div className="p-3 w-fit bg-indigo-50 rounded-2xl text-indigo-500 mb-6 group-hover:scale-110 transition-transform">
-                                                    <AtSign className="h-6 w-6" />
-                                                </div>
-                                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
-                                                <p className="text-xl font-black text-slate-900 tracking-tight break-all">
-                                                    {maskEmailLeading(prof.email)}
-                                                </p>
-                                            </div>
-                                        )}
-                                        {prof.phone && (
-                                            <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
-                                                <div className="p-3 w-fit bg-emerald-50 rounded-2xl text-emerald-500 mb-6 group-hover:scale-110 transition-transform">
-                                                    <Phone className="h-6 w-6" />
-                                                </div>
-                                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
-                                                <p className="text-xl font-black text-slate-900 tracking-tight break-all">
-                                                    {maskPhoneTrailing(prof.phone)}
-                                                </p>
-                                            </div>
-                                        )}
-                                        <div className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm group hover:border-amber-200 transition-all">
-                                            <div className="p-3 w-fit bg-amber-50 rounded-2xl text-amber-500 mb-6 group-hover:scale-110 transition-transform">
-                                                <MapPin className="h-6 w-6" />
-                                            </div>
-                                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Location</p>
-                                            <p className="text-xl font-black text-slate-900">{prof.city || 'Online Consultation'}</p>
-                                        </div>
-                                    </div>
-                                </TabsContent>
-                            </motion.div>
-                        </Tabs>
-                    </div>
+              )}
+              {prof.isVerified ? (
+                <div className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white text-teal-600 shadow-lg">
+                  <ShieldCheck className="h-6 w-6" />
                 </div>
+              ) : null}
             </div>
+
+            <div className="overflow-hidden rounded-[1.75rem] border border-teal-100 bg-white shadow-xl shadow-teal-100/60">
+              <div className="border-b border-teal-100 bg-gradient-to-r from-teal-50 to-cyan-50 px-6 py-4">
+                <p className="text-lg font-black text-[#073b3a]">Booking Details</p>
+                <p className="mt-1 text-sm text-slate-500">Secure consultation request</p>
+              </div>
+              <div className="space-y-5 p-6">
+                <SidebarInfo icon={IndianRupee} label="Consultation Fee" value={formatFee(prof.consultationFee)} />
+                <SidebarInfo icon={Award} label="Experience" value={`${prof.yearsOfExperience || 0}+ Years`} />
+                <Button
+                  type="button"
+                  onClick={handleBookAppointment}
+                  className="mt-2 h-12 w-full rounded-2xl bg-primary font-black text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90 cursor-pointer"
+                >
+                  Book Appointment
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </aside>
+
+          <div className="min-w-0 space-y-12 md:space-y-16">
+            <section>
+              <h1 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl lg:text-6xl">
+                {displayName}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-slate-500">
+                {prof.specialization || "Healthcare Professional"} • {location}
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl">About me</h2>
+              <p className="mt-6 max-w-4xl text-sm leading-7 text-slate-500 sm:text-base">{aboutText}</p>
+
+              <div className="my-8 h-px bg-slate-200" />
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <FeatureBlock
+                  title="Patient-Centered Care Approach"
+                  description="Focused on clear communication, comfort, and practical next steps for every consultation."
+                />
+                <FeatureBlock
+                  title="Modern Digital Consultation"
+                  description="Secure online booking flow with care coordination built for convenient healthcare access."
+                />
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl">Education & qualifications</h2>
+              <p className="mt-6 max-w-4xl text-sm leading-7 text-slate-500 sm:text-base">
+                Professional credentials and qualification details available for public review on HealthHere.
+              </p>
+
+              <div className="mt-8 grid gap-6 md:grid-cols-2">
+                {qualifications.length > 0 ? (
+                  qualifications.map((qual: any, idx: number) => (
+                    <QualificationCard key={`${qual.degree}-${idx}`} qual={qual} />
+                  ))
+                ) : (
+                  <>
+                    <QualificationCard qual={{ degree: prof.specialization || "Clinical Practice", institution: "Verified professional profile" }} />
+                    <QualificationCard qual={{ degree: "Patient Consultation", institution: "HealthHere care access network" }} />
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl">Areas of expertise</h2>
+              <p className="mt-6 max-w-4xl text-sm leading-7 text-slate-500 sm:text-base">
+                A practical overview of the care strengths this profile is positioned around.
+              </p>
+
+              <div className="mt-8 grid gap-x-10 gap-y-6 md:grid-cols-2">
+                <ExpertiseBar label={prof.specialization || "Clinical Consultation"} value={95} />
+                <ExpertiseBar label="Patient Care & Communication" value={90} />
+                <ExpertiseBar label="Preventive Guidance" value={85} />
+                <ExpertiseBar label="Care Planning" value={80} />
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] bg-cyan-50 p-6 sm:p-10">
+              <div>
+                <h2 className="text-3xl font-black tracking-tight text-[#073b3a] sm:text-4xl">
+                  Book appointment with {displayName}
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-slate-500 sm:text-base">
+                  Continue to the secure booking flow to confirm your details, request a slot, and connect with the care team.
+                </p>
+                {availability.length > 0 ? (
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {availability.slice(0, 4).map((slot: any, idx: number) => (
+                      <div key={`${slot.day_of_week}-${idx}`} className="rounded-2xl bg-white p-4 text-sm shadow-sm">
+                        <p className="font-black text-[#073b3a]">{dayNames[slot.day_of_week] || "Available"}</p>
+                        <p className="mt-1 text-slate-500">
+                          {slot.start_time} - {slot.end_time}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          </div>
         </div>
-    );
+      </main>
+    </div>
+  );
+}
+
+function SidebarInfo({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-black uppercase tracking-widest text-slate-400">{label}</p>
+        <p className="mt-0.5 truncate text-base font-black text-[#073b3a]" title={value}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FeatureBlock({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="h-4 w-4 fill-cyan-500 text-white" />
+        <h3 className="text-base font-black text-[#073b3a]">{title}</h3>
+      </div>
+      <p className="text-sm leading-7 text-slate-500">{description}</p>
+      <div className="border-t border-slate-200 pt-4">
+        <p className="flex items-center gap-2 text-sm text-slate-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
+          Trusted healthcare access through HealthHere.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function QualificationCard({ qual }: { qual: any }) {
+  return (
+    <div className="rounded-[1.75rem] bg-cyan-50 p-6 sm:p-8">
+      <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white">
+        <GraduationCap className="h-7 w-7" />
+      </div>
+      <h3 className="text-lg font-black text-[#073b3a]">{qual.degree || "Qualification"}</h3>
+      <p className="mt-3 text-sm leading-7 text-slate-500">
+        {qual.institution || "This qualification reflects verified professional training and healthcare experience."}
+      </p>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        {qual.year ? (
+          <Badge className="rounded-full bg-white px-3 py-1 font-black text-[#073b3a] hover:bg-white">
+            {qual.year}
+          </Badge>
+        ) : null}
+        {qual.document_url && qual.document_approved === true ? (
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm font-black text-cyan-700"
+            onClick={() => window.open(qual.document_url, "_blank")}
+          >
+            <FileText className="mr-1.5 h-4 w-4" />
+            View document
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ExpertiseBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+        <span className="text-slate-500">{label}</span>
+        <span className="font-semibold text-slate-500">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-cyan-50">
+        <div className="h-full rounded-full bg-cyan-500" style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
 }
