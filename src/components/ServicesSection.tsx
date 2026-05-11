@@ -115,7 +115,7 @@ export default function ServicesSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="mt-10 mb-10 p-8 md:p-12 sm:rounded-[10px] rounded-[40px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
+          className="mt-10 mb-10 p-8 md:p-12 rounded-2xl sm:rounded-[10px] bg-foreground text-background flex flex-col md:flex-row items-center justify-between gap-8"
         >
           <div className="space-y-2 text-center md:text-left">
             <h4 className="text-2xl font-bold text-white">Ready to take control?</h4>

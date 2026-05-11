@@ -265,12 +265,12 @@ export default function Header({ className }: HeaderProps) {
                   </Button>
                 </>
               ) : mounted && !isPending ? (
-                <>
-                  <Button variant="ghost" size="sm" className="w-full justify-start cursor-pointer" onClick={() => { router.push('/login'); setIsMobileMenuOpen(false); }}>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 justify-center cursor-pointer" onClick={() => { router.push('/login'); setIsMobileMenuOpen(false); }}>
                     <LogIn className="h-4 w-4 mr-2" /> Login
                   </Button>
-                  <Button size="sm" className="w-full cursor-pointer" onClick={() => { router.push('/register'); setIsMobileMenuOpen(false); }}>Sign up</Button>
-                </>
+                  <Button size="sm" className="flex-1 cursor-pointer" onClick={() => { router.push('/register'); setIsMobileMenuOpen(false); }}>Sign up</Button>
+                </div>
               ) : null}
             </div>
           </nav>
