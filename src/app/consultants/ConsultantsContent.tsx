@@ -3,8 +3,6 @@
 import { useState, useMemo } from "react";
 import {
     Search,
-    Grid,
-    List,
     MapPin,
     IndianRupee,
     ArrowRight,
@@ -22,7 +20,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
     Select,
     SelectContent,
@@ -55,7 +52,6 @@ const specialties = [
 ];
 
 export default function ConsultantsContent({ initialProfessionals }: ConsultantsContentProps) {
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -98,16 +94,26 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
         <div className="min-h-screen bg-[#f8fafc]">
             {/* In-flow spacer: visible gap under header at rest; scrolls away so sticky bar meets header flush */}
             <div className="h-2 shrink-0 sm:h-3" aria-hidden />
-            <div className="sticky top-16 z-30 w-full bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center divide-x divide-slate-100">
+            <div className="sticky top-16 z-30 w-full bg-white/95 border-b border-slate-200 shadow-sm backdrop-blur-md">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-0 sm:divide-x sm:divide-slate-100">
 
+                    {/* Search Field */}
+                    <div className="flex-1 px-1 sm:px-6 relative group min-w-0">
+                        <Search className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                        <Input
+                            placeholder="Search..."
+                            className="w-full pl-9 sm:pl-8 border-none bg-slate-50 sm:bg-transparent rounded-2xl sm:rounded-none h-10 sm:h-12 focus-visible:ring-0 text-sm sm:text-base text-slate-900 font-bold placeholder:text-slate-400 placeholder:font-bold"
+                            defaultValue={currentSearch}
+                            onChange={(e) => updateQuery({ q: e.target.value })}
+                        />
+                    </div>
                     {/* City Switcher */}
-                    <div className="px-4 first:pl-0 flex items-center gap-3 min-w-[180px]">
-                        <div className="p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:text-indigo-600 transition-colors">
+                    <div className="px-1 sm:px-4 sm:first:pl-0 flex items-center gap-2 sm:gap-3 min-w-0 w-[40%] sm:w-auto sm:min-w-[180px]">
+                        <div className="p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0">
                             <MapPin className="h-4 w-4" />
                         </div>
                         <Select value={currentCity} onValueChange={(val) => updateQuery({ city: val })}>
-                            <SelectTrigger className="border-none bg-transparent h-auto p-0 font-black text-slate-900 focus:ring-0 w-full shadow-none gap-2">
+                            <SelectTrigger className="border-none bg-transparent h-auto p-0 font-black text-slate-900 focus:ring-0 w-full min-w-0 shadow-none gap-1 sm:gap-2 text-sm sm:text-base">
                                 <SelectValue placeholder="Location" />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
@@ -120,16 +126,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
                         </Select>
                     </div>
 
-                    {/* Search Field */}
-                    <div className="flex-1 px-6 relative group">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                        <Input
-                            placeholder="Find consultant name..."
-                            className="w-full pl-8 border-none bg-transparent h-12 focus-visible:ring-0 text-slate-900 font-bold placeholder:text-slate-400 placeholder:font-bold"
-                            defaultValue={currentSearch}
-                            onChange={(e) => updateQuery({ q: e.target.value })}
-                        />
-                    </div>
+
 
                     {/* Quick Stats / Controls */}
                     <div className="hidden lg:flex items-center gap-8 px-8">
@@ -149,42 +146,23 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
                             Advanced Filters
                         </Button>
                     </div>
-
-                    <div className="px-4 last:pr-0 flex items-center gap-1.5 ml-auto">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-10 w-10 rounded-xl", viewMode === "grid" ? "bg-slate-100 text-slate-900" : "text-slate-400")}
-                            onClick={() => setViewMode("grid")}
-                        >
-                            <Grid className="h-5 w-5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-10 w-10 rounded-xl", viewMode === "list" ? "bg-slate-100 text-slate-900" : "text-slate-400")}
-                            onClick={() => setViewMode("list")}
-                        >
-                            <List className="h-5 w-5" />
-                        </Button>
-                    </div>
                 </div>
 
                 {/* Second Bar: Specialty Horizontal Tabs */}
-                <div className="max-w-7xl mx-auto px-6 h-14 flex items-center border-t border-slate-50 overflow-hidden">
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 w-full">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 h-12 sm:h-14 flex items-center border-t border-slate-50 overflow-hidden">
+                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-2 w-full">
                         {specialties.map((s) => (
                             <button
                                 key={s}
                                 onClick={() => updateQuery({ specialty: s })}
                                 className={cn(
-                                    "px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2",
+                                    "px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wide sm:tracking-widest whitespace-nowrap transition-all flex items-center gap-1.5 sm:gap-2",
                                     currentSpecialty === s
                                         ? "bg-primary text-white shadow-lg shadow-primary/20"
                                         : "bg-white text-slate-400 hover:text-slate-900 hover:bg-slate-50 border border-slate-100"
                                 )}
                             >
-                                {s === "all" ? <Briefcase className="h-3.5 w-3.5" /> : <Stethoscope className="h-3.5 w-3.5" />}
+                                {s === "all" ? <Briefcase className="h-3.5 w-3.5 shrink-0" /> : <Stethoscope className="h-3.5 w-3.5 shrink-0" />}
                                 {s.replace("Specialist", "")}
                             </button>
                         ))}
@@ -238,18 +216,14 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
             </div>
 
             {/* Content Area */}
-            <div className="max-w-7xl mx-auto px-6 py-12 pb-40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
 
                 <AnimatePresence mode="popLayout">
-                    <div className={cn(
-                        "grid gap-6",
-                        viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
-                    )}>
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {filteredProfessionals.map((prof, idx) => (
                             <ConsultantCard
                                 key={prof.id}
                                 prof={prof}
-                                mode={viewMode}
                                 index={idx}
                             />
                         ))}
@@ -285,7 +259,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
     );
 }
 
-function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list", index: number }) {
+function ConsultantCard({ prof, index }: { prof: any, index: number }) {
     return (
         <motion.div
             layout
@@ -297,24 +271,17 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
         >
             <Link href={`/consultants/${prof.id}`} className="block h-full group">
                 <Card className={cn(
-                    "relative border-slate-200 bg-white rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-1 group flex",
-                    mode === "grid" ? "flex-col" : "flex-row items-center gap-8 p-4 h-auto"
+                    "relative overflow-hidden border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-100/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-100 hover:shadow-xl hover:shadow-slate-200/70 group flex",
+                    "rounded-3xl flex-row items-stretch gap-3 p-3 h-auto md:flex-col md:gap-0 md:p-0"
                 )}>
                     {/* Visual Section */}
-                    <div className={cn(
-                        "relative bg-slate-50 overflow-hidden", 
-                        mode === "grid" ? "aspect-square w-full" : "h-40 w-40 rounded-2xl shrink-0"
-                    )}>
+                    <div className="relative min-h-36 w-[36%] max-w-[8rem] shrink-0 overflow-hidden rounded-2xl bg-slate-100 md:aspect-[4/3] md:min-h-0 md:w-full md:max-w-none md:rounded-none">
                         {prof.profilePhotoUrl ? (
                             <Image
                                 src={prof.profilePhotoUrl}
                                 alt={prof.displayName ?? prof.name}
                                 fill
-                                sizes={
-                                    mode === "grid"
-                                        ? "(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                        : "160px"
-                                }
+                                sizes="(max-width: 767px) 38vw, (max-width: 1024px) 50vw, 33vw"
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
                             />
                         ) : (
@@ -323,62 +290,61 @@ function ConsultantCard({ prof, mode, index }: { prof: any, mode: "grid" | "list
                             </div>
                         )}
 
-                        {/* Status Overlays */}
-                        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                            <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-slate-200 font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full shadow-sm">
-                                {prof.specialization}
-                            </Badge>
-                            {prof.isVerified && (
-                                <div className="w-fit bg-emerald-500 text-white p-1 rounded-full shadow-xl flex items-center gap-1 pr-2">
-                                    <ShieldCheck className="h-3 w-3" />
-                                    <span className="text-[8px] font-black uppercase tracking-tighter">Verified</span>
-                                </div>
-                            )}
-                        </div>
+                        {prof.isVerified && (
+                            <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-emerald-600 shadow-md ring-1 ring-emerald-100 backdrop-blur-sm md:left-4 md:top-4 md:h-9 md:w-9">
+                                <ShieldCheck className="h-4 w-4 md:h-5 md:w-5" />
+                            </div>
+                        )}
+
+                        <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950/25 to-transparent md:h-20" aria-hidden />
                     </div>
 
                     {/* Content Section */}
-                    <CardContent className={cn(
-                        "p-6 flex flex-col flex-1 h-full",
-                        mode === "list" && "p-0"
-                    )}>
-                        <div className="space-y-4 flex-1">
+                    <CardContent className="flex min-w-0 flex-1 flex-col p-0 md:p-5 lg:p-6">
+                        <div className="flex min-w-0 flex-1 flex-col gap-2.5 md:gap-4">
                             <div>
-                                <div className="flex items-center gap-1.5 mb-2 opacity-50">
-                                    <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                    <span className="text-[10px] font-black text-slate-500 tracking-widest uppercase">Certified Choice</span>
+                                <div className="mb-1.5 flex items-center gap-1.5 text-slate-400 md:mb-2">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    <span className="text-[9px] font-black uppercase tracking-wide md:text-[10px] md:tracking-widest">Certified Choice</span>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 group-hover:text-primary transition-colors leading-tight">{prof.displayName ?? prof.name}</h3>
+                                <h3 className="line-clamp-2 text-lg font-black leading-tight text-slate-950 transition-colors group-hover:text-primary md:text-xl lg:text-2xl">
+                                    {prof.displayName ?? prof.name}
+                                </h3>
+                                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                    <span className="max-w-full truncate rounded-full bg-indigo-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-indigo-700 ring-1 ring-indigo-100 md:text-[10px]">
+                                        {prof.specialization}
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-slate-50/80 p-3 rounded-2xl">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Exp.</p>
-                                    <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100 md:p-3">
+                                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-slate-400 md:text-[9px]">Experience</p>
+                                    <div className="flex items-center gap-1.5">
                                         <Award className="h-3.5 w-3.5 text-indigo-500" />
-                                        <span className="text-xs font-black text-slate-700">{prof.yearsOfExperience}+ Yrs</span>
+                                        <span className="text-[11px] font-black text-slate-800 md:text-xs">{prof.yearsOfExperience}+ Yrs</span>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50/80 p-3 rounded-2xl">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Fee</p>
-                                    <div className="flex items-center gap-2">
+                                <div className="rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-100 md:p-3">
+                                    <p className="mb-1 text-[8px] font-black uppercase tracking-widest text-slate-400 md:text-[9px]">Fee</p>
+                                    <div className="flex items-center gap-1.5">
                                         <IndianRupee className="h-3.5 w-3.5 text-emerald-500" />
-                                        <span className="text-xs font-black text-slate-700">₹{((prof.consultationFee || 0) / 100).toLocaleString()}</span>
+                                        <span className="truncate text-[11px] font-black text-slate-800 md:text-xs">₹{((prof.consultationFee || 0) / 100).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 text-slate-500 mt-2">
-                                <MapPin className="h-3.5 w-3.5 text-slate-300" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{prof.city || "Online Consultation"}</span>
+                            <div className="flex items-center gap-1.5 text-slate-500">
+                                <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                                <span className="truncate text-[10px] font-black uppercase tracking-wide text-slate-500 md:tracking-widest">{prof.city || "Online Consultation"}</span>
                             </div>
                         </div>
 
-                        <div className="pt-2 mt-auto">
-                            <div className="flex items-center justify-between group/row">
-                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Connect Specialist</span>
-                                <div className="h-10 w-10 rounded-full bg-slate-900 group-hover:bg-primary flex items-center justify-center text-white transition-all shadow-xl shadow-slate-100">
-                                    <ArrowRight className="h-5 w-5" />
+                        <div className="mt-auto pt-2 md:pt-4">
+                            <div className="flex items-center justify-between rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2.5 text-indigo-700 transition-all group-hover:border-indigo-200 group-hover:bg-indigo-100/80">
+                                <span className="text-[10px] font-black uppercase tracking-wide md:text-xs md:tracking-widest">View Profile</span>
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-100 transition-transform group-hover:translate-x-0.5">
+                                    <ArrowRight className="h-4 w-4" />
                                 </div>
                             </div>
                         </div>

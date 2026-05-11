@@ -93,7 +93,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                                     src={prof.profilePhotoUrl}
                                     alt={prof.displayName ?? prof.name}
                                     fill
-                                    sizes="(max-width: 768px) 96px, 128px"
+                                    sizes="(max-width: 992px) 96px, 128px"
                                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                             ) : (
