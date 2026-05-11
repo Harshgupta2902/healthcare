@@ -34,7 +34,7 @@ export default async function AdminLayout({
         <AdminSidebar />
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <AdminNavbar user={userData} unreadNotificationCount={unreadNotificationCount} />
-          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-clip p-6 md:p-8">
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-clip p-4 pb-24 sm:p-5 md:p-6 lg:p-8 lg:pb-8">
             {children}
           </main>
         </div>

@@ -91,10 +91,10 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-teal-200/50 dark:border-gray-700/50 shadow-sm"
+      className="h-16 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-teal-200/50 dark:border-gray-700/50 shadow-sm"
     >
-      <div className="flex items-center justify-between h-full px-6">
-        <div className="flex-1 max-w-md">
+      <div className="flex items-center justify-between h-full gap-3 px-3 sm:px-6">
+        <div className="min-w-0 flex-1 sm:max-w-md">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -102,12 +102,12 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white/50 dark:bg-gray-800/50 border-teal-200 dark:border-gray-700 rounded-xl"
+              className="h-10 truncate pl-10 bg-white/60 dark:bg-gray-800/50 border-teal-200 dark:border-gray-700 rounded-xl"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="icon" className="relative rounded-xl p-0 hover:bg-teal-50 dark:hover:bg-gray-800" asChild>
             <Link
               href="/application/enter/notifications"
