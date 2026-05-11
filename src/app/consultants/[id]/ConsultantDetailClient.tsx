@@ -59,8 +59,45 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
   return (
     <div className="min-h-screen bg-white pb-20 pt-10 text-[#083b3a] sm:pt-14">
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section className="mb-8 lg:hidden">
+          <div className="flex gap-4">
+            <div className="relative h-36 w-32 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+              {prof.profilePhotoUrl ? (
+                <Image
+                  src={prof.profilePhotoUrl}
+                  alt={displayName}
+                  fill
+                  priority
+                  sizes="128px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-600 to-cyan-700">
+                  <span className="text-3xl font-black text-white">{displayName.slice(0, 2).toUpperCase()}</span>
+                </div>
+              )}
+              {prof.isVerified ? (
+                <div className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-teal-600 shadow-md">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+              ) : null}
+            </div>
+
+            <div className="min-w-0 flex-1 py-1">
+              <h1 className="line-clamp-2 text-xl font-black leading-tight tracking-tight text-[#073b3a]">
+                {displayName}
+              </h1>
+              <div className="mt-3 space-y-2">
+                <MobileMeta icon={Stethoscope} label="Skill" value={prof.specialization || "Healthcare Professional"} />
+                <MobileMeta icon={MapPin} label="Address" value={location} />
+                <MobileMeta icon={Award} label="Experience" value={`${prof.yearsOfExperience || 0}+ Years`} />
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-8 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-10">
-          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <aside className="hidden space-y-6 lg:sticky lg:top-24 lg:block lg:self-start">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-slate-100 shadow-sm">
               {prof.profilePhotoUrl ? (
                 <Image
@@ -104,7 +141,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
           </aside>
 
           <div className="min-w-0 space-y-12 md:space-y-16">
-            <section>
+            <section className="hidden lg:block">
               <h1 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl lg:text-6xl">
                 {displayName}
               </h1>
@@ -165,7 +202,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
               </div>
             </section>
 
-            <section className="rounded-[2rem] bg-cyan-50 p-6 sm:p-10">
+            <section className="rounded-[2rem] bg-cyan-50 p-4 sm:p-10">
               <div>
                 <h2 className="text-3xl font-black tracking-tight text-[#073b3a] sm:text-4xl">
                   Book appointment with {displayName}
@@ -174,7 +211,7 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
                   Continue to the secure booking flow to confirm your details, request a slot, and connect with the care team.
                 </p>
                 {availability.length > 0 ? (
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-6 grid grid-cols-2 gap-3">
                     {availability.slice(0, 4).map((slot: any, idx: number) => (
                       <div key={`${slot.day_of_week}-${idx}`} className="rounded-2xl bg-white p-4 text-sm shadow-sm">
                         <p className="font-black text-[#073b3a]">{dayNames[slot.day_of_week] || "Available"}</p>
@@ -190,6 +227,46 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
           </div>
         </div>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-md items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Consultation Fee</p>
+            <p className="text-lg font-black text-[#073b3a]">{formatFee(prof.consultationFee)}</p>
+          </div>
+          <Button
+            type="button"
+            onClick={handleBookAppointment}
+            className="h-12 shrink-0 rounded-2xl bg-primary px-5 font-black text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
+          >
+            Book Appointment
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileMeta({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+        <p className="truncate text-xs font-black text-[#073b3a]" title={value}>
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

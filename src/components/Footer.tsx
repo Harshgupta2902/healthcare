@@ -25,6 +25,8 @@ export default function Footer({ className }: FooterProps) {
     return null;
   }
 
+  const hasMobileStickyCta = pathname?.startsWith('/consultants/');
+
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -70,7 +72,7 @@ export default function Footer({ className }: FooterProps) {
 
   return (
     <footer className={`bg-card border-t w-full ${className}`}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-8 md:py-12">
+      <div className={`max-w-6xl mx-auto px-4 sm:px-6 md:px-12 py-8 md:py-12 ${hasMobileStickyCta ? 'pb-22 lg:pb-12' : ''}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-12">
           {/* Contact & Company Info */}
           <div className="space-y-4">
