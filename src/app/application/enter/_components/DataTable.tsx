@@ -20,8 +20,6 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Search, Plus, Edit, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
 
 interface Column<T> {
   key: string
@@ -80,9 +78,9 @@ export function DataTable<T extends { id: string | number }>({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 items-center gap-2 max-w-xl min-w-0">
-          <div className="relative flex-1 min-w-0 max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-1 sm:flex-row sm:items-center sm:max-w-xl">
+          <div className="relative min-w-0 flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="search"
@@ -94,7 +92,7 @@ export function DataTable<T extends { id: string | number }>({
           </div>
           {searchExtra}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           {headerExtra}
           {onAdd && (
             <Button
@@ -108,8 +106,98 @@ export function DataTable<T extends { id: string | number }>({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-teal-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg overflow-hidden">
-        <Table>
+      <div className="space-y-3 sm:hidden">
+        {data.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-teal-200/70 bg-white/80 p-6 text-center text-sm text-gray-500 shadow-sm dark:border-gray-700 dark:bg-gray-900/80">
+            No data found
+          </div>
+        ) : (
+          data.map((item) => {
+            const rowKey = getRowKey ? String(getRowKey(item)) : String(item.id)
+            const [primaryColumn, ...detailColumns] = columns
+            const primaryContent = primaryColumn
+              ? primaryColumn.render
+                ? primaryColumn.render(item)
+                : (item as any)[primaryColumn.key] || 'N/A'
+              : null
+
+            return (
+              <div
+                key={rowKey}
+                className="rounded-2xl border border-teal-200/60 bg-white/90 p-4 shadow-sm backdrop-blur-md dark:border-gray-700/70 dark:bg-gray-900/85"
+              >
+                {primaryColumn ? (
+                  <div className="mb-3 min-w-0 border-b border-teal-100 pb-3 dark:border-gray-800">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-teal-600 dark:text-teal-300">
+                      {primaryColumn.label}
+                    </p>
+                    <div className="min-w-0 text-sm font-semibold text-gray-900 [overflow-wrap:anywhere] dark:text-white">
+                      {primaryContent}
+                    </div>
+                  </div>
+                ) : null}
+
+                {detailColumns.length > 0 ? (
+                  <dl className="space-y-3">
+                    {detailColumns.map((column) => {
+                      const value = column.render
+                        ? column.render(item)
+                        : (item as any)[column.key] || 'N/A'
+
+                      return (
+                        <div key={column.key} className="min-w-0">
+                          <dt className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            {column.label}
+                          </dt>
+                          <dd className="mt-1 min-w-0 text-sm text-gray-700 [overflow-wrap:anywhere] dark:text-gray-200 [&_*]:max-w-full">
+                            {value}
+                          </dd>
+                        </div>
+                      )
+                    })}
+                  </dl>
+                ) : null}
+
+                {showActionsCol && (
+                  <div className="mt-4 flex items-center justify-end gap-2 border-t border-teal-100 pt-3 dark:border-gray-800">
+                    {renderRowActions ? (
+                      <div className="flex flex-wrap items-center justify-end gap-2">{renderRowActions(item)}</div>
+                    ) : (
+                      <>
+                        {onEdit && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(item)}
+                            className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(item)}
+                            className="rounded-lg border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      <div className="hidden rounded-2xl border border-teal-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg overflow-x-auto sm:block">
+        <Table className="min-w-full">
           <TableHeader>
             <TableRow className="bg-teal-50/50 dark:bg-gray-800/50">
               {columns.map((column) => (
@@ -183,12 +271,12 @@ export function DataTable<T extends { id: string | number }>({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Showing {data.length} of {count} results
           </p>
           <Pagination>
-            <PaginationContent>
+            <PaginationContent className="flex-wrap justify-center">
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
