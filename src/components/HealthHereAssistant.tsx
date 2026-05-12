@@ -10,7 +10,6 @@ import {
   Loader2,
   MessageCircle,
   Navigation,
-  Send,
   ShieldAlert,
   Sparkles,
   UserRound,
@@ -330,6 +329,7 @@ function formatAppointmentDate(dateValue?: string | null, timeValue?: string | n
 
 function getVisibleQuestions(ctx: AssistantContext | null) {
   return ALL_QUESTIONS.filter((question) => {
+    if (ctx?.isAuthenticated && question.group === "Public") return false;
     if (question.guest) return true;
     if (!ctx?.isAuthenticated) return false;
     if (!question.roles) return true;
@@ -343,20 +343,6 @@ function getInitialAssistantText(ctx: AssistantContext | null, loading: boolean)
     return `Hi ${ctx.displayName || "there"}, I am HealthHere Assistant. I can help with dashboard navigation, booking, profile updates, and appointment or prescription details.`;
   }
   return "Hi, I am HealthHere Assistant. I can help with services, consultants, the booking flow, the dashboard, and public FAQs. After login, account-specific questions will also appear.";
-}
-
-function findQuestion(input: string, questions: Question[]) {
-  const normalized = input.toLowerCase().trim();
-  return (
-    questions.find((question) => question.label.toLowerCase() === normalized) ||
-    questions.find((question) =>
-      question.label
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((word) => word.length > 3)
-        .some((word) => normalized.includes(word))
-    )
-  );
 }
 
 function escapeRegExp(value: string) {
@@ -409,7 +395,6 @@ function renderAssistantTextWithLinks(text: string, ctx: AssistantContext | null
 export function HealthHereAssistant() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
   const [loadingContext, setLoadingContext] = useState(true);
   const [ctx, setCtx] = useState<AssistantContext | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -551,24 +536,6 @@ export function HealthHereAssistant() {
     addAssistantResponseWithTyping(question.answer(ctx));
   };
 
-  const submitInput = () => {
-    if (isTyping) return;
-    const trimmed = input.trim();
-    if (!trimmed) return;
-
-    const matched = findQuestion(trimmed, visibleQuestions);
-    setInput("");
-    setMessages((current) => [
-      ...current,
-      { id: `u-${Date.now()}`, role: "user", text: trimmed },
-    ]);
-    addAssistantResponseWithTyping(
-      matched
-        ? matched.answer(ctx)
-        : "This basic assistant can only answer the listed HealthHere questions. Choose one of the quick questions below, or open the dashboard/support page for more help."
-    );
-  };
-
   const clearChat = () => {
     if (isTyping) return;
     clearTypingTimers();
@@ -635,55 +602,40 @@ export function HealthHereAssistant() {
             <div ref={scrollAnchorRef} />
           </div>
 
-          <div className="border-t border-slate-100 bg-white p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400">
-                <Sparkles className="h-3.5 w-3.5" />
+          <div className="border-t border-slate-100 bg-white p-2.5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <Sparkles className="h-3 w-3" />
                 Quick questions
-                {loadingContext && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {loadingContext && <Loader2 className="h-3 w-3 animate-spin" />}
               </div>
               <button
                 type="button"
                 onClick={clearChat}
                 disabled={isTyping}
-                className="shrink-0 text-[11px] font-black uppercase tracking-widest text-slate-400 transition hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-400 transition hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Clear chat
               </button>
             </div>
-            <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="space-y-1.5">
               {primaryQuestions.map((question) => (
                 <button
                   key={question.id}
                   type="button"
                   onClick={() => askQuestion(question)}
                   disabled={isTyping}
-                  className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-[11px] font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-[11px] font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <span className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-400">
+                  <span className="shrink-0 text-slate-400">
                     {question.group === "Appointments" ? <CalendarDays className="h-3 w-3" /> : null}
                     {question.group === "Prescription" ? <FileText className="h-3 w-3" /> : null}
                     {question.group === "Public" ? <Navigation className="h-3 w-3" /> : null}
                     {question.group === "Account" || question.group === "Professional" ? <UserRound className="h-3 w-3" /> : null}
-                    {question.group}
                   </span>
-                  {question.label}
+                  <span>{question.label}</span>
                 </button>
               ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") submitInput();
-                }}
-                placeholder="Type your question..."
-                className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-indigo-200 focus:ring-2"
-              />
-              <Button type="button" size="icon" className="h-10 w-10 rounded-xl" onClick={submitInput} disabled={isTyping}>
-                <Send className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </section>
