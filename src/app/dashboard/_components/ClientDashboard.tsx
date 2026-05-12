@@ -175,6 +175,12 @@ interface Appointment {
     createdAt: string;
 }
 
+function formatPatientDetailValue(value: string | null | undefined) {
+    return (value || "")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function ClientDashboard({ initialData }: { initialData: any }) {
     const user = initialData?.user;
     const router = useRouter();
@@ -747,6 +753,10 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             patientFullName,
             issueDateDisplay,
             patientAge: appointment.age,
+            patientSex: formatPatientDetailValue(profile?.gender),
+            patientBloodGroup: profile?.bloodType || "",
+            patientWeight: profile?.weight != null ? `${profile.weight} kg` : "",
+            patientHeight: profile?.height != null ? `${profile.height} cm` : "",
             diagnosisCategory: appointment.category?.trim() || "—",
         });
 

@@ -35,15 +35,20 @@ export const PRESCRIPTION_PDF_STYLE_CSS = `
   .rx-badge { width: 72px; height: 72px; border-radius: 50%; background: #0f766e; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 34px; line-height: 1; }
   .rx-patient { padding: 18px 8px 4px 8px; }
   .rx-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 10px; }
-  .rx-label { font-weight: 700; color: #334155; font-size: 12px; }
-  .rx-line { flex: 1; min-width: 80px; border-bottom: 1px solid #94a3b8; min-height: 18px; padding: 0 6px 2px 6px; color: #0f172a; font-weight: 600; }
+  .rx-label { font-weight: 700; color: #334155; font-size: 12px; white-space: nowrap; }
+  .rx-line { flex: 1; min-width: 80px; border-bottom: 1px solid #94a3b8; min-height: 18px; padding: 0 6px 2px 0px; color: #0f172a; font-weight: 600; white-space: nowrap; }
   .rx-line-short { flex: 0 0 100px; }
-  .rx-line-name { flex: 2 1 160px; min-width: 120px; }
-  .rx-line-age { flex: 0 0 52px; min-width: 44px; }
+  .rx-row-top { flex-wrap: nowrap; gap: 8px 12px; }
+  .rx-line-name { flex: 1 1 auto; min-width: 150px; }
   .rx-line-date { flex: 0 0 132px; min-width: 110px; }
-  .rx-row-diag { flex-wrap: nowrap; }
+  .rx-line-age { flex: 0 0 42px; min-width: 42px; }
+  .rx-line-sex { flex: 0 0 58px; min-width: 58px; }
+  .rx-row-diag { flex-wrap: nowrap; gap: 8px 12px; }
   .rx-row-diag .rx-label { flex-shrink: 0; }
-  .rx-line-diag { flex: 1 1 auto; min-width: 140px; }
+  .rx-line-diag { flex: 1 1 auto; min-width: 160px; }
+  .rx-line-blood { flex: 0 0 58px; min-width: 58px; }
+  .rx-line-weight { flex: 0 0 68px; min-width: 68px; }
+  .rx-line-height { flex: 0 0 68px; min-width: 68px; }
   .rx-main { display: flex; gap: 12px; margin-top: 14px; padding: 0 8px 8px 8px; }
   .rx-symbol { font-size: 42px; font-weight: 800; color: #1e3a5f; line-height: 1; padding-top: 4px; flex-shrink: 0; }
   .rx-body { flex: 1; min-height: 280px; font-size: 12px; color: #1e293b; }
@@ -70,6 +75,10 @@ export type PrescriptionPdfLayoutInput = {
     patientFullName: string;
     issueDateDisplay: string;
     patientAge: number;
+    patientSex?: string;
+    patientBloodGroup?: string;
+    patientWeight?: string;
+    patientHeight?: string;
     diagnosisCategory: string;
 };
 
@@ -301,7 +310,11 @@ export function buildPrescriptionPdfDocumentHtml(input: PrescriptionPdfLayoutInp
         qual: escapeHtml(input.qualificationLine),
         patient: escapeHtml(input.patientFullName),
         date: escapeHtml(input.issueDateDisplay),
-        age: escapeHtml(String(input.patientAge)),
+        age: escapeHtml(input.patientAge ? String(input.patientAge) : ""),
+        sex: escapeHtml(input.patientSex?.trim() || ""),
+        blood: escapeHtml(input.patientBloodGroup?.trim() || ""),
+        weight: escapeHtml(input.patientWeight?.trim() || ""),
+        height: escapeHtml(input.patientHeight?.trim() || ""),
         diagnosis: escapeHtml(input.diagnosisCategory),
         company: escapeHtml(b.companyName),
         addr: escapeHtml(b.addressLine),
@@ -322,17 +335,25 @@ export function buildPrescriptionPdfDocumentHtml(input: PrescriptionPdfLayoutInp
     </div>
   </div>
   <div class="rx-patient">
-    <div class="rx-row">
+    <div class="rx-row rx-row-top">
       <span class="rx-label">Patient name:</span>
       <span class="rx-line rx-line-name">${safe.patient}</span>
       <span class="rx-label">Age:</span>
       <span class="rx-line rx-line-age">${safe.age}</span>
+      <span class="rx-label">Sex:</span>
+      <span class="rx-line rx-line-sex">${safe.sex}</span>
       <span class="rx-label">Date:</span>
       <span class="rx-line rx-line-date">${safe.date}</span>
     </div>
     <div class="rx-row rx-row-diag">
       <span class="rx-label">Diagnosis:</span>
       <span class="rx-line rx-line-diag">${safe.diagnosis}</span>
+      <span class="rx-label">Blood group:</span>
+      <span class="rx-line rx-line-blood">${safe.blood}</span>
+      <span class="rx-label">Weight:</span>
+      <span class="rx-line rx-line-weight">${safe.weight}</span>
+      <span class="rx-label">Height:</span>
+      <span class="rx-line rx-line-height">${safe.height}</span>
     </div>
   </div>
   <div class="rx-main">
