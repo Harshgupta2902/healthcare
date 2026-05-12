@@ -226,6 +226,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>(initialData?.profile || {});
+    const [activeTab, setActiveTab] = useState("profile");
     const [mounted, setMounted] = useState(false);
     const [isSpecializationOpen, setIsSpecializationOpen] = useState(false);
 
@@ -710,9 +711,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
 
     return (
-        <div className="container px-4 sm:px-6 py-6 md:py-10">
-            <div className="mb-8">
-                <h2 className="text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
+        <div className="container px-4 sm:px-6 py-6 pb-28 sm:pb-10 md:py-10">
+            <div className="mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
                     Professional Dashboard
                 </h2>
                 <p className="text-[var(--color-muted-foreground)]">
@@ -720,15 +721,15 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
                 <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 bg-green-100 rounded-xl">
-                                <IndianRupee className="h-5 w-5 text-green-600" />
+                            <div className="p-2.5 sm:p-3 bg-green-100 rounded-xl">
+                                <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Earnings</p>
+                            <div className="min-w-0">
+                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Total Earnings</p>
                                 <p className="text-xl font-black text-slate-900">₹{(totalEarnings / 100).toFixed(2)}</p>
                             </div>
                         </div>
@@ -737,11 +738,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 bg-yellow-100 rounded-xl">
-                                <Clock className="h-5 w-5 text-yellow-600" />
+                            <div className="p-2.5 sm:p-3 bg-yellow-100 rounded-xl">
+                                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Pending</p>
+                            <div className="min-w-0">
+                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Pending</p>
                                 <p className="text-xl font-black text-slate-900">₹{(pendingPayments / 100).toFixed(2)}</p>
                             </div>
                         </div>
@@ -750,11 +751,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <Users className="h-5 w-5 text-blue-600" />
+                            <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl">
+                                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Appointments</p>
+                            <div className="min-w-0">
+                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Appointments</p>
                                 <p className="text-xl font-black text-slate-900">{appointments.length + guestAppointments.length}</p>
                             </div>
                         </div>
@@ -763,11 +764,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <MessageSquare className="h-5 w-5 text-purple-600" />
+                            <div className="p-2.5 sm:p-3 bg-purple-100 rounded-xl">
+                                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Requests</p>
+                            <div className="min-w-0">
+                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Requests</p>
                                 <p className="text-xl font-black text-slate-900">
                                     {consultationRequests.filter((r) => r.status === "pending").length + guestAppointments.length}
                                 </p>
@@ -777,29 +778,29 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </Card>
             </div>
 
-            <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="flex w-full overflow-x-auto overflow-y-hidden lg:w-auto lg:inline-flex bg-white/50 backdrop-blur p-1.5 rounded-2xl border border-white/40 h-auto no-scrollbar whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 snap-x snap-mandatory scroll-smooth">
-                    <TabsTrigger value="profile" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="hidden sm:flex sm:w-full sm:overflow-x-auto sm:overflow-y-hidden lg:w-auto lg:inline-flex bg-white/50 backdrop-blur p-1.5 rounded-2xl border border-white/40 h-auto no-scrollbar sm:whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 sm:snap-x sm:snap-mandatory sm:scroll-smooth">
+                    <TabsTrigger value="profile" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <User className="h-4 w-4" />
                         Profile
                     </TabsTrigger>
-                    <TabsTrigger value="credentials" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+                    <TabsTrigger value="credentials" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <GraduationCap className="h-4 w-4" />
                         Credentials
                     </TabsTrigger>
-                    <TabsTrigger value="consultations" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+                    <TabsTrigger value="consultations" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <MessageSquare className="h-4 w-4" />
                         Consultations
                     </TabsTrigger>
-                    <TabsTrigger value="calendar" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+                    <TabsTrigger value="calendar" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <CalendarIcon className="h-4 w-4" />
                         Calendar
                     </TabsTrigger>
-                    <TabsTrigger value="payments" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+                    <TabsTrigger value="payments" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <IndianRupee className="h-4 w-4" />
                         Payments
                     </TabsTrigger>
-                    <TabsTrigger value="clients" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center">
+                    <TabsTrigger value="clients" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
                         <Users className="h-4 w-4" />
                         Clients
                     </TabsTrigger>
@@ -808,22 +809,22 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
                                     <CardTitle className="text-xl font-black text-slate-900">Professional Information</CardTitle>
                                     <CardDescription>Your professional profile and contact details</CardDescription>
                                 </div>
                                 {!isEditingProfile ? (
-                                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline" className="rounded-full px-5">
+                                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline" className="w-full rounded-full px-5 sm:w-auto">
                                         <Edit className="h-4 w-4 mr-2" />
                                         Edit Profile
                                     </Button>
                                 ) : (
-                                    <div className="flex gap-2">
-                                        <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="rounded-full px-5">
+                                    <div className="flex w-full gap-2 sm:w-auto">
+                                        <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="flex-1 rounded-full px-5 sm:flex-none">
                                             Cancel
                                         </Button>
-                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className="rounded-full px-5 bg-[var(--color-primary)]">
+                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className="flex-1 rounded-full px-5 bg-[var(--color-primary)] sm:flex-none">
                                             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                                             Save
                                         </Button>
@@ -838,7 +839,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 </div>
                             ) : (
                                 <div className="space-y-8">
-                                    <div className="flex items-center gap-8">
+                                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-8">
                                         <div className="relative group">
                                             <input
                                                 type="file"
@@ -847,7 +848,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 accept="image/*"
                                                 className="hidden"
                                             />
-                                            <Avatar className="h-32 w-32 ring-4 ring-white shadow-2xl relative overflow-hidden">
+                                            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-4 ring-white shadow-2xl relative overflow-hidden">
                                                 <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
                                                 <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-4xl font-black">
                                                     {(user.user_metadata?.name || user.email)?.slice(0, 2).toUpperCase()}
@@ -868,7 +869,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex-1 space-y-4">
+                                        <div className="w-full flex-1 space-y-4 text-center sm:text-left">
                                             {isEditingProfile ? (
                                                 <div className="space-y-2">
                                                     <Label className="text-sm font-bold text-slate-600">Profile Photo URL</Label>
@@ -881,7 +882,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                             ) : (
                                                 <div className="space-y-1">
-                                                    <h3 className="text-2xl font-black text-slate-900">
+                                                    <h3 className="text-xl sm:text-2xl font-black text-slate-900">
                                                         {formatProfessionalDisplayName(
                                                             user.user_metadata?.name || "",
                                                             profile?.nameTitle
@@ -902,9 +903,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         <div className="space-y-2 md:col-span-2">
                                             <Label className="text-sm font-bold text-slate-600">Title & full name</Label>
                                             {isEditingProfile ? (
-                                                <div
-                                                    className={cn("flex ")}
-                                                >
+                                                <div className="flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 sm:flex-row">
                                                     <Select
                                                         value={profileForm.nameTitle ?? "_none_"}
                                                         onValueChange={(v) =>
@@ -916,8 +915,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     >
                                                         <SelectTrigger
                                                             className={cn(
-                                                                "shrink-0 rounded-xl border-0",
-                                                                "w-[6.5rem] sm:w-32",
+                                                                "shrink-0 rounded-none border-0",
+                                                                "w-full sm:w-32",
                                                                 "focus:ring-0 focus:ring-offset-0"
                                                             )}
                                                             aria-label="Title"
@@ -936,12 +935,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     <Input
                                                         value={user.user_metadata?.name || ""}
                                                         disabled
-                                                        className="min-w-0 flex-1 rounded-none border-0 bg-slate-50/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                                                        className="min-w-0 flex-1 rounded-none border-0 border-t border-slate-200/80 bg-slate-50/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:border-l sm:border-t-0"
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="flex min-w-0 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30">
-                                                    <div className="flex h-12 w-[6.5rem] shrink-0 items-center border-r border-slate-200/80 bg-slate-50/50 px-3 text-sm font-bold text-slate-900 sm:w-32">
+                                                <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 sm:flex-row">
+                                                    <div className="flex h-11 w-full shrink-0 items-center border-b border-slate-200/80 bg-slate-50/50 px-3 text-sm font-bold text-slate-900 sm:h-12 sm:w-32 sm:border-b-0 sm:border-r">
                                                         {profileForm.nameTitle ?? "—"}
                                                     </div>
                                                     <div className="flex min-h-12 flex-1 items-center px-4 py-2 text-sm font-bold text-slate-900">
@@ -1110,14 +1109,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="credentials" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
                         <CardHeader className="pt-4">
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
                                     <CardTitle>Qualifications & Licenses</CardTitle>
                                     <CardDescription>Your educational background and certifications</CardDescription>
                                 </div>
                                 <Dialog open={showAddQualification} onOpenChange={setShowAddQualification}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg px-6">
+                                        <Button size="sm" className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg px-5 sm:w-auto sm:px-6">
                                             <Plus className="h-4 w-4 mr-2" />
                                             Add Credential
                                         </Button>
@@ -1181,7 +1180,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                                 <div className="w-full min-w-0">
                                                     <div
-                                                        className={`p-8 sm:p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
+                                                        className={`p-6 sm:p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
                                                         ${isDraggingQual
                                                                 ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
                                                                 : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
@@ -1236,7 +1235,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : qualifications.length === 0 ? (
-                                <div className="text-center py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <GraduationCap className="h-10 w-10 text-slate-300" />
                                     </div>
@@ -1249,20 +1248,20 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     {qualifications.map((qual) => (
                                         <div
                                             key={qual.id}
-                                            className="group relative p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                                            className="group relative p-5 sm:p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                                         >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-3 mb-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-start gap-3 mb-3">
                                                         <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
                                                             <GraduationCap className="h-6 w-6" />
                                                         </div>
-                                                        <h4 className="font-black text-slate-900 text-lg">
+                                                        <h4 className="min-w-0 break-words font-black text-slate-900 text-lg">
                                                             {qual.degree}
                                                         </h4>
                                                     </div>
-                                                    <p className="text-slate-600 font-bold">{qual.institution}</p>
-                                                    <div className="flex items-center gap-4 mt-4 text-sm font-medium text-slate-400">
+                                                    <p className="break-words text-slate-600 font-bold">{qual.institution}</p>
+                                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-sm font-medium text-slate-400">
                                                         {qual.year && (
                                                             <span className="flex items-center gap-1">
                                                                 <Clock className="h-3 w-3" /> {qual.year}
@@ -1316,7 +1315,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-red-50 hover:text-red-500"
+                                                    className="rounded-full hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity"
                                                     onClick={() => handleDeleteQualification(qual.id)}
                                                 >
                                                     <Trash2 className="h-5 w-5" />
@@ -1342,7 +1341,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : consultationRequests.length === 0 && guestAppointments.length === 0 ? (
-                                <div className="text-center py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <MessageSquare className="h-10 w-10 text-slate-300" />
                                     </div>
@@ -1391,7 +1390,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <p className="text-slate-600 italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
                                                             </div>
                                                         )}
-                                                        <div className="mt-3 flex items-center gap-2">
+                                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
                                                             <Button
                                                                 size="sm"
                                                                 variant={g.prescriptionHtml ? "outline" : "default"}
@@ -1406,7 +1405,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 {g.prescriptionHtml ? "Edit Prescription" : "Prescribe"}
                                                             </Button>
                                                             {g.prescriptionHtml && (
-                                                                <Badge className="bg-green-50 text-green-700 border-green-100 text-[10px] uppercase font-black">
+                                                                <Badge className="w-fit bg-green-50 text-green-700 border-green-100 text-[10px] uppercase font-black">
                                                                     Saved
                                                                 </Badge>
                                                             )}
@@ -1467,10 +1466,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             </div>
 
                                                             {request.status === "pending" && (
-                                                                <div className="flex gap-2 pt-1">
+                                                                <div className="grid grid-cols-2 gap-2 pt-1 sm:flex">
                                                                     <Button
                                                                         size="sm"
-                                                                        className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-5"
+                                                                        className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-4 sm:px-5"
                                                                         onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
                                                                     >
                                                                         <CheckCircle className="h-4 w-4 mr-1.5" />
@@ -1479,7 +1478,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                     <Button
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        className="rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-5"
+                                                                        className="rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-4 sm:px-5"
                                                                         onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
                                                                     >
                                                                         <XCircle className="h-4 w-4 mr-1.5" />
@@ -1526,7 +1525,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         onHtmlChange={setPrescriptionHtml}
                                     />
                                 ) : null}
-                                <div className="flex justify-end gap-2">
+                                <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
                                     <Button
                                         variant="outline"
                                         className="rounded-full"
@@ -1553,14 +1552,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     <div className="grid gap-6 lg:grid-cols-2">
                         <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-indigo-50/50">
-                                <div className="flex items-center justify-between">
-                                    <div>
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0">
                                         <CardTitle className="text-slate-900 font-black">Weekly Availability</CardTitle>
                                         <CardDescription>Setup your core recurring working hours</CardDescription>
                                     </div>
                                     <Dialog open={showAddAvailability} onOpenChange={setShowAddAvailability}>
                                         <DialogTrigger asChild>
-                                            <Button size="sm" className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md">
+                                            <Button size="sm" className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md sm:w-auto">
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Add Slot
                                             </Button>
@@ -1587,7 +1586,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-6">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                     <div className="space-y-2">
                                                         <Label className="font-bold text-slate-600 flex items-center gap-2">
                                                             <Clock className="h-4 w-4" /> Start Time
@@ -1634,13 +1633,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         {availability.map((slot) => (
                                             <div
                                                 key={slot.id}
-                                                className="group flex items-center justify-between p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all"
+                                                className="group flex flex-col gap-3 p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all sm:flex-row sm:items-center sm:justify-between"
                                             >
-                                                <div className="flex items-center gap-6">
-                                                    <div className="w-24 font-black text-slate-900 border-r-2 border-slate-100">
+                                                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
+                                                    <div className="font-black text-slate-900 sm:w-24 sm:border-r-2 sm:border-slate-100">
                                                         {DAYS_OF_WEEK[slot.dayOfWeek]}
                                                     </div>
-                                                    <div className="flex items-center gap-2 font-black text-indigo-600">
+                                                    <div className="flex flex-wrap items-center gap-2 font-black text-indigo-600">
                                                         <Clock className="h-4 w-4" />
                                                         {slot.startTime} <span className="text-slate-300 font-normal mx-1">→</span> {slot.endTime}
                                                     </div>
@@ -1648,7 +1647,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
+                                                    className="self-end rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 sm:self-auto"
                                                     onClick={() => handleDeleteAvailability(slot.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
@@ -1728,7 +1727,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : payments.length === 0 ? (
-                                <div className="text-center py-24 bg-slate-50/50 rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl">
                                     <IndianRupee className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-500 font-bold">No payments processed yet.</p>
                                 </div>
@@ -1750,8 +1749,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="mt-4 md:mt-0 flex items-center gap-6">
-                                                <div className="text-right">
+                                            <div className="mt-4 flex flex-wrap items-center gap-3 md:mt-0 md:gap-6">
+                                                <div className="text-left md:text-right">
                                                     <p className="text-sm font-black text-slate-900">{payment.clientName || "Direct Payment"}</p>
                                                     <p className="text-xs font-bold text-slate-400 capitalize">{payment.paymentMethod}</p>
                                                 </div>
@@ -1780,7 +1779,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : guestAppointments.length === 0 && [...new Set(appointments.map((a) => a.clientId))].length === 0 ? (
-                                <div className="text-center py-24 bg-slate-50/50 rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl">
                                     <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-500 font-bold">Your client list is currently empty.</p>
                                 </div>
@@ -1876,6 +1875,37 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md sm:hidden">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {[
+                        { value: "profile", label: "Profile", icon: User },
+                        { value: "credentials", label: "Creds", icon: GraduationCap },
+                        { value: "consultations", label: "Requests", icon: MessageSquare },
+                        { value: "calendar", label: "Calendar", icon: CalendarIcon },
+                        { value: "payments", label: "Payments", icon: IndianRupee },
+                        { value: "clients", label: "Clients", icon: Users },
+                    ].map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeTab === item.value;
+
+                        return (
+                            <button
+                                key={item.value}
+                                type="button"
+                                onClick={() => setActiveTab(item.value)}
+                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25"
+                                    : "text-gray-600 hover:bg-teal-50"
+                                    }`}
+                            >
+                                <Icon className="h-5 w-5" />
+                                <span className="max-w-[4.5rem] truncate">{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </nav>
 
             <div className="mt-16 space-y-8 pb-20">
                 <Separator className="bg-slate-200" />

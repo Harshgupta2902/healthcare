@@ -203,6 +203,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<UserProfile>>(initialData?.profile || {});
+    const [activeTab, setActiveTab] = useState("profile");
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -781,9 +782,9 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     };
 
     return (
-        <div className="container py-8">
-            <div className="mb-8">
-                <h2 className="text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2 uppercase tracking-tight">
+        <div className="container px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8">
+            <div className="mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2 uppercase tracking-tight">
                     Patient Medical Dashboard
                 </h2>
                 <p className="text-[var(--color-muted-foreground)] font-medium">
@@ -792,81 +793,81 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
             </div>
 
             {/* Quick Stats Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-10">
                 <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-2xl">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="p-3 bg-red-100 rounded-xl text-red-600">
-                            <Activity className="h-6 w-6" />
+                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-red-100 rounded-xl text-red-600">
+                            <Activity className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
-                        <div>
-                            <p className="text-xs font-black uppercase text-slate-400">Conditions</p>
+                        <div className="min-w-0">
+                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Conditions</p>
                             <p className="text-2xl font-black text-slate-900">{medicalHistory.filter(h => h.status === 'active').length}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-2xl">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
-                            <Pill className="h-6 w-6" />
+                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl text-blue-600">
+                            <Pill className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
-                        <div>
-                            <p className="text-xs font-black uppercase text-slate-400">Active Meds</p>
+                        <div className="min-w-0">
+                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Active Meds</p>
                             <p className="text-2xl font-black text-slate-900">{medications.filter(m => m.isActive).length}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-2xl">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
-                            <FileText className="h-6 w-6" />
+                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-purple-100 rounded-xl text-purple-600">
+                            <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
-                        <div>
-                            <p className="text-xs font-black uppercase text-slate-400">Documents</p>
+                        <div className="min-w-0">
+                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Documents</p>
                             <p className="text-2xl font-black text-slate-900">{documents.length}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-2xl">
-                    <CardContent className="p-5 flex items-center gap-4">
-                        <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600">
-                            <Shield className="h-6 w-6" />
+                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                        <div className="p-2.5 sm:p-3 bg-emerald-100 rounded-xl text-emerald-600">
+                            <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
-                        <div>
-                            <p className="text-xs font-black uppercase text-slate-400">Insurance</p>
+                        <div className="min-w-0">
+                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Insurance</p>
                             <p className="text-2xl font-black text-slate-900">{insuranceData.length}</p>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Tabs defaultValue="profile" className="space-y-8">
-                <TabsList className="flex w-full overflow-x-auto overflow-y-hidden lg:w-auto lg:inline-flex bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/40 shadow-sm h-auto no-scrollbar whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 snap-x snap-mandatory scroll-smooth px-4">
-                    <TabsTrigger value="profile" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
+                <TabsList className="hidden sm:flex sm:w-full sm:overflow-x-auto sm:overflow-y-hidden lg:w-auto lg:inline-flex bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/40 shadow-sm h-auto no-scrollbar sm:whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 sm:snap-x sm:snap-mandatory sm:scroll-smooth">
+                    <TabsTrigger value="profile" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <User className="h-4 w-4" /> Profile
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                    <TabsTrigger value="history" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <Heart className="h-4 w-4" /> History
                     </TabsTrigger>
-                    <TabsTrigger value="medications" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                    <TabsTrigger value="medications" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <Pill className="h-4 w-4" /> Meds
                     </TabsTrigger>
-                    <TabsTrigger value="documents" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                    <TabsTrigger value="documents" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <FileText className="h-4 w-4" /> Docs
                     </TabsTrigger>
-                    <TabsTrigger value="insurance" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                    <TabsTrigger value="insurance" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <Shield className="h-4 w-4" /> Insurance
                     </TabsTrigger>
-                    <TabsTrigger value="appointments" className="gap-2 rounded-xl flex-shrink-0 px-6 snap-center text-xs font-bold uppercase tracking-wider">
+                    <TabsTrigger value="appointments" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
                         <Calendar className="h-4 w-4" /> Appointments
                     </TabsTrigger>
                 </TabsList>
 
                 {/* Profile Tab */}
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
                         <Card className="lg:col-span-1 border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl overflow-hidden h-fit">
                             <div className="h-24 bg-gradient-to-r from-blue-400 to-indigo-500" />
-                            <CardContent className="relative pt-0 px-8 pb-8">
+                            <CardContent className="relative pt-0 px-5 sm:px-8 pb-6 sm:pb-8">
                                 <div className="flex justify-center -mt-12 mb-6">
                                     <div className="relative group">
                                         <input
@@ -898,7 +899,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </div>
                                 <div className="text-center space-y-1 mb-8">
                                     <h3 className="text-xl font-black text-slate-900 truncate px-2">{user.user_metadata?.name || "Patient"}</h3>
-                                    <p className="text-sm font-bold text-slate-400">{user.email}</p>
+                                    <p className="break-all text-sm font-bold text-slate-400">{user.email}</p>
                                     <Badge variant="secondary" className="mt-2 bg-blue-50 text-blue-700 border-blue-100 font-bold px-3">Standard Account</Badge>
                                 </div>
                                 <Separator className="mb-6 bg-slate-100" />
@@ -920,7 +921,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                         <span className="font-black text-slate-900">{profile?.height ? `${profile.height} cm` : "N/A"}</span>
                                     </div>
                                 </div>
-                                <Button className="w-full mt-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-lg font-bold" onClick={() => setIsEditingProfile(true)}>
+                                <Button className="w-full mt-6 sm:mt-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-lg font-bold" onClick={() => setIsEditingProfile(true)}>
                                     <Edit className="h-4 w-4 mr-2" /> Edit Profile
                                 </Button>
                             </CardContent>
@@ -928,15 +929,15 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                         <Card className="lg:col-span-2 border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
                             <CardHeader className="pt-4 border-b border-slate-50/50">
-                                <div className="flex items-center justify-between">
-                                    <div>
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0">
                                         <CardTitle className="text-xl font-black">Extended Medical Data</CardTitle>
                                         <CardDescription>Securely stored personal identifiers</CardDescription>
                                     </div>
                                     {isEditingProfile && (
-                                        <div className="flex gap-2">
-                                            <Button onClick={() => setIsEditingProfile(false)} variant="outline" className="rounded-full px-6">Cancel</Button>
-                                            <Button onClick={handleSaveProfile} disabled={isSaving} className="rounded-full bg-indigo-600 hover:bg-indigo-700 px-6 font-bold shadow-md">
+                                        <div className="flex w-full gap-2 sm:w-auto">
+                                            <Button onClick={() => setIsEditingProfile(false)} variant="outline" className="flex-1 rounded-full px-5 sm:flex-none sm:px-6">Cancel</Button>
+                                            <Button onClick={handleSaveProfile} disabled={isSaving} className="flex-1 rounded-full bg-indigo-600 hover:bg-indigo-700 px-5 sm:flex-none sm:px-6 font-bold shadow-md">
                                                 {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save Changes
                                             </Button>
                                         </div>
@@ -949,7 +950,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <div className="grid gap-6 md:grid-cols-2">
                                         <div className="space-y-4">
                                             <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Personal Details</Label>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-bold text-slate-400 uppercase">Date of Birth</Label>
                                                     <Input
@@ -984,7 +985,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                                         <div className="space-y-4">
                                             <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Health Metrics</Label>
-                                            <div className="grid grid-cols-3 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-2">
                                                 <div className="space-y-2">
                                                     <Label className="text-[10px] font-bold text-slate-400 uppercase">Blood</Label>
                                                     <Select
@@ -1042,7 +1043,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         className="rounded-xl border-slate-100"
                                                     />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <Label className="text-[10px] font-bold text-slate-400 uppercase">City</Label>
                                                         <Input
@@ -1118,7 +1119,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         className="rounded-xl border-slate-100"
                                                     />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <Label className="text-[10px] font-bold text-slate-400 uppercase">Emergency Phone</Label>
                                                         <Input
@@ -1155,8 +1156,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
                         <CardHeader className="pt-4 bg-red-50/30">
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
                                     <CardTitle className="text-xl font-black flex items-center gap-2 text-red-900">
                                         <Activity className="h-6 w-6" /> Medical Conditions
                                     </CardTitle>
@@ -1164,7 +1165,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </div>
                                 <Dialog open={showAddCondition} onOpenChange={setShowAddCondition}>
                                     <DialogTrigger asChild>
-                                        <Button className="rounded-full bg-red-600 hover:bg-red-700 shadow-lg px-8 font-bold">
+                                        <Button className="w-full rounded-full bg-red-600 hover:bg-red-700 shadow-lg px-5 sm:w-auto sm:px-8 font-bold">
                                             <Plus className="h-4 w-4 mr-2" />
                                             Report New Condition
                                         </Button>
@@ -1186,7 +1187,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     className="rounded-xl h-12"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="font-bold">Date of Diagnosis</Label>
                                                     <Input
@@ -1238,7 +1239,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-red-500" />
                                 </div>
                             ) : medicalHistory.length === 0 ? (
-                                <div className="text-center py-24 bg-red-50/10 rounded-3xl border-2 border-dashed border-red-100">
+                                <div className="text-center py-16 sm:py-24 bg-red-50/10 rounded-3xl border-2 border-dashed border-red-100">
                                     <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-200" />
                                     <h4 className="text-lg font-black text-slate-900">No Conditions Reported</h4>
                                     <p className="text-slate-400 mt-1">Keep your longitudinal health record updated.</p>
@@ -1248,7 +1249,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     {medicalHistory.map((condition) => (
                                         <div
                                             key={condition.id}
-                                            className="group relative p-6 bg-white border border-slate-50 rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
+                                            className="group relative p-5 sm:p-6 bg-white border border-slate-50 rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
                                         >
                                             <div className="flex items-start justify-between">
                                                 <div className="space-y-3">
@@ -1275,7 +1276,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="opacity-0 group-hover:opacity-100 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
+                                                    className="rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover:opacity-100"
                                                     onClick={() => handleDeleteCondition(condition.id)}
                                                 >
                                                     <Trash2 className="h-5 w-5" />
@@ -1293,13 +1294,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="medications" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
                         <CardHeader className="pt-4 bg-blue-50/30">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-blue-900">
                                     <Pill className="h-6 w-6" /> Current Medications
                                 </CardTitle>
                                 <Dialog open={showAddMedication} onOpenChange={setShowAddMedication}>
                                     <DialogTrigger asChild>
-                                        <Button className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg px-8 font-bold">
+                                        <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg px-5 sm:w-auto sm:px-8 font-bold">
                                             <Plus className="h-4 w-4 mr-2" />
                                             Add Medication
                                         </Button>
@@ -1314,7 +1315,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                 <Label className="font-bold">Medication Name</Label>
                                                 <Input value={medicationForm.medicationName} onChange={e => setMedicationForm({ ...medicationForm, medicationName: e.target.value })} className="rounded-xl h-12" />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="font-bold">Dosage</Label>
                                                     <Input placeholder="e.g. 500mg" value={medicationForm.dosage} onChange={e => setMedicationForm({ ...medicationForm, dosage: e.target.value })} className="rounded-xl" />
@@ -1324,7 +1325,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     <Input placeholder="e.g. Twice Daily" value={medicationForm.frequency} onChange={e => setMedicationForm({ ...medicationForm, frequency: e.target.value })} className="rounded-xl" />
                                                 </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="font-bold text-xs uppercase text-slate-500">Start Date *</Label>
                                                     <Input
@@ -1367,7 +1368,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
                                 </div>
                             ) : medications.length === 0 ? (
-                                <div className="text-center py-24 bg-blue-50/10 rounded-3xl border-2 border-dashed border-blue-100">
+                                <div className="text-center py-16 sm:py-24 bg-blue-50/10 rounded-3xl border-2 border-dashed border-blue-100">
                                     <div className="bg-white h-16 w-16 mx-auto mb-4 rounded-full flex items-center justify-center shadow-inner">
                                         <Pill className="h-8 w-8 text-blue-200" />
                                     </div>
@@ -1378,7 +1379,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {medications.map((med) => (
                                         <div key={med.id} className="group overflow-hidden bg-white border border-slate-50 rounded-3xl hover:shadow-2xl transition-all duration-500">
-                                            <div className="p-6">
+                                            <div className="p-5 sm:p-6">
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black">
                                                         {med.dosage.match(/\d+/)?.[0] || 'M'}
@@ -1420,8 +1421,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="documents" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
                         <CardHeader className="pt-4">
-                            <div className="flex items-center justify-between">
-                                <div>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
                                     <CardTitle className="text-xl font-black flex items-center gap-2">
                                         <FileText className="h-6 w-6 text-indigo-600" /> Vault Documents
                                     </CardTitle>
@@ -1429,7 +1430,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </div>
                                 <Dialog open={showAddDocument} onOpenChange={setShowAddDocument}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="rounded-full bg-indigo-600 font-bold shadow-lg px-8">
+                                        <Button size="sm" className="w-full rounded-full bg-indigo-600 font-bold shadow-lg px-5 sm:w-auto sm:px-8">
                                             <Upload className="h-4 w-4 mr-2" /> Upload New
                                         </Button>
                                     </DialogTrigger>
@@ -1463,7 +1464,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                             </div>
                                             <div className="space-y-4">
                                                 <div
-                                                    className={`p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
+                                                    className={`p-6 sm:p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
                                                         ${isDragging
                                                             ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
                                                             : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
@@ -1516,14 +1517,14 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
                                 </div>
                             ) : documents.length === 0 ? (
-                                <div className="text-center py-24 bg-slate-50/20 rounded-3xl border-2 border-dashed border-slate-100">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/20 rounded-3xl border-2 border-dashed border-slate-100">
                                     <p className="text-slate-400 font-bold">Your document vault is empty.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {documents.map((doc) => (
                                         <div key={doc.id} className="group bg-white border border-slate-50 rounded-3xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
-                                            <div className="p-6">
+                                            <div className="p-5 sm:p-6">
                                                 <div className="flex items-start justify-between mb-4">
                                                     <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                                         <FileText className="h-6 w-6" />
@@ -1568,13 +1569,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <TabsContent value="insurance" className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-3xl">
                         <CardHeader className="pt-4 bg-emerald-50/30">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
                                     <Shield className="h-6 w-6" /> Insurance Plans
                                 </CardTitle>
                                 <Dialog open={showAddInsurance} onOpenChange={setShowAddInsurance}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="rounded-full bg-emerald-600 font-bold shadow-lg px-8">
+                                        <Button size="sm" className="w-full rounded-full bg-emerald-600 font-bold shadow-lg px-5 sm:w-auto sm:px-8">
                                             <Plus className="h-4 w-4 mr-2" /> Add Provider
                                         </Button>
                                     </DialogTrigger>
@@ -1594,7 +1595,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     className="rounded-xl h-12"
                                                 />
                                             </div>
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="font-bold">Policy Number</Label>
                                                     <Input
@@ -1624,26 +1625,26 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </Dialog>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8">
+                        <CardContent className="p-4 sm:p-6 md:p-8">
                             {isLoadingInsurance ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
                                 </div>
                             ) : insuranceData.length === 0 ? (
-                                <div className="text-center py-24 bg-emerald-50/10 rounded-3xl border-2 border-dashed border-emerald-100">
+                                <div className="text-center py-16 sm:py-24 bg-emerald-50/10 rounded-3xl border-2 border-dashed border-emerald-100">
                                     <p className="text-slate-400 font-bold">No insurance policies linked.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-8">
                                     {insuranceData.map((ins) => (
-                                        <div key={ins.id} className="group relative overflow-hidden bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500">
+                                        <div key={ins.id} className="group relative overflow-hidden bg-white border border-slate-100 rounded-3xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500">
                                             <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-50">
-                                                <div className="p-8 md:w-1/3 bg-slate-50/40">
+                                                <div className="p-5 sm:p-8 md:w-1/3 bg-slate-50/40">
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Coverage Provider</p>
                                                     <h4 className="text-2xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">{ins.providerName}</h4>
                                                     <Badge className="mt-4 bg-emerald-100 text-emerald-700 border-none font-black px-4 py-1">Verified Active</Badge>
                                                 </div>
-                                                <div className="p-8 md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="p-5 sm:p-8 md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
                                                     <div>
                                                         <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Policy ID</p>
                                                         <p className="font-extrabold text-slate-900 tracking-wider text-lg">{ins.policyNumber}</p>
@@ -1656,8 +1657,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Expiration</p>
                                                         <p className="font-extrabold text-red-400 tracking-tight text-lg">{ins.expirationDate || 'Lifetime'}</p>
                                                     </div>
-                                                    <div className="flex items-end justify-end">
-                                                        <Button variant="ghost" className="rounded-2xl text-red-300 hover:text-red-500 hover:bg-red-50 font-black px-6" onClick={() => handleDeleteInsurance(ins.id)}>
+                                                    <div className="flex items-end md:justify-end">
+                                                        <Button variant="ghost" className="w-full rounded-2xl text-red-300 hover:text-red-500 hover:bg-red-50 font-black px-5 sm:w-auto sm:px-6" onClick={() => handleDeleteInsurance(ins.id)}>
                                                             <Trash2 className="h-5 w-5 mr-2" /> Disconnect Policy
                                                         </Button>
                                                     </div>
@@ -1686,7 +1687,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
                                 </div>
                             ) : appointments.length === 0 ? (
-                                <div className="text-center py-24 bg-indigo-50/10 rounded-3xl border-2 border-dashed border-indigo-100">
+                                <div className="text-center py-16 sm:py-24 bg-indigo-50/10 rounded-3xl border-2 border-dashed border-indigo-100">
                                     <Calendar className="h-12 w-12 mx-auto mb-4 text-indigo-200" />
                                     <h4 className="text-lg font-black text-slate-900">No requests yet</h4>
                                     <p className="text-slate-400 mt-1">Your consultation requests will appear here.</p>
@@ -1786,10 +1787,41 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
             </Tabs>
 
+            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md sm:hidden">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {[
+                        { value: "profile", label: "Profile", icon: User },
+                        { value: "history", label: "History", icon: Heart },
+                        { value: "medications", label: "Meds", icon: Pill },
+                        { value: "documents", label: "Docs", icon: FileText },
+                        { value: "insurance", label: "Insurance", icon: Shield },
+                        { value: "appointments", label: "Requests", icon: Calendar },
+                    ].map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeTab === item.value;
+
+                        return (
+                            <button
+                                key={item.value}
+                                type="button"
+                                onClick={() => setActiveTab(item.value)}
+                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25"
+                                    : "text-gray-600 hover:bg-teal-50"
+                                    }`}
+                            >
+                                <Icon className="h-5 w-5" />
+                                <span className="max-w-[4.5rem] truncate">{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </nav>
+
             {/* Support Float Button - Pure Aesthetics */}
-            <div className="fixed bottom-10 right-10 z-50">
-                <Button className="h-14 w-14 rounded-full bg-slate-900 text-white shadow-2xl hover:scale-110 transition-transform flex items-center justify-center p-0 border-4 border-white">
-                    <AlertCircle className="h-6 w-6" />
+            <div className="hidden sm:fixed sm:bottom-10 sm:right-10 sm:z-40">
+                <Button className="h-11 w-11 sm:h-14 sm:w-14 rounded-full bg-slate-900 text-white shadow-2xl hover:scale-110 transition-transform flex items-center justify-center p-0 border-4 border-white">
+                    <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
             </div>
         </div>

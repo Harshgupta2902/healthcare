@@ -55,7 +55,7 @@ export default async function DashboardPage() {
         <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-teal-100/30 rounded-full blur-[140px]" />
       </div>
 
-      <div className="relative z-10 py-10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
+      <div className="relative z-10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
         {role === 'professional' ? (
           <ProfessionalDashboard initialData={dashboardData} />
         ) : (
