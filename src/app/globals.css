@@ -186,6 +186,7 @@
   html {
     overflow-x: clip;
     max-width: 100%;
+    scrollbar-gutter: stable;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -198,6 +199,16 @@
     background-image: linear-gradient(180deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
     background-attachment: fixed;
     color: var(--color-foreground);
+  }
+
+  /*
+    Radix/remove-scroll adds data-scroll-locked and a scrollbar compensation margin
+    when dialogs/selects open. The stable gutter already reserves that space, so
+    overriding the compensation prevents sticky header flicker/layout shift.
+  */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
   }
 
   h1,
