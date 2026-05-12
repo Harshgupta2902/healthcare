@@ -299,6 +299,16 @@ function writeStoredMessages(ctx: AssistantContext | null, messages: AssistantMe
   }
 }
 
+function clearStoredMessages(ctx: AssistantContext | null) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(getHistoryStorageKey(ctx));
+  } catch {
+    // Local storage can be unavailable in private browsing or strict settings.
+  }
+}
+
 function restoreMessagesForContext(ctx: AssistantContext) {
   return readStoredMessages(ctx) ?? buildInitialMessages(ctx);
 }
@@ -559,6 +569,14 @@ export function HealthHereAssistant() {
     );
   };
 
+  const clearChat = () => {
+    if (isTyping) return;
+    clearTypingTimers();
+    setIsTyping(false);
+    clearStoredMessages(ctx);
+    setMessages(buildInitialMessages(ctx ?? GUEST_CONTEXT));
+  };
+
   return (
     <>
       {open && (
@@ -618,10 +636,20 @@ export function HealthHereAssistant() {
           </div>
 
           <div className="border-t border-slate-100 bg-white p-3">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400">
-              <Sparkles className="h-3.5 w-3.5" />
-              Quick questions
-              {loadingContext && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                <Sparkles className="h-3.5 w-3.5" />
+                Quick questions
+                {loadingContext && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              </div>
+              <button
+                type="button"
+                onClick={clearChat}
+                disabled={isTyping}
+                className="shrink-0 text-[11px] font-black uppercase tracking-widest text-slate-400 transition hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Clear chat
+              </button>
             </div>
             <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
               {primaryQuestions.map((question) => (
