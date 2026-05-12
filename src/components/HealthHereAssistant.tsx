@@ -48,6 +48,7 @@ type AssistantContext = {
   success: true;
   isAuthenticated: boolean;
   role: "guest" | "client" | "professional" | "admin";
+  userId: string | null;
   displayName: string | null;
   appointments: AssistantAppointment[];
 };
@@ -243,6 +244,7 @@ const GUEST_CONTEXT: AssistantContext = {
   success: true,
   isAuthenticated: false,
   role: "guest",
+  userId: null,
   displayName: null,
   appointments: [],
 };
@@ -255,6 +257,50 @@ function buildInitialMessages(ctx: AssistantContext | null, loading = false): As
       text: getInitialAssistantText(ctx, loading),
     },
   ];
+}
+
+function getHistoryStorageKey(ctx: AssistantContext | null) {
+  if (ctx?.isAuthenticated && ctx.userId) return `healthhere-assistant-history:${ctx.userId}`;
+  return "healthhere-assistant-history:guest";
+}
+
+function readStoredMessages(ctx: AssistantContext | null) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(getHistoryStorageKey(ctx));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+
+    const messages = parsed.filter((item): item is AssistantMessage => {
+      return (
+        item &&
+        typeof item.id === "string" &&
+        (item.role === "assistant" || item.role === "user") &&
+        typeof item.text === "string"
+      );
+    });
+
+    return messages.length > 0 ? messages.slice(-40) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredMessages(ctx: AssistantContext | null, messages: AssistantMessage[]) {
+  if (typeof window === "undefined") return;
+  if (!ctx) return;
+
+  try {
+    window.localStorage.setItem(getHistoryStorageKey(ctx), JSON.stringify(messages.slice(-40)));
+  } catch {
+    // Local storage can be unavailable in private browsing or strict settings.
+  }
+}
+
+function restoreMessagesForContext(ctx: AssistantContext) {
+  return readStoredMessages(ctx) ?? buildInitialMessages(ctx);
 }
 
 function formatAppointmentDate(dateValue?: string | null, timeValue?: string | null) {
@@ -361,6 +407,7 @@ export function HealthHereAssistant() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollAnchorRef = useRef<HTMLDivElement | null>(null);
   const typingTimersRef = useRef<number[]>([]);
+  const previousPathnameRef = useRef<string | null>(null);
 
   const clearTypingTimers = () => {
     typingTimersRef.current.forEach((timer) => window.clearTimeout(timer));
@@ -376,16 +423,18 @@ export function HealthHereAssistant() {
       if (cancelled) return;
       if (result.success) {
         setCtx(result);
-        setMessages(buildInitialMessages(result));
+        setMessages(restoreMessagesForContext(result));
       } else {
         setCtx(GUEST_CONTEXT);
-        setMessages([
-          {
-            id: "hello-context-error",
-            role: "assistant",
-            text: "HealthHere Assistant is ready, but account context could not be loaded. You can still use the public help questions.",
-          },
-        ]);
+        setMessages(
+          readStoredMessages(GUEST_CONTEXT) ?? [
+            {
+              id: "hello-context-error",
+              role: "assistant",
+              text: "HealthHere Assistant is ready, but account context could not be loaded. You can still use the public help questions.",
+            },
+          ]
+        );
       }
       setLoadingContext(false);
     })();
@@ -394,6 +443,19 @@ export function HealthHereAssistant() {
       cancelled = true;
     };
   }, [pathname, contextRefreshKey]);
+
+  useEffect(() => {
+    if (previousPathnameRef.current && previousPathnameRef.current !== pathname) {
+      setOpen(false);
+    }
+
+    previousPathnameRef.current = pathname ?? null;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    writeStoredMessages(ctx, messages);
+  }, [ctx, messages]);
 
   useEffect(() => {
     if (!open) return;
@@ -415,7 +477,7 @@ export function HealthHereAssistant() {
         clearTypingTimers();
         setIsTyping(false);
         setCtx(GUEST_CONTEXT);
-        setMessages(buildInitialMessages(GUEST_CONTEXT));
+        setMessages(restoreMessagesForContext(GUEST_CONTEXT));
         window.setTimeout(() => setContextRefreshKey((key) => key + 1), 300);
         return;
       }

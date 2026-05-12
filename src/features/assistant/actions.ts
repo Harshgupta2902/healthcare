@@ -76,6 +76,7 @@ export async function getAssistantContext(input?: unknown) {
             success: true as const,
             isAuthenticated: false,
             role: "guest" as const,
+            userId: null,
             displayName: null,
             appointments: [] as AssistantAppointment[],
         };
@@ -140,6 +141,7 @@ export async function getAssistantContext(input?: unknown) {
             success: true as const,
             isAuthenticated: true,
             role,
+            userId: user.id,
             displayName,
             appointments: [...guestAppointments, ...professionalAppointments].sort(sortByAppointmentTimeDesc).slice(0, 10),
         };
@@ -184,6 +186,7 @@ export async function getAssistantContext(input?: unknown) {
         success: true as const,
         isAuthenticated: true,
         role,
+        userId: user.id,
         displayName,
         appointments,
     };
