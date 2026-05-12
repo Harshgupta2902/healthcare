@@ -3,6 +3,7 @@ import "./globals.css";
 import ErrorReporter from "@/components/ErrorReporter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { HealthHereAssistant } from "@/components/HealthHereAssistant";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next"
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <HealthHereAssistant />
         <Toaster position="top-right" richColors />
       </body>
     </html>
