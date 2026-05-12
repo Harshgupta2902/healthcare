@@ -562,7 +562,7 @@ export function HealthHereAssistant() {
   return (
     <>
       {open && (
-        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+6rem)] z-[60] mx-auto flex max-h-[70vh] max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:bottom-6 sm:right-6 sm:left-auto sm:max-h-[min(720px,calc(100vh-3rem))] sm:w-[400px]">
+        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] z-[60] mx-auto flex max-h-[65vh] max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:bottom-24 sm:right-6 sm:left-auto sm:max-h-[min(720px,calc(100vh-7rem))] sm:w-[400px]">
           <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-900 to-indigo-900 px-4 py-3 text-white">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
