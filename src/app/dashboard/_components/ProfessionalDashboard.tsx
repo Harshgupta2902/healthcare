@@ -711,7 +711,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
 
     return (
-        <div className="container px-4 sm:px-6 py-6 pb-28 sm:pb-10 md:py-10">
+        <div className="container overflow-x-hidden px-4 sm:px-6 py-6 pb-28 sm:pb-10 md:py-10">
             <div className="mb-6 sm:mb-8">
                 <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
                     Professional Dashboard
@@ -807,7 +807,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsList>
 
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
@@ -815,16 +815,16 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <CardDescription>Your professional profile and contact details</CardDescription>
                                 </div>
                                 {!isEditingProfile ? (
-                                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline" className="w-full rounded-full px-5 sm:w-auto">
+                                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline" className="w-full rounded-lg px-5 sm:w-auto sm:rounded-full">
                                         <Edit className="h-4 w-4 mr-2" />
                                         Edit Profile
                                     </Button>
                                 ) : (
                                     <div className="flex w-full gap-2 sm:w-auto">
-                                        <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="flex-1 rounded-full px-5 sm:flex-none">
+                                        <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="flex-1 rounded-lg px-5 sm:flex-none sm:rounded-full">
                                             Cancel
                                         </Button>
-                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className="flex-1 rounded-full px-5 bg-[var(--color-primary)] sm:flex-none">
+                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className="flex-1 rounded-lg px-5 bg-[var(--color-primary)] sm:flex-none sm:rounded-full">
                                             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                                             Save
                                         </Button>
@@ -832,7 +832,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 )}
                             </div>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6 md:p-8">
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                             {isLoadingProfile ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
@@ -899,7 +899,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                                     <Separator className="bg-slate-100" />
 
-                                    <div className="grid gap-6 md:grid-cols-2">
+                                    <div className="grid min-w-0 gap-6 md:grid-cols-2">
                                         <div className="space-y-2 md:col-span-2">
                                             <Label className="text-sm font-bold text-slate-600">Title & full name</Label>
                                             {isEditingProfile ? (
@@ -1097,7 +1097,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
                                             disabled={!isEditingProfile}
                                             rows={6}
-                                            className="rounded-2xl border-slate-200 resize-none"
+                                            className="rounded-lg sm:rounded-2xl border-slate-200 resize-none"
                                         />
                                     </div>
                                 </div>
@@ -1107,7 +1107,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="credentials" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
@@ -1116,12 +1116,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 </div>
                                 <Dialog open={showAddQualification} onOpenChange={setShowAddQualification}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg px-5 sm:w-auto sm:px-6">
+                                        <Button size="sm" className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 shadow-lg px-5 sm:w-auto sm:rounded-full sm:px-6">
                                             <Plus className="h-4 w-4 mr-2" />
                                             Add Credential
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="rounded-2xl max-w-lg w-[calc(100vw-2rem)] sm:w-full overflow-visible">
+                                    <DialogContent className="rounded-lg sm:rounded-2xl max-w-lg w-[calc(100vw-2rem)] sm:w-full overflow-visible">
                                         <DialogHeader>
                                             <DialogTitle className="text-xl font-black">Add New Qualification</DialogTitle>
                                             <DialogDescription>Enter your educational or professional certification details</DialogDescription>
@@ -1180,7 +1180,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                                 <div className="w-full min-w-0">
                                                     <div
-                                                        className={`p-6 sm:p-10 border-2 border-dashed rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
+                                                        className={`p-6 sm:p-10 border-2 border-dashed rounded-xl sm:rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
                                                         ${isDraggingQual
                                                                 ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
                                                                 : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
@@ -1203,7 +1203,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             onChange={(e) => setSelectedQualFile(e.target.files?.[0] || null)}
                                                         />
                                                         <div className="space-y-3 min-w-0">
-                                                            <div className={`h-20 w-20 rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500 shrink-0
+                                                            <div className={`h-20 w-20 rounded-xl sm:rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500 shrink-0
                                                             ${isDraggingQual ? 'bg-indigo-600 text-white rotate-12' : 'bg-white text-indigo-500 group-hover:scale-110'}
                                                         `}>
                                                                 <Upload className="h-10 w-10" />
@@ -1220,7 +1220,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Button onClick={handleAddQual} className="w-full rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
+                                            <Button onClick={handleAddQual} className="w-full rounded-lg sm:rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
                                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                                                 Verify & Add Credential
                                             </Button>
@@ -1229,13 +1229,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 </Dialog>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6 md:p-8">
+                        <CardContent className="min-w-0 overflow-hidden p-3 sm:p-6 md:p-8">
                             {isLoadingQuals ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : qualifications.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-slate-200">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <GraduationCap className="h-10 w-10 text-slate-300" />
                                     </div>
@@ -1244,11 +1244,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Button variant="link" onClick={() => setShowAddQualification(true)} className="mt-4 text-indigo-600 font-bold">Add your first one now →</Button>
                                 </div>
                             ) : (
-                                <div className="grid gap-6 md:grid-cols-2">
+                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2">
                                     {qualifications.map((qual) => (
                                         <div
                                             key={qual.id}
-                                            className="group relative p-5 sm:p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                                            className="group relative w-full min-w-0 max-w-full overflow-hidden p-5 sm:p-6 bg-white border border-slate-100 rounded-lg sm:rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0 flex-1">
@@ -1263,7 +1263,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     <p className="break-words text-slate-600 font-bold">{qual.institution}</p>
                                                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-sm font-medium text-slate-400">
                                                         {qual.year && (
-                                                            <span className="flex items-center gap-1">
+                                                            <span className="flex min-w-0 items-center gap-1">
                                                                 <Clock className="h-3 w-3" /> {qual.year}
                                                             </span>
                                                         )}
@@ -1279,11 +1279,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             </Button>
                                                         )}
                                                         {qual.hasVerificationDocument && qual.documentApproved == null && (
-                                                            <span className="flex items-center gap-2 text-slate-400">
+                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-slate-400">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="link"
-                                                                    className="p-0 h-auto text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    className="h-auto min-w-0 p-0 text-slate-400 font-bold pointer-events-none cursor-not-allowed"
                                                                     disabled
                                                                     tabIndex={-1}
                                                                     aria-disabled
@@ -1295,11 +1295,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             </span>
                                                         )}
                                                         {qual.hasVerificationDocument && qual.documentApproved === false && (
-                                                            <span className="flex items-center gap-2 text-slate-400">
+                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-slate-400">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="link"
-                                                                    className="p-0 h-auto text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    className="h-auto min-w-0 p-0 text-slate-400 font-bold pointer-events-none cursor-not-allowed"
                                                                     disabled
                                                                     tabIndex={-1}
                                                                     aria-disabled
@@ -1330,18 +1330,18 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="consultations" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Consultation Requests</CardTitle>
                             <CardDescription>Manage incoming video and text consultation requests from new clients</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6 md:p-8">
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                             {isLoadingRequests || isLoadingGuestBookings ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : consultationRequests.length === 0 && guestAppointments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-slate-200">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <MessageSquare className="h-10 w-10 text-slate-300" />
                                     </div>
@@ -1352,11 +1352,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 <div className="space-y-10">
                                     {guestAppointments.length > 0 && (
                                         <div className="space-y-4">
-                                            <div className="grid gap-4 lg:grid-cols-3">
+                                            <div className="grid min-w-0 gap-4 lg:grid-cols-3">
                                                 {guestAppointments.map((g) => (
                                                     <div
                                                         key={g.id}
-                                                        className="group p-4 bg-white border border-indigo-100 rounded-2xl hover:shadow-xl transition-all duration-300"
+                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-indigo-100 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
                                                     >
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
@@ -1395,7 +1395,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 size="sm"
                                                                 variant={g.prescriptionHtml ? "outline" : "default"}
                                                                 className={cn(
-                                                                    "rounded-full font-black",
+                                                                    "rounded-lg sm:rounded-full font-black",
                                                                     g.prescriptionHtml
                                                                         ? "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                                                                         : "bg-indigo-600 hover:bg-indigo-700 text-white"
@@ -1420,11 +1420,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             {guestAppointments.length > 0 && (
                                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">In-app consultation requests</h3>
                                             )}
-                                            <div className="grid gap-4 lg:grid-cols-3">
+                                            <div className="grid min-w-0 gap-4 lg:grid-cols-3">
                                                 {consultationRequests.map((request) => (
                                                     <div
                                                         key={request.id}
-                                                        className="group p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-xl transition-all duration-300"
+                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-slate-100 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
                                                     >
                                                         <div className="flex flex-col justify-between gap-4 h-full">
                                                             <div className="flex-1 space-y-3">
@@ -1469,7 +1469,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <div className="grid grid-cols-2 gap-2 pt-1 sm:flex">
                                                                     <Button
                                                                         size="sm"
-                                                                        className="rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-4 sm:px-5"
+                                                                        className="rounded-lg sm:rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-4 sm:px-5"
                                                                         onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
                                                                     >
                                                                         <CheckCircle className="h-4 w-4 mr-1.5" />
@@ -1478,7 +1478,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                     <Button
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        className="rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-4 sm:px-5"
+                                                                        className="rounded-lg sm:rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-4 sm:px-5"
                                                                         onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
                                                                     >
                                                                         <XCircle className="h-4 w-4 mr-1.5" />
@@ -1506,7 +1506,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             }
                         }}
                     >
-                        <DialogContent className="w-[min(1400px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[min(1400px,calc(100vw-2rem))] rounded-2xl max-h-[min(92vh,960px)] overflow-y-auto sm:p-8">
+                        <DialogContent className="w-[min(1400px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] sm:max-w-[min(1400px,calc(100vw-2rem))] rounded-lg sm:rounded-2xl max-h-[min(92vh,960px)] overflow-y-auto sm:p-8">
                             <DialogHeader>
                                 <DialogTitle>
                                     {selectedGuestForPrescription
@@ -1528,14 +1528,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
                                     <Button
                                         variant="outline"
-                                        className="rounded-full"
+                                        className="rounded-lg sm:rounded-full"
                                         onClick={() => setPrescriptionModalOpen(false)}
                                         disabled={isSavingPrescription}
                                     >
                                         Cancel
                                     </Button>
                                     <Button
-                                        className="rounded-full bg-indigo-600 hover:bg-indigo-700"
+                                        className="rounded-lg sm:rounded-full bg-indigo-600 hover:bg-indigo-700"
                                         onClick={handleSavePrescription}
                                         disabled={isSavingPrescription}
                                     >
@@ -1549,8 +1549,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="calendar" className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
+                    <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-indigo-50/50">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0">
@@ -1559,12 +1559,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     </div>
                                     <Dialog open={showAddAvailability} onOpenChange={setShowAddAvailability}>
                                         <DialogTrigger asChild>
-                                            <Button size="sm" className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-md sm:w-auto">
+                                            <Button size="sm" className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 shadow-md sm:w-auto sm:rounded-full">
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Add Slot
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="rounded-2xl">
+                                        <DialogContent className="rounded-lg sm:rounded-2xl">
                                             <DialogHeader>
                                                 <DialogTitle className="text-xl font-black">Add availability time slot</DialogTitle>
                                                 <DialogDescription>These slots will repeat every week</DialogDescription>
@@ -1610,7 +1610,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         />
                                                     </div>
                                                 </div>
-                                                <Button onClick={handleUpdateAvail} className="w-full rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
+                                                <Button onClick={handleUpdateAvail} className="w-full rounded-lg sm:rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
                                                     {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                                                     Save Schedule
                                                 </Button>
@@ -1619,13 +1619,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     </Dialog>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-4 sm:p-6 md:p-8">
+                            <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                                 {isLoadingAvail ? (
                                     <div className="flex justify-center py-20">
                                         <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                     </div>
                                 ) : availability.length === 0 ? (
-                                    <div className="text-center py-20 bg-slate-50/50 rounded-2xl">
+                                    <div className="text-center py-20 bg-slate-50/50 rounded-lg sm:rounded-2xl">
                                         <p className="text-slate-500 font-bold">Your schedule is empty.</p>
                                     </div>
                                 ) : (
@@ -1633,7 +1633,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         {availability.map((slot) => (
                                             <div
                                                 key={slot.id}
-                                                className="group flex flex-col gap-3 p-4 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all sm:flex-row sm:items-center sm:justify-between"
+                                                className="group flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-4 border border-slate-100 rounded-lg sm:rounded-2xl hover:bg-slate-50 transition-all sm:flex-row sm:items-center sm:justify-between"
                                             >
                                                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
                                                     <div className="font-black text-slate-900 sm:w-24 sm:border-r-2 sm:border-slate-100">
@@ -1659,18 +1659,18 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
+                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-emerald-50/50">
                                 <CardTitle className="text-slate-900 font-black">Upcoming Appointments</CardTitle>
                                 <CardDescription>Confirmed consultations for the next 7 days</CardDescription>
                             </CardHeader>
-                            <CardContent className="p-4 sm:p-6 md:p-8">
+                            <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                                 {isLoadingAppointments ? (
                                     <div className="flex justify-center py-20">
                                         <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                     </div>
                                 ) : appointments.length === 0 ? (
-                                    <div className="text-center py-20 bg-slate-50/50 rounded-2xl">
+                                    <div className="text-center py-20 bg-slate-50/50 rounded-lg sm:rounded-2xl">
                                         <p className="text-slate-500 font-bold">No upcoming appointments scheduled.</p>
                                     </div>
                                 ) : (
@@ -1678,7 +1678,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         {appointments.map((apt) => (
                                             <div
                                                 key={apt.id}
-                                                className="p-5 border border-slate-100 rounded-2xl bg-white shadow-sm"
+                                                className="w-full min-w-0 max-w-full overflow-hidden p-5 border border-slate-100 rounded-lg sm:rounded-2xl bg-white shadow-sm"
                                             >
                                                 <div className="flex items-start justify-between">
                                                     <div className="space-y-2">
@@ -1699,7 +1699,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     {apt.status === "scheduled" && (
                                                         <Button
                                                             size="sm"
-                                                            className="rounded-full px-6 bg-emerald-600 hover:bg-emerald-700 shadow-md font-bold"
+                                                            className="rounded-lg sm:rounded-full px-6 bg-emerald-600 hover:bg-emerald-700 shadow-md font-bold"
                                                             onClick={() => handleUpdateAppointmentStatus(apt.id, "completed")}
                                                         >
                                                             Mark Done
@@ -1716,18 +1716,18 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="payments" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <CardTitle>Financial Overview</CardTitle>
                             <CardDescription>Track your transaction history and upcoming payouts</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6 md:p-8">
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                             {isLoadingPayments ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : payments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl">
                                     <IndianRupee className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-500 font-bold">No payments processed yet.</p>
                                 </div>
@@ -1736,10 +1736,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     {payments.map((payment) => (
                                         <div
                                             key={payment.id}
-                                            className="group flex flex-col md:flex-row md:items-center justify-between p-4 sm:p-6 bg-white border border-slate-100 rounded-3xl hover:shadow-2xl transition-all duration-300"
+                                            className="group flex w-full min-w-0 max-w-full flex-col overflow-hidden md:flex-row md:items-center justify-between p-4 sm:p-6 bg-white border border-slate-100 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-300"
                                         >
                                             <div className="flex items-center gap-6">
-                                                <div className={`p-4 rounded-2xl ${payment.status === "completed" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
+                                                <div className={`p-4 rounded-lg sm:rounded-2xl ${payment.status === "completed" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
                                                     <IndianRupee className="h-8 w-8" />
                                                 </div>
                                                 <div>
@@ -1768,31 +1768,31 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="clients" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-2xl">
+                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Client Records</CardTitle>
                             <CardDescription>Comprehensive database of clients you have consulted with</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6 md:p-8">
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
                             {isLoadingAppointments || isLoadingGuestBookings ? (
                                 <div className="flex justify-center py-20">
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : guestAppointments.length === 0 && [...new Set(appointments.map((a) => a.clientId))].length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl">
                                     <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-500 font-bold">Your client list is currently empty.</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {guestAppointments.map((g) => (
                                         <div
                                             key={`guest-${g.id}`}
-                                            className="group p-4 bg-white border border-indigo-100 rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
+                                            className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-indigo-100 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
                                         >
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl shadow-inner">
+                                                    <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl shadow-inner">
                                                         {(g.firstName || "G").charAt(0).toUpperCase()}
                                                     </div>
                                                     <div className="overflow-hidden min-w-0">
@@ -1806,7 +1806,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                    <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Requested</p>
                                                         <p className="text-xs font-black text-slate-800 pt-1">
                                                             {mounted
@@ -1818,7 +1818,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 : ""}
                                                         </p>
                                                     </div>
-                                                    <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Category</p>
                                                         <p className="text-xs font-black text-indigo-600 pt-1 truncate">{g.category}</p>
                                                     </div>
@@ -1832,11 +1832,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         return (
                                             <div
                                                 key={clientId}
-                                                className="group p-4 sm:p-6 bg-white border border-slate-50 rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
+                                                className="group w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
                                             >
                                                 <div className="flex flex-col gap-5">
                                                     <div className="p-4 sm:p-5 flex items-center gap-4">
-                                                        <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-slate-600 text-xl shadow-inner">
+                                                        <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-slate-600 text-xl shadow-inner">
                                                             {(latestAppointment.clientName || "C").charAt(0).toUpperCase()}
                                                         </div>
                                                         <div className="overflow-hidden">
@@ -1850,11 +1850,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                        <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
                                                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Total Visits</p>
                                                             <p className="text-xl font-black text-indigo-600">{clientAppointments.length}</p>
                                                         </div>
-                                                        <div className="bg-white/80 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
                                                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Last Seen</p>
                                                             <p className="text-xs font-black text-slate-800 pt-1">
                                                                 {mounted ? new Date(latestAppointment.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
@@ -1862,7 +1862,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         </div>
                                                     </div>
 
-                                                    <Button variant="outline" className="w-full rounded-2xl border-slate-100 bg-white font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group-hover:shadow-md">
+                                                    <Button variant="outline" className="w-full rounded-lg sm:rounded-2xl border-slate-100 bg-white font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group-hover:shadow-md">
                                                         Open Full History
                                                     </Button>
                                                 </div>
@@ -1894,7 +1894,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 key={item.value}
                                 type="button"
                                 onClick={() => setActiveTab(item.value)}
-                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
+                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
                                     ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25"
                                     : "text-gray-600 hover:bg-teal-50"
                                     }`}
@@ -1919,14 +1919,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     </div>
                 </div>
 
-                <Card className="border-none shadow-2xl bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+                <Card className="border-none shadow-2xl bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-3xl overflow-hidden">
                     <CardHeader className="pt-4 bg-white/80 border-b border-slate-50">
                         <CardTitle>Schedule Visualization</CardTitle>
                         <CardDescription>Green indicates recurring availability, Blue represents specific day appointments.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                            <div className="lg:col-span-1 flex justify-center p-8 border-none rounded-3xl bg-white shadow-2xl ring-1 ring-slate-100">
+                    <CardContent className="min-w-0 overflow-hidden p-4 sm:p-8">
+                        <div className="grid min-w-0 grid-cols-1 gap-6 sm:gap-12 lg:grid-cols-3">
+                            <div className="lg:col-span-1 flex justify-center p-5 sm:p-8 border-none rounded-xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-100">
                                 {mounted ? (
                                     <Calendar
                                         mode="single"
@@ -1956,7 +1956,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                             <div className="lg:col-span-2 space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50/30 p-6 rounded-3xl border border-green-100 shadow-sm">
+                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50/30 p-5 sm:p-6 rounded-xl sm:rounded-3xl border border-green-100 shadow-sm">
                                         <h4 className="text-green-800 font-black flex items-center gap-2 mb-4 text-sm uppercase tracking-wider">
                                             <CheckCircle className="h-4 w-4" /> Weekly Slots
                                         </h4>
@@ -1975,20 +1975,20 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </div>
                                     </div>
 
-                                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50/30 p-6 rounded-3xl border border-indigo-100 shadow-sm">
+                                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50/30 p-5 sm:p-6 rounded-xl sm:rounded-3xl border border-indigo-100 shadow-sm">
                                         <h4 className="text-indigo-800 font-black flex items-center gap-2 mb-4 text-sm uppercase tracking-wider">
                                             <Info className="h-4 w-4" /> Schedule Legend
                                         </h4>
                                         <div className="space-y-4">
-                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-2xl">
+                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-lg sm:rounded-2xl">
                                                 <div className="w-4 h-4 bg-green-50 border-b-4 border-green-500 rounded-sm" />
                                                 <span className="font-bold text-slate-700">Days with recurring availability set</span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-2xl">
+                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-lg sm:rounded-2xl">
                                                 <div className="w-4 h-4 bg-indigo-600 rounded-lg shadow-sm" />
                                                 <span className="font-bold text-slate-700">Specific dates with scheduled clients</span>
                                             </div>
-                                            <div className="flex items-start gap-3 p-3 text-[10px] leading-relaxed text-slate-400 bg-slate-50/40 rounded-2xl mt-2">
+                                            <div className="flex items-start gap-3 p-3 text-[10px] leading-relaxed text-slate-400 bg-slate-50/40 rounded-lg sm:rounded-2xl mt-2">
                                                 <Info className="h-4 w-4 flex-shrink-0" />
                                                 <span>Note: Appointment dates are highlighted in solid blue and take priority over recurring availability in the calendar view.</span>
                                             </div>
@@ -1996,7 +1996,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     </div>
                                 </div>
 
-                                <div className="bg-indigo-900 text-indigo-100 p-8 rounded-3xl shadow-xl relative overflow-hidden group">
+                                <div className="bg-indigo-900 text-indigo-100 p-5 sm:p-8 rounded-xl sm:rounded-3xl shadow-xl relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
                                     <div className="relative z-10 flex items-start gap-4">
                                         <div className="bg-white/10 p-2 rounded-xl">
