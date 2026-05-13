@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Help & support",
+  title: "How can we support you today?",
   description:
-    "Get help using HealthHere: account access, appointments, privacy, and how to reach our support team.",
+    "How can we support you today? Search guides and FAQs for appointments, account security, billing, prescriptions, and using the HealthHere help center.",
   pathname: "/support",
-  keywords: ["HealthHere help", "support", "FAQ", "healthcare platform help"],
+  keywords: ["HealthHere support", "help center", "FAQ", "how can we support you"],
 });
 
 export default function SupportLayout({ children }: { children: React.ReactNode }) {

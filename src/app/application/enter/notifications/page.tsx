@@ -16,7 +16,8 @@ import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Notifications',
-  description: 'Admin: platform notifications and operational alerts.',
+  description:
+    'Notifications: admin inbox for platform notifications, operational alerts, and read/unread status on HealthHere.',
   pathname: '/application/enter/notifications',
   robots: ROBOTS_NOINDEX,
 })

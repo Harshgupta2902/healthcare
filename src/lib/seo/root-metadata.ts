@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { DEFAULT_DESCRIPTION, getMetadataBase, SITE_NAME } from "./site";
 
+const ROOT_DESCRIPTION =
+  "Healthcare that actually works: skip the waiting room and access medical experts, personalized treatment plans, and secure care from anywhere.";
+
 export const rootMetadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: "HealthHere — Your Health, Our Priority",
+    default: "HealthHere — Healthcare that actually works",
     template: "%s | HealthHere",
   },
-  description: DEFAULT_DESCRIPTION,
+  description: ROOT_DESCRIPTION,
   applicationName: SITE_NAME,
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,

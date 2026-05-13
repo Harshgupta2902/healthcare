@@ -4,9 +4,9 @@ import { buildPageMetadata, ROBOTS_NOINDEX } from "@/lib/seo/page-metadata";
 export const metadata: Metadata = buildPageMetadata({
   title: "Your dashboard",
   description:
-    "Your private HealthHere dashboard for appointments, care updates, and account settings.",
+    "Your dashboard on HealthHere: manage appointments, prescriptions, medical profile, insurance, and account settings in one place.",
   pathname: "/dashboard",
-  keywords: ["HealthHere dashboard", "patient portal"],
+  keywords: ["HealthHere dashboard", "patient portal", "your dashboard"],
   robots: ROBOTS_NOINDEX,
 });
 

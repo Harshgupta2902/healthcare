@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const display = prof.displayName ?? prof.name;
     const city = prof.city ? ` in ${prof.city}` : "";
-    const description = `Book a consultation with ${display}, a verified ${prof.specialization} professional${city}. View qualifications, fees, and availability on HealthHere.`;
+    const description = `${display} is a verified ${prof.specialization} professional on HealthHere${city}. Book an appointment, review qualifications and fees, and request a secure consultation.`;
 
     return buildPageMetadata({
         title: display,

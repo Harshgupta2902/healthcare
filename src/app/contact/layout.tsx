@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Contact us",
+  title: "Get in touch with us",
   description:
-    "Contact the HealthHere team for platform support, partnership questions, or help finding the right care pathway.",
+    "Get in touch with us: questions, concerns, or partnership requests for the HealthHere team—we respond as soon as we can.",
   pathname: "/contact",
-  keywords: ["contact HealthHere", "healthcare support", "customer service"],
+  keywords: ["contact HealthHere", "get in touch", "customer support"],
 });
 
 export default function ContactLayout({ children }: { children: React.ReactNode }) {

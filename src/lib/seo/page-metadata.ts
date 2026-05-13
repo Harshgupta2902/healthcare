@@ -77,16 +77,17 @@ export function buildPageMetadata({
 
 export function buildHomeMetadata(): Metadata {
   return buildPageMetadata({
-    absoluteTitle: "HealthHere — Your Health, Our Priority",
+    absoluteTitle: "HealthHere — Healthcare that actually works",
     title: "HealthHere",
-    description: DEFAULT_DESCRIPTION,
+    description:
+      "Healthcare that actually works: skip the waiting room and access medical experts, personalized treatment plans, and secure care from anywhere. HealthHere makes quality healthcare accessible and convenient.",
     pathname: "/",
     keywords: [
       "HealthHere",
-      "healthcare",
+      "healthcare that actually works",
       "telehealth",
       "online doctor",
-      "medical consultants",
+      "medical experts",
       "book consultation",
       "health platform",
     ],

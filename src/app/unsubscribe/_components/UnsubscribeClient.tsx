@@ -67,10 +67,10 @@ export default function UnsubscribeClient({ email, token, initialStatus }: Props
                     </motion.div>
 
                     <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-4">
-                        Sorry to see you go
+                        Unsubscribe from our newsletter
                     </h1>
                     <p className="text-muted-foreground font-medium mb-2 max-w-md mx-auto">
-                        You are about to unsubscribe
+                        We are sorry to see you go. You are about to unsubscribe
                     </p>
                     <p className="text-lg font-bold mb-8 break-all">{email}</p>
 

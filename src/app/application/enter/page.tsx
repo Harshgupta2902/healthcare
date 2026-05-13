@@ -4,8 +4,9 @@ import { DashboardContent } from './_components/DashboardContent'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Admin overview',
-  description: 'HealthHere admin dashboard: usage snapshot, recent appointments, and recent users.',
+  title: 'Dashboard Overview',
+  description:
+    'Dashboard Overview: HealthHere admin snapshot for recent appointments, users, and platform activity—welcome to the healthcare admin dashboard.',
   pathname: '/application/enter',
   robots: ROBOTS_NOINDEX,
 })

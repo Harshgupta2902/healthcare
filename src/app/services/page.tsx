@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Healthcare services",
+  title: "Healthcare without limits",
   description:
-    "Explore HealthHere services designed to make specialist access, consultations, and care coordination simpler and more transparent.",
+    "Experience the next generation of digital healthcare on HealthHere: simplified medical access, board-certified professionals, and wellbeing-focused services—healthcare without limits.",
   pathname: "/services",
-  keywords: ["healthcare services", "online consultations", "HealthHere services", "medical platform"],
+  keywords: ["healthcare without limits", "digital healthcare", "HealthHere services", "medical platform"],
 });
 
 export default function ServicesPage() {

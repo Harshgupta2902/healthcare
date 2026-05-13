@@ -4,8 +4,9 @@ import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Documents',
-  description: 'Admin: manage uploaded documents and qualification credentials.',
+  title: 'Documents Management',
+  description:
+    'Documents Management: admin tools for uploaded files, qualification credentials, and document approvals on HealthHere.',
   pathname: '/application/enter/documents',
   robots: ROBOTS_NOINDEX,
 })

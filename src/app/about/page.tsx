@@ -4,11 +4,11 @@ import { ArrowRight, HeartPulse, ShieldCheck, Sparkles, Users } from "lucide-rea
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "About us",
+  title: "Clinical access, designed around people",
   description:
-    "Learn about HealthHere's mission to make trusted healthcare access simpler, safer, and more human-centered.",
+    "HealthHere connects patients with trusted healthcare professionals through a secure, simple, and supportive digital care experience—clinical access, designed around people.",
   pathname: "/about",
-  keywords: ["about HealthHere", "healthcare mission", "trusted care platform"],
+  keywords: ["about HealthHere", "clinical access", "patient-centered care", "trusted professionals"],
 });
 
 const values = [

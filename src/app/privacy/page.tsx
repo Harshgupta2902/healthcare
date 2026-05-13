@@ -4,11 +4,11 @@ import { LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Privacy policy",
+  title: "Your privacy matters",
   description:
-    "Read how HealthHere collects, uses, protects, and manages personal and healthcare-related information.",
+    "Your privacy matters: how HealthHere handles information when you use our website, services, forms, dashboards, and communications—and how we protect healthcare-related data.",
   pathname: "/privacy",
-  keywords: ["HealthHere privacy", "health data protection", "HIPAA-minded practices"],
+  keywords: ["HealthHere privacy", "your privacy matters", "health data protection"],
 });
 
 const sections = [

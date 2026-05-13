@@ -4,8 +4,9 @@ import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Users',
-  description: 'Admin: manage HealthHere user accounts and roles.',
+  title: 'Users Management',
+  description:
+    'Users Management: search and maintain HealthHere accounts, roles, and access for patients and professionals.',
   pathname: '/application/enter/users',
   robots: ROBOTS_NOINDEX,
 })

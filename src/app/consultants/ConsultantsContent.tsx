@@ -94,6 +94,14 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
         <div className="min-h-screen bg-[#f8fafc]">
             {/* In-flow spacer: visible gap under header at rest; scrolls away so sticky bar meets header flush */}
             <div className="h-2 shrink-0 sm:h-3" aria-hidden />
+            <header className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 pb-2 sm:pt-4">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                    Verified medical consultants
+                </h1>
+                <p className="mt-1 max-w-3xl text-sm text-slate-600">
+                    Search verified professionals, compare experience and consultation fees, and book through HealthHere.
+                </p>
+            </header>
             <div className="sticky top-16 z-30 w-full bg-white/95 border-b border-slate-200 shadow-sm backdrop-blur-md">
                 <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-0 sm:divide-x sm:divide-slate-100">
 

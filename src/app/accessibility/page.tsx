@@ -4,11 +4,11 @@ import { Eye, Keyboard, MessageCircle, Sparkles, Volume2 } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Accessibility",
+  title: "Healthcare access should be usable for everyone",
   description:
-    "Learn about HealthHere's accessibility goals, supported practices, and how to report accessibility barriers.",
+    "Healthcare access should be usable for everyone: HealthHere's accessibility commitments for patients, professionals, and administrators across devices and assistive technologies.",
   pathname: "/accessibility",
-  keywords: ["HealthHere accessibility", "WCAG", "inclusive healthcare", "a11y"],
+  keywords: ["HealthHere accessibility", "inclusive healthcare", "WCAG", "a11y"],
 });
 
 const commitments = [

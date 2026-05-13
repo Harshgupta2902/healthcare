@@ -8,10 +8,11 @@ interface PageProps {
 }
 
 export const metadata: Metadata = buildPageMetadata({
-    title: "Browse medical consultants",
-    description: "Find and book verified medical consultants across various specializations.",
+    title: "Verified medical consultants",
+    description:
+        "Search and filter verified medical consultants by specialty, location, experience, and consultation fee—then book through HealthHere.",
     pathname: "/consultants",
-    keywords: ["find a consultant", "medical specialists", "book doctor", "HealthHere consultants"],
+    keywords: ["verified medical consultants", "find a consultant", "book doctor", "HealthHere directory"],
 });
 
 export default async function ConsultantsPage({ searchParams }: PageProps) {

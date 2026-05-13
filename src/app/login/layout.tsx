@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { buildPageMetadata, ROBOTS_NOINDEX } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Sign in",
+  title: "Welcome back",
   description:
-    "Securely sign in to your HealthHere account to manage appointments, messages, and your care profile.",
+    "Welcome back: enter your credentials to access your HealthHere dashboard, appointments, and secure care tools.",
   pathname: "/login",
-  keywords: ["HealthHere login", "patient account", "healthcare sign in"],
+  keywords: ["HealthHere login", "welcome back", "secure access"],
   robots: ROBOTS_NOINDEX,
 });
 

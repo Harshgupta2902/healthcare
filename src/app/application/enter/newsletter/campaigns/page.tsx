@@ -6,8 +6,9 @@ import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Newsletter campaigns',
-  description: 'Admin: review newsletter campaigns and performance.',
+  title: 'Newsletter Campaigns',
+  description:
+    'Newsletter Campaigns: review past and active campaigns sent through the HealthHere newsletter system.',
   pathname: '/application/enter/newsletter/campaigns',
   robots: ROBOTS_NOINDEX,
 })

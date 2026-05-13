@@ -142,9 +142,9 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
 
           <div className="min-w-0 space-y-12 md:space-y-16">
             <section className="hidden lg:block">
-              <h1 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl lg:text-6xl">
+              <h2 className="text-4xl font-black tracking-tight text-[#073b3a] sm:text-5xl lg:text-6xl">
                 {displayName}
-              </h1>
+              </h2>
               <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-slate-500">
                 {prof.specialization || "Healthcare Professional"} • {location}
               </p>

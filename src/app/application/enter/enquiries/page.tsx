@@ -5,7 +5,8 @@ import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Enquiries',
-  description: 'Admin: review inbound contact messages and enquiries.',
+  description:
+    'Enquiries: read and respond to inbound contact messages and support requests for the HealthHere platform.',
   pathname: '/application/enter/enquiries',
   robots: ROBOTS_NOINDEX,
 })

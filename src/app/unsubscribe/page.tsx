@@ -8,8 +8,9 @@ import UnsubscribeClient from './_components/UnsubscribeClient'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
 export const metadata: Metadata = buildPageMetadata({
-    title: 'Newsletter unsubscribe',
-    description: 'Confirm your preferences for HealthHere email updates.',
+    title: 'Unsubscribe from our newsletter',
+    description:
+        'Unsubscribe from our newsletter: confirm removal, see when you are already unsubscribed, or troubleshoot an invalid unsubscribe link on HealthHere.',
     pathname: '/unsubscribe',
     robots: ROBOTS_NOINDEX,
 })
