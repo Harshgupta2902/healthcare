@@ -1,5 +1,14 @@
 import { getInsurance } from '@/features/admin/actions'
 import { InsuranceTable } from './InsuranceTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Insurance',
+  description: 'Admin: manage insurance records and related documentation.',
+  pathname: '/application/enter/insurance',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function InsurancePage({
   searchParams,

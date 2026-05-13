@@ -1,5 +1,14 @@
 import { getMedicalHistory } from '@/features/admin/actions'
 import { MedicalHistoryTable } from './MedicalHistoryTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Medical history',
+  description: 'Admin: review client medical history records.',
+  pathname: '/application/enter/medical-history',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function MedicalHistoryPage({
   searchParams,

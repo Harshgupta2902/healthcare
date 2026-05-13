@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, HeartPulse, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "About Us | HealthHere",
+export const metadata: Metadata = buildPageMetadata({
+  title: "About us",
   description:
     "Learn about HealthHere's mission to make trusted healthcare access simpler, safer, and more human-centered.",
-};
+  pathname: "/about",
+  keywords: ["about HealthHere", "healthcare mission", "trusted care platform"],
+});
 
 const values = [
   {

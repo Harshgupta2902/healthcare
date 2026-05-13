@@ -1,5 +1,14 @@
 import { getContactMessages } from '@/features/admin/actions'
 import { EnquiriesTable } from './EnquiriesTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Enquiries',
+  description: 'Admin: review inbound contact messages and enquiries.',
+  pathname: '/application/enter/enquiries',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function EnquiriesPage({
   searchParams,

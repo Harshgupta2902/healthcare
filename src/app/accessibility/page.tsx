@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Eye, Keyboard, MessageCircle, Sparkles, Volume2 } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Accessibility | HealthHere",
+export const metadata: Metadata = buildPageMetadata({
+  title: "Accessibility",
   description:
     "Learn about HealthHere's accessibility goals, supported practices, and how to report accessibility barriers.",
-};
+  pathname: "/accessibility",
+  keywords: ["HealthHere accessibility", "WCAG", "inclusive healthcare", "a11y"],
+});
 
 const commitments = [
   {

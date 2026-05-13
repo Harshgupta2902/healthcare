@@ -1,5 +1,14 @@
 import { getDocuments, getQualificationCredentialsForAdmin } from '@/features/admin/actions'
 import { DocumentsManagementTabs } from './DocumentsManagementTabs'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Documents',
+  description: 'Admin: manage uploaded documents and qualification credentials.',
+  pathname: '/application/enter/documents',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function DocumentsPage({
   searchParams,

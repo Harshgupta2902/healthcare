@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, FileText, Sparkles } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | HealthHere",
+export const metadata: Metadata = buildPageMetadata({
+  title: "Terms of service",
   description:
     "Review the terms that govern use of the HealthHere website, dashboards, and healthcare access platform.",
-};
+  pathname: "/terms",
+  keywords: ["HealthHere terms", "user agreement", "platform terms"],
+});
 
 const terms = [
   {

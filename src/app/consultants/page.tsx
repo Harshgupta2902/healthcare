@@ -1,15 +1,18 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { searchProfessionals } from "@/features/professional/actions";
 import ConsultantsContent from "./ConsultantsContent";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 interface PageProps {
     searchParams: Promise<{ q?: string; specialty?: string }>;
 }
 
-export const metadata: Metadata = {
-    title: "Browse Consultants | HealthHere",
+export const metadata: Metadata = buildPageMetadata({
+    title: "Browse medical consultants",
     description: "Find and book verified medical consultants across various specializations.",
-};
+    pathname: "/consultants",
+    keywords: ["find a consultant", "medical specialists", "book doctor", "HealthHere consultants"],
+});
 
 export default async function ConsultantsPage({ searchParams }: PageProps) {
     const { q, specialty } = await searchParams;

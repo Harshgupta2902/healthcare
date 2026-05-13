@@ -1,14 +1,18 @@
+import type { Metadata } from "next";
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Home } from 'lucide-react'
 import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
 import { getNewsletterStatusByToken } from '@/features/client/actions'
 import UnsubscribeClient from './_components/UnsubscribeClient'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
-export const metadata = {
-    title: 'Unsubscribe — HealthHere',
-    description: 'Unsubscribe from the HealthHere newsletter.',
-}
+export const metadata: Metadata = buildPageMetadata({
+    title: 'Newsletter unsubscribe',
+    description: 'Confirm your preferences for HealthHere email updates.',
+    pathname: '/unsubscribe',
+    robots: ROBOTS_NOINDEX,
+})
 
 interface PageProps {
     searchParams: Promise<{ t?: string }>

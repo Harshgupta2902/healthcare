@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from './_components/AdminSidebar'
 import { AdminNavbar } from './_components/AdminNavbar'
 import { getAdminUnreadNotificationCount } from '@/features/admin/actions'
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: { index: false, follow: false },
+  },
+}
 
 export default async function AdminLayout({
   children,

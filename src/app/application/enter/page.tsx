@@ -1,5 +1,14 @@
+import type { Metadata } from 'next'
 import { getDashboardStats, getRecentAppointments, getRecentUsers } from '@/features/admin/actions'
 import { DashboardContent } from './_components/DashboardContent'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Admin overview',
+  description: 'HealthHere admin dashboard: usage snapshot, recent appointments, and recent users.',
+  pathname: '/application/enter',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function AdminDashboard() {
   const statsResult = await getDashboardStats()

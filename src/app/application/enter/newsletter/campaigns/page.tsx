@@ -2,6 +2,15 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getNewsletterCampaigns } from '@/features/admin/actions'
 import { CampaignsTable } from './CampaignsTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Newsletter campaigns',
+  description: 'Admin: review newsletter campaigns and performance.',
+  pathname: '/application/enter/newsletter/campaigns',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function NewsletterCampaignsPage({
   searchParams,

@@ -4,6 +4,15 @@ import { Button } from '@/components/ui/button'
 import { getNewsletterSubscribers, getNewsletterActiveRecipientCount } from '@/features/admin/actions'
 import { NewsletterTable } from './NewsletterTable'
 import type { SubscriberStatus } from './StatusFilter'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Newsletter',
+  description: 'Admin: manage newsletter subscribers and delivery health.',
+  pathname: '/application/enter/newsletter',
+  robots: ROBOTS_NOINDEX,
+})
 
 const ALLOWED_STATUSES = ['active', 'resubscribed', 'unsubscribed'] as const satisfies readonly SubscriberStatus[]
 const DEFAULT_STATUSES: SubscriberStatus[] = ['active', 'resubscribed']

@@ -5,11 +5,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { HealthHereAssistant } from "@/components/HealthHereAssistant";
 import { Toaster } from "@/components/ui/sonner";
-import { Analytics } from "@vercel/analytics/next"
-export const metadata: Metadata = {
-  title: "HealthHere - Your Health, Our Priority",
-  description: "Making quality healthcare accessible and convenient for everyone, wherever you are.",
-};
+import { Analytics } from "@vercel/analytics/next";
+import { rootMetadata } from "@/lib/seo/root-metadata";
+
+export const metadata: Metadata = rootMetadata;
 
 export default function RootLayout({
   children,

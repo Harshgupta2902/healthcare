@@ -11,6 +11,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { MarkAllReadButton, MarkReadButton } from './NotificationActions'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Notifications',
+  description: 'Admin: platform notifications and operational alerts.',
+  pathname: '/application/enter/notifications',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function AdminNotificationsPage() {
   const res = await getAdminNotifications(200)

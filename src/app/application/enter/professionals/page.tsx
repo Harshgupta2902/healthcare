@@ -1,5 +1,14 @@
 import { getProfessionals } from '@/features/admin/actions'
 import { ProfessionalsTable } from './ProfessionalsTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Professionals',
+  description: 'Admin: verify and manage professional profiles.',
+  pathname: '/application/enter/professionals',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function ProfessionalsPage({
   searchParams,

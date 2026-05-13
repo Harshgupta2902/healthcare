@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import ServicesSection from "@/components/ServicesSection";
 import { MedicalSpecialties } from "@/components/MedicalSpecialties";
+import { buildHomeMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata: Metadata = buildHomeMetadata();
 
 export default function HomePage() {
   return (

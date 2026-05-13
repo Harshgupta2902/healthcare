@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import ServicesSection from "@/components/ServicesSection";
 import { Stethoscope, Shield, Clock, Users, Sparkles, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Healthcare services",
+  description:
+    "Explore HealthHere services designed to make specialist access, consultations, and care coordination simpler and more transparent.",
+  pathname: "/services",
+  keywords: ["healthcare services", "online consultations", "HealthHere services", "medical platform"],
+});
 
 export default function ServicesPage() {
   return (

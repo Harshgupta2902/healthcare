@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | HealthHere",
+export const metadata: Metadata = buildPageMetadata({
+  title: "Privacy policy",
   description:
     "Read how HealthHere collects, uses, protects, and manages personal and healthcare-related information.",
-};
+  pathname: "/privacy",
+  keywords: ["HealthHere privacy", "health data protection", "HIPAA-minded practices"],
+});
 
 const sections = [
   {

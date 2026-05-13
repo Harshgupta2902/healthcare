@@ -1,5 +1,14 @@
 import { getAppointments, getProfessionalsForDropdown } from '@/features/admin/actions'
 import { AppointmentsTable } from './AppointmentsTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Appointments',
+  description: 'Admin: review and manage HealthHere appointments.',
+  pathname: '/application/enter/appointments',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function AppointmentsPage({
   searchParams,

@@ -1,5 +1,14 @@
 import { getMedications } from '@/features/admin/actions'
 import { MedicationsTable } from './MedicationsTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Medications',
+  description: 'Admin: manage medication records and related data.',
+  pathname: '/application/enter/medications',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function MedicationsPage({
   searchParams,

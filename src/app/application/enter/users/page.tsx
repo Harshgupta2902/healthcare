@@ -1,5 +1,14 @@
 import { getUsers } from '@/features/admin/actions'
 import { UsersTable } from './UsersTable'
+import type { Metadata } from 'next'
+import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Users',
+  description: 'Admin: manage HealthHere user accounts and roles.',
+  pathname: '/application/enter/users',
+  robots: ROBOTS_NOINDEX,
+})
 
 export default async function UsersPage({
   searchParams,
