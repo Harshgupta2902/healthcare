@@ -22,11 +22,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     const display = prof.displayName ?? prof.name;
+    const profileTitle = `Consultant Profile - ${display}`;
     const city = prof.city ? ` in ${prof.city}` : "";
     const description = `${display} is a verified ${prof.specialization} professional on HealthHere${city}. Book an appointment, review qualifications and fees, and request a secure consultation.`;
 
     return buildPageMetadata({
-        title: display,
+        title: profileTitle,
         description,
         pathname: `/consultants/${id}`,
         keywords: [
