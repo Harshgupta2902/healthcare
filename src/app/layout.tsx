@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ErrorReporter from "@/components/ErrorReporter";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import SiteChrome from "@/components/SiteChrome";
 import { HealthHereAssistant } from "@/components/HealthHereAssistant";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
@@ -22,11 +21,7 @@ export default function RootLayout({
         <RootJsonLd />
         <ErrorReporter />
         <Analytics />
-        <Header />
-        <main className="flex flex-1 flex-col min-h-0 min-w-0 overflow-x-clip pt-20">
-          {children}
-        </main>
-        <Footer />
+        <SiteChrome>{children}</SiteChrome>
         <HealthHereAssistant />
         <Toaster position="top-right" richColors />
       </body>
