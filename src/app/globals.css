@@ -26,7 +26,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-background: #eff4fb;
+  /* App shell: align with reference HTML surface/background (#f8f9ff) */
+  --color-background: #f8f9ff;
   --color-foreground: #0f172a;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
@@ -113,6 +114,25 @@
   "Segoe UI Emoji",
   "Segoe UI Symbol",
   "Noto Color Emoji";
+
+  /* Homepage stitch reference (namespaced so shadcn primary/secondary stay unchanged) */
+  --color-lp-surface: #f8f9ff;
+  --color-lp-on-surface: #0b1c30;
+  --color-lp-on-surface-variant: #44474d;
+  --color-lp-outline-variant: #c5c6cd;
+  --color-lp-brand: #0059bb;
+  --color-lp-on-brand: #ffffff;
+  --color-lp-brand-bright: #0070ea;
+  --color-lp-surface-container-low: #eff4ff;
+  --color-lp-surface-container-lowest: #ffffff;
+  --color-lp-surface-container: #e5eeff;
+  --color-lp-surface-container-high: #dce9ff;
+  --color-lp-primary-container: #0d1c32;
+  --color-lp-on-primary-container: #76849f;
+  --color-lp-on-secondary-container: #fefcff;
+  --color-lp-surface-variant: #d3e4fe;
+  --color-lp-secondary-fixed: #d8e2ff;
+  --color-lp-cta-bg: #000000;
 }
 
 @layer base {
@@ -196,8 +216,7 @@
     overflow-x: clip;
     max-width: 100%;
     background-color: var(--color-background);
-    background-image: linear-gradient(180deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
-    background-attachment: fixed;
+    background-image: none;
     color: var(--color-foreground);
   }
 
@@ -270,5 +289,11 @@ nextjs-portal {
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(15, 23, 42, 0.08);
   }
 }
