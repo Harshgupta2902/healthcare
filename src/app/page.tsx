@@ -1,35 +1,19 @@
 import type { Metadata } from "next";
-import Hero from "@/components/Hero";
-import ServicesSection from "@/components/ServicesSection";
-import { MedicalSpecialties } from "@/components/MedicalSpecialties";
 import { buildHomeMetadata } from "@/lib/seo/page-metadata";
+import { HeroSection } from "./home/hero-section";
+import { SpecialtiesSection } from "./home/specialties-section";
+import { ServicesBentoSection } from "./home/services-bento-section";
+import { HomeCtaSection } from "./home/home-cta-section";
 
 export const metadata: Metadata = buildHomeMetadata();
 
-export default function HomePage() {
+export default function Page() {
   return (
-    <div className="bg-background selection:bg-primary selection:text-primary-foreground min-h-screen">
-      {/* Designer Background: Subtle texture across the whole page */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col">
-        {/* Hero Section */}
-        <section className="w-full">
-          <Hero />
-        </section>
-
-        
-        {/* Medical Specialties Section */}
-        <section className="w-full">
-          <MedicalSpecialties />
-        </section>
-
-        {/* Services Section */}
-        <section id="services" className="w-full">
-          <ServicesSection />
-        </section>
-      </div>
+    <div className="flex flex-1 flex-col w-full min-h-0 overflow-hidden bg-lp-surface text-base font-sans text-lp-on-surface selection:bg-lp-brand/15 selection:text-lp-on-surface">
+      <HeroSection />
+      <SpecialtiesSection />
+      <ServicesBentoSection />
+      <HomeCtaSection />
     </div>
   );
 }
