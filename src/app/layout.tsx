@@ -23,7 +23,7 @@ export default function RootLayout({
         <ErrorReporter />
         <Analytics />
         <Header />
-        <main className="flex flex-1 flex-col min-h-0 min-w-0 overflow-x-clip">
+        <main className="flex flex-1 flex-col min-h-0 min-w-0 overflow-x-clip pt-20">
           {children}
         </main>
         <Footer />
