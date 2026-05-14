@@ -7,6 +7,7 @@ import { HealthHereAssistant } from "@/components/HealthHereAssistant";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { rootMetadata } from "@/lib/seo/root-metadata";
+import { RootJsonLd } from "@/lib/seo/root-json-ld";
 
 export const metadata: Metadata = rootMetadata;
 
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased min-h-screen flex flex-col min-w-0" suppressHydrationWarning>
+        <RootJsonLd />
         <ErrorReporter />
         <Analytics />
         <Header />
