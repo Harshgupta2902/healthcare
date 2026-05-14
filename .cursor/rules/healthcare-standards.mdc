@@ -23,6 +23,7 @@ alwaysApply: true
 - **UI Components**: Shadcn UI / Radix UI.
 - **Visual Style**: Premium Healthcare (Soft Teals, Glassmorphism, Rounded XL/2XL).
 - **Icons**: Lucide React.
+- **Fonts**: Use only **Inter** (`font-sans` / body) and **Manrope** (`font-heading` / titles). Do not add other typefaces (`next/font` for extra families, new font `@import`s, or icon fonts used as text) unless the user explicitly requests it.
 
 ## Visual Language (Aesthetics)
 - Rounded corners: `rounded-xl` or `rounded-2xl`.
