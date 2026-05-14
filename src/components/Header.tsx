@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { LpButton } from "@/components/ui/lp-button";
 import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
@@ -176,20 +177,17 @@ export default function Header({ className }: HeaderProps) {
 
     return (
       <div className="hidden md:flex items-center gap-4">
-        <button
+        <LpButton
           type="button"
-          className="hidden cursor-pointer sm:block px-6 py-2.5 text-sm font-semibold tracking-wide text-lp-on-surface border border-lp-outline-variant rounded-lg hover:bg-lp-surface-container-low transition-all duration-200 active:scale-95"
+          variant="headerGuest"
+          className="hidden sm:block"
           onClick={() => router.push("/login")}
         >
           Login
-        </button>
-        <button
-          type="button"
-          className="px-6 py-2.5 cursor-pointer text-sm font-semibold tracking-wide bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-          onClick={() => router.push("/register")}
-        >
+        </LpButton>
+        <LpButton type="button" variant="headerGuestCta" onClick={() => router.push("/register")}>
           Sign up
-        </button>
+        </LpButton>
       </div>
     );
   };
@@ -313,39 +311,41 @@ export default function Header({ className }: HeaderProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full justify-start border-lp-outline-variant"
+                    className="w-full justify-start border-lp-outline-variant cursor-pointer"
                     onClick={handleDashboardClick}
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                   </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleSignOut}>
+                  <Button variant="ghost" size="sm" className="w-full justify-start cursor-pointer" onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
                   </Button>
                 </>
               ) : mounted && !isPending ? (
                 <div className="flex flex-col gap-2 px-1">
-                  <button
+                  <LpButton
                     type="button"
-                    className="w-full rounded-lg border border-lp-outline-variant px-4 py-2.5 text-sm font-semibold text-lp-on-surface transition-colors hover:bg-lp-surface-container"
+                    variant="headerGuest"
+                    fullWidth
+                    className="justify-center"
                     onClick={() => {
                       router.push("/login");
                       setIsMobileMenuOpen(false);
                     }}
                   >
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <LogIn className="h-4 w-4" /> Login
-                    </span>
-                  </button>
-                  <button
+                    <LogIn className="h-4 w-4" /> Login
+                  </LpButton>
+                  <LpButton
                     type="button"
-                    className="w-full rounded-lg bg-gradient-to-r from-lp-brand to-lp-brand-bright px-4 py-2.5 text-sm font-semibold text-lp-on-brand shadow-sm"
+                    variant="headerGuestCta"
+                    fullWidth
+                    className="justify-center"
                     onClick={() => {
                       router.push("/register");
                       setIsMobileMenuOpen(false);
                     }}
                   >
                     Sign up
-                  </button>
+                  </LpButton>
                 </div>
               ) : null}
             </div>
