@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export const metadata: Metadata = buildPageMetadata({
-    title: "Verified medical consultants",
+    title: "Consultants directory",
     description:
         "Search and filter verified medical consultants by specialty, location, experience, and consultation fee—then book through HealthHere.",
     pathname: "/consultants",
