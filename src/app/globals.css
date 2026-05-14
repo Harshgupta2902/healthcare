@@ -296,4 +296,19 @@ nextjs-portal {
     backdrop-filter: blur(12px);
     border: 1px solid rgba(15, 23, 42, 0.08);
   }
+
+  /* Login stitch reference: glass panel + soft blobs */
+  .login-surface-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(203, 219, 245, 0.3);
+    box-shadow: 0 4px 20px rgba(10, 25, 47, 0.05);
+  }
+
+  .login-organic-blob {
+    position: absolute;
+    pointer-events: none;
+    filter: blur(80px);
+    opacity: 0.4;
+  }
 }
