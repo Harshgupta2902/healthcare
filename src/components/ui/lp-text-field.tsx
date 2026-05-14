@@ -20,8 +20,8 @@ export interface LpTextFieldProps extends Omit<React.ComponentProps<"input">, "c
   /** Extra classes on the `<input>` */
   inputClassName?: string;
   surface?: LpTextFieldSurface;
-  /** Login fields use `lg`; register uses `xl` */
-  rounding?: "lg" | "xl";
+  /** Login: `lg`; register: `xl`; consultants search: `2xl` */
+  rounding?: "lg" | "xl" | "2xl";
 }
 
 const LpTextField = React.forwardRef<HTMLInputElement, LpTextFieldProps>(function LpTextField(
@@ -43,7 +43,7 @@ const LpTextField = React.forwardRef<HTMLInputElement, LpTextFieldProps>(functio
   ref,
 ) {
   const surfaceClass = surface === "muted" ? "bg-lp-surface" : "bg-white";
-  const roundClass = rounding === "lg" ? "rounded-lg" : "rounded-xl";
+  const roundClass = rounding === "lg" ? "rounded-lg" : rounding === "2xl" ? "rounded-2xl" : "rounded-xl";
 
   const labelClass = cn(
     "font-sans text-xs font-semibold uppercase tracking-wide",

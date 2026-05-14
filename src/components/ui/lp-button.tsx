@@ -31,6 +31,14 @@ const lpButtonVariants = cva(
           "rounded-lg border border-lp-outline-variant bg-transparent px-4 py-2.5 text-sm font-semibold tracking-wide text-lp-on-surface transition-all duration-200 hover:bg-lp-surface-container active:scale-95 sm:px-6",
         headerGuestCta:
           "rounded-lg bg-gradient-to-r from-lp-brand to-lp-brand-bright px-4 py-2.5 text-sm font-semibold tracking-wide text-lp-on-brand shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 sm:px-6",
+        pillOn:
+          "rounded-full bg-lp-brand px-6 py-2.5 text-xs font-semibold uppercase tracking-wide text-lp-on-brand shadow-md whitespace-nowrap",
+        pillOff:
+          "rounded-full border border-lp-outline-variant bg-lp-surface-container-lowest px-6 py-2.5 text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant whitespace-nowrap transition-all hover:border-lp-brand hover:text-lp-brand",
+        directoryFab:
+          "pointer-events-none flex size-12 shrink-0 items-center justify-center rounded-full bg-lp-brand text-lp-on-brand shadow-lg transition-transform group-hover:scale-110",
+        paginationIcon:
+          "flex size-10 shrink-0 items-center justify-center rounded-full border border-lp-outline-variant text-lp-on-surface-variant transition-colors hover:bg-lp-surface-container disabled:opacity-50",
       },
       size: {
         default: "",
