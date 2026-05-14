@@ -178,14 +178,14 @@ export default function Header({ className }: HeaderProps) {
       <div className="hidden md:flex items-center gap-4">
         <button
           type="button"
-          className="hidden sm:block px-6 py-2.5 text-sm font-semibold tracking-wide text-lp-on-surface border border-lp-outline-variant rounded-lg hover:bg-lp-surface-container-low transition-all duration-200 active:scale-95"
+          className="hidden cursor-pointer sm:block px-6 py-2.5 text-sm font-semibold tracking-wide text-lp-on-surface border border-lp-outline-variant rounded-lg hover:bg-lp-surface-container-low transition-all duration-200 active:scale-95"
           onClick={() => router.push("/login")}
         >
           Login
         </button>
         <button
           type="button"
-          className="px-6 py-2.5 text-sm font-semibold tracking-wide bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+          className="px-6 py-2.5 cursor-pointer text-sm font-semibold tracking-wide bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
           onClick={() => router.push("/register")}
         >
           Sign up
