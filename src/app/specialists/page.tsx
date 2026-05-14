@@ -48,7 +48,7 @@ interface Specialist {
   description: string;
   dealsWith: string;
   icon: LucideIcon;
-  /** Matches MedicalSpecialties.tsx card icon treatment */
+  /** Icon chip colors (Tailwind utility classes) */
   color: string;
 }
 
