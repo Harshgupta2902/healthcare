@@ -1,17 +1,23 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Apple, Phone, Loader2, Eye, EyeOff, Sparkles, ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  Mail,
+  Apple,
+  Loader2,
+  Eye,
+  EyeOff,
+  Lock,
+  KeyRound,
+  Shield,
+} from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 import { signIn } from "@/features/profile/actions";
+import { cn } from "@/lib/utils";
+import { LOGIN_AVATAR_1, LOGIN_AVATAR_2, LOGIN_GOOGLE_ICON, LOGIN_SIDE_IMAGE } from "./constants";
 
 interface FormData {
   email: string;
@@ -31,6 +37,9 @@ function safeInternalRedirect(raw: string | null): string | null {
   return raw;
 }
 
+const inputClass =
+  "block w-full rounded-lg border border-lp-outline-variant bg-lp-surface py-3 pl-11 pr-4 font-sans text-base leading-6 text-lp-on-surface outline-none transition-all placeholder:text-lp-on-surface-variant/70 focus:border-lp-brand focus:ring-2 focus:ring-lp-brand/20 disabled:opacity-50 md:text-sm";
+
 function LoginContent() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -38,12 +47,12 @@ function LoginContent() {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  /** idle → signing in → redirecting (stay on redirecting until page unmounts) */
   const [authPhase, setAuthPhase] = useState<"idle" | "signing-in" | "redirecting">("idle");
   const [showPassword, setShowPassword] = useState(false);
   const isBusy = authPhase !== "idle";
   const router = useRouter();
   const searchParams = useSearchParams();
+  const year = new Date().getFullYear();
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -70,13 +79,13 @@ function LoginContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
 
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
@@ -105,11 +114,10 @@ function LoginContent() {
         redirectPath = userRole === "admin" ? "/application/enter" : "/dashboard";
       }
 
-      // Keep UI in loading state through navigation (do not set idle on success)
       setAuthPhase("redirecting");
       router.push(redirectPath);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred. Please try again.");
       setAuthPhase("idle");
     }
@@ -120,183 +128,176 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen relative bg-background flex items-center justify-center p-4 selection:bg-primary selection:text-primary-foreground overflow-hidden">
-      {/* Designer Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-lp-surface font-sans text-lp-on-surface">
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between px-5 py-4 md:px-16 bg-lp-surface/40 backdrop-blur-sm">
+        <Link href="/" className="font-heading text-2xl font-bold leading-8 text-lp-cta-bg">
+          HealthHere
+        </Link>
+        <div className="hidden md:block">
+          <span className="font-sans text-sm font-semibold tracking-wide text-lp-on-surface-variant">
+            Need help?{" "}
+            <Link href="/support" className="font-bold text-lp-brand hover:underline">
+              Support
+            </Link>
+          </span>
+        </div>
+      </header>
 
+      <div className="relative flex flex-1 flex-col">
+        <main className="relative z-0 mt-16 flex flex-1 flex-col items-center justify-center px-5 py-16 md:px-0">
+          <div
+            className="login-organic-blob -left-24 -top-24 h-[500px] w-[500px] rounded-full bg-lp-secondary-fixed"
+            aria-hidden
+          />
+          <div
+            className="login-organic-blob -right-12 bottom-0 h-[400px] w-[400px] rounded-full bg-[#b9c7e4]"
+            aria-hidden
+          />
 
-      <div className="relative z-10 w-full max-w-md">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative group"
-        >
-          <div className="absolute -inset-1 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-12 px-0 lg:flex-row lg:items-center lg:justify-center lg:gap-16 lg:px-16">
+            <div className="login-surface-card relative w-full max-w-[480px] rounded-xl p-8 md:p-12">
+              {isBusy && (
+                <div
+                  className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 rounded-xl bg-white/85 px-6 text-center backdrop-blur-sm"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <Loader2 className="h-10 w-10 shrink-0 animate-spin text-lp-brand" />
+                  <p className="text-xs font-semibold uppercase tracking-widest text-lp-on-surface-variant">
+                    {authPhase === "signing-in" ? "Signing you in..." : "Taking you to your dashboard..."}
+                  </p>
+                </div>
+              )}
 
-          <Card className="relative shadow-2xl border border-border/50 bg-background/80 backdrop-blur-xl rounded-[32px] overflow-hidden">
-            {isBusy && (
-              <div
-                className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 rounded-[32px] bg-background/80 backdrop-blur-md px-6 text-center"
-                aria-live="polite"
-                aria-busy="true"
-              >
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">
-                  {authPhase === "signing-in" ? "Signing you in..." : "Taking you to your dashboard..."}
+              <div className="mb-8 text-center">
+                <div className="mb-2 inline-flex items-center justify-center rounded-lg bg-lp-brand-bright p-3 text-lp-on-secondary-container">
+                  <Lock className="size-8 shrink-0" aria-hidden />
+                </div>
+                <h1 className="mb-2 font-heading text-3xl font-bold leading-10 tracking-tight text-lp-cta-bg md:text-4xl md:leading-[40px]">
+                  Welcome Back
+                </h1>
+                <p className="font-sans text-base leading-6 text-lp-on-surface-variant">
+                  Enter your credentials to access your dashboard.
                 </p>
               </div>
-            )}
-            <CardHeader className="space-y-4 text-center pt-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mx-auto mb-2">
-                <Sparkles className="w-3 h-3" />
-                <span>Secure Access</span>
-              </div>
-              <CardTitle className="text-3xl font-black tracking-tight text-foreground">
-                Welcome Back
-              </CardTitle>
-              <CardDescription className="text-muted-foreground font-medium">
-                Enter your credentials to access your dashboard.
-              </CardDescription>
-            </CardHeader>
 
-            <CardContent className="space-y-8 pb-10">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                  <label htmlFor="email" className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface">
                     Email Address
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 focus:bg-background transition-all font-bold ${errors.email ? "border-red-500/50" : ""
-                      }`}
-                    disabled={isBusy}
-                  />
-                  {errors.email && (
-                    <p className="text-xs text-red-500 font-bold ml-1">{errors.email}</p>
-                  )}
+                  </label>
+                  <div className="group relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-lp-outline-variant transition-colors group-focus-within:text-lp-brand">
+                      <Mail className="size-5 shrink-0" aria-hidden />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="name@clinic.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      disabled={isBusy}
+                      aria-invalid={!!errors.email}
+                      className={cn(inputClass, errors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20")}
+                    />
+                  </div>
+                  {errors.email && <p className="text-xs font-medium text-red-600">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="password" className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface">
+                      Password
+                    </label>
+                    <Link
+                      href="/forgot-password"
+                      className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-brand transition-all hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
+                  <div className="group relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-lp-outline-variant transition-colors group-focus-within:text-lp-brand">
+                      <KeyRound className="size-5 shrink-0" aria-hidden />
+                    </div>
+                    <input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className={`h-14 rounded-2xl border-border/50 bg-secondary/20 px-6 pr-14 focus:bg-background transition-all font-bold ${errors.password ? "border-red-500/50" : ""
-                        }`}
                       disabled={isBusy}
-                      autoComplete="off"
+                      aria-invalid={!!errors.password}
+                      className={cn(
+                        inputClass,
+                        "pr-12",
+                        errors.password && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                      )}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-lp-outline-variant transition-colors hover:text-lp-on-surface disabled:opacity-50"
                       disabled={isBusy}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
+                      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                     </button>
                   </div>
-                  {errors.password && (
-                    <p className="text-xs text-red-500 font-bold ml-1">{errors.password}</p>
-                  )}
+                  {errors.password && <p className="text-xs font-medium text-red-600">{errors.password}</p>}
                 </div>
 
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      id="rememberMe"
-                      name="rememberMe"
-                      type="checkbox"
-                      checked={formData.rememberMe}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-primary focus:ring-primary border-border/50 rounded cursor-pointer"
-                      disabled={isBusy}
-                    />
-                    <Label htmlFor="rememberMe" className="text-xs font-bold text-muted-foreground cursor-pointer">
-                      Remember me
-                    </Label>
-                  </div>
-                  <Link href="/forgot-password" className="text-xs font-black text-primary hover:underline">
-                    Forgot Password?
-                  </Link>
+                <div className="flex items-center">
+                  <input
+                    id="rememberMe"
+                    name="rememberMe"
+                    type="checkbox"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
+                    disabled={isBusy}
+                    className="size-4 rounded border-lp-outline-variant text-lp-brand focus:ring-lp-brand"
+                  />
+                  <label htmlFor="rememberMe" className="ml-2 cursor-pointer font-sans text-sm leading-5 text-lp-on-surface-variant">
+                    Remember Me
+                  </label>
                 </div>
 
-                <Button
+                <button
                   type="submit"
-                  className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white text-lg font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all"
                   disabled={isBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-lp-brand to-lp-brand-bright py-4 font-sans text-sm font-semibold uppercase tracking-wide text-lp-on-brand shadow-lg transition-all hover:shadow-xl active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
                 >
                   {authPhase === "idle" ? (
-                    "Log In"
+                    <>
+                      <Shield className="size-5 shrink-0" aria-hidden />
+                      Log In
+                    </>
                   ) : (
                     <span className="inline-flex items-center justify-center gap-2">
-                      <Loader2 className="h-6 w-6 animate-spin shrink-0" />
+                      <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden />
                       {authPhase === "signing-in" ? "Signing you in..." : "Redirecting..."}
                     </span>
                   )}
-                </Button>
+                </button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
-                  <span className="bg-background px-4 text-muted-foreground">
-                    Or Continue With
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { icon: Mail, label: "Google" },
-                  { icon: Apple, label: "Apple" },
-                  { icon: Phone, label: "Phone" }
-                ].map((item) => (
-                  <Button
-                    key={item.label}
-                    variant="outline"
-                    onClick={() => handleSocialLogin(item.label)}
-                    className="h-14 rounded-2xl border-border/50 hover:bg-secondary/50 transition-all group"
-                    disabled={isBusy}
-                  >
-                    <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                  </Button>
-                ))}
-              </div>
-
-              <div className="text-center pt-4">
-                <p className="text-sm text-muted-foreground font-medium">
-                  Don't have an account?{" "}
-                  <Link
-                    href="/register"
-                    className="font-black text-primary hover:underline"
-                  >
+              <div className="mt-8 text-center">
+                <p className="font-sans text-sm leading-5 text-lp-on-surface-variant">
+                  New to HealthHere?{" "}
+                  <Link href="/register" className="font-bold text-lp-brand transition-all hover:underline">
                     Sign Up
                   </Link>
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
+
+          </div>
+        </main>
+
       </div>
     </div>
   );
@@ -304,9 +305,8 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen bg-lp-surface" aria-hidden />}>
       <LoginContent />
     </Suspense>
   );
 }
-
