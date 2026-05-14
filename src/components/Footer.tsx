@@ -14,7 +14,7 @@ interface FooterProps {
 }
 
 const labelClass =
-  "font-heading text-xs font-semibold uppercase tracking-wider text-lp-on-surface mb-2 block";
+  "font-heading text-sm font-bold uppercase tracking-wider text-lp-on-surface mb-2 block";
 const linkClass =
   "text-sm text-lp-on-surface-variant transition-colors hover:text-lp-brand";
 
