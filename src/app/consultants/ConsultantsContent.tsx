@@ -8,12 +8,10 @@ import {
   ArrowRight,
   Star,
   ShieldCheck,
-  SlidersHorizontal,
   Briefcase,
   Stethoscope,
   ChevronLeft,
   ChevronRight,
-  ArrowDownUp,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -29,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 
 interface ConsultantsContentProps {
   initialProfessionals: any[];
@@ -70,9 +67,6 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [expRange, setExpRange] = useState([0, 40]);
-  const [showFilters, setShowFilters] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>("price-desc");
 
   const currentSearch = searchParams.get("q") || "";
@@ -90,15 +84,10 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
 
   const filteredProfessionals = useMemo(() => {
     return initialProfessionals.filter((p) => {
-      const fee = (p.consultationFee || 0) / 100;
-      const exp = p.yearsOfExperience || 0;
-      const matchesPrice = fee >= priceRange[0] && fee <= priceRange[1];
-      const matchesExp = exp >= expRange[0] && exp <= expRange[1];
       const matchesCity = currentCity === "all" || p.city === currentCity;
-
-      return matchesPrice && matchesExp && matchesCity;
+      return matchesCity;
     });
-  }, [initialProfessionals, priceRange, expRange, currentCity]);
+  }, [initialProfessionals, currentCity]);
 
   const sortedProfessionals = useMemo(() => {
     const list = [...filteredProfessionals];
@@ -133,9 +122,8 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
         </section>
 
         <div className="sticky top-20 z-40 -mx-5 bg-lp-surface px-5 py-4 md:-mx-16 md:px-16">
-          <div className="mx-auto flex max-w-7xl flex-col items-stretch gap-4 md:flex-row md:items-stretch">
-            <div className="flex w-full min-w-0 flex-col gap-4 md:flex-1 md:flex-row md:items-stretch">
-              <div className="flex w-full min-w-0 items-stretch md:w-auto md:min-w-[180px]">
+          <div className="mx-auto flex max-w-7xl w-full flex-col gap-4 md:flex-row md:items-stretch">
+            <div className="flex w-full min-w-0 items-stretch md:w-auto md:min-w-[180px]">
               <Select value={currentCity} onValueChange={(val) => updateQuery({ city: val })}>
                 <SelectTrigger
                   className={cn(
@@ -164,9 +152,9 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
                   ))}
                 </SelectContent>
               </Select>
-              </div>
+            </div>
 
-              <div className="min-w-0 flex-1 [&_.space-y-2]:space-y-0">
+            <div className="min-w-0 flex-1 [&_.space-y-2]:space-y-0">
               <LpTextField
                 key={currentSearch}
                 id="consultant-search"
@@ -184,19 +172,6 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
                   "placeholder:font-normal placeholder:text-lp-on-surface-variant/80",
                 )}
               />
-              </div>
-            </div>
-
-            <div className="flex w-full items-stretch md:w-auto md:shrink-0 md:items-center">
-              <LpButton
-                type="button"
-                variant="outlineSoft"
-                className="min-h-12 w-full gap-2 rounded-2xl border-lp-brand px-4 py-3 text-xs font-semibold uppercase tracking-wide text-lp-brand hover:bg-lp-brand/5 md:w-auto"
-                onClick={() => setShowFilters((v) => !v)}
-              >
-                <SlidersHorizontal className="size-4 shrink-0" aria-hidden />
-                Advanced Filters
-              </LpButton>
             </div>
           </div>
         </div>
@@ -254,62 +229,6 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
           </div>
         </div>
 
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="mb-8 overflow-hidden rounded-2xl border border-lp-outline-variant/30 bg-lp-surface-container-low"
-            >
-              <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10 px-4 py-8 md:grid-cols-2 md:px-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-heading text-xs font-semibold uppercase tracking-wider text-lp-cta-bg">
-                      Consultation Fee
-                    </h4>
-                    <span className="font-heading text-lg font-semibold text-lp-brand">
-                      ₹{priceRange[0]} – ₹{priceRange[1]}
-                    </span>
-                  </div>
-                  <Slider
-                    defaultValue={[0, 5000]}
-                    max={10000}
-                    step={100}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="py-2"
-                  />
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-wider text-lp-on-surface-variant">
-                    Adjust your budget to find standard or premium specialists.
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-heading text-xs font-semibold uppercase tracking-wider text-lp-cta-bg">
-                      Experience Level
-                    </h4>
-                    <span className="font-heading text-lg font-semibold text-lp-brand">
-                      {expRange[0]} – {expRange[1]} yrs
-                    </span>
-                  </div>
-                  <Slider
-                    defaultValue={[0, 40]}
-                    max={50}
-                    step={1}
-                    value={expRange}
-                    onValueChange={setExpRange}
-                    className="py-2"
-                  />
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-wider text-lp-on-surface-variant">
-                    Filter by clinical maturity, from rising stars to veteran experts.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <AnimatePresence mode="popLayout">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {sortedProfessionals.map((prof, idx) => (
@@ -329,19 +248,17 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
             </div>
             <h2 className="mb-2 font-heading text-2xl font-bold text-lp-cta-bg">No expert found</h2>
             <p className="mb-6 font-sans text-sm text-lp-on-surface-variant">
-              Try adjusting your filters or searching another specialization.
+              Try another search, location, or specialty.
             </p>
             <LpButton
               type="button"
               variant="ghost"
               className="font-semibold uppercase tracking-widest text-lp-brand"
               onClick={() => {
-                setPriceRange([0, 5000]);
-                setExpRange([0, 40]);
                 updateQuery({ q: null, specialty: "all", city: "all" });
               }}
             >
-              Reset all filters
+              Reset search
             </LpButton>
           </motion.div>
         )}
