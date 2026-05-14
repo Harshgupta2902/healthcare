@@ -17,7 +17,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { LpButton } from "@/components/ui/lp-button";
+import { LpTextField } from "@/components/ui/lp-text-field";
 
 interface FormData {
   firstName: string;
@@ -38,11 +39,6 @@ interface FormErrors {
   confirmPassword?: string;
   terms?: string;
 }
-
-const fieldClass =
-  "w-full rounded-xl border border-lp-outline-variant bg-white px-4 py-3 font-sans text-base leading-6 text-lp-on-surface outline-none transition-all placeholder:text-lp-on-surface-variant/60 focus:border-lp-brand focus:ring-2 focus:ring-lp-brand/20 disabled:opacity-50 md:text-sm";
-
-const iconInputClass = `${fieldClass} pl-12 pr-4`;
 
 function RegisterContent() {
   const router = useRouter();
@@ -184,7 +180,7 @@ function RegisterContent() {
               aria-live="polite"
               aria-busy="true"
             >
-              <Loader2 className="h-10 w-10 animate-spin text-lp-brand" />
+              <Loader2 className="h-10 w-10 shrink-0 animate-spin text-lp-brand" />
               <p className="text-xs font-semibold uppercase tracking-widest text-lp-on-surface-variant">Creating your account…</p>
             </div>
           )}
@@ -201,189 +197,124 @@ function RegisterContent() {
           </div>
 
           <div className="mb-8 flex rounded-xl border border-lp-outline-variant/20 bg-lp-surface-container-low p-1">
-            <button
+            <LpButton
               type="button"
+              variant={formData.role === "client" ? "segmentOn" : "segmentOff"}
               onClick={() => setFormData((p) => ({ ...p, role: "client" }))}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 px-4 font-sans text-sm font-semibold uppercase tracking-wide transition-all",
-                formData.role === "client"
-                  ? "bg-white text-lp-brand shadow-sm"
-                  : "text-lp-on-surface-variant hover:text-lp-brand",
-              )}
+              disabled={isLoading}
+              className="gap-2"
             >
               <User className="size-5 shrink-0" aria-hidden />
               Patient
-            </button>
-            <button
+            </LpButton>
+            <LpButton
               type="button"
+              variant={formData.role === "professional" ? "segmentOn" : "segmentOff"}
               onClick={() => setFormData((p) => ({ ...p, role: "professional" }))}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 px-4 font-sans text-sm font-semibold uppercase tracking-wide transition-all",
-                formData.role === "professional"
-                  ? "bg-white text-lp-brand shadow-sm"
-                  : "text-lp-on-surface-variant hover:text-lp-brand",
-              )}
+              disabled={isLoading}
+              className="gap-2"
             >
               <Stethoscope className="size-5 shrink-0" aria-hidden />
               Provider
-            </button>
+            </LpButton>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <label htmlFor="firstName" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={cn(fieldClass, errors.firstName && "border-red-500 focus:border-red-500 focus:ring-red-500/20")}
-                />
-                {errors.firstName && <p className="text-xs text-red-600">{errors.firstName}</p>}
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="lastName" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={cn(fieldClass, errors.lastName && "border-red-500 focus:border-red-500 focus:ring-red-500/20")}
-                />
-                {errors.lastName && <p className="text-xs text-red-600">{errors.lastName}</p>}
-              </div>
+              <LpTextField
+                id="firstName"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                label="First Name"
+                placeholder="John"
+                value={formData.firstName}
+                onChange={handleChange}
+                disabled={isLoading}
+                error={errors.firstName}
+              />
+              <LpTextField
+                id="lastName"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                label="Last Name"
+                placeholder="Doe"
+                value={formData.lastName}
+                onChange={handleChange}
+                disabled={isLoading}
+                error={errors.lastName}
+              />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="mobileNumber" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                Mobile Number
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant">
-                  <Smartphone className="size-5" aria-hidden />
-                </span>
-                <input
-                  id="mobileNumber"
-                  name="mobileNumber"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={iconInputClass}
-                />
-              </div>
-            </div>
+            <LpTextField
+              id="mobileNumber"
+              name="mobileNumber"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              label="Mobile Number"
+              placeholder="+1 (555) 000-0000"
+              value={formData.mobileNumber}
+              onChange={handleChange}
+              disabled={isLoading}
+              startIcon={<Smartphone className="size-5" aria-hidden />}
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="email" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                Email Address
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant">
-                  <Mail className="size-5" aria-hidden />
-                </span>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="john.doe@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={cn(iconInputClass, errors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20")}
-                />
-              </div>
-              {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
-            </div>
+            <LpTextField
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              label="Email Address"
+              placeholder="john.doe@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isLoading}
+              error={errors.email}
+              startIcon={<Mail className="size-5" aria-hidden />}
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="password" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                Create Password
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant">
-                  <Lock className="size-5" aria-hidden />
-                </span>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="••••••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={cn(
-                    iconInputClass,
-                    "pr-12",
-                    errors.password && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                  )}
-                />
-                <button
+            <LpTextField
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              label="Create Password"
+              placeholder="••••••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              disabled={isLoading}
+              error={errors.password}
+              startIcon={<Lock className="size-5" aria-hidden />}
+              endSlot={
+                <LpButton
                   type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-4 top-1/2 -translate-y-1/2"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant transition-colors hover:text-lp-on-surface disabled:opacity-50"
                   disabled={isLoading}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                </button>
-              </div>
-              {errors.password && <p className="text-xs text-red-600">{errors.password}</p>}
-            </div>
+                </LpButton>
+              }
+            />
 
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block px-1 font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant">
-                  <Lock className="size-5" aria-hidden />
-                </span>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="••••••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className={cn(
-                    iconInputClass,
-                    "pr-12",
-                    errors.confirmPassword && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-lp-on-surface-variant transition-colors hover:text-lp-on-surface disabled:opacity-50"
-                  disabled={isLoading}
-                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                >
-                  {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                </button>
-              </div>
-              {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword}</p>}
-            </div>
+            <LpTextField
+              id="confirmPassword"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              label="Confirm Password"
+              placeholder="••••••••••••"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              disabled={isLoading}
+              error={errors.confirmPassword}
+              startIcon={<Lock className="size-5" aria-hidden />}
+            />
 
             <div className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container p-4">
               <p className="mb-3 font-heading text-xs font-semibold uppercase tracking-wide text-lp-cta-bg">Security Requirements</p>
@@ -425,11 +356,7 @@ function RegisterContent() {
             </div>
             {errors.terms && <p className="text-xs text-red-600">{errors.terms}</p>}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright py-4 font-heading text-xl font-semibold leading-8 text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:pointer-events-none disabled:opacity-70 md:text-2xl md:leading-10"
-            >
+            <LpButton type="submit" variant="primaryLg" fullWidth disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="size-6 shrink-0 animate-spin" aria-hidden />
@@ -441,17 +368,16 @@ function RegisterContent() {
                   <ArrowRight className="size-6 shrink-0" aria-hidden />
                 </>
               )}
-            </button>
+            </LpButton>
           </form>
 
           <div className="mt-8 border-t border-lp-outline-variant/30 pt-8 text-center md:hidden">
             <p className="mb-4 font-sans text-base leading-6 text-lp-on-surface-variant">Already have an account?</p>
-            <Link
-              href="/login"
-              className="inline-block rounded-xl border-2 border-lp-brand px-8 py-3 font-sans text-sm font-semibold uppercase tracking-wide text-lp-brand transition-all active:scale-95 hover:bg-lp-surface-container-low"
-            >
-              Login
-            </Link>
+            <div className="flex justify-center">
+              <LpButton asChild variant="outline">
+                <Link href="/login">Login</Link>
+              </LpButton>
+            </div>
           </div>
         </div>
       </div>

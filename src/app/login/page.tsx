@@ -1,23 +1,13 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Mail,
-  Apple,
-  Loader2,
-  Eye,
-  EyeOff,
-  Lock,
-  KeyRound,
-  Shield,
-} from "lucide-react";
+import { Mail, Loader2, Eye, EyeOff, Lock, KeyRound, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { signIn } from "@/features/profile/actions";
-import { cn } from "@/lib/utils";
-import { LOGIN_AVATAR_1, LOGIN_AVATAR_2, LOGIN_GOOGLE_ICON, LOGIN_SIDE_IMAGE } from "./constants";
+import { LpButton } from "@/components/ui/lp-button";
+import { LpTextField } from "@/components/ui/lp-text-field";
 
 interface FormData {
   email: string;
@@ -37,9 +27,6 @@ function safeInternalRedirect(raw: string | null): string | null {
   return raw;
 }
 
-const inputClass =
-  "block w-full rounded-lg border border-lp-outline-variant bg-lp-surface py-3 pl-11 pr-4 font-sans text-base leading-6 text-lp-on-surface outline-none transition-all placeholder:text-lp-on-surface-variant/70 focus:border-lp-brand focus:ring-2 focus:ring-lp-brand/20 disabled:opacity-50 md:text-sm";
-
 function LoginContent() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -52,7 +39,6 @@ function LoginContent() {
   const isBusy = authPhase !== "idle";
   const router = useRouter();
   const searchParams = useSearchParams();
-  const year = new Date().getFullYear();
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -123,13 +109,9 @@ function LoginContent() {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    toast.info(`${provider} login coming soon!`);
-  };
-
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-lp-surface font-sans text-lp-on-surface">
-      <header className="fixed top-0 z-50 flex w-full items-center justify-between px-5 py-4 md:px-16 bg-lp-surface/40 backdrop-blur-sm">
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-lp-surface/40 px-5 py-4 backdrop-blur-sm md:px-16">
         <Link href="/" className="font-heading text-2xl font-bold leading-8 text-lp-cta-bg">
           HealthHere
         </Link>
@@ -182,74 +164,58 @@ function LoginContent() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="email" className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface">
-                    Email Address
-                  </label>
-                  <div className="group relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-lp-outline-variant transition-colors group-focus-within:text-lp-brand">
-                      <Mail className="size-5 shrink-0" aria-hidden />
-                    </div>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="name@clinic.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      disabled={isBusy}
-                      aria-invalid={!!errors.email}
-                      className={cn(inputClass, errors.email && "border-red-500 focus:border-red-500 focus:ring-red-500/20")}
-                    />
-                  </div>
-                  {errors.email && <p className="text-xs font-medium text-red-600">{errors.email}</p>}
-                </div>
+                <LpTextField
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  label="Email Address"
+                  placeholder="name@clinic.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  disabled={isBusy}
+                  error={errors.email}
+                  startIcon={<Mail className="size-5 shrink-0" aria-hidden />}
+                  surface="muted"
+                  rounding="lg"
+                />
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface">
-                      Password
-                    </label>
+                <LpTextField
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  label="Password"
+                  labelEndSlot={
                     <Link
                       href="/forgot-password"
                       className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-brand transition-all hover:underline"
                     >
                       Forgot Password?
                     </Link>
-                  </div>
-                  <div className="group relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-lp-outline-variant transition-colors group-focus-within:text-lp-brand">
-                      <KeyRound className="size-5 shrink-0" aria-hidden />
-                    </div>
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      disabled={isBusy}
-                      aria-invalid={!!errors.password}
-                      className={cn(
-                        inputClass,
-                        "pr-12",
-                        errors.password && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
-                      )}
-                    />
-                    <button
+                  }
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={isBusy}
+                  error={errors.password}
+                  startIcon={<KeyRound className="size-5 shrink-0" aria-hidden />}
+                  endSlot={
+                    <LpButton
                       type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-lp-outline-variant transition-colors hover:text-lp-on-surface disabled:opacity-50"
                       disabled={isBusy}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                    </button>
-                  </div>
-                  {errors.password && <p className="text-xs font-medium text-red-600">{errors.password}</p>}
-                </div>
+                    </LpButton>
+                  }
+                  surface="muted"
+                  rounding="lg"
+                />
 
                 <div className="flex items-center">
                   <input
@@ -266,23 +232,19 @@ function LoginContent() {
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isBusy}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-lp-brand to-lp-brand-bright py-4 font-sans text-sm font-semibold uppercase tracking-wide text-lp-on-brand shadow-lg transition-all hover:shadow-xl active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
-                >
+                <LpButton type="submit" variant="primary" fullWidth disabled={isBusy}>
                   {authPhase === "idle" ? (
                     <>
                       <Shield className="size-5 shrink-0" aria-hidden />
                       Log In
                     </>
                   ) : (
-                    <span className="inline-flex items-center justify-center gap-2">
+                    <>
                       <Loader2 className="size-5 shrink-0 animate-spin" aria-hidden />
                       {authPhase === "signing-in" ? "Signing you in..." : "Redirecting..."}
-                    </span>
+                    </>
                   )}
-                </button>
+                </LpButton>
               </form>
 
               <div className="mt-8 text-center">
@@ -294,10 +256,8 @@ function LoginContent() {
                 </p>
               </div>
             </div>
-
           </div>
         </main>
-
       </div>
     </div>
   );
