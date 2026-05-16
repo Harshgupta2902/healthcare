@@ -1,87 +1,57 @@
-import Image from "next/image";
 import Link from "next/link";
-import { BadgeCheck, Users, Star, Headphones, Shield } from "lucide-react";
-import { HOME_HERO_IMAGE } from "./constants";
+import { BadgeCheck } from "lucide-react";
+
+const TRUST_STATS = [
+  { value: "10k+", label: "Active Users" },
+  { value: "4.9/5", label: "User Rating" },
+  { value: "24/7", label: "Expert Support" },
+  { value: "HIPAA", label: "Secure" },
+] as const;
 
 export function HeroSection() {
   return (
-    <section className="relative w-full bg-lp-surface">
-      <div className="px-5 sm:px-8 lg:px-16 max-w-7xl mx-auto py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-lp-brand-bright/10 text-lp-brand border border-lp-brand/20">
-              <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
-              <span className="text-sm font-semibold tracking-wide uppercase">Trusted by 10k+ patients</span>
-            </div>
-            <h1 className="font-heading text-4xl sm:text-5xl leading-tight sm:leading-[56px] font-bold tracking-tight text-foreground max-w-xl">
+    <section className="relative w-full bg-lp-surface px-5 py-24 sm:px-8 md:py-32 lg:px-16">
+      <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-lp-brand/20 bg-lp-brand-bright/10 px-4 py-1.5 text-lp-brand">
+            <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
+            <span className="font-sans text-sm font-semibold uppercase tracking-wide">Trusted by 10k+ patients</span>
+          </div>
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-foreground">
               Healthcare that <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
                 Actually Works
               </span>
             </h1>
-            <p className="text-lg leading-7 text-lp-on-surface-variant max-w-lg">
-              Ditch the waiting room. Access world-class medical experts, personalized treatment plans, and secure care
-              from anywhere in the world.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-4">
-              <Link
-                href="/book-consultation"
-                className="inline-flex items-center justify-center px-8 py-4 bg-lp-brand text-lp-on-brand text-xl font-semibold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-              >
-                Get Started Now
-              </Link>
-              <Link
-                href="/consultants"
-                className="inline-flex items-center justify-center px-8 py-4 bg-lp-surface-container text-lp-brand text-xl font-semibold rounded-xl hover:bg-lp-surface-container-high transition-all"
-              >
-                Find Specialist
-              </Link>
-            </div>
+
+          <p className="max-w-2xl font-sans text-lg leading-7 text-lp-on-surface-variant">
+            Ditch the waiting room. Access world-class medical experts, personalized treatment plans, and secure care
+            from anywhere in the world.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-4 pt-8">
+            <Link
+              href="/book-consultation"
+              className="inline-flex items-center justify-center rounded-xl bg-lp-brand px-8 py-4 font-heading text-xl font-semibold text-lp-on-brand shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              Get Started For Free
+            </Link>
+            <Link
+              href="/consultants"
+              className="inline-flex items-center justify-center rounded-xl bg-lp-surface-container px-8 py-4 font-heading text-xl font-semibold text-lp-brand transition-all hover:bg-lp-surface-container-high"
+            >
+              Find Specialist
+            </Link>
           </div>
-          <div className="relative">
-            <div className="rounded-[2rem] overflow-hidden shadow-2xl aspect-[4/3] max-h-[450px] relative">
-              <Image
-                src={HOME_HERO_IMAGE}
-                alt="Clinical excellence — professional medical environment with diagnostic technology"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-              />
+        </div>
+
+        <div className="mt-16 grid w-full max-w-3xl grid-cols-2 gap-8 border-t border-lp-outline-variant/30 pt-16 md:grid-cols-4">
+          {TRUST_STATS.map((stat) => (
+            <div className="flex flex-col items-center" key={stat.label}>
+              <div className="text-3xl font-bold">{stat.value}</div>
+              <div className="font-sans text-md text-lp-on-surface-variant">{stat.label}</div>
             </div>
-            <div className="absolute -bottom-8 -left-8 glass-card p-6 rounded-2xl shadow-xl max-w-md hidden md:block">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="flex items-center gap-3">
-                  <Users className="size-6 shrink-0 text-lp-brand" aria-hidden />
-                  <div>
-                    <div className="font-heading font-bold text-lp-cta-bg">10k+</div>
-                    <div className="text-sm text-lp-on-surface-variant">Active Users</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Star className="size-6 shrink-0 fill-lp-brand text-lp-brand" aria-hidden />
-                  <div>
-                    <div className="font-heading font-bold text-lp-cta-bg">4.9/5</div>
-                    <div className="text-sm text-lp-on-surface-variant">User Rating</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Headphones className="size-6 shrink-0 text-lp-brand" aria-hidden />
-                  <div>
-                    <div className="font-heading font-bold text-lp-cta-bg">24/7</div>
-                    <div className="text-sm text-lp-on-surface-variant">Expert Support</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Shield className="size-6 shrink-0 text-lp-brand" aria-hidden />
-                  <div>
-                    <div className="font-heading font-bold text-lp-cta-bg">HIPAA</div>
-                    <div className="text-sm text-lp-on-surface-variant">Security</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
