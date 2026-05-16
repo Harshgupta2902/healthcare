@@ -2,6 +2,15 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
+import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
+import { formatBookingDateLabel, formatBookingTimeLabel } from "@/lib/booking-display";
+import {
+  ageFromDateOfBirth,
+  normalizeBookingPhone,
+  splitFullName,
+  type BookingFormPrefill,
+} from "@/lib/booking-profile-prefill";
 import indianCities from "@/data/indian-cities.json";
 
 const placesSearchSchema = z.object({
@@ -130,4 +139,130 @@ export async function submitGuestAppointment(form: unknown) {
     return { error: error.message };
   }
   return { success: true, id: data.id };
+}
+
+// ============================================
+// Prefill booking form from signed-in profile
+// ============================================
+
+export async function getBookingFormPrefill(): Promise<{ prefill: BookingFormPrefill | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { prefill: null };
+  }
+
+  const [{ data: coreProfile }, { data: medProfile }] = await Promise.all([
+    supabase.from("users").select("name, email, phone").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("client_medical_profiles")
+      .select("date_of_birth, city, state")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  const prefill: BookingFormPrefill = {};
+  const displayName =
+    (coreProfile?.name as string | undefined)?.trim() ||
+    (user.user_metadata?.name as string | undefined)?.trim() ||
+    "";
+
+  if (displayName) {
+    const { firstName, lastName } = splitFullName(displayName);
+    if (firstName.length >= 2) prefill.firstName = firstName;
+    if (lastName.length >= 2) prefill.lastName = lastName;
+  }
+
+  const email = ((coreProfile?.email as string | undefined) || user.email || "").trim();
+  if (email) prefill.email = email;
+
+  const phone = normalizeBookingPhone(coreProfile?.phone as string | null);
+  if (phone) prefill.phone = phone;
+
+  const dob = (medProfile?.date_of_birth as string | null | undefined)?.trim();
+  if (dob) {
+    const age = ageFromDateOfBirth(dob);
+    if (age != null) prefill.age = age;
+  }
+
+  const city = (medProfile?.city as string | null | undefined)?.trim();
+  const state = (medProfile?.state as string | null | undefined)?.trim();
+  if (city) prefill.city = city;
+  if (state) prefill.state = state;
+
+  const hasAny = Object.keys(prefill).length > 0;
+  return { prefill: hasAny ? prefill : null };
+}
+
+// ============================================
+// Guest appointment confirmation (success page)
+// ============================================
+
+const appointmentIdSchema = z.string().uuid();
+
+export type GuestAppointmentConfirmation = {
+  consultantLabel: string;
+  dateLabel: string;
+  timeLabel: string;
+};
+
+type ConfirmationRpcRow = {
+  id: string;
+  category: string | null;
+  appointment_date: string;
+  appointment_time: string;
+  professional_id: string | null;
+};
+
+export async function getGuestAppointmentConfirmation(
+  appointmentId: string,
+): Promise<{ success: true; data: GuestAppointmentConfirmation } | { error: string }> {
+  const parsed = appointmentIdSchema.safeParse(appointmentId);
+  if (!parsed.success) {
+    return { error: "Invalid booking reference." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: rpcData, error: rpcError } = await supabase.rpc("get_guest_appointment_confirmation", {
+    p_id: parsed.data,
+  });
+
+  if (rpcError) {
+    console.error("[getGuestAppointmentConfirmation] rpc error:", rpcError);
+    return { error: "Confirmation is temporarily unavailable." };
+  }
+
+  const row = rpcData as ConfirmationRpcRow | null;
+  if (!row?.id) {
+    return { error: "Booking not found." };
+  }
+
+  let consultantLabel = row.category?.trim() || "Your specialist";
+
+  if (row.professional_id) {
+    const meta = await fetchGuestAppointmentProfessionalMeta(supabase, [row.professional_id]);
+    const prof = meta[row.professional_id];
+    if (prof?.name) {
+      const { data: profile } = await supabase
+        .from("professional_profiles")
+        .select("name_title")
+        .eq("user_id", row.professional_id)
+        .maybeSingle();
+      const formatted = formatProfessionalDisplayName(prof.name, profile?.name_title ?? null);
+      consultantLabel = formatted || prof.name;
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      consultantLabel,
+      dateLabel: formatBookingDateLabel(row.appointment_date as string),
+      timeLabel: formatBookingTimeLabel(row.appointment_time as string),
+    },
+  };
 }
