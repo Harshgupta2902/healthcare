@@ -26,6 +26,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* Header nav: mobile below 992px, desktop at 992px+ */
+  --breakpoint-nav: 62rem;
+
   /* App shell: align with reference HTML surface/background (#f8f9ff) */
   --color-background: #f8f9ff;
   --color-foreground: #0f172a;

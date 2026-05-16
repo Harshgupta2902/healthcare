@@ -127,7 +127,7 @@ export default function Header({ className }: HeaderProps) {
 
     if (user) {
       return (
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden nav:flex items-center gap-4">
           <Button
             variant="outline"
             size="sm"
@@ -176,7 +176,7 @@ export default function Header({ className }: HeaderProps) {
     }
 
     return (
-      <div className="hidden md:flex items-center gap-4">
+      <div className="hidden nav:flex items-center gap-4">
         <LpButton
           type="button"
           variant="headerGuest"
@@ -196,17 +196,17 @@ export default function Header({ className }: HeaderProps) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 flex h-20 w-full items-center justify-between border-b border-lp-outline-variant/30 bg-lp-surface/80 px-5 shadow-sm backdrop-blur-md sm:px-8 lg:px-16 ${className ?? ""}`}
     >
-      <div className="flex min-w-0 items-center gap-3 md:gap-4">
+      <div className="flex min-w-0 items-center gap-3 nav:gap-4">
         <Link
           href="/"
-          className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600 font-extrabold tracking-tight font-heading text-xl sm:text-2xl"
+          className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600 font-extrabold tracking-tight font-heading text-2xl sm:text-3xl"
         >
           HealthHere
         </Link>
         {mounted && !isPending && user && (
           <Badge
             variant="secondary"
-            className="hidden shrink-0 border border-lp-outline-variant/40 bg-lp-surface-container px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-lp-brand md:inline-flex"
+            className="hidden shrink-0 border border-lp-outline-variant/40 bg-lp-surface-container px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-lp-brand nav:inline-flex"
           >
             {user.user_metadata?.role === "professional" ? (
               <>
@@ -219,7 +219,7 @@ export default function Header({ className }: HeaderProps) {
         )}
       </div>
 
-      <nav className="hidden flex-1 justify-center md:flex">
+      <nav className="hidden flex-1 justify-center nav:flex">
         <div className="flex items-center gap-6 lg:gap-8">
           <Link href="/services" className={desktopNavClass(pathname === "/services")}>
             Services
@@ -241,13 +241,13 @@ export default function Header({ className }: HeaderProps) {
         </div>
       </nav>
 
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-2 nav:gap-4">
         {renderAuthSection()}
 
         <Button
           variant="ghost"
           size="sm"
-          className="h-9 w-9 p-0 text-lp-on-surface md:hidden"
+          className="h-9 w-9 p-0 text-lp-on-surface nav:hidden"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
         >
@@ -256,7 +256,7 @@ export default function Header({ className }: HeaderProps) {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="absolute left-0 right-0 top-full border-t border-lp-outline-variant/30 bg-lp-surface-container-lowest shadow-lg md:hidden">
+        <div className="absolute left-0 right-0 top-full border-t border-lp-outline-variant/30 bg-lp-surface-container-lowest shadow-lg nav:hidden">
           <nav className="max-h-[min(70vh,calc(100dvh-5rem))] space-y-1 overflow-y-auto px-3 py-4">
             <Link
               href="/services"
