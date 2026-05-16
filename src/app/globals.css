@@ -318,4 +318,8 @@ nextjs-portal {
     filter: blur(80px);
     opacity: 0.4;
   }
+
+  .booking-success-glow {
+    box-shadow: 0 0 40px rgba(0, 89, 187, 0.15);
+  }
 }
