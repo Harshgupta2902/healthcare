@@ -73,3 +73,26 @@ CREATE TRIGGER trg_admin_notify_newsletter_change
   AFTER INSERT OR UPDATE OF status ON public.newsletter_subscribers
   FOR EACH ROW
   EXECUTE PROCEDURE public.admin_notify_on_newsletter_change();
+
+-- 2026-05-16: Booking success page — read appointment by id (anon-safe, UUID in URL).
+-- SECURITY DEFINER returns only confirmation fields; bypasses guest_appointments SELECT RLS.
+CREATE OR REPLACE FUNCTION public.get_guest_appointment_confirmation(p_id UUID)
+RETURNS JSON
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT json_build_object(
+    'id', g.id,
+    'category', g.category,
+    'appointment_date', g.appointment_date,
+    'appointment_time', g.appointment_time,
+    'professional_id', g.professional_id
+  )
+  FROM public.guest_appointments g
+  WHERE g.id = p_id
+  LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_guest_appointment_confirmation(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_guest_appointment_confirmation(UUID) TO anon, authenticated;

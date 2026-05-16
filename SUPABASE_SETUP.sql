@@ -118,6 +118,28 @@ begin
   end if;
 end$$;
 
+-- RPC: booking success page reads appointment by id (anon + authenticated; UUID is unguessable).
+CREATE OR REPLACE FUNCTION public.get_guest_appointment_confirmation(p_id UUID)
+RETURNS JSON
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT json_build_object(
+    'id', g.id,
+    'category', g.category,
+    'appointment_date', g.appointment_date,
+    'appointment_time', g.appointment_time,
+    'professional_id', g.professional_id
+  )
+  FROM public.guest_appointments g
+  WHERE g.id = p_id
+  LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_guest_appointment_confirmation(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_guest_appointment_confirmation(UUID) TO anon, authenticated;
+
 -- SUPABASE SETUP SCRIPT (Renamed profiles to users)
 -- Copy and paste this into the Supabase SQL Editor
 
