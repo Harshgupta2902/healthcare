@@ -88,10 +88,10 @@ export function NewsletterSubscribe({
           </p>
         </div>
       ) : (
-        <div className="w-full md:max-w-xl">
+        <div className="w-full space-y-2 md:max-w-xl">
           <form
             onSubmit={handleNewsletterSubmit}
-            className="flex w-full flex-col gap-3 sm:flex-row sm:items-start"
+            className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
           >
             <div className="min-w-0 flex-1 [&_.space-y-2]:space-y-0 sm:max-w-80">
               <LpTextField
@@ -103,24 +103,33 @@ export function NewsletterSubscribe({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
-                error={error}
                 rounding="lg"
                 surface="white"
                 aria-label="Email address for newsletter"
+                aria-invalid={!!error}
+                inputClassName={cn(
+                  "min-h-12",
+                  error && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+                )}
               />
             </div>
             <LpButton
               type="submit"
               variant="primary"
               disabled={isSubmitting}
-              className="shrink-0 px-6 py-3 normal-case tracking-normal"
+              className="h-12 min-h-12 shrink-0 px-6 py-0 normal-case tracking-normal"
             >
               {isSubmitting ? "Subscribing..." : "Subscribe"}
             </LpButton>
           </form>
+          {error ? (
+            <p className="text-xs font-medium text-red-600" role="alert">
+              {error}
+            </p>
+          ) : null}
         </div>
       )}
-    </div>
+    </motion>
   );
 
   if (variant === "embedded") {
