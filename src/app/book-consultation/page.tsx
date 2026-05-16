@@ -1,19 +1,26 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { BookConsultationPageClient } from "./BookConsultationPageClient";
 
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { BookConsultationContent } from "./BookConsultationContent";
+type PageProps = {
+  searchParams: Promise<{ cref?: string }>;
+};
 
-export default function BookConsultationPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center bg-lp-surface">
-          <Loader2 className="size-12 animate-spin text-lp-brand" aria-label="Loading" />
-        </div>
-      }
-    >
-      <BookConsultationContent />
-    </Suspense>
-  );
+export default async function BookConsultationPage({ searchParams }: PageProps) {
+  const { cref } = await searchParams;
+  const crefToken = cref?.trim();
+
+  if (crefToken) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      const returnTo = `/book-consultation?cref=${encodeURIComponent(crefToken)}`;
+      redirect(`/login?redirect=${encodeURIComponent(returnTo)}`);
+    }
+  }
+
+  return <BookConsultationPageClient />;
 }

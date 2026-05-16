@@ -67,6 +67,10 @@ export async function updateSession(request: NextRequest) {
         }
     }
 
+    const pathname = request.nextUrl.pathname
+    const isBookConsultationRoute =
+        pathname === '/book-consultation' || pathname.startsWith('/book-consultation/')
+
     if (
         !user &&
         !request.nextUrl.pathname.startsWith('/login') &&
@@ -74,7 +78,8 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/register') &&
         !request.nextUrl.pathname.startsWith('/consultants') &&
         !request.nextUrl.pathname.startsWith('/application/enter') &&
-        request.nextUrl.pathname !== '/'
+        request.nextUrl.pathname !== '/' &&
+        !isBookConsultationRoute
     ) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
