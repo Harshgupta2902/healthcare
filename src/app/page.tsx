@@ -4,6 +4,7 @@ import { HeroSection } from "./home/hero-section";
 import { SpecialtiesSection } from "./home/specialties-section";
 import { ServicesBentoSection } from "./home/services-bento-section";
 import { HomeCtaSection } from "./home/home-cta-section";
+import { NewsletterSubscribe } from "@/components/NewsletterSubscribe";
 
 export const metadata: Metadata = buildHomeMetadata();
 
@@ -14,6 +15,7 @@ export default function Page() {
       <SpecialtiesSection />
       <ServicesBentoSection />
       <HomeCtaSection />
+      <NewsletterSubscribe inputId="home-newsletter-email" />
     </div>
   );
 }
