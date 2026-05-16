@@ -32,12 +32,16 @@ export function HeroSection() {
           <div className="flex flex-wrap justify-center gap-4 pt-8">
             <Link
               href="/book-consultation"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-xl bg-lp-brand px-8 py-4 font-heading text-xl font-semibold text-lp-on-brand shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
             >
               Get Started For Free
             </Link>
             <Link
               href="/consultants"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-xl bg-lp-surface-container px-8 py-4 font-heading text-xl font-semibold text-lp-brand transition-all hover:bg-lp-surface-container-high"
             >
               Find Specialist

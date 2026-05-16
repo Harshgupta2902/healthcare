@@ -129,7 +129,7 @@ export function NewsletterSubscribe({
           ) : null}
         </div>
       )}
-    </motion>
+    </div>
   );
 
   if (variant === "embedded") {

@@ -2,17 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Baby,
-  Brain,
-  ChevronRight,
-  Eye,
-  HeartPulse,
-  ShieldCheck,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Baby, Brain, ChevronRight, Eye, HeartPulse, ShieldCheck, Zap, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SpecialtyCard = {
@@ -139,6 +129,8 @@ export function SpecialtiesSection() {
           >
             <Link
               href="/specialists"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group inline-flex items-center gap-2 font-sans text-sm font-bold uppercase tracking-widest text-lp-brand transition-all hover:opacity-80"
             >
               View All Specialists

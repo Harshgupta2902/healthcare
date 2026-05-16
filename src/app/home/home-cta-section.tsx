@@ -18,6 +18,8 @@ export function HomeCtaSection() {
             </p>
             <Link
               href="/book-consultation"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group inline-flex items-center gap-3 rounded-xl bg-lp-brand px-12 py-5 font-heading text-xl font-semibold text-lp-on-brand shadow-xl transition-all hover:scale-105 hover:shadow-lp-brand/20"
             >
               <span>Book Your Free Call</span>
