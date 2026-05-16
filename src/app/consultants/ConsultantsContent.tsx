@@ -112,7 +112,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
     <div className="min-h-0 bg-lp-surface pb-16 font-sans text-lp-on-surface selection:bg-lp-brand/20">
       <div className="mx-auto max-w-7xl px-5 md:px-16">
         <section className="mb-8 pt-2">
-          <h1 className="mb-4 font-heading text-4xl font-bold leading-tight tracking-tight text-lp-cta-bg md:text-5xl md:leading-[56px]">
+          <h1 className="mb-4 mt-8 font-heading text-4xl font-bold leading-tight tracking-tight text-lp-cta-bg md:text-5xl md:leading-[56px]">
             Find Your Specialist
           </h1>
           <p className="max-w-2xl font-sans text-lg leading-7 text-lp-on-surface-variant">
@@ -191,7 +191,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
           ))}
         </div>
 
-        <div className="mb-6 flex flex-col gap-3 pb-6 sm:flex-row sm:items-baseline ">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-baseline ">
           <p className="font-heading text-sm font-bold text-lp-on-surface md:text-2xl">
             <span className="tabular-nums text-sm">{sortedProfessionals.length.toLocaleString()}</span>{" "}
             <span className="font-sans text-sm font-bold text-lp-on-surface-variant">Experts Found</span>
@@ -327,10 +327,6 @@ function ConsultantCard({ prof, index }: { prof: any; index: number }) {
               <h3 className="font-heading text-xl font-semibold leading-tight text-lp-on-surface md:text-2xl">
                 {prof.displayName ?? prof.name}
               </h3>
-              <div className="flex shrink-0 items-center gap-1 text-lp-on-surface-variant" title="Profile quality">
-                <Star className="size-4 fill-amber-400 text-amber-400" aria-hidden />
-                <span className="font-sans text-xs font-semibold uppercase tracking-wide">Top pick</span>
-              </div>
             </div>
 
             <div className="mb-4 flex items-center gap-2 text-lp-on-surface-variant">
