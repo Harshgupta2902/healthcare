@@ -1,0 +1,2 @@
+export const ABOUT_MISSION_IMAGE =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuBPIZddYqI7S9o2dBIoDdrL8QhHyLzVhIRvATG5DYYeMqwWeVfGL9oPVpUqkBn0bJnzTR_JfNrBlbPesRaCRf24N4feK4CvJI6g4z9frPRZiIHsA3e1zffQL-luhrPw-23PQMFm7jPwHKtedIyothvkpsBUoWqAYKyED06Vma6-b5kF2XZMg-kBIbeAKAxsrq1Lg5pCI88yGRZIgEiUurlWOcu2TXp6gzx9FldhfSixQd-4e9s5Y8wsAEOO8Bxx71xs-UkziyxW-VU";
