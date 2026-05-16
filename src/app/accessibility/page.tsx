@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eye, Keyboard, MessageCircle, Sparkles, Volume2 } from "lucide-react";
+import {
+  Accessibility,
+  Eye,
+  Keyboard,
+  Mail,
+  Monitor,
+  Volume2,
+} from "lucide-react";
+import { LpButton } from "@/components/ui/lp-button";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Healthcare access should be usable for everyone",
+  title: "Accessibility Statement",
   description:
     "Healthcare access should be usable for everyone: HealthHere's accessibility commitments for patients, professionals, and administrators across devices and assistive technologies.",
   pathname: "/accessibility",
@@ -34,82 +42,96 @@ const commitments = [
     title: "Responsive access",
     description:
       "HealthHere is designed to work across mobile, tablet, and desktop screens so healthcare access is not limited by device size.",
-    icon: MessageCircle,
+    icon: Monitor,
   },
-];
+] as const;
+
+const standardsTags = ["WCAG 2.1 AA", "ADA Compliant", "Section 508"] as const;
 
 export default function AccessibilityPage() {
   return (
-    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-
-      <main className="relative z-10">
-        <section className="py-20 sm:py-24 md:py-32">
-          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary backdrop-blur-md">
-                <Sparkles className="h-3.5 w-3.5" />
-                Accessibility
-              </div>
-              <h1 className="text-4xl font-black leading-tight tracking-tight sm:text-5xl md:text-7xl">
-                Healthcare access should be usable for everyone.
-              </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-base font-medium leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-                We are committed to improving HealthHere so patients, professionals, and administrators can use the platform with confidence across abilities and devices.
-              </p>
-              <p className="mt-4 text-sm text-muted-foreground">Last updated: May 11, 2026</p>
-            </div>
+    <div className="min-h-screen bg-lp-surface font-sans text-lp-on-surface selection:bg-lp-brand/15 selection:text-lp-on-surface">
+      <main className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24 lg:px-16">
+        {/* Hero */}
+        <section className="mx-auto mb-16 max-w-3xl text-center sm:mb-24">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-lp-surface-container-high px-4 py-1.5">
+            <Accessibility className="size-[18px] text-lp-brand" aria-hidden />
+            <span className="font-sans text-sm font-semibold uppercase tracking-widest text-lp-brand">
+              Accessibility
+            </span>
           </div>
+          <h1 className="mb-4 font-heading text-4xl font-bold tracking-tight text-lp-cta-bg sm:text-5xl md:text-[48px] md:leading-[56px]">
+            Healthcare access should be usable for everyone.
+          </h1>
+          <p className="mb-2 font-sans text-lg leading-relaxed text-lp-on-surface-variant">
+            We are committed to improving HealthHere so patients, professionals, and administrators can use the
+            platform with confidence across abilities and devices.
+          </p>
+          <p className="font-sans text-sm font-semibold text-lp-outline">Last updated: May 11, 2026</p>
         </section>
 
-        <section className="pb-20 sm:pb-28">
-          <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-6 md:grid-cols-2">
-              {commitments.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <article key={item.title} className="rounded-3xl border border-primary/10 bg-card p-6 shadow-sm sm:p-8">
-                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Icon className="h-6 w-6" />
-                    </div>
-                    <h2 className="text-xl font-black">{item.title}</h2>
-                    <p className="mt-3 leading-relaxed text-muted-foreground">{item.description}</p>
-                  </article>
-                );
-              })}
-            </div>
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-2">
-              <div className="rounded-[2rem] border border-primary/10 bg-secondary/30 p-6 sm:p-8">
-                <h2 className="text-2xl font-black">Standards and ongoing work</h2>
-                <p className="mt-4 leading-relaxed text-muted-foreground">
-                  Our goal is to align key user journeys with recognized accessibility practices, including WCAG guidance where practical. Accessibility is an ongoing process, and we continue improving navigation, forms, contrast, labels, and responsive behavior as the platform grows.
-                </p>
-              </div>
-
-              <div className="rounded-[2rem] border border-primary/10 bg-card p-6 shadow-sm sm:p-8">
-                <h2 className="text-2xl font-black">Report a barrier</h2>
-                <p className="mt-4 leading-relaxed text-muted-foreground">
-                  If you experience difficulty using HealthHere, please contact us with the page URL, your device/browser, and a short description of the issue.
-                </p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <a
-                    href="mailto:care@healthhere.com"
-                    className="inline-flex justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    Email accessibility support
-                  </a>
-                  <Link
-                    href="/contact"
-                    className="inline-flex justify-center rounded-xl border border-primary/20 px-5 py-3 text-sm font-bold text-primary transition hover:bg-primary/5"
-                  >
-                    Contact form
-                  </Link>
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {commitments.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article
+                key={item.title}
+                className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-8 shadow-[0px_4px_20px_rgba(10,25,47,0.05)] transition-all duration-300 hover:border-lp-brand/30"
+              >
+                <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-lp-surface-container-low">
+                  <Icon className="size-6 text-lp-brand" aria-hidden />
                 </div>
-              </div>
+                <h2 className="mb-2 font-heading text-2xl font-semibold text-lp-on-surface">{item.title}</h2>
+                <p className="font-sans text-base leading-6 text-lp-on-surface-variant">{item.description}</p>
+              </article>
+            );
+          })}
+
+          <article className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low p-8 shadow-[0px_4px_20px_rgba(10,25,47,0.05)]">
+            <h2 className="mb-2 font-heading text-2xl font-semibold text-lp-on-surface">Standards and ongoing work</h2>
+            <p className="mb-4 font-sans text-base leading-6 text-lp-on-surface-variant">
+              Our goal is to align key user journeys with recognized accessibility practices, including WCAG 2.1 Level
+              AA guidance where practical. Accessibility is an ongoing process, and we continue improving navigation,
+              forms, contrast, and labels.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {standardsTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-lp-outline-variant/20 bg-lp-surface-container-lowest px-3 py-1 font-sans text-sm font-semibold text-lp-brand"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
-          </div>
-        </section>
+          </article>
+
+          <article className="flex flex-col justify-between rounded-xl border-2 border-lp-brand/10 bg-lp-surface-container-lowest p-8 shadow-[0px_4px_20px_rgba(10,25,47,0.05)]">
+            <div>
+              <h2 className="mb-2 font-heading text-2xl font-semibold text-lp-on-surface">Report a barrier</h2>
+              <p className="font-sans text-base leading-6 text-lp-on-surface-variant">
+                If you experience difficulty using HealthHere, please contact us with the page URL, your
+                device/browser, and a short description of the issue.
+              </p>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <LpButton
+                variant="primary"
+                className="rounded-lg px-6 py-3 normal-case tracking-normal"
+                asChild
+              >
+                <a href="mailto:care@healthhere.com">
+                  <Mail className="size-[18px]" aria-hidden />
+                  Email accessibility support
+                </a>
+              </LpButton>
+              <LpButton variant="outlineSoft" className="rounded-lg px-6 py-3 normal-case tracking-normal" asChild>
+                <Link href="/contact">Contact form</Link>
+              </LpButton>
+            </div>
+          </article>
+        </div>
       </main>
     </div>
   );
