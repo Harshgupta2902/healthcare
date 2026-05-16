@@ -1,8 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, CheckCircle2, Clock, Info, User } from "lucide-react";
 import { LpButton } from "@/components/ui/lp-button";
-import { HOME_VIDEO_CARD_IMAGE } from "@/app/home/constants";
 import type { GuestAppointmentConfirmation } from "../actions";
 
 export function BookConsultationSuccessView({
@@ -59,20 +57,13 @@ export function BookConsultationSuccessView({
           </div>
         </div>
 
-        <div className="relative mt-8 min-h-48 overflow-hidden rounded-xl bg-lp-cta-bg shadow-sm">
-          <div className="absolute inset-0 opacity-10">
-            <Image
-              src={HOME_VIDEO_CARD_IMAGE}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 672px) 100vw, 672px"
-            />
-          </div>
-          <div className="relative flex flex-col items-center justify-between gap-6 p-8 md:flex-row">
+        <div className="relative mt-8 overflow-hidden rounded-xl border border-lp-outline-variant/10 bg-gradient-to-br from-[rgb(10,25,47)] to-[rgb(29,78,216)] shadow-2xl">
+          <div className="pointer-events-none absolute top-0 right-0 size-64 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-[100px]" aria-hidden />
+          <div className="pointer-events-none absolute bottom-0 left-0 size-64 -translate-x-1/2 translate-y-1/2 rounded-full bg-white/5 blur-[100px]" aria-hidden />
+          <div className="relative z-10 flex flex-col items-center justify-between gap-6 p-8 md:flex-row">
             <div className="text-left">
               <h3 className="mb-1 font-heading text-2xl font-semibold text-white">Complete your profile</h3>
-              <p className="font-sans text-base text-lp-on-primary-container">
+              <p className="font-sans text-base text-white/90">
                 Save time on your next booking by adding your medical history.
               </p>
             </div>
