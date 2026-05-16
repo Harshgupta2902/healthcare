@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   User,
@@ -32,8 +32,9 @@ import {
 } from "@/components/ui/command";
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
-import { searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
+import { getBookingFormPrefill, searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
+import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
 import { decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BOOKING_TIME_SLOTS } from "./constants";
@@ -152,6 +153,7 @@ function BookingSelect({
 }
 
 export function BookConsultationContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const cref = searchParams.get("cref")?.trim() ?? "";
   const isConsultantBooking = cref.length > 0;
@@ -179,11 +181,39 @@ export function BookConsultationContent() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<AppointmentForm>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: { category: "", state: "", city: "", time: "" },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    void getBookingFormPrefill().then(({ prefill }) => {
+      if (cancelled || !prefill) return;
+
+      reset((current) => ({
+        ...current,
+        ...(prefill.firstName ? { firstName: prefill.firstName } : {}),
+        ...(prefill.lastName ? { lastName: prefill.lastName } : {}),
+        ...(prefill.email ? { email: prefill.email } : {}),
+        ...(prefill.phone ? { phone: prefill.phone } : {}),
+        ...(prefill.age != null ? { age: prefill.age } : {}),
+        ...(!isConsultantBooking && prefill.city
+          ? { city: prefill.city, state: prefill.state || prefill.city }
+          : {}),
+      }));
+
+      if (!isConsultantBooking && prefill.city) {
+        setCity(prefill.city);
+        setStateName(prefill.state || prefill.city);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reset, isConsultantBooking]);
 
   useEffect(() => {
     if (!decodedConsultantId) {
@@ -287,9 +317,8 @@ export function BookConsultationContent() {
         });
         return;
       }
-      toast.success("Appointment booked", {
-        description: "We've received your request. We'll get back to you shortly.",
-      });
+      const booked = res as { success: true; id: string };
+      router.push(buildBookingSuccessHref(booked.id));
     } finally {
       setIsSubmitting(false);
     }
