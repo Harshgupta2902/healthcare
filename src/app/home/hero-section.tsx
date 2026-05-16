@@ -17,7 +17,7 @@ export function HeroSection() {
             <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
             <span className="font-sans text-sm font-semibold uppercase tracking-wide">Trusted by 10k+ patients</span>
           </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-foreground">
+          <h1 className="sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-foreground">
               Healthcare that <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
                 Actually Works
