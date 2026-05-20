@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
@@ -66,13 +66,28 @@ import {
 } from "@/lib/phone-country-options";
 import { cn } from "@/lib/utils";
 import { PhoneCountryFields } from "@/components/PhoneCountryFields";
+import {
+    dashboardGlassCard,
+    dashboardMobileNav,
+    dashboardMobileNavActive,
+    dashboardMobileNavInactive,
+    dashboardPageSubtitle,
+    dashboardPageTitle,
+    dashboardPrimaryButton,
+    dashboardStatCard,
+    dashboardStatIconWrap,
+    dashboardStatLabel,
+    dashboardStatValue,
+    dashboardTabsList,
+    dashboardTabsTrigger,
+} from "./dashboard-theme";
 
 const LexicalPrescriptionEditor = dynamic(
     () => import("./LexicalPrescriptionEditor").then((mod) => mod.LexicalPrescriptionEditor),
     {
         ssr: false,
         loading: () => (
-            <div className="flex min-h-[520px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+            <div className="flex min-h-[520px] items-center justify-center rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low text-sm text-lp-on-surface-variant">
                 Loading editor…
             </div>
         ),
@@ -270,6 +285,19 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         endTime: "17:00",
         isAvailable: true
     });
+    const [deletingAvailabilityId, setDeletingAvailabilityId] = useState<string | null>(null);
+
+    const scheduledDaySet = useMemo(
+        () => new Set(availability.map((slot) => slot.dayOfWeek)),
+        [availability],
+    );
+
+    const availableDayIndices = useMemo(
+        () => DAYS_OF_WEEK.map((_, index) => index).filter((index) => !scheduledDaySet.has(index)),
+        [scheduledDaySet],
+    );
+
+    const allWeekdaysScheduled = availableDayIndices.length === 0;
 
     useEffect(() => {
         if (!initialData && user) {
@@ -568,7 +596,28 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         }
     };
 
+    const openAddAvailabilityDialog = (open: boolean) => {
+        setShowAddAvailability(open);
+        if (open) {
+            const firstDay = availableDayIndices[0] ?? 1;
+            setAvailabilityForm({
+                dayOfWeek: firstDay,
+                startTime: "09:00",
+                endTime: "17:00",
+                isAvailable: true,
+            });
+        }
+    };
+
     const handleUpdateAvail = async () => {
+        if (scheduledDaySet.has(availabilityForm.dayOfWeek)) {
+            toast.error(`${DAYS_OF_WEEK[availabilityForm.dayOfWeek]} is already on your schedule.`);
+            return;
+        }
+        if (availabilityForm.startTime >= availabilityForm.endTime) {
+            toast.error("End time must be after start time.");
+            return;
+        }
         setIsSaving(true);
         try {
             const result = await updateAvailability(availabilityForm);
@@ -601,6 +650,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     };
 
     const handleDeleteAvailability = async (id: string) => {
+        setDeletingAvailabilityId(id);
         try {
             const result = await deleteAvailability(id);
             if (!result.success) {
@@ -611,6 +661,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             fetchAvailability();
         } catch (error: any) {
             toast.error(error.message || "Failed to delete");
+        } finally {
+            setDeletingAvailabilityId(null);
         }
     };
 
@@ -713,63 +765,61 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     return (
         <div className="container overflow-x-hidden px-4 sm:px-6 py-6 pb-28 sm:pb-10 md:py-10">
             <div className="mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2">
-                    Professional Dashboard
-                </h2>
-                <p className="text-[var(--color-muted-foreground)]">
+                <h2 className={dashboardPageTitle}>Professional Dashboard</h2>
+                <p className={dashboardPageSubtitle}>
                     Manage your practice, appointments, and client consultations
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-                <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
+            <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 sm:p-3 bg-green-100 rounded-xl">
-                                <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                            <div className={dashboardStatIconWrap}>
+                                <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5" />
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Total Earnings</p>
-                                <p className="text-xl font-black text-slate-900">₹{(totalEarnings / 100).toFixed(2)}</p>
+                                <p className={dashboardStatLabel}>Total Earnings</p>
+                                <p className={dashboardStatValue}>₹{(totalEarnings / 100).toFixed(2)}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
+                <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 sm:p-3 bg-yellow-100 rounded-xl">
-                                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+                            <div className={dashboardStatIconWrap}>
+                                <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Pending</p>
-                                <p className="text-xl font-black text-slate-900">₹{(pendingPayments / 100).toFixed(2)}</p>
+                                <p className={dashboardStatLabel}>Pending</p>
+                                <p className={dashboardStatValue}>₹{(pendingPayments / 100).toFixed(2)}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
+                <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl">
-                                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                            <div className={dashboardStatIconWrap}>
+                                <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Appointments</p>
-                                <p className="text-xl font-black text-slate-900">{appointments.length + guestAppointments.length}</p>
+                                <p className={dashboardStatLabel}>Appointments</p>
+                                <p className={dashboardStatValue}>{appointments.length + guestAppointments.length}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="hover:shadow-lg transition-all border-none bg-white/60 backdrop-blur-sm">
+                <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 sm:p-3 bg-purple-100 rounded-xl">
-                                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                            <div className={dashboardStatIconWrap}>
+                                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
                             </div>
                             <div className="min-w-0">
-                                <p className="truncate text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Requests</p>
-                                <p className="text-xl font-black text-slate-900">
+                                <p className={dashboardStatLabel}>Requests</p>
+                                <p className={dashboardStatValue}>
                                     {consultationRequests.filter((r) => r.status === "pending").length + guestAppointments.length}
                                 </p>
                             </div>
@@ -779,39 +829,39 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="hidden sm:flex sm:w-full sm:overflow-x-auto sm:overflow-y-hidden lg:w-auto lg:inline-flex bg-white/50 backdrop-blur p-1.5 rounded-2xl border border-white/40 h-auto no-scrollbar sm:whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 sm:snap-x sm:snap-mandatory sm:scroll-smooth">
-                    <TabsTrigger value="profile" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                <TabsList className={dashboardTabsList}>
+                    <TabsTrigger value="profile" className={dashboardTabsTrigger}>
                         <User className="h-4 w-4" />
                         Profile
                     </TabsTrigger>
-                    <TabsTrigger value="credentials" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                    <TabsTrigger value="credentials" className={dashboardTabsTrigger}>
                         <GraduationCap className="h-4 w-4" />
                         Credentials
                     </TabsTrigger>
-                    <TabsTrigger value="consultations" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                    <TabsTrigger value="consultations" className={dashboardTabsTrigger}>
                         <MessageSquare className="h-4 w-4" />
                         Consultations
                     </TabsTrigger>
-                    <TabsTrigger value="calendar" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                    <TabsTrigger value="calendar" className={dashboardTabsTrigger}>
                         <CalendarIcon className="h-4 w-4" />
                         Calendar
                     </TabsTrigger>
-                    <TabsTrigger value="payments" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                    <TabsTrigger value="payments" className={dashboardTabsTrigger}>
                         <IndianRupee className="h-4 w-4" />
                         Payments
                     </TabsTrigger>
-                    <TabsTrigger value="clients" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-sm font-bold">
+                    <TabsTrigger value="clients" className={dashboardTabsTrigger}>
                         <Users className="h-4 w-4" />
                         Clients
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
-                        <CardHeader className="pt-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+                    <Card className={dashboardGlassCard}>
+                        <CardHeader className="border-b border-lp-outline-variant/20 bg-gradient-to-r from-lp-surface-container-low/80 to-lp-surface-container/50 pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
-                                    <CardTitle className="text-xl font-black text-slate-900">Professional Information</CardTitle>
+                                    <CardTitle className="text-xl font-black text-lp-cta-bg">Professional Information</CardTitle>
                                     <CardDescription>Your professional profile and contact details</CardDescription>
                                 </div>
                                 {!isEditingProfile ? (
@@ -824,7 +874,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="flex-1 rounded-lg px-5 sm:flex-none sm:rounded-full">
                                             Cancel
                                         </Button>
-                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className="flex-1 rounded-lg px-5 bg-[var(--color-primary)] sm:flex-none sm:rounded-full">
+                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className={`flex-1 rounded-lg px-5 sm:flex-none sm:rounded-full ${dashboardPrimaryButton}`}>
                                             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                                             Save
                                         </Button>
@@ -850,7 +900,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             />
                                             <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-4 ring-white shadow-2xl relative overflow-hidden">
                                                 <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
-                                                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-4xl font-black">
+                                                <AvatarFallback className="bg-gradient-to-br from-lp-brand to-lp-brand-bright text-lp-on-brand text-4xl font-bold">
                                                     {(user.user_metadata?.name || user.email)?.slice(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                                 {isUploadingImage ? (
@@ -872,23 +922,23 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         <div className="w-full flex-1 space-y-4 text-center sm:text-left">
                                             {isEditingProfile ? (
                                                 <div className="space-y-2">
-                                                    <Label className="text-sm font-bold text-slate-600">Profile Photo URL</Label>
+                                                    <Label className="text-sm font-bold text-lp-on-surface-variant">Profile Photo URL</Label>
                                                     <Input
                                                         placeholder="Enter image URL"
                                                         value={profileForm.profilePhotoUrl || ""}
                                                         onChange={(e) => setProfileForm({ ...profileForm, profilePhotoUrl: e.target.value })}
-                                                        className="rounded-xl border-slate-200 focus:ring-slate-400"
+                                                        className="rounded-xl border-lp-outline-variant/30 focus:ring-slate-400"
                                                     />
                                                 </div>
                                             ) : (
                                                 <div className="space-y-1">
-                                                    <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                                                    <h3 className="text-xl sm:text-2xl font-black text-lp-cta-bg">
                                                         {formatProfessionalDisplayName(
                                                             user.user_metadata?.name || "",
                                                             profile?.nameTitle
                                                         ) || "Professional"}
                                                     </h3>
-                                                    <p className="text-indigo-600 font-bold tracking-wide uppercase text-sm">{profile?.specialization || "Not Specified"}</p>
+                                                    <p className="text-sm font-semibold uppercase tracking-wide text-lp-brand">{profile?.specialization || "Not Specified"}</p>
                                                     {profile?.isVerified && (
                                                         <Badge className="bg-green-50 text-green-700 border-green-100 mt-2 font-bold px-3">Verified Medical Professional</Badge>
                                                     )}
@@ -897,13 +947,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </div>
                                     </div>
 
-                                    <Separator className="bg-slate-100" />
+                                    <Separator className="bg-lp-surface-container-low" />
 
                                     <div className="grid min-w-0 gap-6 md:grid-cols-2">
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-sm font-bold text-slate-600">Title & full name</Label>
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Title & full name</Label>
                                             {isEditingProfile ? (
-                                                <div className="flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 sm:flex-row">
+                                                <div className="flex flex-col overflow-hidden rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low/30 sm:flex-row">
                                                     <Select
                                                         value={profileForm.nameTitle ?? "_none_"}
                                                         onValueChange={(v) =>
@@ -935,26 +985,26 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     <Input
                                                         value={user.user_metadata?.name || ""}
                                                         disabled
-                                                        className="min-w-0 flex-1 rounded-none border-0 border-t border-slate-200/80 bg-slate-50/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:border-l sm:border-t-0"
+                                                        className="min-w-0 flex-1 rounded-none border-0 border-t border-lp-outline-variant/30/80 bg-lp-surface-container-low/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:border-l sm:border-t-0"
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 sm:flex-row">
-                                                    <div className="flex h-11 w-full shrink-0 items-center border-b border-slate-200/80 bg-slate-50/50 px-3 text-sm font-bold text-slate-900 sm:h-12 sm:w-32 sm:border-b-0 sm:border-r">
+                                                <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low/30 sm:flex-row">
+                                                    <div className="flex h-11 w-full shrink-0 items-center border-b border-lp-outline-variant/30/80 bg-lp-surface-container-low/50 px-3 text-sm font-bold text-lp-cta-bg sm:h-12 sm:w-32 sm:border-b-0 sm:border-r">
                                                         {profileForm.nameTitle ?? "—"}
                                                     </div>
-                                                    <div className="flex min-h-12 flex-1 items-center px-4 py-2 text-sm font-bold text-slate-900">
+                                                    <div className="flex min-h-12 flex-1 items-center px-4 py-2 text-sm font-bold text-lp-cta-bg">
                                                         {user.user_metadata?.name || ""}
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-sm font-bold text-slate-600">Email Address</Label>
-                                            <Input value={user.email || ""} disabled className="bg-slate-50/50 rounded-xl border-none font-bold" />
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Email Address</Label>
+                                            <Input value={user.email || ""} disabled className="bg-lp-surface-container-low/50 rounded-xl border-none font-bold" />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Specialization *</Label>
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Specialization *</Label>
                                             <Popover open={isSpecializationOpen} onOpenChange={setIsSpecializationOpen}>
                                                 <PopoverTrigger asChild>
                                                     <Button
@@ -996,7 +1046,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             </Popover>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Medical License Number</Label>
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Medical License Number</Label>
                                             <Input
                                                 placeholder="Enter license number"
                                                 value={profileForm.licenseNumber || ""}
@@ -1006,7 +1056,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">City / Primary Practice Location</Label>
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">City / Primary Practice Location</Label>
                                             <Input
                                                 placeholder="e.g., Mumbai, Bangalore"
                                                 value={profileForm.city || ""}
@@ -1016,7 +1066,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-slate-600">Contact Phone</Label>
+                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Contact Phone</Label>
                                             <PhoneCountryFields
                                                 countryIso={
                                                     profileForm.phoneCountryIso ??
@@ -1047,8 +1097,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center mb-1">
-                                                <Label className="text-sm font-bold text-slate-600">Experience</Label>
-                                                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
+                                                <Label className="text-sm font-bold text-lp-on-surface-variant">Experience</Label>
+                                                <span className="text-[10px] font-bold text-lp-brand uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
                                                     {profileForm.yearsOfExperience || 0} Years
                                                 </span>
                                             </div>
@@ -1063,13 +1113,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     setProfileForm({ ...profileForm, yearsOfExperience: val });
                                                 }}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl border-slate-100 h-12 focus:ring-indigo-500"
+                                                className="rounded-xl border-lp-outline-variant/30 h-12 focus:ring-indigo-500"
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center mb-1">
-                                                <Label className="text-sm font-bold text-slate-600">Consultation Fee</Label>
-                                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
+                                                <Label className="text-sm font-bold text-lp-on-surface-variant">Consultation Fee</Label>
+                                                <span className="text-[10px] font-black text-lp-brand uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
                                                     ₹{((profileForm.consultationFee || 0) / 100).toLocaleString('en-IN')} INR
                                                 </span>
                                             </div>
@@ -1084,20 +1134,20 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     setProfileForm({ ...profileForm, consultationFee: val === null ? null : val * 100 });
                                                 }}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl border-slate-100 h-12"
+                                                className="rounded-xl border-lp-outline-variant/30 h-12"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-600">Professional Bio</Label>
+                                        <Label className="text-sm font-bold text-lp-on-surface-variant">Professional Bio</Label>
                                         <Textarea
                                             placeholder="Write about yourself, your experience, and expertise..."
                                             value={profileForm.bio || ""}
                                             onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
                                             disabled={!isEditingProfile}
                                             rows={6}
-                                            className="rounded-lg sm:rounded-2xl border-slate-200 resize-none"
+                                            className="rounded-lg sm:rounded-2xl border-lp-outline-variant/30 resize-none"
                                         />
                                     </div>
                                 </div>
@@ -1107,7 +1157,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="credentials" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
@@ -1128,7 +1178,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         </DialogHeader>
                                         <div className="space-y-6 pt-4">
                                             <div className="space-y-2">
-                                                <Label className="font-bold text-slate-600">Degree/Certification *</Label>
+                                                <Label className="font-bold text-lp-on-surface-variant">Degree/Certification *</Label>
                                                 <Input
                                                     placeholder="e.g., MD Cardiology, Board Certified"
                                                     value={qualificationForm.degree}
@@ -1140,7 +1190,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="font-bold text-slate-600">Issuing Institution *</Label>
+                                                <Label className="font-bold text-lp-on-surface-variant">Issuing Institution *</Label>
                                                 <QualificationInstitutionInput
                                                     active={showAddQualification}
                                                     value={qualificationForm.institution}
@@ -1152,7 +1202,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                             </div>
                                             <div className="space-y-4 w-full min-w-0">
                                                 <div className="space-y-2">
-                                                    <Label className="font-bold text-slate-600">Year Awarded</Label>
+                                                    <Label className="font-bold text-lp-on-surface-variant">Year Awarded</Label>
                                                     <Input
                                                         type="text"
                                                         inputMode="numeric"
@@ -1183,7 +1233,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         className={`p-6 sm:p-10 border-2 border-dashed rounded-xl sm:rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer w-full min-w-0 overflow-hidden
                                                         ${isDraggingQual
                                                                 ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
-                                                                : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
+                                                                : 'border-lp-outline-variant/30 bg-lp-surface-container-low/50 hover:border-indigo-300 hover:bg-lp-surface-container-low'
                                                             }`}
                                                         onClick={() => qualInputRef.current?.click()}
                                                         onDragOver={(e) => { e.preventDefault(); setIsDraggingQual(true); }}
@@ -1212,7 +1262,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 <p className="font-black text-slate-800 text-base sm:text-lg break-all">
                                                                     {selectedQualFile ? selectedQualFile.name : "Drop Verification File"}
                                                                 </p>
-                                                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">
+                                                                <p className="text-[10px] text-lp-on-surface-variant font-black uppercase tracking-[0.2em] mt-1">
                                                                     {selectedQualFile ? `${(selectedQualFile.size / 1024 / 1024).toFixed(2)} MB` : "PDF, JPG, PNG (Max 10MB)"}
                                                                 </p>
                                                             </div>
@@ -1235,33 +1285,33 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : qualifications.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-lp-outline-variant/30">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <GraduationCap className="h-10 w-10 text-slate-300" />
                                     </div>
-                                    <h4 className="text-lg font-black text-slate-900">No Credentials Listed</h4>
-                                    <p className="text-slate-500 max-w-xs mx-auto mt-2">Display your professional authority by adding your degrees and certifications.</p>
-                                    <Button variant="link" onClick={() => setShowAddQualification(true)} className="mt-4 text-indigo-600 font-bold">Add your first one now →</Button>
+                                    <h4 className="text-lg font-black text-lp-cta-bg">No Credentials Listed</h4>
+                                    <p className="text-lp-on-surface-variant max-w-xs mx-auto mt-2">Display your professional authority by adding your degrees and certifications.</p>
+                                    <Button variant="link" onClick={() => setShowAddQualification(true)} className="mt-4 text-lp-brand font-bold">Add your first one now →</Button>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2">
                                     {qualifications.map((qual) => (
                                         <div
                                             key={qual.id}
-                                            className="group relative w-full min-w-0 max-w-full overflow-hidden p-5 sm:p-6 bg-white border border-slate-100 rounded-lg sm:rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                                            className="group relative w-full min-w-0 max-w-full overflow-hidden p-5 sm:p-6 bg-white border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start gap-3 mb-3">
-                                                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                                        <div className="p-2 bg-indigo-50 rounded-lg text-lp-brand">
                                                             <GraduationCap className="h-6 w-6" />
                                                         </div>
-                                                        <h4 className="min-w-0 break-words font-black text-slate-900 text-lg">
+                                                        <h4 className="min-w-0 break-words font-black text-lp-cta-bg text-lg">
                                                             {qual.degree}
                                                         </h4>
                                                     </div>
-                                                    <p className="break-words text-slate-600 font-bold">{qual.institution}</p>
-                                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-sm font-medium text-slate-400">
+                                                    <p className="break-words text-lp-on-surface-variant font-bold">{qual.institution}</p>
+                                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-sm font-medium text-lp-on-surface-variant">
                                                         {qual.year && (
                                                             <span className="flex min-w-0 items-center gap-1">
                                                                 <Clock className="h-3 w-3" /> {qual.year}
@@ -1279,11 +1329,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             </Button>
                                                         )}
                                                         {qual.hasVerificationDocument && qual.documentApproved == null && (
-                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-slate-400">
+                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-lp-on-surface-variant">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="link"
-                                                                    className="h-auto min-w-0 p-0 text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    className="h-auto min-w-0 p-0 text-lp-on-surface-variant font-bold pointer-events-none cursor-not-allowed"
                                                                     disabled
                                                                     tabIndex={-1}
                                                                     aria-disabled
@@ -1295,11 +1345,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                             </span>
                                                         )}
                                                         {qual.hasVerificationDocument && qual.documentApproved === false && (
-                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-slate-400">
+                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-lp-on-surface-variant">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="link"
-                                                                    className="h-auto min-w-0 p-0 text-slate-400 font-bold pointer-events-none cursor-not-allowed"
+                                                                    className="h-auto min-w-0 p-0 text-lp-on-surface-variant font-bold pointer-events-none cursor-not-allowed"
                                                                     disabled
                                                                     tabIndex={-1}
                                                                     aria-disabled
@@ -1330,7 +1380,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="consultations" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Consultation Requests</CardTitle>
                             <CardDescription>Manage incoming video and text consultation requests from new clients</CardDescription>
@@ -1341,12 +1391,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : consultationRequests.length === 0 && guestAppointments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-slate-200">
+                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-lp-outline-variant/30">
                                     <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <MessageSquare className="h-10 w-10 text-slate-300" />
                                     </div>
-                                    <h4 className="text-lg font-black text-slate-900">Quiet Inbox</h4>
-                                    <p className="text-slate-500 max-w-xs mx-auto mt-2">Guest bookings from your public link and in-app requests will show here.</p>
+                                    <h4 className="text-lg font-black text-lp-cta-bg">Quiet Inbox</h4>
+                                    <p className="text-lp-on-surface-variant max-w-xs mx-auto mt-2">Guest bookings from your public link and in-app requests will show here.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-10">
@@ -1359,19 +1409,19 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-indigo-100 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
                                                     >
                                                         <div className="flex items-center gap-2 mb-2">
-                                                            <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
+                                                            <div className="bg-lp-surface-container-low h-8 w-8 rounded-full flex items-center justify-center font-bold text-lp-on-surface-variant text-xs">
                                                                 {(g.firstName || "G").charAt(0)}
                                                             </div>
                                                             <p className="font-bold text-slate-800">
                                                                 {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
                                                             </p>
-                                                            <span className="text-slate-400 text-sm">·</span>
-                                                            <span className="text-sm font-bold text-slate-600">Age {g.age}</span>
+                                                            <span className="text-lp-on-surface-variant text-sm">·</span>
+                                                            <span className="text-sm font-bold text-lp-on-surface-variant">Age {g.age}</span>
                                                         </div>
-                                                        <p className="text-xs font-black uppercase tracking-wide text-slate-400 mt-2">
+                                                        <p className="text-xs font-black uppercase tracking-wide text-lp-on-surface-variant mt-2">
                                                             {g.category} · {g.city}, {g.state}
                                                         </p>
-                                                        <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mt-2">
+                                                        <p className="text-sm font-bold text-lp-brand flex items-center gap-2 mt-2">
                                                             <CalendarIcon className="h-4 w-4" />
                                                             {mounted
                                                                 ? new Date(`${g.appointmentDate}T${g.appointmentTime || "00:00"}:00`).toLocaleString("en-US", {
@@ -1387,7 +1437,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         {g.message && (
                                                             <div className="relative mt-3">
                                                                 <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
-                                                                <p className="text-slate-600 italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
+                                                                <p className="text-lp-on-surface-variant italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
                                                             </div>
                                                         )}
                                                         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1418,13 +1468,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     {consultationRequests.length > 0 && (
                                         <div className="space-y-4">
                                             {guestAppointments.length > 0 && (
-                                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">In-app consultation requests</h3>
+                                                <h3 className="text-xs font-black uppercase tracking-widest text-lp-on-surface-variant">In-app consultation requests</h3>
                                             )}
                                             <div className="grid min-w-0 gap-4 lg:grid-cols-3">
                                                 {consultationRequests.map((request) => (
                                                     <div
                                                         key={request.id}
-                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-slate-100 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
+                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
                                                     >
                                                         <div className="flex flex-col justify-between gap-4 h-full">
                                                             <div className="flex-1 space-y-3">
@@ -1432,7 +1482,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                     <div className={`p-2 rounded-xl ${request.requestType === "video" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"}`}>
                                                                         {request.requestType === "video" ? <Video className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
                                                                     </div>
-                                                                    <h4 className="font-black text-slate-900 text-lg uppercase tracking-tight">
+                                                                    <h4 className="font-black text-lp-cta-bg text-lg uppercase tracking-tight">
                                                                         {request.requestType} Consulting
                                                                     </h4>
                                                                     <Badge className={`rounded-full px-3 py-1 font-black uppercase text-[10px] ${request.status === "pending" ? "bg-amber-100 text-amber-700 border-amber-200" :
@@ -1443,7 +1493,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                     </Badge>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
-                                                                    <div className="bg-slate-100 h-8 w-8 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
+                                                                    <div className="bg-lp-surface-container-low h-8 w-8 rounded-full flex items-center justify-center font-bold text-lp-on-surface-variant text-xs">
                                                                         {(request.clientName || "C").charAt(0)}
                                                                     </div>
                                                                     <p className="font-bold text-slate-800">
@@ -1451,16 +1501,16 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                     </p>
                                                                 </div>
                                                                 {request.preferredDate && (
-                                                                    <p className="text-sm font-bold text-indigo-600 flex items-center gap-2">
+                                                                    <p className="text-sm font-bold text-lp-brand flex items-center gap-2">
                                                                         <CalendarIcon className="h-4 w-4" />
                                                                         {mounted ? new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                                                                        {request.preferredTime && <span className="text-slate-400">• {request.preferredTime}</span>}
+                                                                        {request.preferredTime && <span className="text-lp-on-surface-variant">• {request.preferredTime}</span>}
                                                                     </p>
                                                                 )}
                                                                 {request.message && (
                                                                     <div className="relative mt-4">
                                                                         <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
-                                                                        <p className="text-slate-600 italic text-sm pl-4 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">"{request.message}"</p>
+                                                                        <p className="text-lp-on-surface-variant italic text-sm pl-4 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">"{request.message}"</p>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1550,45 +1600,63 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 <TabsContent value="calendar" className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
                     <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
+                        <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-indigo-50/50">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0">
-                                        <CardTitle className="text-slate-900 font-black">Weekly Availability</CardTitle>
+                                        <CardTitle className="text-lp-cta-bg font-black">Weekly Availability</CardTitle>
                                         <CardDescription>Setup your core recurring working hours</CardDescription>
                                     </div>
-                                    <Dialog open={showAddAvailability} onOpenChange={setShowAddAvailability}>
+                                    <Dialog open={showAddAvailability} onOpenChange={openAddAvailabilityDialog}>
                                         <DialogTrigger asChild>
-                                            <Button size="sm" className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 shadow-md sm:w-auto sm:rounded-full">
-                                                <Plus className="h-4 w-4 mr-2" />
+                                            <Button
+                                                size="sm"
+                                                disabled={allWeekdaysScheduled}
+                                                className={`w-full px-5 sm:w-auto sm:rounded-full ${dashboardPrimaryButton}`}
+                                            >
+                                                <Plus className="mr-2 h-4 w-4" />
                                                 Add Slot
                                             </Button>
                                         </DialogTrigger>
                                         <DialogContent className="rounded-lg sm:rounded-2xl">
                                             <DialogHeader>
-                                                <DialogTitle className="text-xl font-black">Add availability time slot</DialogTitle>
+                                                <DialogTitle className="font-heading text-xl font-bold text-lp-cta-bg">
+                                                    Add availability time slot
+                                                </DialogTitle>
                                                 <DialogDescription>These slots will repeat every week</DialogDescription>
                                             </DialogHeader>
                                             <div className="space-y-6 pt-4">
                                                 <div className="space-y-2">
-                                                    <Label className="font-bold text-slate-600">Select Day</Label>
+                                                    <Label className="font-semibold text-lp-on-surface-variant">Select Day</Label>
                                                     <Select
                                                         value={availabilityForm.dayOfWeek.toString()}
-                                                        onValueChange={(value) => setAvailabilityForm({ ...availabilityForm, dayOfWeek: parseInt(value) })}
+                                                        onValueChange={(value) =>
+                                                            setAvailabilityForm({
+                                                                ...availabilityForm,
+                                                                dayOfWeek: parseInt(value, 10),
+                                                            })
+                                                        }
                                                     >
-                                                        <SelectTrigger className="rounded-xl h-12">
-                                                            <SelectValue />
+                                                        <SelectTrigger className="h-12 rounded-xl">
+                                                            <SelectValue placeholder="Choose a day" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl">
-                                                            {DAYS_OF_WEEK.map((day, index) => (
-                                                                <SelectItem key={index} value={index.toString()}>{day}</SelectItem>
+                                                            {availableDayIndices.map((index) => (
+                                                                <SelectItem key={index} value={index.toString()}>
+                                                                    {DAYS_OF_WEEK[index]}
+                                                                </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
+                                                    {availableDayIndices.length === 0 ? (
+                                                        <p className="text-xs font-medium text-lp-on-surface-variant">
+                                                            All days are already scheduled. Remove a day to add another.
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                     <div className="space-y-2">
-                                                        <Label className="font-bold text-slate-600 flex items-center gap-2">
+                                                        <Label className="font-bold text-lp-on-surface-variant flex items-center gap-2">
                                                             <Clock className="h-4 w-4" /> Start Time
                                                         </Label>
                                                         <Input
@@ -1599,7 +1667,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="font-bold text-slate-600 flex items-center gap-2">
+                                                        <Label className="font-bold text-lp-on-surface-variant flex items-center gap-2">
                                                             <Clock className="h-4 w-4" /> End Time
                                                         </Label>
                                                         <Input
@@ -1610,8 +1678,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                         />
                                                     </div>
                                                 </div>
-                                                <Button onClick={handleUpdateAvail} className="w-full rounded-lg sm:rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
-                                                    {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                                                <Button
+                                                    onClick={handleUpdateAvail}
+                                                    className={`h-12 w-full rounded-xl text-base font-semibold sm:rounded-full ${dashboardPrimaryButton}`}
+                                                    disabled={isSaving || availableDayIndices.length === 0}
+                                                >
+                                                    {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                                                     Save Schedule
                                                 </Button>
                                             </div>
@@ -1625,21 +1697,21 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                     </div>
                                 ) : availability.length === 0 ? (
-                                    <div className="text-center py-20 bg-slate-50/50 rounded-lg sm:rounded-2xl">
-                                        <p className="text-slate-500 font-bold">Your schedule is empty.</p>
+                                    <div className="text-center py-20 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
+                                        <p className="text-lp-on-surface-variant font-bold">Your schedule is empty.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
                                         {availability.map((slot) => (
                                             <div
                                                 key={slot.id}
-                                                className="group flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-4 border border-slate-100 rounded-lg sm:rounded-2xl hover:bg-slate-50 transition-all sm:flex-row sm:items-center sm:justify-between"
+                                                className="group flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-4 border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:bg-lp-surface-container-low transition-all sm:flex-row sm:items-center sm:justify-between"
                                             >
                                                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
-                                                    <div className="font-black text-slate-900 sm:w-24 sm:border-r-2 sm:border-slate-100">
+                                                    <div className="font-black text-lp-cta-bg sm:w-24 sm:border-r-2 sm:border-lp-outline-variant/30">
                                                         {DAYS_OF_WEEK[slot.dayOfWeek]}
                                                     </div>
-                                                    <div className="flex flex-wrap items-center gap-2 font-black text-indigo-600">
+                                                    <div className="flex flex-wrap items-center gap-2 font-black text-lp-brand">
                                                         <Clock className="h-4 w-4" />
                                                         {slot.startTime} <span className="text-slate-300 font-normal mx-1">→</span> {slot.endTime}
                                                     </div>
@@ -1647,10 +1719,16 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    className="self-end rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 sm:self-auto"
+                                                    className="self-end rounded-full text-lp-on-surface-variant hover:bg-red-50 hover:text-red-600 sm:self-auto"
+                                                    disabled={deletingAvailabilityId === slot.id}
                                                     onClick={() => handleDeleteAvailability(slot.id)}
+                                                    aria-label={`Remove ${DAYS_OF_WEEK[slot.dayOfWeek]} slot`}
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    {deletingAvailabilityId === slot.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin text-lp-brand" />
+                                                    ) : (
+                                                        <Trash2 className="h-4 w-4" />
+                                                    )}
                                                 </Button>
                                             </div>
                                         ))}
@@ -1659,9 +1737,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
+                        <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-emerald-50/50">
-                                <CardTitle className="text-slate-900 font-black">Upcoming Appointments</CardTitle>
+                                <CardTitle className="text-lp-cta-bg font-black">Upcoming Appointments</CardTitle>
                                 <CardDescription>Confirmed consultations for the next 7 days</CardDescription>
                             </CardHeader>
                             <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
@@ -1670,30 +1748,30 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                     </div>
                                 ) : appointments.length === 0 ? (
-                                    <div className="text-center py-20 bg-slate-50/50 rounded-lg sm:rounded-2xl">
-                                        <p className="text-slate-500 font-bold">No upcoming appointments scheduled.</p>
+                                    <div className="text-center py-20 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
+                                        <p className="text-lp-on-surface-variant font-bold">No upcoming appointments scheduled.</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
                                         {appointments.map((apt) => (
                                             <div
                                                 key={apt.id}
-                                                className="w-full min-w-0 max-w-full overflow-hidden p-5 border border-slate-100 rounded-lg sm:rounded-2xl bg-white shadow-sm"
+                                                className="w-full min-w-0 max-w-full overflow-hidden p-5 border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl bg-white shadow-sm"
                                             >
                                                 <div className="flex items-start justify-between">
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-600">
+                                                            <div className="h-10 w-10 rounded-full bg-lp-surface-container-low flex items-center justify-center font-black text-lp-on-surface-variant">
                                                                 {(apt.clientName || "P").charAt(0)}
                                                             </div>
                                                             <div>
-                                                                <h4 className="font-extrabold text-slate-900">{apt.clientName || "Patient"}</h4>
+                                                                <h4 className="font-extrabold text-lp-cta-bg">{apt.clientName || "Patient"}</h4>
                                                                 <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none font-black text-[10px] uppercase">{apt.appointmentType}</Badge>
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-1 pl-12 text-sm">
-                                                            <p className="text-slate-900 font-black">{mounted ? new Date(apt.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}</p>
-                                                            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{apt.status}</p>
+                                                            <p className="text-lp-cta-bg font-black">{mounted ? new Date(apt.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}</p>
+                                                            <p className="text-lp-on-surface-variant font-bold uppercase text-[10px] tracking-widest">{apt.status}</p>
                                                         </div>
                                                     </div>
                                                     {apt.status === "scheduled" && (
@@ -1716,7 +1794,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="payments" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <CardTitle>Financial Overview</CardTitle>
                             <CardDescription>Track your transaction history and upcoming payouts</CardDescription>
@@ -1727,32 +1805,32 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : payments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
                                     <IndianRupee className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-slate-500 font-bold">No payments processed yet.</p>
+                                    <p className="text-lp-on-surface-variant font-bold">No payments processed yet.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {payments.map((payment) => (
                                         <div
                                             key={payment.id}
-                                            className="group flex w-full min-w-0 max-w-full flex-col overflow-hidden md:flex-row md:items-center justify-between p-4 sm:p-6 bg-white border border-slate-100 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-300"
+                                            className="group flex w-full min-w-0 max-w-full flex-col overflow-hidden md:flex-row md:items-center justify-between p-4 sm:p-6 bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-300"
                                         >
                                             <div className="flex items-center gap-6">
                                                 <div className={`p-4 rounded-lg sm:rounded-2xl ${payment.status === "completed" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
                                                     <IndianRupee className="h-8 w-8" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-3xl font-black text-slate-900 tracking-tight">₹{(payment.amount / 100).toFixed(2)}</p>
-                                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                                    <p className="text-3xl font-black text-lp-cta-bg tracking-tight">₹{(payment.amount / 100).toFixed(2)}</p>
+                                                    <p className="text-sm font-bold text-lp-on-surface-variant uppercase tracking-widest">
                                                         {mounted ? new Date(payment.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
                                                     </p>
                                                 </div>
                                             </div>
                                             <div className="mt-4 flex flex-wrap items-center gap-3 md:mt-0 md:gap-6">
                                                 <div className="text-left md:text-right">
-                                                    <p className="text-sm font-black text-slate-900">{payment.clientName || "Direct Payment"}</p>
-                                                    <p className="text-xs font-bold text-slate-400 capitalize">{payment.paymentMethod}</p>
+                                                    <p className="text-sm font-black text-lp-cta-bg">{payment.clientName || "Direct Payment"}</p>
+                                                    <p className="text-xs font-bold text-lp-on-surface-variant capitalize">{payment.paymentMethod}</p>
                                                 </div>
                                                 <Badge className={`rounded-xl px-4 py-1 font-black ${payment.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
                                                     }`}>
@@ -1768,7 +1846,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
 
                 <TabsContent value="clients" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-lg sm:rounded-2xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Client Records</CardTitle>
                             <CardDescription>Comprehensive database of clients you have consulted with</CardDescription>
@@ -1779,9 +1857,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
                                 </div>
                             ) : guestAppointments.length === 0 && [...new Set(appointments.map((a) => a.clientId))].length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/50 rounded-lg sm:rounded-2xl">
+                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
                                     <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-slate-500 font-bold">Your client list is currently empty.</p>
+                                    <p className="text-lp-on-surface-variant font-bold">Your client list is currently empty.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -1797,17 +1875,17 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
                                                     <div className="overflow-hidden min-w-0">
                                                         <Badge className="mb-1 rounded-full text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 border-0">Guest</Badge>
-                                                        <h4 className="font-black text-slate-900 truncate text-lg">
+                                                        <h4 className="font-black text-lp-cta-bg truncate text-lg">
                                                             {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
                                                         </h4>
-                                                        <p className="text-xs font-bold text-slate-400 truncate mt-0.5">
+                                                        <p className="text-xs font-bold text-lp-on-surface-variant truncate mt-0.5">
                                                             Guest booking
                                                         </p>
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
-                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Requested</p>
+                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
+                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Requested</p>
                                                         <p className="text-xs font-black text-slate-800 pt-1">
                                                             {mounted
                                                                 ? new Date(`${g.appointmentDate}T${(g.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleDateString("en-US", {
@@ -1818,9 +1896,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                 : ""}
                                                         </p>
                                                     </div>
-                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
-                                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Category</p>
-                                                        <p className="text-xs font-black text-indigo-600 pt-1 truncate">{g.category}</p>
+                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
+                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Category</p>
+                                                        <p className="text-xs font-black text-lp-brand pt-1 truncate">{g.category}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1832,17 +1910,17 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                         return (
                                             <div
                                                 key={clientId}
-                                                className="group w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
+                                                className="group w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-lp-surface-container-low/50 transition-all duration-500"
                                             >
                                                 <div className="flex flex-col gap-5">
                                                     <div className="p-4 sm:p-5 flex items-center gap-4">
-                                                        <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-slate-600 text-xl shadow-inner">
+                                                        <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-lp-on-surface-variant text-xl shadow-inner">
                                                             {(latestAppointment.clientName || "C").charAt(0).toUpperCase()}
                                                         </div>
                                                         <div className="overflow-hidden">
-                                                            <h4 className="font-black text-slate-900 truncate text-lg">{latestAppointment.clientName || "Healthcare Client"}</h4>
+                                                            <h4 className="font-black text-lp-cta-bg truncate text-lg">{latestAppointment.clientName || "Healthcare Client"}</h4>
                                                             {latestAppointment.clientEmail && (
-                                                                <p className="text-xs font-bold text-slate-400 truncate flex items-center gap-1">
+                                                                <p className="text-xs font-bold text-lp-on-surface-variant truncate flex items-center gap-1">
                                                                     <Mail className="h-3 w-3" /> {latestAppointment.clientEmail}
                                                                 </p>
                                                             )}
@@ -1850,19 +1928,19 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
-                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Total Visits</p>
-                                                            <p className="text-xl font-black text-indigo-600">{clientAppointments.length}</p>
+                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
+                                                            <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Total Visits</p>
+                                                            <p className="text-xl font-black text-lp-brand">{clientAppointments.length}</p>
                                                         </div>
-                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-slate-100 shadow-sm">
-                                                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Last Seen</p>
+                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
+                                                            <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Last Seen</p>
                                                             <p className="text-xs font-black text-slate-800 pt-1">
                                                                 {mounted ? new Date(latestAppointment.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <Button variant="outline" className="w-full rounded-lg sm:rounded-2xl border-slate-100 bg-white font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group-hover:shadow-md">
+                                                    <Button variant="outline" className="w-full rounded-lg sm:rounded-2xl border-lp-outline-variant/30 bg-white font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group-hover:shadow-md">
                                                         Open Full History
                                                     </Button>
                                                 </div>
@@ -1876,7 +1954,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
             </Tabs>
 
-            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md sm:hidden">
+            <nav className={dashboardMobileNav}>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
                     {[
                         { value: "profile", label: "Profile", icon: User },
@@ -1894,10 +1972,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 key={item.value}
                                 type="button"
                                 onClick={() => setActiveTab(item.value)}
-                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25"
-                                    : "text-gray-600 hover:bg-teal-50"
-                                    }`}
+                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive ? dashboardMobileNavActive : dashboardMobileNavInactive}`}
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="max-w-[4.5rem] truncate">{item.label}</span>
@@ -1914,8 +1989,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         <CalendarIcon className="h-6 w-6" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900">Pictorial Schedule</h2>
-                        <p className="text-slate-500 font-bold text-sm">A visual overview of your recurring and date-specific time</p>
+                        <h2 className="text-2xl font-black text-lp-cta-bg">Pictorial Schedule</h2>
+                        <p className="text-lp-on-surface-variant font-bold text-sm">A visual overview of your recurring and date-specific time</p>
                     </div>
                 </div>
 
@@ -1966,12 +2041,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 if (daySlots.length === 0) return null;
                                                 return (
                                                     <div key={idx} className="text-xs flex justify-between items-center bg-white/60 p-2.5 rounded-xl border border-green-100">
-                                                        <span className="font-extrabold text-slate-900">{day}</span>
+                                                        <span className="font-extrabold text-lp-cta-bg">{day}</span>
                                                         <span className="text-emerald-700 font-black">{daySlots.map(s => `${s.startTime}-${s.endTime}`).join(", ")}</span>
                                                     </div>
                                                 );
                                             })}
-                                            {availability.length === 0 && <p className="text-xs text-slate-400 italic">Configure your weekly hours in the Calendar tab.</p>}
+                                            {availability.length === 0 && <p className="text-xs text-lp-on-surface-variant italic">Configure your weekly hours in the Calendar tab.</p>}
                                         </div>
                                     </div>
 
@@ -1988,7 +2063,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                 <div className="w-4 h-4 bg-indigo-600 rounded-lg shadow-sm" />
                                                 <span className="font-bold text-slate-700">Specific dates with scheduled clients</span>
                                             </div>
-                                            <div className="flex items-start gap-3 p-3 text-[10px] leading-relaxed text-slate-400 bg-slate-50/40 rounded-lg sm:rounded-2xl mt-2">
+                                            <div className="flex items-start gap-3 p-3 text-[10px] leading-relaxed text-lp-on-surface-variant bg-lp-surface-container-low/40 rounded-lg sm:rounded-2xl mt-2">
                                                 <Info className="h-4 w-4 flex-shrink-0" />
                                                 <span>Note: Appointment dates are highlighted in solid blue and take priority over recurring availability in the calendar view.</span>
                                             </div>
