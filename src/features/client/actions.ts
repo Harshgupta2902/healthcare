@@ -603,7 +603,11 @@ export async function subscribeNewsletter(input: SubscribeNewsletterInput | stri
     const headerStore = await headers()
     const clientIp = getClientIpFromHeaders(headerStore)
 
-    const rateLimit = await assertNewsletterRateLimits({ ip: clientIp, deviceHash })
+    const rateLimit = await assertNewsletterRateLimits({
+        ip: clientIp,
+        deviceHash,
+        email: sanitizedEmail,
+    })
     if (!rateLimit.ok) {
         return {
             success: false as const,

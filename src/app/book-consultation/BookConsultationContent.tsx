@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/command";
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
+import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 import { getBookingFormPrefill, searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
@@ -294,6 +295,7 @@ export function BookConsultationContent() {
   const onSubmit = async (data: AppointmentForm) => {
     setIsSubmitting(true);
     try {
+      const deviceHash = await getDeviceFingerprintHash();
       const res = await submitGuestAppointment({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -307,14 +309,17 @@ export function BookConsultationContent() {
         time: data.time,
         message: data.message ?? "",
         professionalId: decodedConsultantId ?? undefined,
+        deviceHash,
       });
-      if ((res as { error?: string })?.error) {
-        toast.error("Failed to book appointment", {
-          description:
-            typeof (res as { error?: string }).error === "string"
-              ? (res as { error: string }).error
-              : "Please try again.",
-        });
+      const err = (res as { error?: string | Record<string, string[]> })?.error;
+      if (err) {
+        if (typeof err === "string") {
+          toast.error(err);
+        } else {
+          toast.error("Failed to book appointment", {
+            description: "Please check the form and try again.",
+          });
+        }
         return;
       }
       const booked = res as { success: true; id: string };

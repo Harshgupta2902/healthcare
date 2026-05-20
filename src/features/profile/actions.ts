@@ -6,7 +6,12 @@ import { zodFirstError } from '@/lib/server-action-result'
 import { recordAdminNotification } from '@/lib/admin-notifications'
 import { cookies, headers } from 'next/headers'
 import sharp from 'sharp'
-import { assertSignupRateLimits, getClientIpFromHeaders } from '@/lib/device-rate-limit'
+import {
+    assertLoginRateLimits,
+    assertSignupRateLimits,
+    deviceHashZodField,
+    getClientIpFromHeaders,
+} from '@/lib/device-rate-limit'
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -111,18 +116,42 @@ export async function syncUserSession() {
     return userData;
 }
 
-export async function signIn(email: string, password: string) {
+const signInSchema = z.object({
+    email: z.string().trim().email('Please enter a valid email address.'),
+    password: z.string().min(1, 'Password is required').max(128, 'Password is too long'),
+    deviceHash: deviceHashZodField,
+})
+
+export type SignInInput = z.infer<typeof signInSchema>
+
+export async function signIn(input: SignInInput) {
+    const parsed = signInSchema.safeParse(input)
+    if (!parsed.success) {
+        return { error: zodFirstError(parsed.error), code: 'validation' as const }
+    }
+
+    const { email, password, deviceHash } = parsed.data
+    const headerStore = await headers()
+    const clientIp = getClientIpFromHeaders(headerStore)
+    const rateLimit = await assertLoginRateLimits({
+        ip: clientIp,
+        deviceHash,
+        email,
+    })
+    if (!rateLimit.ok) {
+        return { error: rateLimit.error, code: rateLimit.reason }
+    }
+
     const supabase = await createClient()
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
     })
 
     if (error) {
-        return { error: error.message }
+        return { error: 'Invalid email or password.', code: 'auth' as const }
     }
 
-    // Sync database and cookies
     const syncedData = await syncUserSession()
 
     return { success: true, user: data.user, role: syncedData?.role }
@@ -151,7 +180,7 @@ export async function signUp(input: SignUpInput) {
 
     const headerStore = await headers()
     const clientIp = getClientIpFromHeaders(headerStore)
-    const rateLimit = await assertSignupRateLimits({ ip: clientIp, deviceHash })
+    const rateLimit = await assertSignupRateLimits({ ip: clientIp, deviceHash, email })
     if (!rateLimit.ok) {
         return { error: rateLimit.error, code: rateLimit.reason }
     }

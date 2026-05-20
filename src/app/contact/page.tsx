@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { submitContactForm } from "@/features/contact/actions";
 import { contactSchema, type ContactFormValues } from "@/features/contact/schema";
+import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 
 export default function ContactPage() {
   const form = useForm<ContactFormValues>({
@@ -33,7 +34,8 @@ export default function ContactPage() {
 
   async function onSubmit(data: ContactFormValues) {
     try {
-      const result = await submitContactForm(data);
+      const deviceHash = await getDeviceFingerprintHash();
+      const result = await submitContactForm({ ...data, deviceHash });
 
       if (result.error) {
         if (typeof result.error === "string") {

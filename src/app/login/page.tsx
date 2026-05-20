@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Loader2, Eye, EyeOff, Lock, KeyRound, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 import { signIn } from "@/features/profile/actions";
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
@@ -83,7 +84,12 @@ function LoginContent() {
     setAuthPhase("signing-in");
 
     try {
-      const result = await signIn(formData.email, formData.password);
+      const deviceHash = await getDeviceFingerprintHash();
+      const result = await signIn({
+        email: formData.email,
+        password: formData.password,
+        deviceHash,
+      });
 
       if (result.error) {
         toast.error(result.error || "Invalid email or password.");

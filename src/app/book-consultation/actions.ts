@@ -1,7 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import {
+  assertGuestBookingRateLimits,
+  deviceHashZodField,
+  getClientIpFromHeaders,
+} from "@/lib/device-rate-limit";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
 import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
 import { formatBookingDateLabel, formatBookingTimeLabel } from "@/lib/booking-display";
@@ -104,12 +110,24 @@ const guestAppointmentSchema = z.object({
   message: z.string().optional().nullable(),
   /** From `?cref=` — professional `users.id`; omit or null for generic booking */
   professionalId: z.string().uuid().nullish(),
+  deviceHash: deviceHashZodField,
 });
 
 export async function submitGuestAppointment(form: unknown) {
   const validated = guestAppointmentSchema.safeParse(form);
   if (!validated.success) {
     return { error: validated.error.flatten().fieldErrors };
+  }
+
+  const headerStore = await headers();
+  const clientIp = getClientIpFromHeaders(headerStore);
+  const rateLimit = await assertGuestBookingRateLimits({
+    ip: clientIp,
+    deviceHash: validated.data.deviceHash,
+    email: validated.data.email,
+  });
+  if (!rateLimit.ok) {
+    return { error: rateLimit.error, code: rateLimit.reason };
   }
 
   const supabase = await createClient();

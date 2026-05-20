@@ -1,11 +1,23 @@
 "use server";
 
+import { headers } from "next/headers";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import {
+    assertContactRateLimits,
+    deviceHashZodField,
+    getClientIpFromHeaders,
+} from "@/lib/device-rate-limit";
 import { contactSchema, type ContactFormValues } from "./schema";
 
-export async function submitContactForm(formData: ContactFormValues) {
-    // Validate data with Zod
-    const validatedFields = contactSchema.safeParse(formData);
+const contactSubmitSchema = contactSchema.extend({
+    deviceHash: deviceHashZodField,
+});
+
+export type ContactSubmitInput = z.infer<typeof contactSubmitSchema>;
+
+export async function submitContactForm(formData: ContactSubmitInput) {
+    const validatedFields = contactSubmitSchema.safeParse(formData);
 
     if (!validatedFields.success) {
         return {
@@ -13,7 +25,22 @@ export async function submitContactForm(formData: ContactFormValues) {
         };
     }
 
-    const { email, subject, message } = validatedFields.data;
+    const { email, subject, message, deviceHash } = validatedFields.data;
+
+    const headerStore = await headers();
+    const clientIp = getClientIpFromHeaders(headerStore);
+    const rateLimit = await assertContactRateLimits({
+        ip: clientIp,
+        deviceHash,
+        email,
+    });
+    if (!rateLimit.ok) {
+        return {
+            error: rateLimit.error,
+            code: rateLimit.reason,
+        };
+    }
+
     const supabase = await createClient();
 
     try {
