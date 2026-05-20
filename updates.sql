@@ -96,3 +96,69 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_guest_appointment_confirmation(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_guest_appointment_confirmation(UUID) TO anon, authenticated;
+
+-- 2026-05-20: Newsletter signup rate limits (IP 5/hr, email 1/15min, device 5/hr).
+CREATE TABLE IF NOT EXISTS public.newsletter_rate_limits (
+  bucket_key TEXT PRIMARY KEY,
+  attempt_count INT NOT NULL DEFAULT 0,
+  window_start TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.newsletter_rate_limits ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.try_newsletter_rate_limit(
+  p_bucket_key TEXT,
+  p_max_attempts INT,
+  p_window_seconds INT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count INT;
+  v_window_start TIMESTAMPTZ;
+  v_now TIMESTAMPTZ := NOW();
+BEGIN
+  IF p_bucket_key IS NULL OR length(trim(p_bucket_key)) = 0 THEN
+    RETURN FALSE;
+  END IF;
+  IF p_max_attempts IS NULL OR p_max_attempts < 1 OR p_window_seconds IS NULL OR p_window_seconds < 1 THEN
+    RAISE EXCEPTION 'Invalid rate limit parameters' USING ERRCODE = '22023';
+  END IF;
+
+  SELECT attempt_count, window_start
+    INTO v_count, v_window_start
+    FROM public.newsletter_rate_limits
+   WHERE bucket_key = p_bucket_key
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
+    INSERT INTO public.newsletter_rate_limits (bucket_key, attempt_count, window_start)
+    VALUES (p_bucket_key, 1, v_now);
+    RETURN TRUE;
+  END IF;
+
+  IF v_window_start + (p_window_seconds || ' seconds')::INTERVAL <= v_now THEN
+    UPDATE public.newsletter_rate_limits
+       SET attempt_count = 1,
+           window_start = v_now
+     WHERE bucket_key = p_bucket_key;
+    RETURN TRUE;
+  END IF;
+
+  IF v_count >= p_max_attempts THEN
+    RETURN FALSE;
+  END IF;
+
+  UPDATE public.newsletter_rate_limits
+     SET attempt_count = attempt_count + 1
+   WHERE bucket_key = p_bucket_key;
+
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.try_newsletter_rate_limit(TEXT, INT, INT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.try_newsletter_rate_limit(TEXT, INT, INT) TO anon, authenticated;

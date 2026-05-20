@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
 import { subscribeNewsletter } from "@/features/client/actions";
+import { getNewsletterDeviceHash } from "@/lib/device-fingerprint";
 
 export interface NewsletterSubscribeProps {
   className?: string;
@@ -49,7 +50,11 @@ export function NewsletterSubscribe({
     setIsSubmitting(true);
 
     try {
-      const result = await subscribeNewsletter(email.trim());
+      const deviceHash = await getNewsletterDeviceHash();
+      const result = await subscribeNewsletter({
+        email: email.trim(),
+        deviceHash,
+      });
 
       if (result.success) {
         setIsSuccess(true);
@@ -61,7 +66,11 @@ export function NewsletterSubscribe({
         }
       } else {
         setError(result.error);
-        toast.error(result.error);
+        if ("code" in result && result.code === "device") {
+          toast.error("Too many requests from this device. Please try again later.");
+        } else {
+          toast.error(result.error);
+        }
       }
 
       setTimeout(() => setIsSuccess(false), 5000);

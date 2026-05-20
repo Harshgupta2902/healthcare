@@ -16,6 +16,11 @@ import {
 import { fetchGuestAppointmentProfessionalMeta } from '@/lib/guest-appointment-professional-meta'
 import { sendNewsletterEmail } from '@/lib/mailer'
 import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
+import {
+    assertNewsletterRateLimits,
+    getClientIpFromHeaders,
+} from '@/lib/newsletter-rate-limit'
+import { headers } from 'next/headers'
 
 const medicalProfileSchema = z
     .object({
@@ -570,14 +575,48 @@ export async function getClientDashboardData() {
 }
 
 
-export async function subscribeNewsletter(email: string) {
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const subscribeNewsletterSchema = z.object({
+    email: z
+        .string()
+        .trim()
+        .min(1, 'Email address is required')
+        .max(320)
+        .email('Please enter a valid email address.'),
+    deviceHash: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i, 'Invalid device fingerprint')
+        .optional(),
+})
 
-    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
-        return { success: false as const, error: 'Please enter a valid email address.' }
+export type SubscribeNewsletterInput = z.infer<typeof subscribeNewsletterSchema>
+
+export async function subscribeNewsletter(input: SubscribeNewsletterInput | string) {
+    const parsed = subscribeNewsletterSchema.safeParse(
+        typeof input === 'string' ? { email: input } : input,
+    )
+    if (!parsed.success) {
+        return { success: false as const, error: zodFirstError(parsed.error) }
     }
 
+    const { email, deviceHash } = parsed.data
     const sanitizedEmail = email.trim().toLowerCase()
+
+    const headerStore = await headers()
+    const clientIp = getClientIpFromHeaders(headerStore)
+
+    const rateLimit = await assertNewsletterRateLimits({
+        ip: clientIp,
+        email: sanitizedEmail,
+        deviceHash,
+    })
+    if (!rateLimit.ok) {
+        return {
+            success: false as const,
+            error: rateLimit.error,
+            code: rateLimit.reason,
+        }
+    }
+
     const supabase = await createClient()
 
     const { data, error } = await supabase.rpc('subscribe_newsletter', {
