@@ -73,6 +73,22 @@ import {
     ExternalLink,
     ShieldCheck
 } from "lucide-react";
+import {
+    dashboardGlassCardLg,
+    dashboardMobileNav,
+    dashboardMobileNavActive,
+    dashboardMobileNavInactive,
+    dashboardPageSubtitle,
+    dashboardPageTitle,
+    dashboardPrimaryButton,
+    dashboardProfileBanner,
+    dashboardStatCard,
+    dashboardStatIconWrap,
+    dashboardStatLabel,
+    dashboardStatValue,
+    dashboardTabsList,
+    dashboardTabsTrigger,
+} from "./dashboard-theme";
 
 interface UserProfile {
     id: string;
@@ -794,80 +810,77 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     return (
         <div className="container overflow-x-hidden px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8">
             <div className="mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-[var(--color-foreground)] mb-2 uppercase tracking-tight">
-                    Patient Medical Dashboard
-                </h2>
-                <p className="text-[var(--color-muted-foreground)] font-medium">
+                <h2 className={dashboardPageTitle}>Patient Medical Dashboard</h2>
+                <p className={dashboardPageSubtitle}>
                     Centralized hub for your health metrics, prescriptions, and medical history.
                 </p>
             </div>
 
-            {/* Quick Stats Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-10">
-                <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-lg sm:rounded-2xl">
-                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                        <div className="p-2.5 sm:p-3 bg-red-100 rounded-xl text-red-600">
+            <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 md:gap-6 lg:grid-cols-4">
+                <Card className={dashboardStatCard}>
+                    <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+                        <div className={dashboardStatIconWrap}>
                             <Activity className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Conditions</p>
-                            <p className="text-2xl font-black text-slate-900">{medicalHistory.filter(h => h.status === 'active').length}</p>
+                            <p className={dashboardStatLabel}>Conditions</p>
+                            <p className={dashboardStatValue}>{medicalHistory.filter(h => h.status === 'active').length}</p>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-lg sm:rounded-2xl">
-                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                        <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl text-blue-600">
+                <Card className={dashboardStatCard}>
+                    <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+                        <div className={dashboardStatIconWrap}>
                             <Pill className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Active Meds</p>
-                            <p className="text-2xl font-black text-slate-900">{medications.filter(m => m.isActive).length}</p>
+                            <p className={dashboardStatLabel}>Active Meds</p>
+                            <p className={dashboardStatValue}>{medications.filter(m => m.isActive).length}</p>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-lg sm:rounded-2xl">
-                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                        <div className="p-2.5 sm:p-3 bg-purple-100 rounded-xl text-purple-600">
+                <Card className={dashboardStatCard}>
+                    <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+                        <div className={dashboardStatIconWrap}>
                             <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Documents</p>
-                            <p className="text-2xl font-black text-slate-900">{documents.length}</p>
+                            <p className={dashboardStatLabel}>Documents</p>
+                            <p className={dashboardStatValue}>{documents.length}</p>
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="bg-white/60 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition-all rounded-lg sm:rounded-2xl">
-                    <CardContent className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
-                        <div className="p-2.5 sm:p-3 bg-emerald-100 rounded-xl text-emerald-600">
+                <Card className={dashboardStatCard}>
+                    <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
+                        <div className={dashboardStatIconWrap}>
                             <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-[10px] sm:text-xs font-black uppercase text-slate-400">Insurance</p>
-                            <p className="text-2xl font-black text-slate-900">{insuranceData.length}</p>
+                            <p className={dashboardStatLabel}>Insurance</p>
+                            <p className={dashboardStatValue}>{insuranceData.length}</p>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
-                <TabsList className="hidden sm:flex sm:w-full sm:overflow-x-auto sm:overflow-y-hidden lg:w-auto lg:inline-flex bg-white/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/40 shadow-sm h-auto no-scrollbar sm:whitespace-nowrap justify-start md:justify-center lg:justify-start gap-2 sm:snap-x sm:snap-mandatory sm:scroll-smooth">
-                    <TabsTrigger value="profile" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                <TabsList className={dashboardTabsList}>
+                    <TabsTrigger value="profile" className={dashboardTabsTrigger}>
                         <User className="h-4 w-4" /> Profile
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                    <TabsTrigger value="history" className={dashboardTabsTrigger}>
                         <Heart className="h-4 w-4" /> History
                     </TabsTrigger>
-                    <TabsTrigger value="medications" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                    <TabsTrigger value="medications" className={dashboardTabsTrigger}>
                         <Pill className="h-4 w-4" /> Meds
                     </TabsTrigger>
-                    <TabsTrigger value="documents" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                    <TabsTrigger value="documents" className={dashboardTabsTrigger}>
                         <FileText className="h-4 w-4" /> Docs
                     </TabsTrigger>
-                    <TabsTrigger value="insurance" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                    <TabsTrigger value="insurance" className={dashboardTabsTrigger}>
                         <Shield className="h-4 w-4" /> Insurance
                     </TabsTrigger>
-                    <TabsTrigger value="appointments" className="gap-2 rounded-xl w-full sm:w-auto sm:flex-shrink-0 px-3 sm:px-5 snap-center text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider">
+                    <TabsTrigger value="appointments" className={dashboardTabsTrigger}>
                         <Calendar className="h-4 w-4" /> Appointments
                     </TabsTrigger>
                 </TabsList>
@@ -875,8 +888,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 {/* Profile Tab */}
                 <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
-                        <Card className="lg:col-span-1 border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl overflow-hidden h-fit">
-                            <div className="h-24 bg-gradient-to-r from-blue-400 to-indigo-500" />
+                        <Card className={`lg:col-span-1 h-fit ${dashboardGlassCardLg}`}>
+                            <div className={dashboardProfileBanner} />
                             <CardContent className="relative pt-0 px-5 sm:px-8 pb-6 sm:pb-8">
                                 <div className="flex justify-center -mt-12 mb-6">
                                     <div className="relative group">
@@ -892,7 +905,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                             onClick={() => !isUploadingImage && profileImageInputRef.current?.click()}
                                         >
                                             <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
-                                            <AvatarFallback className="bg-indigo-600 text-white text-3xl font-black">
+                                            <AvatarFallback className="bg-lp-brand text-lp-on-brand text-3xl font-bold">
                                                 {(user.user_metadata?.name || user.email)?.charAt(0).toUpperCase()}
                                             </AvatarFallback>
                                             {isUploadingImage ? (
@@ -908,37 +921,37 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     </div>
                                 </div>
                                 <div className="text-center space-y-1 mb-8">
-                                    <h3 className="text-xl font-black text-slate-900 truncate px-2">{user.user_metadata?.name || "Patient"}</h3>
-                                    <p className="break-all text-sm font-bold text-slate-400">{user.email}</p>
-                                    <Badge variant="secondary" className="mt-2 bg-blue-50 text-blue-700 border-blue-100 font-bold px-3">Standard Account</Badge>
+                                    <h3 className="truncate px-2 font-heading text-xl font-bold text-lp-cta-bg">{user.user_metadata?.name || "Patient"}</h3>
+                                    <p className="break-all text-sm font-medium text-lp-on-surface-variant">{user.email}</p>
+                                    <Badge variant="secondary" className="mt-2 border-lp-outline-variant/30 bg-lp-surface-container px-3 font-semibold text-lp-brand">Standard Account</Badge>
                                 </div>
-                                <Separator className="mb-6 bg-slate-100" />
+                                <Separator className="mb-6 bg-lp-outline-variant/30" />
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Blood Type</span>
+                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Blood Type</span>
                                         <span className="font-black text-red-600">{profile?.bloodType || "N/A"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Gender</span>
-                                        <span className="font-black text-slate-900 capitalize">{profile?.gender || "N/A"}</span>
+                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Gender</span>
+                                        <span className="font-black text-lp-cta-bg capitalize">{profile?.gender || "N/A"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Weight</span>
-                                        <span className="font-black text-slate-900">{profile?.weight ? `${profile.weight} kg` : "N/A"}</span>
+                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Weight</span>
+                                        <span className="font-black text-lp-cta-bg">{profile?.weight ? `${profile.weight} kg` : "N/A"}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Height</span>
-                                        <span className="font-black text-slate-900">{profile?.height ? `${profile.height} cm` : "N/A"}</span>
+                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Height</span>
+                                        <span className="font-black text-lp-cta-bg">{profile?.height ? `${profile.height} cm` : "N/A"}</span>
                                     </div>
                                 </div>
-                                <Button className="w-full mt-6 sm:mt-8 rounded-lg sm:rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-lg font-bold" onClick={() => setIsEditingProfile(true)}>
+                                <Button className={`mt-6 w-full sm:mt-8 ${dashboardPrimaryButton}`} onClick={() => setIsEditingProfile(true)}>
                                     <Edit className="h-4 w-4 mr-2" /> Edit Profile
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        <Card className="lg:col-span-2 border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                            <CardHeader className="pt-4 border-b border-slate-50/50">
+                        <Card className={`lg:col-span-2 ${dashboardGlassCardLg}`}>
+                            <CardHeader className="border-b border-lp-outline-variant/20 pt-4">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0">
                                         <CardTitle className="text-xl font-black">Extended Medical Data</CardTitle>
@@ -947,7 +960,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     {isEditingProfile && (
                                         <div className="flex w-full gap-2 sm:w-auto">
                                             <Button onClick={() => setIsEditingProfile(false)} variant="outline" className="flex-1 rounded-full px-5 sm:flex-none sm:px-6">Cancel</Button>
-                                            <Button onClick={handleSaveProfile} disabled={isSaving} className="flex-1 rounded-full bg-indigo-600 hover:bg-indigo-700 px-5 sm:flex-none sm:px-6 font-bold shadow-md">
+                                            <Button onClick={handleSaveProfile} disabled={isSaving} className={`flex-1 rounded-full px-5 sm:flex-none sm:px-6 ${dashboardPrimaryButton}`}>
                                                 {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save Changes
                                             </Button>
                                         </div>
@@ -959,27 +972,27 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     {/* Personal & Health Stats */}
                                     <div className="grid min-w-0 gap-6 md:grid-cols-2">
                                         <div className="space-y-4">
-                                            <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Personal Details</Label>
+                                            <Label className="text-xs font-black text-lp-brand uppercase tracking-widest">Personal Details</Label>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Date of Birth</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Date of Birth</Label>
                                                     <Input
                                                         type="date"
                                                         max={new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]}
                                                         value={profileForm.dateOfBirth || ""}
                                                         onChange={(e) => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100"
+                                                        className="rounded-xl border-lp-outline-variant/30"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Gender</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Gender</Label>
                                                     <Select
                                                         value={profileForm.gender || ""}
                                                         onValueChange={(v) => setProfileForm({ ...profileForm, gender: v })}
                                                         disabled={!isEditingProfile}
                                                     >
-                                                        <SelectTrigger className="rounded-xl border-slate-100 h-10">
+                                                        <SelectTrigger className="rounded-xl border-lp-outline-variant/30 h-10">
                                                             <SelectValue placeholder="Select" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl">
@@ -994,16 +1007,16 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                         </div>
 
                                         <div className="space-y-4">
-                                            <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Health Metrics</Label>
+                                            <Label className="text-xs font-black text-lp-brand uppercase tracking-widest">Health Metrics</Label>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-2">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Blood</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Blood</Label>
                                                     <Select
                                                         value={profileForm.bloodType || ""}
                                                         onValueChange={(v) => setProfileForm({ ...profileForm, bloodType: v })}
                                                         disabled={!isEditingProfile}
                                                     >
-                                                        <SelectTrigger className="rounded-xl border-slate-100 h-10 px-2">
+                                                        <SelectTrigger className="rounded-xl border-lp-outline-variant/30 h-10 px-2">
                                                             <SelectValue placeholder="Type" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl">
@@ -1014,25 +1027,25 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Height(cm)</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Height(cm)</Label>
                                                     <Input
                                                         type="number"
                                                         placeholder="175"
                                                         value={profileForm.height || ""}
                                                         onChange={(e) => setProfileForm({ ...profileForm, height: parseFloat(e.target.value) || null })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100 h-10"
+                                                        className="rounded-xl border-lp-outline-variant/30 h-10"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Weight(kg)</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Weight(kg)</Label>
                                                     <Input
                                                         type="number"
                                                         placeholder="70"
                                                         value={profileForm.weight || ""}
                                                         onChange={(e) => setProfileForm({ ...profileForm, weight: parseFloat(e.target.value) || null })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100 h-10"
+                                                        className="rounded-xl border-lp-outline-variant/30 h-10"
                                                     />
                                                 </div>
                                             </div>
@@ -1040,53 +1053,53 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <Label className="text-xs font-black text-indigo-600 uppercase tracking-widest">Location & Contact</Label>
+                                        <Label className="text-xs font-black text-lp-brand uppercase tracking-widest">Location & Contact</Label>
                                         <div className="grid min-w-0 gap-6 md:grid-cols-2">
                                             <div className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Primary Address</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Primary Address</Label>
                                                     <Input
                                                         placeholder="Street Address"
                                                         value={profileForm.address || ""}
                                                         onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100"
+                                                        className="rounded-xl border-lp-outline-variant/30"
                                                     />
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">City</Label>
+                                                        <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">City</Label>
                                                         <Input
                                                             value={profileForm.city || ""}
                                                             onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                             onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
                                                             disabled={!isEditingProfile}
-                                                            className="rounded-xl border-slate-100"
+                                                            className="rounded-xl border-lp-outline-variant/30"
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">State</Label>
+                                                        <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">State</Label>
                                                         <Input
                                                             value={profileForm.state || ""}
                                                             onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                             onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
                                                             disabled={!isEditingProfile}
-                                                            className="rounded-xl border-slate-100"
+                                                            className="rounded-xl border-lp-outline-variant/30"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Postal Code</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Postal Code</Label>
                                                     <Input
                                                         value={profileForm.postalCode || ""}
                                                         onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                                         onChange={(e) => setProfileForm({ ...profileForm, postalCode: e.target.value })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100"
+                                                        className="rounded-xl border-lp-outline-variant/30"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Mobile phone</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Mobile phone</Label>
                                                     <PhoneCountryFields
                                                         countryIso={
                                                             profileForm.phoneCountryIso ??
@@ -1119,37 +1132,37 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                                             <div className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] font-bold text-slate-400 uppercase">Emergency Contact Name</Label>
+                                                    <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Emergency Contact Name</Label>
                                                     <Input
                                                         placeholder="Contact Name"
                                                         value={profileForm.emergencyContactName || ""}
                                                         onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                         onChange={(e) => setProfileForm({ ...profileForm, emergencyContactName: e.target.value })}
                                                         disabled={!isEditingProfile}
-                                                        className="rounded-xl border-slate-100"
+                                                        className="rounded-xl border-lp-outline-variant/30"
                                                     />
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">Emergency Phone</Label>
+                                                        <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Emergency Phone</Label>
                                                         <Input
                                                             placeholder="Phone Number"
                                                             value={profileForm.emergencyContactPhone || ""}
                                                             onInput={(e: any) => e.target.value = e.target.value.replace(/\D/g, '')}
                                                             onChange={(e) => setProfileForm({ ...profileForm, emergencyContactPhone: e.target.value })}
                                                             disabled={!isEditingProfile}
-                                                            className="rounded-xl border-slate-100"
+                                                            className="rounded-xl border-lp-outline-variant/30"
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase">Relationship</Label>
+                                                        <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Relationship</Label>
                                                         <Input
                                                             placeholder="Spouse, Parent, etc."
                                                             value={profileForm.emergencyContactRelationship || ""}
                                                             onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, '')}
                                                             onChange={(e) => setProfileForm({ ...profileForm, emergencyContactRelationship: e.target.value })}
                                                             disabled={!isEditingProfile}
-                                                            className="rounded-xl border-slate-100"
+                                                            className="rounded-xl border-lp-outline-variant/30"
                                                         />
                                                     </div>
                                                 </div>
@@ -1164,7 +1177,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {/* History Tab */}
                 <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-red-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
@@ -1251,8 +1264,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             ) : medicalHistory.length === 0 ? (
                                 <div className="text-center py-16 sm:py-24 bg-red-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-red-100">
                                     <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-200" />
-                                    <h4 className="text-lg font-black text-slate-900">No Conditions Reported</h4>
-                                    <p className="text-slate-400 mt-1">Keep your longitudinal health record updated.</p>
+                                    <h4 className="text-lg font-black text-lp-cta-bg">No Conditions Reported</h4>
+                                    <p className="text-lp-on-surface-variant mt-1">Keep your longitudinal health record updated.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2">
@@ -1268,19 +1281,19 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                             <Stethoscope className="h-5 w-5" />
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-extrabold text-slate-900 text-lg uppercase tracking-tight">{condition.conditionName}</h4>
-                                                            <Badge className={`mt-1 font-black text-[10px] uppercase rounded-full ${condition.status === 'active' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-slate-100 text-slate-600 border-none'}`}>
+                                                            <h4 className="font-extrabold text-lp-cta-bg text-lg uppercase tracking-tight">{condition.conditionName}</h4>
+                                                            <Badge className={`mt-1 font-black text-[10px] uppercase rounded-full ${condition.status === 'active' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-lp-surface-container-low text-lp-on-surface-variant border-none'}`}>
                                                                 {condition.status}
                                                             </Badge>
                                                         </div>
                                                     </div>
                                                     {condition.diagnosisDate && mounted && (
-                                                        <p className="text-xs font-bold text-slate-400 pl-11">
+                                                        <p className="text-xs font-bold text-lp-on-surface-variant pl-11">
                                                             Diagnosed: {new Date(condition.diagnosisDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric', day: 'numeric' })}
                                                         </p>
                                                     )}
                                                     {condition.notes && (
-                                                        <p className="text-sm text-slate-500 pl-11 bg-slate-50/50 p-3 rounded-lg sm:rounded-2xl italic">"{condition.notes}"</p>
+                                                        <p className="text-sm text-lp-on-surface-variant pl-11 bg-slate-50/50 p-3 rounded-lg sm:rounded-2xl italic">"{condition.notes}"</p>
                                                     )}
                                                 </div>
                                                 <Button
@@ -1302,7 +1315,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {/* Medications Tab - Premium Grid */}
                 <TabsContent value="medications" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-blue-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-blue-900">
@@ -1337,7 +1350,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label className="font-bold text-xs uppercase text-slate-500">Start Date *</Label>
+                                                    <Label className="font-bold text-xs uppercase text-lp-on-surface-variant">Start Date *</Label>
                                                     <Input
                                                         type="date"
                                                         max={new Date().toISOString().split('T')[0]}
@@ -1347,7 +1360,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="font-bold text-xs uppercase text-slate-500">End Date</Label>
+                                                    <Label className="font-bold text-xs uppercase text-lp-on-surface-variant">End Date</Label>
                                                     <Input
                                                         type="date"
                                                         value={medicationForm.endDate}
@@ -1357,7 +1370,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="font-bold text-xs uppercase text-slate-500">Prescribing Doctor</Label>
+                                                <Label className="font-bold text-xs uppercase text-lp-on-surface-variant">Prescribing Doctor</Label>
                                                 <Input
                                                     value={medicationForm.prescribingDoctor}
                                                     onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z\s\.]/g, '')}
@@ -1382,8 +1395,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <div className="bg-white h-16 w-16 mx-auto mb-4 rounded-full flex items-center justify-center shadow-inner">
                                         <Pill className="h-8 w-8 text-blue-200" />
                                     </div>
-                                    <h4 className="text-lg font-black text-slate-900">No Active Prescriptions</h4>
-                                    <p className="text-slate-400 mt-1">Add medications to receive reminders and safety alerts.</p>
+                                    <h4 className="text-lg font-black text-lp-cta-bg">No Active Prescriptions</h4>
+                                    <p className="text-lp-on-surface-variant mt-1">Add medications to receive reminders and safety alerts.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -1403,16 +1416,16 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                <h4 className="font-black text-slate-900 text-lg uppercase truncate">{med.medicationName}</h4>
+                                                <h4 className="font-black text-lp-cta-bg text-lg uppercase truncate">{med.medicationName}</h4>
                                                 <Badge className="bg-blue-50 text-blue-700 border-none font-black text-[10px] mt-1 mb-4">{med.dosage} - {med.frequency}</Badge>
 
                                                 <div className="space-y-4 pt-4 border-t border-slate-50">
                                                     <div className="flex justify-between items-center text-xs">
-                                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Doctor</span>
-                                                        <span className="font-black text-slate-900 uppercase tracking-tight">{med.prescribingDoctor || "Self"}</span>
+                                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Doctor</span>
+                                                        <span className="font-black text-lp-cta-bg uppercase tracking-tight">{med.prescribingDoctor || "Self"}</span>
                                                     </div>
                                                     <div className="flex justify-between items-center text-xs">
-                                                        <span className="text-slate-400 font-bold uppercase tracking-tighter">Status</span>
+                                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Status</span>
                                                         <span className={`font-black uppercase tracking-tight ${med.isActive ? 'text-green-500' : 'text-slate-300'}`}>
                                                             {med.isActive ? 'Active Plan' : 'Inactive'}
                                                         </span>
@@ -1429,39 +1442,43 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {/* Documents - Modern File Explorer style */}
                 <TabsContent value="documents" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
                                     <CardTitle className="text-xl font-black flex items-center gap-2">
-                                        <FileText className="h-6 w-6 text-indigo-600" /> Vault Documents
+                                        <FileText className="h-6 w-6 text-lp-brand" /> Vault Documents
                                     </CardTitle>
                                     <CardDescription>Secure storage for lab reports and prescriptions</CardDescription>
                                 </div>
                                 <Dialog open={showAddDocument} onOpenChange={setShowAddDocument}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="w-full rounded-lg bg-indigo-600 font-bold shadow-lg px-5 sm:w-auto sm:rounded-full sm:px-8">
-                                            <Upload className="h-4 w-4 mr-2" /> Upload New
+                                        <Button size="sm" className={`w-full px-5 sm:w-auto sm:rounded-full sm:px-8 ${dashboardPrimaryButton}`}>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload New
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="max-w-md rounded-xl sm:rounded-3xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-2xl font-black">Secure Upload</DialogTitle>
-                                            <DialogDescription>Your files are encrypted and stored securely.</DialogDescription>
+                                    <DialogContent className="flex max-h-[min(90dvh,36rem)] w-[calc(100%-1.5rem)] max-w-md flex-col gap-0 overflow-hidden rounded-xl p-4 sm:rounded-3xl sm:p-6">
+                                        <DialogHeader className="shrink-0 space-y-1 pb-3 text-left">
+                                            <DialogTitle className="font-heading text-xl font-bold text-lp-cta-bg sm:text-2xl">
+                                                Secure Upload
+                                            </DialogTitle>
+                                            <DialogDescription className="text-lp-on-surface-variant">
+                                                Your files are encrypted and stored securely.
+                                            </DialogDescription>
                                         </DialogHeader>
-                                        <div className="space-y-6 pt-4">
+                                        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden pr-0.5">
                                             <div className="space-y-2">
-                                                <Label className="font-bold">Document Name</Label>
+                                                <Label className="font-semibold">Document Name</Label>
                                                 <Input
                                                     value={documentForm.documentName}
                                                     onInput={(e: any) => e.target.value = e.target.value.replace(/[^a-zA-Z0-9\s\.\-]/g, '')}
                                                     onChange={e => setDocumentForm({ ...documentForm, documentName: e.target.value })}
                                                     placeholder="e.g. Lab Report March 2024"
-                                                    className="rounded-xl h-12"
+                                                    className="h-11 rounded-xl"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="font-bold">Document Type</Label>
+                                                <Label className="font-semibold">Document Type</Label>
                                                 <Select value={documentForm.documentType} onValueChange={v => setDocumentForm({ ...documentForm, documentType: v })}>
                                                     <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                                     <SelectContent className="rounded-xl">
@@ -1472,51 +1489,60 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="space-y-4">
-                                                <div
-                                                    className={`p-6 sm:p-10 border-2 border-dashed rounded-xl sm:rounded-[32px] text-center transition-all duration-300 relative group cursor-pointer
-                                                        ${isDragging
-                                                            ? 'border-indigo-500 bg-indigo-50 scale-[1.02] shadow-2xl shadow-indigo-100'
-                                                            : 'border-slate-200 bg-slate-50/50 hover:border-indigo-300 hover:bg-slate-50'
-                                                        }`}
-                                                    onClick={() => documentInputRef.current?.click()}
-                                                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                                                    onDragLeave={() => setIsDragging(false)}
-                                                    onDrop={(e) => {
-                                                        e.preventDefault();
-                                                        setIsDragging(false);
-                                                        const file = e.dataTransfer.files?.[0];
-                                                        if (file) setSelectedFile(file);
-                                                    }}
-                                                >
-                                                    <input
-                                                        type="file"
-                                                        ref={documentInputRef}
-                                                        className="hidden"
-                                                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                                    />
-                                                    <div className="space-y-3">
-                                                        <div className={`h-20 w-20 rounded-xl sm:rounded-3xl shadow-sm flex items-center justify-center mx-auto transition-all duration-500
-                                                            ${isDragging ? 'bg-indigo-600 text-white rotate-12' : 'bg-white text-indigo-500 group-hover:scale-110'}
-                                                        `}>
-                                                            <Upload className="h-10 w-10" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-black text-slate-800 text-lg">
-                                                                {selectedFile ? selectedFile.name : "Drop your file here"}
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">
-                                                                {selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : "or click to browse documents"}
-                                                            </p>
-                                                        </div>
+                                            <div
+                                                className={`group relative min-w-0 cursor-pointer overflow-hidden rounded-xl border-2 border-dashed p-4 text-center transition-all duration-300 sm:rounded-2xl sm:p-6
+                                                    ${isDragging
+                                                        ? 'scale-[1.01] border-lp-brand bg-lp-surface-container shadow-lg'
+                                                        : 'border-lp-outline-variant/40 bg-lp-surface-container-low/80 hover:border-lp-brand/50 hover:bg-lp-surface-container-low'
+                                                    }`}
+                                                onClick={() => documentInputRef.current?.click()}
+                                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                                onDragLeave={() => setIsDragging(false)}
+                                                onDrop={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDragging(false);
+                                                    const file = e.dataTransfer.files?.[0];
+                                                    if (file) setSelectedFile(file);
+                                                }}
+                                            >
+                                                <input
+                                                    type="file"
+                                                    ref={documentInputRef}
+                                                    className="hidden"
+                                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                                />
+                                                <div className="mx-auto min-w-0 max-w-full space-y-2 sm:space-y-3">
+                                                    <div
+                                                        className={`mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-xl shadow-sm transition-all duration-300 sm:h-16 sm:w-16
+                                                            ${isDragging ? 'rotate-6 bg-lp-brand text-lp-on-brand' : 'bg-lp-surface-container-lowest text-lp-brand group-hover:scale-105'}
+                                                        `}
+                                                    >
+                                                        <Upload className="h-7 w-7 sm:h-8 sm:w-8" />
+                                                    </div>
+                                                    <div className="min-w-0 max-w-full px-1">
+                                                        <p
+                                                            className="truncate text-base font-bold text-lp-cta-bg sm:text-lg"
+                                                            title={selectedFile?.name}
+                                                        >
+                                                            {selectedFile ? selectedFile.name : "Drop your file here"}
+                                                        </p>
+                                                        <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-lp-on-surface-variant">
+                                                            {selectedFile
+                                                                ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
+                                                                : "or click to browse documents"}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Button onClick={handleAddDocument} className="w-full h-14 rounded-lg sm:rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 font-black text-lg transition-all" disabled={isSaving}>
-                                                {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
-                                                Store in Vault
-                                            </Button>
                                         </div>
+                                        <Button
+                                            onClick={handleAddDocument}
+                                            className={`mt-4 h-12 w-full shrink-0 rounded-xl sm:rounded-full ${dashboardPrimaryButton}`}
+                                            disabled={isSaving}
+                                        >
+                                            {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                                            Store in Vault
+                                        </Button>
                                     </DialogContent>
                                 </Dialog>
                             </div>
@@ -1527,8 +1553,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                     <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
                                 </div>
                             ) : documents.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/20 rounded-xl sm:rounded-3xl border-2 border-dashed border-slate-100">
-                                    <p className="text-slate-400 font-bold">Your document vault is empty.</p>
+                                <div className="text-center py-16 sm:py-24 bg-slate-50/20 rounded-xl sm:rounded-3xl border-2 border-dashed border-lp-outline-variant/30">
+                                    <p className="text-lp-on-surface-variant font-bold">Your document vault is empty.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -1536,7 +1562,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                         <div key={doc.id} className="group w-full min-w-0 max-w-full bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
                                             <div className="p-5 sm:p-6">
                                                 <div className="flex items-start justify-between mb-4">
-                                                    <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-2xl flex items-center justify-center">
+                                                    <div className="h-12 w-12 bg-indigo-50 text-lp-brand rounded-lg sm:rounded-2xl flex items-center justify-center">
                                                         <FileText className="h-6 w-6" />
                                                     </div>
                                                     <Button
@@ -1548,11 +1574,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                <h4 className="font-black text-slate-900 truncate uppercase tracking-tight">{doc.documentName}</h4>
-                                                <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mt-1">{doc.documentType}</p>
+                                                <h4 className="font-black text-lp-cta-bg truncate uppercase tracking-tight">{doc.documentName}</h4>
+                                                <p className="text-xs font-black text-lp-brand uppercase tracking-widest mt-1">{doc.documentType}</p>
                                                 <div className="mt-4 flex items-center justify-between">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Size</span>
+                                                        <span className="text-[10px] font-bold text-lp-on-surface-variant uppercase tracking-tighter">Size</span>
                                                         <span className="text-xs font-black text-slate-700">
                                                             {doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(2)} MB` : "N/A"}
                                                         </span>
@@ -1560,7 +1586,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="rounded-full font-black text-[10px] uppercase tracking-widest border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                                                        className="rounded-full font-black text-[10px] uppercase tracking-widest border-indigo-100 text-lp-brand hover:bg-indigo-50"
                                                         onClick={() => window.open(doc.fileUrl, '_blank')}
                                                     >
                                                         <ExternalLink className="h-3 w-3 mr-1" /> View
@@ -1577,7 +1603,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {/* Insurance Tab */}
                 <TabsContent value="insurance" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-emerald-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
@@ -1642,29 +1668,29 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 </div>
                             ) : insuranceData.length === 0 ? (
                                 <div className="text-center py-16 sm:py-24 bg-emerald-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-emerald-100">
-                                    <p className="text-slate-400 font-bold">No insurance policies linked.</p>
+                                    <p className="text-lp-on-surface-variant font-bold">No insurance policies linked.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-8">
                                     {insuranceData.map((ins) => (
-                                        <div key={ins.id} className="group relative w-full min-w-0 max-w-full overflow-hidden bg-white border border-slate-100 rounded-xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500">
+                                        <div key={ins.id} className="group relative w-full min-w-0 max-w-full overflow-hidden bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500">
                                             <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-50">
                                                 <div className="p-5 sm:p-8 md:w-1/3 bg-slate-50/40">
-                                                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Coverage Provider</p>
-                                                    <h4 className="text-2xl font-black text-slate-900 group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">{ins.providerName}</h4>
+                                                    <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-widest mb-1">Coverage Provider</p>
+                                                    <h4 className="text-2xl font-black text-lp-cta-bg group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">{ins.providerName}</h4>
                                                     <Badge className="mt-4 bg-emerald-100 text-emerald-700 border-none font-black px-4 py-1">Verified Active</Badge>
                                                 </div>
                                                 <div className="p-5 sm:p-8 md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
                                                     <div>
-                                                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Policy ID</p>
-                                                        <p className="font-extrabold text-slate-900 tracking-wider text-lg">{ins.policyNumber}</p>
+                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Policy ID</p>
+                                                        <p className="font-extrabold text-lp-cta-bg tracking-wider text-lg">{ins.policyNumber}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Beneficiary</p>
-                                                        <p className="font-extrabold text-slate-900 tracking-tight text-lg">{ins.policyHolderName}</p>
+                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Beneficiary</p>
+                                                        <p className="font-extrabold text-lp-cta-bg tracking-tight text-lg">{ins.policyHolderName}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Expiration</p>
+                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Expiration</p>
                                                         <p className="font-extrabold text-red-400 tracking-tight text-lg">{ins.expirationDate || 'Lifetime'}</p>
                                                     </div>
                                                     <div className="flex items-end md:justify-end">
@@ -1684,7 +1710,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {/* Appointments Tab */}
                 <TabsContent value="appointments" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border-none shadow-xl bg-white/70 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-indigo-50/30">
                             <CardTitle className="text-xl font-black flex items-center gap-2 text-indigo-900">
                                 <Calendar className="h-6 w-6" /> My Consultation Requests
@@ -1699,36 +1725,36 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             ) : appointments.length === 0 ? (
                                 <div className="text-center py-16 sm:py-24 bg-indigo-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-indigo-100">
                                     <Calendar className="h-12 w-12 mx-auto mb-4 text-indigo-200" />
-                                    <h4 className="text-lg font-black text-slate-900">No requests yet</h4>
-                                    <p className="text-slate-400 mt-1">Your consultation requests will appear here.</p>
+                                    <h4 className="text-lg font-black text-lp-cta-bg">No requests yet</h4>
+                                    <p className="text-lp-on-surface-variant mt-1">Your consultation requests will appear here.</p>
                                 </div>
                             ) : (
                                 <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                                     {appointments.map((apt) => (
                                         <div
                                             key={apt.id}
-                                            className="group w-full min-w-0 max-w-full overflow-hidden p-5 bg-white border border-slate-100 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500"
+                                            className="group w-full min-w-0 max-w-full overflow-hidden p-5 bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500"
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <Badge className="font-black text-[10px] uppercase rounded-full bg-amber-50 text-amber-700 border-amber-100">
                                                     Submitted
                                                 </Badge>
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-lp-on-surface-variant">
                                                     {apt.category}
                                                 </p>
                                             </div>
 
                                             <div className="mt-4 space-y-1">
-                                                <h4 className="font-black text-slate-900 truncate text-lg">
+                                                <h4 className="font-black text-lp-cta-bg truncate text-lg">
                                                     {apt.professionalName || "Consultation Team"}
                                                 </h4>
-                                                <p className="text-xs text-slate-400 font-bold truncate uppercase tracking-wide">
+                                                <p className="text-xs text-lp-on-surface-variant font-bold truncate uppercase tracking-wide">
                                                     {apt.city}, {apt.state}
                                                 </p>
                                             </div>
 
                                             <div className="mt-4 p-3 rounded-lg sm:rounded-2xl bg-indigo-50/40 border border-indigo-100/60">
-                                                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Schedule</p>
+                                                <p className="text-xs font-black text-lp-on-surface-variant uppercase tracking-wider">Schedule</p>
                                                 <p className="text-sm font-black text-indigo-700">
                                                     {mounted
                                                         ? new Date(`${apt.appointmentDate}T${(apt.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleString('en-US', {
@@ -1744,7 +1770,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                             </div>
 
                                             {apt.message && (
-                                                <p className="mt-3 text-sm text-slate-500 italic line-clamp-2">"{apt.message}"</p>
+                                                <p className="mt-3 text-sm text-lp-on-surface-variant italic line-clamp-2">"{apt.message}"</p>
                                             )}
 
                                             {apt.prescriptionUpdatedAt && (
@@ -1797,7 +1823,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 </TabsContent>
             </Tabs>
 
-            <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md sm:hidden">
+            <nav className={dashboardMobileNav}>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
                     {[
                         { value: "profile", label: "Profile", icon: User },
@@ -1815,10 +1841,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                 key={item.value}
                                 type="button"
                                 onClick={() => setActiveTab(item.value)}
-                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25"
-                                    : "text-gray-600 hover:bg-teal-50"
-                                    }`}
+                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive ? dashboardMobileNavActive : dashboardMobileNavInactive}`}
                             >
                                 <Icon className="h-5 w-5" />
                                 <span className="max-w-[4.5rem] truncate">{item.label}</span>
@@ -1830,7 +1853,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
             {/* Support Float Button - Pure Aesthetics */}
             <div className="hidden sm:fixed sm:bottom-10 sm:right-10 sm:z-40">
-                <Button className="h-11 w-11 sm:h-14 sm:w-14 rounded-full bg-slate-900 text-white shadow-2xl hover:scale-110 transition-transform flex items-center justify-center p-0 border-4 border-white">
+                <Button className="flex h-11 w-11 items-center justify-center rounded-full border-4 border-lp-surface-container-lowest bg-lp-cta-bg p-0 text-lp-on-brand shadow-2xl transition-transform hover:scale-110 sm:h-14 sm:w-14">
                     <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
             </div>
