@@ -162,3 +162,15 @@ $$;
 
 REVOKE ALL ON FUNCTION public.try_newsletter_rate_limit(TEXT, INT, INT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.try_newsletter_rate_limit(TEXT, INT, INT) TO anon, authenticated;
+
+-- 2026-05-20: One weekly availability row per professional per weekday (prevents duplicate Monday slots).
+-- Run once. If this fails, dedupe duplicates first (see DELETE below), then re-run the CREATE UNIQUE INDEX.
+
+DELETE FROM public.professional_availability a
+USING public.professional_availability b
+WHERE a.professional_id = b.professional_id
+  AND a.day_of_week = b.day_of_week
+  AND a.updated_at < b.updated_at;
+
+CREATE UNIQUE INDEX IF NOT EXISTS professional_availability_professional_day_unique
+  ON public.professional_availability (professional_id, day_of_week);

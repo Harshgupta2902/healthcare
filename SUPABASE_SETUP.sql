@@ -268,8 +268,12 @@ CREATE TABLE IF NOT EXISTS public.professional_availability (
   end_time TEXT NOT NULL,
   is_available BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT professional_availability_day_of_week_check CHECK (day_of_week >= 0 AND day_of_week <= 6)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS professional_availability_professional_day_unique
+  ON public.professional_availability (professional_id, day_of_week);
 
 -- 🛡️ 4. EXTRAS & TRIGGERS
 CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (

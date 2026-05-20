@@ -501,67 +501,60 @@ export async function updateAvailability(data: any) {
         .select('id, day_of_week, start_time, end_time, is_available')
         .eq('professional_id', user.id)
         .eq('day_of_week', validatedData.dayOfWeek)
-        .order('updated_at', { ascending: false })
-        .limit(1)
         .maybeSingle()
 
-    const { error } = await supabase
-        .from('professional_availability')
-        .upsert({
-            professional_id: user.id,
-            day_of_week: validatedData.dayOfWeek,
-            start_time: validatedData.startTime,
-            end_time: validatedData.endTime,
-            is_available: validatedData.isAvailable,
-            updated_at: new Date().toISOString(),
-        })
+    if (existing) {
+        return {
+            success: false as const,
+            error: `${weekdayLong(validatedData.dayOfWeek)} is already on your weekly schedule. Remove that day first to add a new slot.`,
+        }
+    }
 
-    if (error) return { success: false as const, error: error.message }
+    if (validatedData.startTime >= validatedData.endTime) {
+        return { success: false as const, error: 'End time must be after start time.' }
+    }
+
+    const { error } = await supabase.from('professional_availability').insert({
+        professional_id: user.id,
+        day_of_week: validatedData.dayOfWeek,
+        start_time: validatedData.startTime,
+        end_time: validatedData.endTime,
+        is_available: validatedData.isAvailable,
+    })
+
+    if (error) {
+        if (error.code === '23505') {
+            return {
+                success: false as const,
+                error: `${weekdayLong(validatedData.dayOfWeek)} is already on your weekly schedule.`,
+            }
+        }
+        return { success: false as const, error: error.message }
+    }
 
     const dayLabel = `Calendar · ${weekdayLong(validatedData.dayOfWeek)}`
     const slotLabel = `${validatedData.startTime}–${validatedData.endTime}${validatedData.isAvailable ? '' : ' (marked unavailable)'}`
 
-    if (!existing) {
-        await recordProfessionalActivity(supabase, {
-            actorUserId: user.id,
-            type: 'professional.calendar_slot_added',
-            title: 'Calendar: new weekly slot',
-            changes: [{ label: dayLabel, from: '—', to: slotLabel }],
-            metadata: { section: 'calendar', day_of_week: validatedData.dayOfWeek },
-        })
-    } else {
-        const calChanges: FieldChange[] = []
-        if (String(existing.start_time) !== String(validatedData.startTime)) {
-            calChanges.push({ label: `${dayLabel} · start time`, from: existing.start_time, to: validatedData.startTime })
-        }
-        if (String(existing.end_time) !== String(validatedData.endTime)) {
-            calChanges.push({ label: `${dayLabel} · end time`, from: existing.end_time, to: validatedData.endTime })
-        }
-        if (Boolean(existing.is_available) !== Boolean(validatedData.isAvailable)) {
-            calChanges.push({
-                label: `${dayLabel} · availability`,
-                from: existing.is_available ? 'available' : 'unavailable',
-                to: validatedData.isAvailable ? 'available' : 'unavailable',
-            })
-        }
-        if (calChanges.length > 0) {
-            await recordProfessionalActivity(supabase, {
-                actorUserId: user.id,
-                type: 'professional.calendar_slot_updated',
-                title: 'Calendar: weekly slot updated',
-                changes: calChanges,
-                metadata: { section: 'calendar', day_of_week: validatedData.dayOfWeek },
-            })
-        }
-    }
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.calendar_slot_added',
+        title: 'Calendar: new weekly slot',
+        changes: [{ label: dayLabel, from: '—', to: slotLabel }],
+        metadata: { section: 'calendar', day_of_week: validatedData.dayOfWeek },
+    })
 
     return { success: true as const }
 }
+
+const availabilityIdSchema = z.string().uuid()
 
 export async function deleteAvailability(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false as const, error: 'You must be signed in.' }
+
+    const idParsed = availabilityIdSchema.safeParse(id)
+    if (!idParsed.success) return { success: false as const, error: 'Invalid availability slot.' }
 
     const { data: actorNameRow } = await supabase.from('users').select('name').eq('id', user.id).single()
     const actorDisplayName = (actorNameRow?.name || 'Professional').trim() || 'Professional'
@@ -569,14 +562,14 @@ export async function deleteAvailability(id: string) {
     const { data: slot } = await supabase
         .from('professional_availability')
         .select('day_of_week, start_time, end_time')
-        .eq('id', id)
+        .eq('id', idParsed.data)
         .eq('professional_id', user.id)
         .maybeSingle()
 
     const { error } = await supabase
         .from('professional_availability')
         .delete()
-        .eq('id', id)
+        .eq('id', idParsed.data)
         .eq('professional_id', user.id)
 
     if (error) return { success: false as const, error: error.message }
