@@ -19,7 +19,7 @@ import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
 import {
     assertNewsletterRateLimits,
     getClientIpFromHeaders,
-} from '@/lib/newsletter-rate-limit'
+} from '@/lib/device-rate-limit'
 import { headers } from 'next/headers'
 
 const medicalProfileSchema = z
@@ -584,8 +584,7 @@ const subscribeNewsletterSchema = z.object({
         .email('Please enter a valid email address.'),
     deviceHash: z
         .string()
-        .regex(/^[a-f0-9]{64}$/i, 'Invalid device fingerprint')
-        .optional(),
+        .regex(/^[a-f0-9]{64}$/i, 'Unable to verify your device. Please refresh and try again.'),
 })
 
 export type SubscribeNewsletterInput = z.infer<typeof subscribeNewsletterSchema>
@@ -604,11 +603,7 @@ export async function subscribeNewsletter(input: SubscribeNewsletterInput | stri
     const headerStore = await headers()
     const clientIp = getClientIpFromHeaders(headerStore)
 
-    const rateLimit = await assertNewsletterRateLimits({
-        ip: clientIp,
-        email: sanitizedEmail,
-        deviceHash,
-    })
+    const rateLimit = await assertNewsletterRateLimits({ ip: clientIp, deviceHash })
     if (!rateLimit.ok) {
         return {
             success: false as const,

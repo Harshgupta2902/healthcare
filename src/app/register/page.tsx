@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
+import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 
 interface FormData {
   firstName: string;
@@ -139,8 +140,15 @@ function RegisterContent() {
 
     try {
       const { signUp } = await import("@/features/profile/actions");
+      const deviceHash = await getDeviceFingerprintHash();
 
-      const result = await signUp(formData.email, formData.password, fullName, formData.role);
+      const result = await signUp({
+        email: formData.email,
+        password: formData.password,
+        name: fullName,
+        role: formData.role,
+        deviceHash,
+      });
 
       if (result.error) {
         toast.error(result.error);

@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { zodFirstError } from '@/lib/server-action-result'
 import { recordAdminNotification } from '@/lib/admin-notifications'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import sharp from 'sharp'
+import { assertSignupRateLimits, getClientIpFromHeaders } from '@/lib/device-rate-limit'
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -127,13 +128,34 @@ export async function signIn(email: string, password: string) {
     return { success: true, user: data.user, role: syncedData?.role }
 }
 
-export async function signUp(
-    email: string,
-    password: string,
-    name: string,
-    role: string,
-    nameTitle?: string | null
-) {
+const signUpSchema = z.object({
+    email: z.string().trim().email('Please enter a valid email address.'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    name: z.string().trim().min(2, 'Name must be at least 2 characters'),
+    role: z.enum(['client', 'professional']),
+    nameTitle: z.string().optional().nullable(),
+    deviceHash: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i, 'Unable to verify your device. Please refresh and try again.'),
+})
+
+export type SignUpInput = z.infer<typeof signUpSchema>
+
+export async function signUp(input: SignUpInput) {
+    const parsed = signUpSchema.safeParse(input)
+    if (!parsed.success) {
+        return { error: zodFirstError(parsed.error), code: 'validation' as const }
+    }
+
+    const { email, password, name, role, nameTitle, deviceHash } = parsed.data
+
+    const headerStore = await headers()
+    const clientIp = getClientIpFromHeaders(headerStore)
+    const rateLimit = await assertSignupRateLimits({ ip: clientIp, deviceHash })
+    if (!rateLimit.ok) {
+        return { error: rateLimit.error, code: rateLimit.reason }
+    }
+
     console.log("ServerAction: signUp called with", { email, name, role, nameTitle });
     const supabase = await createClient()
     const titleForMeta =

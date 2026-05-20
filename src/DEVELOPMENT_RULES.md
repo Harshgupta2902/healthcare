@@ -5,3 +5,4 @@
 - **Server Actions**: Use Next.js Server Actions for all mutations.
 - **Validation**: Use Zod for all form and server action validation.
 - **Row Level Security**: Ensure all tables have RLS enabled and proper policies in place.
+- **Rate limits**: See [docs/RATE_LIMITS.md](../docs/RATE_LIMITS.md) for registration vs newsletter limits, bucket keys, and how to change or reset them.

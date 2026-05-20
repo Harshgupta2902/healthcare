@@ -1,6 +1,6 @@
 'use client'
 
-const DEVICE_ID_KEY = 'hh_newsletter_device_id'
+const DEVICE_ID_KEY = 'hh_device_id'
 
 function getOrCreateDeviceId(): string {
   try {
@@ -16,9 +16,9 @@ function getOrCreateDeviceId(): string {
 
 /**
  * Stable SHA-256 hash from device signals + persistent local id.
- * Used for newsletter signup rate limiting (not authentication).
+ * Used for registration and newsletter rate limiting (not authentication).
  */
-export async function getNewsletterDeviceHash(): Promise<string> {
+export async function getDeviceFingerprintHash(): Promise<string> {
   const parts = [
     getOrCreateDeviceId(),
     navigator.userAgent,
