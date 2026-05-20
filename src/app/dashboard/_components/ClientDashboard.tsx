@@ -1098,9 +1098,10 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                                                         className="rounded-xl border-lp-outline-variant/30"
                                                     />
                                                 </div>
-                                                <div className="space-y-2">
+                                                <div className="min-w-0 space-y-2">
                                                     <Label className="text-[10px] font-bold text-lp-on-surface-variant uppercase">Mobile phone</Label>
                                                     <PhoneCountryFields
+                                                        className="min-w-0"
                                                         countryIso={
                                                             profileForm.phoneCountryIso ??
                                                             resolveCountryIsoFromDialCode(

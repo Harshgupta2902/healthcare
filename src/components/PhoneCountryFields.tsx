@@ -29,6 +29,8 @@ export type PhoneCountryFieldsProps = {
   disabled?: boolean
   className?: string
   inputClassName?: string
+  /** When true (default), country trigger shows flag + dial code only. */
+  compactCountry?: boolean
 }
 
 function FlagImg({ iso2, className }: { iso2: string; className?: string }) {
@@ -54,13 +56,19 @@ export function PhoneCountryFields({
   disabled,
   className,
   inputClassName,
+  compactCountry = true,
 }: PhoneCountryFieldsProps) {
   const [open, setOpen] = React.useState(false)
   const upperIso = (countryIso || DEFAULT_PHONE_COUNTRY_ISO).toUpperCase()
   const selected = getPhoneCountryOptionByIso2(upperIso) ?? getPhoneCountryOptionByIso2(DEFAULT_PHONE_COUNTRY_ISO)!
 
   return (
-    <div className={cn('flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2', className)}>
+    <div
+      className={cn(
+        'grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2',
+        className,
+      )}
+    >
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -68,18 +76,27 @@ export function PhoneCountryFields({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            aria-label="Country calling code"
+            aria-label={`Country code, ${selected.label}`}
             disabled={disabled}
             className={cn(
-              'h-12 w-full shrink-0 justify-between rounded-xl border-slate-100 px-3 font-normal sm:w-[240px]',
-              disabled && 'opacity-70'
+              'h-12 shrink-0 justify-between gap-1 rounded-xl border-lp-outline-variant/40 px-2.5 font-normal',
+              compactCountry
+                ? 'h-12 w-max min-w-[5.25rem] max-w-[7.25rem] px-2'
+                : 'h-12 w-full min-w-[8.5rem] max-w-[10rem]',
+              disabled && 'opacity-70',
             )}
           >
-            <span className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <span className="flex min-w-0 items-center gap-1.5 text-left">
               <FlagImg iso2={selected.iso2} />
-              <span className="truncate text-sm font-medium">{selected.label}</span>
+              {compactCountry ? (
+                <span className="text-sm font-semibold tabular-nums text-lp-on-surface">
+                  {selected.dialCode}
+                </span>
+              ) : (
+                <span className="truncate text-sm font-medium">{selected.label}</span>
+              )}
             </span>
-            <ChevronsUpDown className="ml-1 size-4 shrink-0 opacity-50" aria-hidden />
+            <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" aria-hidden />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[min(100vw-2rem,360px)] p-0 rounded-xl" align="start">
@@ -128,7 +145,10 @@ export function PhoneCountryFields({
           onNationalChange(digits)
         }}
         disabled={disabled}
-        className={cn('h-12 min-w-0 flex-1 rounded-xl border-slate-100', inputClassName)}
+        className={cn(
+          'h-12 min-w-0 w-full rounded-xl border-lp-outline-variant/40',
+          inputClassName,
+        )}
       />
     </div>
   )
