@@ -7,166 +7,83 @@ Last updated: **2026-05-20**
 
 ## Summary
 
-| Feature | Rate limited? | Same rules? | Where enforced |
-|--------|----------------|-------------|----------------|
-| **Account registration** (`/register`) | **Yes** | IP + device | `signUp` server action |
-| **Newsletter subscribe** (homepage) | **Yes** | IP + device (same limits) | `subscribeNewsletter` server action |
-| **Login** | **No** | — | — |
-| **Contact form** | **No** | — | — |
-| **Guest book consultation** | **No** | — | — |
+| Feature | Rate limited? | IP + device | Per email | Where enforced |
+|--------|----------------|-------------|-----------|----------------|
+| **Account registration** (`/register`) | **Yes** | 1/min, 5/hr | 3/day | `signUp` server action |
+| **Newsletter subscribe** (homepage) | **Yes** | 1/min, 5/hr | 3/hr | `subscribeNewsletter` server action |
+| **Login** (`/login`) | **Yes** | 5/min, 20/hr | 10/hr | `signIn` server action |
+| **Contact form** (`/contact`) | **Yes** | 2/min, 10/hr | 5/hr | `submitContactForm` server action |
+| **Guest book consultation** | **Yes** | 2/min, 10/hr | 5/hr | `submitGuestAppointment` server action |
+| **Unsubscribe link** (`/unsubscribe`) | **No** | — | — | — |
+| **Admin newsletter CRUD / broadcasts** | **No** | — | — | Trusted role |
+| **Password reset** | **No** | — | — | Supabase Auth default |
 
-Registration and newsletter use **identical limits** but **separate counters** (different bucket prefixes).
+Each flow uses **separate bucket prefixes** in `public.newsletter_rate_limits`.
 
 ---
 
-## Shared rules (register + newsletter)
+## Limits by feature
 
-“Same device” = **same client IP** + **same device fingerprint hash**.
+### Registration & newsletter (unchanged device rules)
 
-| Limit | Max attempts | Window |
-|-------|----------------|--------|
-| **Per minute** | 1 | 60 seconds |
-| **Per hour** | 5 | 3600 seconds (1 hour) |
+| Limit | Register | Newsletter |
+|-------|----------|------------|
+| Per minute (IP+device) | 1 | 1 |
+| Per hour (IP+device) | 5 | 5 |
+| Per email | 3/day | 3/hour |
 
-- Minute check runs first, then hour check.
-- Each **allowed** attempt increments both buckets.
-- Blocked attempts do **not** increment counters.
-- Register and newsletter limits are **independent** (separate bucket keys).
+### Login
 
-### User messages
+| Limit | Value |
+|-------|--------|
+| Per minute (IP+device) | 5 |
+| Per hour (IP+device) | 20 |
+| Per email (hour) | 10 |
 
-| Scope | Per minute | Per hour (5+) |
-|-------|------------|----------------|
-| **Register** | *You can register only one account per minute from this device…* | *Too many signups from this device…* |
-| **Newsletter** | *You can subscribe only one email per minute from this device…* | *Too many newsletter signups from this device…* |
+Failed logins still consume buckets (checked before `signInWithPassword`). Auth errors return a generic *Invalid email or password.*
+
+### Contact form
+
+| Limit | Value |
+|-------|--------|
+| Per minute (IP+device) | 2 |
+| Per hour (IP+device) | 10 |
+| Per email (hour) | 5 |
+
+### Guest consultation booking
+
+| Limit | Value |
+|-------|--------|
+| Per minute (IP+device) | 2 |
+| Per hour (IP+device) | 10 |
+| Per email (hour) | 5 |
+
+---
+
+## How limits are enforced
+
+1. Browser builds **device fingerprint** → SHA-256 hex (`getDeviceFingerprintHash()`).
+2. Form submits `deviceHash` with the server action payload.
+3. Server reads **IP** from `x-forwarded-for` / `x-real-ip`.
+4. RPC `try_newsletter_rate_limit` increments buckets in Postgres (serverless-safe).
+
+### Bucket key formats
+
+```
+{scope}_minute:{ip}|{deviceHash}
+{scope}_hour:{ip}|{deviceHash}
+{scope}_email_hour:{normalizedEmail}    # login, newsletter, contact, guest_booking
+register_email_day:{normalizedEmail}    # register only
+```
+
+Scopes: `register`, `newsletter`, `login`, `contact`, `guest_booking`.
 
 ### Invalid device fingerprint
 
-Missing or invalid `deviceHash` (must be 64-char hex SHA-256):
+Missing or invalid `deviceHash` (must be 64-char hex):
 
-- Request **rejected** on both flows.
+- Request **rejected** on all limited flows.
 - Message: *Unable to verify your device. Please refresh the page and try again.*
-
----
-
-## Account registration (`/register`)
-
-- Open to anyone; no existing account required.
-- Flow: `register/page.tsx` → `getDeviceFingerprintHash()` → `signUp({ …, deviceHash })` → rate limit → Supabase Auth `signUp`.
-- Bucket prefixes: `register_minute:`, `register_hour:`
-
-### `signUp` input (Zod)
-
-```ts
-{
-  email: string
-  password: string   // min 8 chars
-  name: string         // min 2 chars
-  role: 'client' | 'professional'
-  nameTitle?: string | null
-  deviceHash: string   // 64-char hex SHA-256
-}
-```
-
-### Error `code` values
-
-| `code` | Meaning |
-|--------|---------|
-| `device_minute` | >1 register attempt per minute (same IP + device) |
-| `device` | >5 per hour or invalid device hash |
-| `validation` | Zod failed |
-
----
-
-## Newsletter subscribe (public)
-
-- Open to anyone (logged in or not); **only email** required.
-- No link to `users` table.
-- Flow: `NewsletterSubscribe` → `getDeviceFingerprintHash()` → `subscribeNewsletter({ email, deviceHash })` → rate limit → RPC `subscribe_newsletter`.
-- Bucket prefixes: `newsletter_minute:`, `newsletter_hour:`
-
-### `subscribeNewsletter` input (Zod)
-
-```ts
-{
-  email: string      // valid email, max 320 chars
-  deviceHash: string // 64-char hex SHA-256
-}
-```
-
-### Error `code` values
-
-| `code` | Meaning |
-|--------|---------|
-| `device_minute` | >1 subscribe attempt per minute (same IP + device) |
-| `device` | >5 per hour or invalid device hash |
-
-Rate limit runs **before** checking if email is already subscribed (abuse protection).
-
----
-
-## How “same device” is identified
-
-### Client IP (server)
-
-1. `x-forwarded-for` (first IP)
-2. `x-real-ip`
-3. `unknown`
-
-**Code:** `getClientIpFromHeaders()` in `src/lib/device-rate-limit.ts`
-
-### Device fingerprint (browser)
-
-| Signal | Source |
-|--------|--------|
-| Persistent ID | `localStorage` → `hh_device_id` |
-| User agent | `navigator.userAgent` |
-| Language | `navigator.language` |
-| Timezone | `Intl.DateTimeFormat().resolvedOptions().timeZone` |
-| Screen | `width x height` + `colorDepth` |
-| Platform | `navigator.platform` |
-
-Joined with `|`, hashed with **SHA-256** → 64-char hex sent to server.
-
-**Code:** `getDeviceFingerprintHash()` in `src/lib/device-fingerprint.ts`
-
-### Combined bucket key format
-
-```
-{prefix}:{ip}|{deviceHash}
-```
-
-Examples:
-
-- `register_minute:203.0.113.10|abc…`
-- `register_hour:203.0.113.10|abc…`
-- `newsletter_minute:203.0.113.10|abc…`
-- `newsletter_hour:203.0.113.10|abc…`
-
----
-
-## Database (Supabase)
-
-### Table
-
-`public.newsletter_rate_limits`
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `bucket_key` | `TEXT` PK | e.g. `newsletter_hour:ip\|hash` |
-| `attempt_count` | `INT` | Attempts in current window |
-| `window_start` | `TIMESTAMPTZ` | Window start time |
-
-RLS on; clients use RPC only.
-
-### RPC
-
-`public.try_newsletter_rate_limit(p_bucket_key, p_max_attempts, p_window_seconds)` → `TRUE` / `FALSE`
-
-### Schema files
-
-- `SUPABASE_SETUP.sql`
-- `updates.sql` (2026-05-20 block)
 
 ---
 
@@ -174,65 +91,52 @@ RLS on; clients use RPC only.
 
 | File | Role |
 |------|------|
-| `src/lib/device-rate-limit.ts` | Shared limits, `assertSignupRateLimits()`, `assertNewsletterRateLimits()` |
-| `src/lib/device-fingerprint.ts` | Client hash (register + newsletter) |
-| `src/features/profile/actions.ts` | `signUp()` |
+| `src/lib/device-rate-limit.ts` | All scopes, limits, `assert*RateLimits()` helpers |
+| `src/lib/device-fingerprint.ts` | Client SHA-256 hash |
+| `src/features/profile/actions.ts` | `signUp()`, `signIn()` |
 | `src/app/register/page.tsx` | Register form |
+| `src/app/login/page.tsx` | Login form |
 | `src/features/client/actions.ts` | `subscribeNewsletter()` |
 | `src/components/NewsletterSubscribe.tsx` | Newsletter form |
+| `src/features/contact/actions.ts` | `submitContactForm()` |
+| `src/app/contact/page.tsx` | Contact form |
+| `src/app/book-consultation/actions.ts` | `submitGuestAppointment()` |
+| `src/app/book-consultation/BookConsultationContent.tsx` | Booking form |
 
 ---
 
 ## Changing limits
 
-Edit `COMBINED_LIMITS` in `src/lib/device-rate-limit.ts`:
+Edit `SCOPE_LIMITS` in `src/lib/device-rate-limit.ts`, then update this doc.
 
-```ts
-const COMBINED_LIMITS = {
-  perMinute: { max: 1, windowSeconds: 60 },
-  perHour: { max: 5, windowSeconds: 3600 },
-}
-```
-
-Edit per-scope messages in `SCOPE_CONFIG` in the same file.
-
-Deploy app only — no SQL change unless bucket prefixes change.
+Deploy app only — no SQL change unless bucket prefix names change.
 
 ---
 
 ## Support / ops: reset blocks
 
 ```sql
--- Register only
-DELETE FROM public.newsletter_rate_limits
-WHERE bucket_key LIKE 'register_%:203.0.113.10|%';
-
--- Newsletter only
-DELETE FROM public.newsletter_rate_limits
-WHERE bucket_key LIKE 'newsletter_%:203.0.113.10|%';
-
--- Both for one IP
+-- All limits for one IP
 DELETE FROM public.newsletter_rate_limits
 WHERE bucket_key LIKE '%:203.0.113.10|%';
+
+-- Login only for one email
+DELETE FROM public.newsletter_rate_limits
+WHERE bucket_key LIKE 'login_email_hour:victim@example.com';
+
+-- Register device buckets
+DELETE FROM public.newsletter_rate_limits
+WHERE bucket_key LIKE 'register_%';
 ```
 
-Windows also expire automatically after 60s / 1h.
+Windows expire automatically after their configured duration.
 
 ---
 
-## Not rate limited
+## Limitations (abuse throttles, not full bot defense)
 
-- Login / password reset
-- Unsubscribe link (`/unsubscribe`)
-- Admin newsletter CRUD / broadcasts
-- Contact / enquiry forms
-- Guest appointment booking
+- `deviceHash` is client-generated and can be spoofed (new hash per attempt).
+- IP headers can be rotated behind proxies.
+- Use **CAPTCHA** (e.g. Turnstile) and edge **WAF** for production if abuse continues.
 
----
-
-## Quick checklist
-
-1. **Register** and **newsletter** = same numbers (1/min, 5/hr), different bucket prefixes.
-2. Both need **deviceHash** from the browser.
-3. Storage = Postgres RPC (serverless-safe).
-4. Change limits in `device-rate-limit.ts`; keep this doc in sync.
+See [SECURITY_FIXES.md](./SECURITY_FIXES.md) §4 for threat context.
