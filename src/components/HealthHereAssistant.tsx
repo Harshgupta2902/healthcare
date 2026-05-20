@@ -237,7 +237,7 @@ const AUTH_QUESTIONS: Question[] = [
 const ALL_QUESTIONS = [...PUBLIC_QUESTIONS, ...AUTH_QUESTIONS];
 
 const ASSISTANT_LINK_CLASS =
-  "font-black text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-900";
+  "font-semibold text-lp-brand underline decoration-lp-brand/40 underline-offset-2 hover:text-lp-brand-bright";
 
 const GUEST_CONTEXT: AssistantContext = {
   success: true,
@@ -547,15 +547,15 @@ export function HealthHereAssistant() {
   return (
     <>
       {open && (
-        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] z-[60] mx-auto flex max-h-[65vh] max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:bottom-24 sm:right-6 sm:left-auto sm:max-h-[min(720px,calc(100vh-7rem))] sm:w-[400px]">
-          <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-900 to-indigo-900 px-4 py-3 text-white">
+        <section className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] z-[60] mx-auto flex max-h-[65vh] max-w-md flex-col overflow-hidden rounded-2xl border border-lp-outline-variant/25 bg-lp-surface-container-lowest/95 shadow-2xl shadow-lp-brand/10 backdrop-blur-md sm:bottom-24 sm:left-auto sm:right-6 sm:max-h-[min(720px,calc(100vh-7rem))] sm:w-[400px]">
+          <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-lp-brand to-lp-brand-bright px-4 py-3 text-lp-on-brand">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
                 <Bot className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-white font-bold">HealthHere Assistant</p>
-                <p className="text-[11px] text-white/70">
+                <p className="font-heading text-white text-sm font-bold">HealthHere Assistant</p>
+                <p className="text-[11px] text-lp-on-brand/80">
                   {ctx?.isAuthenticated ? `${ctx.role} help enabled` : "Public help"}
                 </p>
               </div>
@@ -564,16 +564,16 @@ export function HealthHereAssistant() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg text-white hover:bg-white/10 hover:text-white"
+              className="h-9 w-9 rounded-lg text-lp-on-brand hover:bg-white/15 hover:text-lp-on-brand"
               onClick={() => setOpen(false)}
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/70 p-3">
-            <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3 text-[11px] font-semibold leading-relaxed text-amber-800">
-              <ShieldAlert className="mr-1 inline h-3.5 w-3.5" />
+          <div className="flex-1 space-y-3 overflow-y-auto bg-lp-surface-container-low/60 p-3">
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 p-3 text-[11px] font-medium leading-relaxed text-amber-900">
+              <ShieldAlert className="mr-1 inline h-3.5 w-3.5 text-amber-700" />
               This assistant does not provide diagnosis, emergency help, dosage changes, or treatment advice.
             </div>
 
@@ -583,8 +583,8 @@ export function HealthHereAssistant() {
                 className={cn(
                   "max-w-[88%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm leading-relaxed",
                   message.role === "assistant"
-                    ? "bg-white text-slate-700 shadow-sm"
-                    : "ml-auto bg-indigo-600 text-white"
+                    ? "border border-lp-outline-variant/20 bg-lp-surface-container-lowest text-lp-on-surface shadow-sm"
+                    : "ml-auto bg-gradient-to-r from-lp-brand to-lp-brand-bright font-medium text-lp-on-brand shadow-md",
                 )}
               >
                 {message.role === "assistant" ? renderAssistantTextWithLinks(message.text, ctx) : message.text}
@@ -592,28 +592,28 @@ export function HealthHereAssistant() {
             ))}
 
             {isTyping && (
-              <div className="flex max-w-[88%] items-center gap-1.5 px-3 py-3 text-slate-500">
-                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
-                <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
+              <div className="flex max-w-[88%] items-center gap-1.5 px-3 py-3 text-lp-on-surface-variant">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-lp-brand/50 [animation-delay:-0.2s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-lp-brand/50 [animation-delay:-0.1s]" />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-lp-brand/50" />
               </div>
             )}
 
             <div ref={scrollAnchorRef} />
           </div>
 
-          <div className="border-t border-slate-100 bg-white p-2.5">
+          <div className="border-t border-lp-outline-variant/20 bg-lp-surface-container-lowest/95 p-2.5 backdrop-blur-sm">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <Sparkles className="h-3 w-3" />
+              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-lp-on-surface-variant">
+                <Sparkles className="h-3 w-3 text-lp-brand" />
                 Quick questions
-                {loadingContext && <Loader2 className="h-3 w-3 animate-spin" />}
+                {loadingContext && <Loader2 className="h-3 w-3 animate-spin text-lp-brand" />}
               </div>
               <button
                 type="button"
                 onClick={clearChat}
                 disabled={isTyping}
-                className="shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-400 transition hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-lp-on-surface-variant transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Clear chat
               </button>
@@ -625,9 +625,9 @@ export function HealthHereAssistant() {
                   type="button"
                   onClick={() => askQuestion(question)}
                   disabled={isTyping}
-                  className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-[11px] font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center gap-2 rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low px-2.5 py-2 text-left text-[11px] font-semibold text-lp-on-surface transition hover:border-lp-brand/40 hover:bg-lp-surface-container hover:text-lp-brand disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <span className="shrink-0 text-slate-400">
+                  <span className="shrink-0 text-lp-brand">
                     {question.group === "Appointments" ? <CalendarDays className="h-3 w-3" /> : null}
                     {question.group === "Prescription" ? <FileText className="h-3 w-3" /> : null}
                     {question.group === "Public" ? <Navigation className="h-3 w-3" /> : null}
@@ -643,9 +643,15 @@ export function HealthHereAssistant() {
 
       <Button
         type="button"
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-4 z-[60] h-12 w-12 rounded-2xl bg-slate-900 p-0 text-white shadow-2xl shadow-slate-900/25 hover:bg-slate-800 sm:bottom-6 sm:right-6 sm:h-14 sm:w-14"
+        className={cn(
+          "fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] right-4 z-[60] h-12 w-12 rounded-2xl border border-white/20 p-0 shadow-2xl shadow-lp-brand/25 transition-all hover:scale-[1.03] sm:bottom-6 sm:right-6 sm:h-14 sm:w-14",
+          open
+            ? "bg-lp-surface-container-high text-lp-on-surface hover:bg-lp-surface-container"
+            : "bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand hover:shadow-lp-brand/35",
+        )}
         onClick={() => setOpen((current) => !current)}
-        aria-label="Open HealthHere Assistant"
+        aria-label={open ? "Close HealthHere Assistant" : "Open HealthHere Assistant"}
+        aria-expanded={open}
       >
         {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
       </Button>
