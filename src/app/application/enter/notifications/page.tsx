@@ -10,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { AdminPageHeader } from '../_components/AdminPageHeader'
+import { adminTheme } from '../_components/admin-theme'
 import { MarkAllReadButton, MarkReadButton } from './NotificationActions'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
@@ -37,17 +39,14 @@ export default async function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Notifications</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Signups, guest requests, profile changes, and credential uploads from clients and professionals.
-          </p>
-        </div>
+      <AdminPageHeader
+        title="Notifications"
+        description="Signups, guest requests, profile changes, and credential uploads from clients and professionals."
+      >
         {rows.some((r) => !r.read_at) ? <MarkAllReadButton /> : null}
-      </div>
+      </AdminPageHeader>
 
-      <Card className="border-teal-200/50 dark:border-gray-700/50 shadow-lg rounded-2xl overflow-hidden">
+      <Card className="liquid-glass overflow-hidden rounded-2xl border-0 shadow-none">
         <CardHeader className="px-4 pt-4 sm:px-6">
           <CardTitle className="text-base sm:text-lg">Activity feed</CardTitle>
           <CardDescription className="text-sm leading-relaxed">
@@ -57,20 +56,18 @@ export default async function AdminNotificationsPage() {
         <CardContent className="px-4 sm:px-6">
           <div className="space-y-3 sm:hidden">
             {rows.length === 0 ? (
-              <div className="rounded-xl bg-slate-50 p-4 text-center text-sm text-muted-foreground">
+              <div className="liquid-glass rounded-xl p-4 text-center text-sm text-muted-foreground">
                 No notifications yet.
               </div>
             ) : (
               rows.map((n) => (
                 <div
                   key={n.id}
-                  className={`rounded-2xl border border-teal-100 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 ${
-                    n.read_at ? 'opacity-70' : ''
-                  }`}
+                  className={`${adminTheme.mobileCard} ${n.read_at ? 'opacity-70' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{n.title}</p>
+                      <p className="text-sm font-semibold text-lp-on-surface">{n.title}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {format(new Date(n.created_at), 'MMM d, yyyy HH:mm')}
                       </p>
@@ -84,7 +81,7 @@ export default async function AdminNotificationsPage() {
 
                   {n.actor ? (
                     <div className="mt-3 min-w-0 text-xs text-muted-foreground">
-                      <span className="font-medium text-slate-700 dark:text-gray-200">{n.actor.name}</span>
+                      <span className="font-medium text-lp-on-surface">{n.actor.name}</span>
                       <span className="break-all"> · {n.actor.email}</span>
                       <Badge variant="secondary" className="ml-2 capitalize text-[10px]">
                         {n.actor.role}

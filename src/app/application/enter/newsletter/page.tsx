@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getNewsletterSubscribers, getNewsletterActiveRecipientCount } from '@/features/admin/actions'
+import { AdminPageHeader } from '../_components/AdminPageHeader'
 import { NewsletterTable } from './NewsletterTable'
 import type { SubscriberStatus } from './StatusFilter'
 import type { Metadata } from 'next'
@@ -47,22 +48,17 @@ export default async function NewsletterPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-            Newsletter Subscribers
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage newsletter subscribers and send broadcasts to active contacts.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="rounded-xl gap-2">
+      <AdminPageHeader
+        title="Newsletter Subscribers"
+        description="Manage newsletter subscribers and send broadcasts to active contacts."
+      >
+        <Button asChild variant="outline" className="liquid-glass gap-2 rounded-xl border-lp-outline-variant/40">
           <Link href="/application/enter/newsletter/campaigns">
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" />
             View campaigns
           </Link>
         </Button>
-      </div>
+      </AdminPageHeader>
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

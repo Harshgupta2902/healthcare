@@ -1,4 +1,5 @@
 import { getDocuments, getQualificationCredentialsForAdmin } from '@/features/admin/actions'
+import { AdminPageHeader } from '../_components/AdminPageHeader'
 import { DocumentsManagementTabs } from './DocumentsManagementTabs'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
@@ -37,14 +38,10 @@ export default async function DocumentsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          Documents Management
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Patient medical documents and professional qualification verification files
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Documents Management"
+        description="Patient medical documents and professional qualification verification files"
+      />
 
       <DocumentsManagementTabs
         medical={{

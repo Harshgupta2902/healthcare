@@ -1,4 +1,5 @@
 import { getAppointments, getProfessionalsForDropdown } from '@/features/admin/actions'
+import { AdminPageHeader } from '../_components/AdminPageHeader'
 import { AppointmentsTable } from './AppointmentsTable'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
@@ -31,16 +32,10 @@ export default async function AppointmentsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          Guest appointments
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Public booking requests from “Book consultation”. Assign a consultant when needed; once guest and
-          consultant emails exist, use the calendar icon in Actions to build a Google Calendar link (saved and copied).
-          After that, the copy icon reuses the stored link.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Guest appointments"
+        description='Public booking requests from "Book consultation". Assign a consultant when needed; once guest and consultant emails exist, use the calendar icon in Actions to build a Google Calendar link (saved and copied). After that, the copy icon reuses the stored link.'
+      />
       {!apptRes.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{apptRes.error}</p>
       )}

@@ -1,4 +1,5 @@
 import { getContactMessages } from '@/features/admin/actions'
+import { AdminPageHeader } from '../_components/AdminPageHeader'
 import { EnquiriesTable } from './EnquiriesTable'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
@@ -26,14 +27,10 @@ export default async function EnquiriesPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-          Enquiries
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Messages submitted from the public contact page
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Enquiries"
+        description="Messages submitted from the public contact page"
+      />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {result.error}

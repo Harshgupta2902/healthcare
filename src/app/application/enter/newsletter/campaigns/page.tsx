@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { getNewsletterCampaigns } from '@/features/admin/actions'
+import { AdminPageHeader } from '../../_components/AdminPageHeader'
 import { CampaignsTable } from './CampaignsTable'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
@@ -28,23 +29,17 @@ export default async function NewsletterCampaignsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <Link
-            href="/application/enter/newsletter"
-            className="inline-flex items-center gap-1 text-sm text-teal-600 dark:text-teal-400 hover:underline mb-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to subscribers
-          </Link>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-            Newsletter Campaigns
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Every newsletter you've sent — view the HTML body and which subscribers received it.
-          </p>
-        </div>
-      </div>
+      <Link
+        href="/application/enter/newsletter"
+        className="inline-flex items-center gap-1 text-sm text-lp-brand hover:text-lp-brand-bright hover:underline"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to subscribers
+      </Link>
+      <AdminPageHeader
+        title="Newsletter Campaigns"
+        description="Every newsletter you've sent — view the HTML body and which subscribers received it."
+      />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}
