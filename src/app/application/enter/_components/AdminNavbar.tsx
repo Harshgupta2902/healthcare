@@ -3,20 +3,11 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { Search, Bell, LogOut, Camera, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { Search, Bell, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { signOut, uploadProfileImage } from '@/features/profile/actions'
-import { toast } from 'sonner'
-import { useRef } from 'react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { signOut } from '@/features/profile/actions'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -36,9 +27,6 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isUploading, setIsUploading] = useState(false)
-
   const handleLogout = async () => {
     const supabase = createClient()
     try {
@@ -54,31 +42,6 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
     }
     router.refresh()
     router.replace('/')
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setIsUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      const result = await uploadProfileImage(formData)
-      if (result.success) {
-        toast.success('Profile image updated successfully')
-        const supabase = createClient()
-        await supabase.auth.refreshSession()
-        router.refresh()
-      } else {
-        toast.error(result.error || 'Failed to upload image')
-      }
-    } catch {
-      toast.error('An unexpected error occurred')
-    } finally {
-      setIsUploading(false)
-    }
   }
 
   const initials = user.name
@@ -133,73 +96,43 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
             </Link>
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="group relative cursor-pointer">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <Button
-                  variant="ghost"
-                  className={cn('flex items-center gap-3 rounded-xl p-1', adminTheme.hoverSurface)}
-                  disabled={isUploading}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className={cn(
+              'h-10 w-10 rounded-xl text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 lg:hidden',
+              adminTheme.hoverSurface
+            )}
+            aria-label="Logout"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+
+          <div className="hidden items-center gap-3 lg:flex">
+            <Avatar className={cn('h-10 w-10 border-2', adminTheme.avatarRing)}>
+              <AvatarImage src={user.image || undefined} className="object-cover" />
+              <AvatarFallback className={adminTheme.avatarFallback}>{initials}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 max-w-[14rem] text-left">
+              {showNameLine ? (
+                <p className="truncate font-heading text-sm font-semibold text-lp-on-surface">{name}</p>
+              ) : null}
+              {email ? (
+                <p
+                  className={cn(
+                    'truncate text-lp-on-surface-variant',
+                    showNameLine ? 'text-[10px] leading-tight' : 'text-sm font-medium text-lp-on-surface'
+                  )}
                 >
-                  <Avatar className={cn('relative h-10 w-10 overflow-hidden border-2', adminTheme.avatarRing)}>
-                    <AvatarImage src={user.image || undefined} className="object-cover" />
-                    <AvatarFallback className={adminTheme.avatarFallback}>{initials}</AvatarFallback>
-                    {isUploading ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                        <Loader2 className="h-4 w-4 animate-spin text-white" />
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100">
-                        <Camera className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </Avatar>
-                  <div className="hidden min-w-0 max-w-[11rem] text-left xl:max-w-[14rem] lg:block">
-                    {showNameLine ? (
-                      <p className="truncate font-heading text-sm font-semibold text-lp-on-surface transition-colors group-hover:text-lp-brand">
-                        {name}
-                      </p>
-                    ) : null}
-                    {email ? (
-                      <p
-                        className={cn(
-                          'truncate text-lp-on-surface-variant',
-                          showNameLine
-                            ? 'text-[10px] leading-tight'
-                            : 'text-sm font-medium text-lp-on-surface'
-                        )}
-                      >
-                        {email}
-                      </p>
-                    ) : (
-                      <p className="text-sm font-medium text-lp-on-surface">Admin</p>
-                    )}
-                  </div>
-                </Button>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className={cn(adminTheme.overlay, 'rounded-xl p-1')}>
-              <DropdownMenuItem className="rounded-lg" onClick={() => fileInputRef.current?.click()}>
-                <Camera className="mr-2 h-4 w-4" />
-                Update Photo
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="rounded-lg text-red-600 focus:text-red-600 dark:text-red-400"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {email}
+                </p>
+              ) : (
+                <p className="text-sm font-medium text-lp-on-surface">Admin</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </motion.header>
