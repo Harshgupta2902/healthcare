@@ -13,6 +13,7 @@ import {
 import { AdminPageHeader } from '../_components/AdminPageHeader'
 import { adminTheme } from '../_components/admin-theme'
 import { MarkAllReadButton, MarkReadButton } from './NotificationActions'
+import { NotificationDateFilter } from './NotificationDateFilter'
 import type { Metadata } from 'next'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 
@@ -24,22 +25,40 @@ export const metadata: Metadata = buildPageMetadata({
   robots: ROBOTS_NOINDEX,
 })
 
-export default async function AdminNotificationsPage() {
-  const res = await getAdminNotifications(200)
+export default async function AdminNotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>
+}) {
+  const params = await searchParams
+  const from = typeof params.from === 'string' ? params.from : undefined
+  const to = typeof params.to === 'string' ? params.to : undefined
+
+  const res = await getAdminNotifications(200, { from, to })
 
   if (!res.success) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-        {res.error}
+      <div className="space-y-6">
+        <AdminPageHeader title="Notifications">
+          <NotificationDateFilter from={from} to={to} />
+        </AdminPageHeader>
+        <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+          {res.error}
+        </div>
       </div>
     )
   }
 
   const rows = res.data
+  const hasDateFilter = Boolean(from || to)
+  const emptyMessage = hasDateFilter
+    ? 'No notifications in this date range.'
+    : 'No notifications yet.'
 
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Notifications">
+        <NotificationDateFilter from={from} to={to} />
         {rows.some((r) => !r.read_at) ? <MarkAllReadButton /> : null}
       </AdminPageHeader>
 
@@ -54,7 +73,7 @@ export default async function AdminNotificationsPage() {
           <div className="space-y-3 sm:hidden">
             {rows.length === 0 ? (
               <div className="liquid-glass rounded-xl p-4 text-center text-sm text-muted-foreground">
-                No notifications yet.
+                {emptyMessage}
               </div>
             ) : (
               rows.map((n) => (
@@ -98,57 +117,59 @@ export default async function AdminNotificationsPage() {
 
           <div className="hidden overflow-x-auto sm:block">
             <Table className="min-w-[720px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>When</TableHead>
-                <TableHead>Who</TableHead>
-                <TableHead>Summary</TableHead>
-                <TableHead className="text-right w-[120px]">Read</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
-                    No notifications yet.
-                  </TableCell>
+                  <TableHead>When</TableHead>
+                  <TableHead>Who</TableHead>
+                  <TableHead>Summary</TableHead>
+                  <TableHead className="w-[120px] text-right">Read</TableHead>
                 </TableRow>
-              ) : (
-                rows.map((n) => (
-                  <TableRow key={n.id} className={n.read_at ? 'opacity-70' : undefined}>
-                    <TableCell className="whitespace-nowrap text-sm">
-                      {format(new Date(n.created_at), 'MMM d, yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {n.actor ? (
-                        <span>
-                          <span className="font-medium">{n.actor.name}</span>
-                          <span className="text-muted-foreground"> · {n.actor.email}</span>
-                          <Badge variant="secondary" className="ml-2 capitalize text-[10px]">
-                            {n.actor.role}
-                          </Badge>
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-sm">{n.title}</div>
-                      {n.body ? (
-                        <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line max-w-xl">{n.body}</div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {n.read_at ? (
-                        <span className="text-xs text-muted-foreground">Read</span>
-                      ) : (
-                        <MarkReadButton id={n.id} />
-                      )}
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-12 text-center text-muted-foreground">
+                      {emptyMessage}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
+                ) : (
+                  rows.map((n) => (
+                    <TableRow key={n.id} className={n.read_at ? 'opacity-70' : undefined}>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {format(new Date(n.created_at), 'MMM d, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {n.actor ? (
+                          <span>
+                            <span className="font-medium">{n.actor.name}</span>
+                            <span className="text-muted-foreground"> · {n.actor.email}</span>
+                            <Badge variant="secondary" className="ml-2 capitalize text-[10px]">
+                              {n.actor.role}
+                            </Badge>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium">{n.title}</div>
+                        {n.body ? (
+                          <div className="mt-0.5 max-w-xl text-xs whitespace-pre-line text-muted-foreground">
+                            {n.body}
+                          </div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {n.read_at ? (
+                          <span className="text-xs text-muted-foreground">Read</span>
+                        ) : (
+                          <MarkReadButton id={n.id} />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
             </Table>
           </div>
         </CardContent>

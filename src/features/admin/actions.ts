@@ -1473,6 +1473,30 @@ export async function getRecentUsers(limit: number = 5) {
 // ADMIN NOTIFICATIONS
 // ============================================
 
+const dateOnlySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
+
+const adminNotificationsDateFilterSchema = z
+  .object({
+    from: dateOnlySchema.optional(),
+    to: dateOnlySchema.optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.from || !data.to) return true
+      return data.from <= data.to
+    },
+    { message: 'Start date must be on or before end date' }
+  )
+
+function adminNotificationDateBounds(from?: string, to?: string) {
+  return {
+    fromIso: from ? `${from}T00:00:00.000Z` : undefined,
+    toIso: to ? `${to}T23:59:59.999Z` : undefined,
+  }
+}
+
 export type AdminNotificationRow = {
   id: string
   type: string
@@ -1500,19 +1524,34 @@ export async function getAdminUnreadNotificationCount(): Promise<number> {
   return count ?? 0
 }
 
-export async function getAdminNotifications(limit: number = 100): Promise<
+export async function getAdminNotifications(
+  limit: number = 100,
+  dateFilter?: { from?: string; to?: string }
+): Promise<
   | { success: true; data: AdminNotificationRow[] }
   | { success: false; error: string; data: [] }
 > {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false, error: auth.error, data: [] }
+
+  const parsed = adminNotificationsDateFilterSchema.safeParse(dateFilter ?? {})
+  if (!parsed.success) {
+    return { success: false, error: zodFirstError(parsed.error), data: [] }
+  }
+
+  const { fromIso, toIso } = adminNotificationDateBounds(parsed.data.from, parsed.data.to)
   const supabase = await createClient()
 
-  const { data: rows, error } = await supabase
+  let query = supabase
     .from('admin_notifications')
     .select('id, type, title, body, actor_user_id, metadata, read_at, created_at')
     .order('created_at', { ascending: false })
     .limit(Math.min(500, Math.max(1, limit)))
+
+  if (fromIso) query = query.gte('created_at', fromIso)
+  if (toIso) query = query.lte('created_at', toIso)
+
+  const { data: rows, error } = await query
 
   if (error) return { success: false, error: error.message, data: [] }
 
