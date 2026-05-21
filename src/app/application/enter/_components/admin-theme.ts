@@ -2,7 +2,6 @@
 export const adminTheme = {
   pageTitle:
     "font-heading text-2xl sm:text-3xl font-bold bg-gradient-to-r from-lp-brand to-lp-brand-bright bg-clip-text text-transparent",
-  pageDescription: "font-sans text-sm sm:text-base text-lp-on-surface-variant mt-2",
   ctaButton:
     "rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand shadow-lg shadow-lp-brand/25 hover:shadow-xl hover:from-lp-brand hover:to-lp-brand-bright",
   input:
