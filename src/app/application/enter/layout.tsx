@@ -38,12 +38,15 @@ export default async function AdminLayout({
   const unreadNotificationCount = await getAdminUnreadNotificationCount()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-x-clip">
-      <div className="flex h-screen overflow-hidden min-w-0">
+    <div className="relative min-h-screen overflow-x-clip bg-lp-surface font-sans text-lp-on-surface">
+      <div className="admin-ambient-blob admin-ambient-blob-a" aria-hidden />
+      <div className="admin-ambient-blob admin-ambient-blob-b" aria-hidden />
+      <div className="admin-ambient-blob admin-ambient-blob-c" aria-hidden />
+      <div className="relative z-10 flex h-screen overflow-hidden min-w-0">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <AdminNavbar user={userData} unreadNotificationCount={unreadNotificationCount} />
-          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-clip p-4 pb-24 sm:p-5 md:p-6 lg:p-8 lg:pb-8">
+          <main className="relative z-10 min-w-0 flex-1 overflow-y-auto overflow-x-clip p-4 pb-24 sm:p-5 md:p-6 lg:p-8 lg:pb-8">
             {children}
           </main>
         </div>

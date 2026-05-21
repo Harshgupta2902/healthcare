@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { Search, Bell, LogOut, User, Camera, Loader2 } from 'lucide-react'
+import { Search, Bell, LogOut, Camera, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { signOut, uploadProfileImage } from '@/features/profile/actions'
 import { toast } from 'sonner'
@@ -21,6 +21,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { adminTheme } from './admin-theme'
 
 interface AdminNavbarProps {
   user: {
@@ -73,7 +75,7 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
       } else {
         toast.error(result.error || 'Failed to upload image')
       }
-    } catch (error: any) {
+    } catch {
       toast.error('An unexpected error occurred')
     } finally {
       setIsUploading(false)
@@ -91,32 +93,37 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="h-16 shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-teal-200/50 dark:border-gray-700/50 shadow-sm"
+      className="liquid-glass-strong h-16 shrink-0 border-b border-white/50 shadow-sm dark:border-white/10"
     >
-      <div className="flex items-center justify-between h-full gap-3 px-3 sm:px-6">
+      <div className="flex h-full items-center justify-between gap-3 px-3 sm:px-6">
         <div className="min-w-0 flex-1 sm:max-w-md">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className={cn('absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2', adminTheme.iconMuted)} />
             <Input
               type="search"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 truncate pl-10 bg-white/60 dark:bg-gray-800/50 border-teal-200 dark:border-gray-700 rounded-xl"
+              className={cn('h-10 truncate pl-10', adminTheme.input)}
             />
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-          <Button variant="ghost" size="icon" className="relative rounded-xl p-0 hover:bg-teal-50 dark:hover:bg-gray-800" asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn('relative rounded-xl p-0', adminTheme.hoverSurface)}
+            asChild
+          >
             <Link
               href="/application/enter/notifications"
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl"
               aria-label="Notifications"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="h-5 w-5 text-lp-on-surface" />
               {unreadNotificationCount > 0 ? (
-                <Badge className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-5 px-1 flex items-center justify-center text-[10px] bg-red-500 hover:bg-red-500 border-0 pointer-events-none">
+                <Badge className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.125rem] items-center justify-center border-0 bg-red-500 px-1 text-[10px] hover:bg-red-500">
                   {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
                 </Badge>
               ) : null}
@@ -125,7 +132,7 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="relative group cursor-pointer">
+              <div className="group relative cursor-pointer">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -135,36 +142,38 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
                 />
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-3 rounded-xl hover:bg-teal-50 dark:hover:bg-gray-800 p-1"
+                  className={cn('flex items-center gap-3 rounded-xl p-1', adminTheme.hoverSurface)}
                   disabled={isUploading}
                 >
-                  <Avatar className="w-10 h-10 border-2 border-teal-500 relative overflow-hidden group">
+                  <Avatar className={cn('relative h-10 w-10 overflow-hidden border-2', adminTheme.avatarRing)}>
                     <AvatarImage src={user.image || undefined} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-500 text-white font-bold">
-                      {initials}
-                    </AvatarFallback>
+                    <AvatarFallback className={adminTheme.avatarFallback}>{initials}</AvatarFallback>
                     {isUploading ? (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <Loader2 className="h-4 w-4 animate-spin text-white" />
                       </div>
                     ) : (
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Camera className="w-4 h-4 text-white" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100">
+                        <Camera className="h-4 w-4 text-white" />
                       </div>
                     )}
                   </Avatar>
-                  <div className="text-left hidden lg:block">
-                    <p className="text-sm font-bold text-slate-900 group-hover:text-teal-600 transition-colors uppercase tracking-tight">{user.name || 'Admin'}</p>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{user.email}</p>
+                  <div className="hidden text-left lg:block">
+                    <p className="font-heading text-sm font-bold uppercase tracking-tight text-lp-on-surface transition-colors group-hover:text-lp-brand">
+                      {user.name || 'Admin'}
+                    </p>
+                    <p className="text-[10px] font-black uppercase leading-none tracking-widest text-lp-on-surface-variant">
+                      {user.email}
+                    </p>
                   </div>
                 </Button>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-xl">
+            <DropdownMenuContent align="end" className="liquid-glass rounded-xl border-white/60 p-1 dark:border-white/10">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user.name || 'Admin'}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                  <p className="text-sm font-medium text-lp-on-surface">{user.name || 'Admin'}</p>
+                  <p className="text-xs text-lp-on-surface-variant">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -175,7 +184,7 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-red-600 dark:text-red-400 rounded-lg focus:text-red-600"
+                className="rounded-lg text-red-600 focus:text-red-600 dark:text-red-400"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout

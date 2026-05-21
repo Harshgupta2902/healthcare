@@ -43,18 +43,18 @@ export function AdminSidebar() {
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="hidden lg:block w-64 shrink-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-r border-teal-200/50 dark:border-gray-700/50 shadow-lg"
+        className="liquid-glass-strong hidden w-64 shrink-0 border-r border-white/50 shadow-xl lg:block dark:border-white/10"
       >
-        <div className="p-6 border-b border-teal-200/50 dark:border-gray-700/50">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+        <div className="border-b border-lp-outline-variant/25 p-6">
+          <h1 className="font-heading text-2xl font-bold bg-gradient-to-r from-lp-brand to-lp-brand-bright bg-clip-text text-transparent">
             Admin Panel
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="mt-1 font-sans text-sm text-lp-on-surface-variant">
             Healthcare Dashboard
           </p>
         </div>
 
-        <nav className="p-4 space-y-1">
+        <nav className="space-y-1 p-4">
           {navItems.map((item) => {
             const isActive = getIsActive(pathname, item.href)
             const Icon = item.icon
@@ -65,13 +65,11 @@ export function AdminSidebar() {
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
-                    isActive
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/30'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-teal-50 dark:hover:bg-gray-800/50'
+                    'flex items-center gap-3 rounded-xl px-4 py-3 font-sans transition-all duration-200',
+                    isActive ? 'admin-nav-active' : 'text-lp-on-surface hover:bg-white/45 dark:hover:bg-white/5'
                   )}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className="font-medium">{item.label}</span>
                 </motion.div>
               </Link>
@@ -80,7 +78,7 @@ export function AdminSidebar() {
         </nav>
       </motion.aside>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-teal-100 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,118,110,0.12)] backdrop-blur-md dark:border-gray-700/70 dark:bg-gray-900/95 lg:hidden">
+      <nav className="liquid-glass-strong fixed inset-x-0 bottom-0 z-50 border-t border-white/50 px-3 py-2 shadow-[0_-12px_30px_rgba(0,89,187,0.12)] backdrop-blur-xl lg:hidden dark:border-white/10">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
             const isActive = getIsActive(pathname, item.href)
@@ -93,8 +91,8 @@ export function AdminSidebar() {
                 className={cn(
                   'flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] font-semibold transition-all',
                   isActive
-                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25'
-                    : 'text-gray-600 hover:bg-teal-50 dark:text-gray-300 dark:hover:bg-gray-800'
+                    ? 'admin-nav-active shadow-lg'
+                    : 'text-lp-on-surface-variant hover:bg-white/40 dark:hover:bg-white/5'
                 )}
               >
                 <Icon className="h-5 w-5" />
