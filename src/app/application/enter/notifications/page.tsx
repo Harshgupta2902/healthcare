@@ -52,7 +52,7 @@ export default async function AdminNotificationsPage({
   }
 
   const rows = res.data
-  const emptyMessage = 'No notifications in this date range.'
+  const emptyMessage = 'No notifications in this date range.\n Try changing the Date Range.'
 
   return (
     <div className="space-y-6">
@@ -64,9 +64,6 @@ export default async function AdminNotificationsPage({
       <Card className="liquid-glass overflow-hidden rounded-2xl border-0 shadow-none">
         <CardHeader className="px-4 pt-4 sm:px-6">
           <CardTitle className="text-base sm:text-lg">Activity feed</CardTitle>
-          <CardDescription className="text-sm leading-relaxed">
-            Newest first. Trigger-based events may show a null actor when the user was not signed in.
-          </CardDescription>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
           <div className="space-y-3 sm:hidden">
