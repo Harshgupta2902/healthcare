@@ -89,6 +89,10 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
     .toUpperCase()
     .slice(0, 2) || 'AD'
 
+  const email = user.email?.trim() ?? ''
+  const name = user.name?.trim() ?? ''
+  const showNameLine = Boolean(name && email && name.toLowerCase() !== email.toLowerCase())
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -158,13 +162,26 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
                       </div>
                     )}
                   </Avatar>
-                  <div className="hidden text-left lg:block">
-                    <p className="font-heading text-sm font-bold uppercase tracking-tight text-lp-on-surface transition-colors group-hover:text-lp-brand">
-                      {user.name || 'Admin'}
-                    </p>
-                    <p className="text-[10px] font-black uppercase leading-none tracking-widest text-lp-on-surface-variant">
-                      {user.email}
-                    </p>
+                  <div className="hidden min-w-0 max-w-[11rem] text-left xl:max-w-[14rem] lg:block">
+                    {showNameLine ? (
+                      <p className="truncate font-heading text-sm font-semibold text-lp-on-surface transition-colors group-hover:text-lp-brand">
+                        {name}
+                      </p>
+                    ) : null}
+                    {email ? (
+                      <p
+                        className={cn(
+                          'truncate text-lp-on-surface-variant',
+                          showNameLine
+                            ? 'text-[10px] leading-tight'
+                            : 'text-sm font-medium text-lp-on-surface'
+                        )}
+                      >
+                        {email}
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-lp-on-surface">Admin</p>
+                    )}
                   </div>
                 </Button>
               </div>

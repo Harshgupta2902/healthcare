@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 import { adminTheme } from "./admin-theme"
 
 interface AdminPageHeaderProps {
@@ -8,11 +9,15 @@ interface AdminPageHeaderProps {
 
 export function AdminPageHeader({ title, children }: AdminPageHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        <h1 className={adminTheme.pageTitle}>{title}</h1>
+    <header className="liquid-glass w-full rounded-2xl px-4 py-4 sm:px-5">
+      <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        <h1 className={cn(adminTheme.pageTitle, "min-w-0 shrink-0")}>{title}</h1>
+        {children ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-2 md:ml-auto md:justify-end">
+            {children}
+          </div>
+        ) : null}
       </div>
-      {children ? <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div> : null}
-    </div>
+    </header>
   )
 }
