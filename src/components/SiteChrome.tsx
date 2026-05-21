@@ -5,19 +5,25 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 
 /**
- * Auth routes render full-page experiences (own header/footer) without the
- * global marketing shell or main top padding for the fixed site header.
+ * Auth and admin routes use their own shell — no marketing Header/Footer or
+ * `pt-20` offset for the fixed site header.
  */
 function isAuthFullPagePath(pathname: string | null): boolean {
   if (!pathname) return false;
   return pathname === "/login" || pathname.startsWith("/login/");
 }
 
+/** Admin panel has its own layout (sidebar + navbar); skip marketing shell padding. */
+function isAdminPanelPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === "/application/enter" || pathname.startsWith("/application/enter/");
+}
+
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const authShell = isAuthFullPagePath(pathname);
+  const bareShell = isAuthFullPagePath(pathname) || isAdminPanelPath(pathname);
 
-  if (authShell) {
+  if (bareShell) {
     return <>{children}</>;
   }
 
