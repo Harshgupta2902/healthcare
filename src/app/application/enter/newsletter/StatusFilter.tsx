@@ -52,7 +52,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
           type="button"
           variant="outline"
           size="sm"
-          className="rounded-xl gap-2 border-teal-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 h-9"
+          className="rounded-xl gap-2 border-lp-outline-variant/40 dark:border-white/10 bg-white/50 dark:bg-gray-800/50 h-9"
           aria-label="Filter by status"
         >
           <Filter className="w-4 h-4" />
@@ -60,7 +60,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
           {!isDefault && (
             <Badge
               variant="secondary"
-              className="rounded-full px-2 py-0 text-[10px] leading-4 bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-200"
+              className="rounded-full px-2 py-0 text-[10px] leading-4 bg-lp-surface-container text-lp-brand text-lp-brand dark:text-lp-brand-bright"
             >
               {value.length}
             </Badge>
@@ -73,7 +73,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
           <button
             type="button"
             onClick={reset}
-            className="text-[11px] text-teal-600 dark:text-teal-300 hover:underline disabled:opacity-50"
+            className="text-[11px] text-lp-brand hover:underline disabled:opacity-50 dark:text-lp-brand-bright"
             disabled={isDefault}
           >
             Reset
@@ -85,7 +85,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
             return (
               <label
                 key={opt.value}
-                className="flex items-start gap-2.5 rounded-lg p-2 cursor-pointer hover:bg-teal-50 dark:hover:bg-gray-800"
+                className="flex items-start gap-2.5 rounded-lg p-2 cursor-pointer hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
               >
                 <Checkbox
                   checked={checked}

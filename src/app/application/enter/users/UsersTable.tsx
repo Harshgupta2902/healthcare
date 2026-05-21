@@ -101,9 +101,9 @@ export function UsersTable({ initialData, initialPage, totalPages, count }: User
       label: 'Name',
       render: (user: User) => (
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 shrink-0 border border-teal-200/60 dark:border-gray-600">
+          <Avatar className="h-9 w-9 shrink-0 border border-lp-outline-variant/40 dark:border-gray-600">
             <AvatarImage src={user.image || undefined} alt={user.name || user.email || 'User'} />
-            <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
+            <AvatarFallback className="bg-gradient-to-br from-lp-brand to-lp-brand-bright text-xs font-bold text-white">
               {userInitialLetter(user)}
             </AvatarFallback>
           </Avatar>

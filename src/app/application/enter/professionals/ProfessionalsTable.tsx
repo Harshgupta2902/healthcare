@@ -144,9 +144,9 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
       label: 'Name',
       render: (professional: Professional) => (
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar className="h-9 w-9 shrink-0 border border-teal-200/60 dark:border-gray-600">
+          <Avatar className="h-9 w-9 shrink-0 border border-lp-outline-variant/40 dark:border-gray-600">
             <AvatarImage src={professional.image || undefined} alt={professional.name || professional.email} />
-            <AvatarFallback className="bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
+            <AvatarFallback className="bg-gradient-to-br from-lp-brand to-lp-brand-bright text-xs font-bold text-white">
               {professionalInitialLetter(professional)}
             </AvatarFallback>
           </Avatar>
@@ -242,7 +242,7 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-lg font-semibold border-teal-300 text-teal-800 hover:bg-teal-50 gap-1.5"
+                className="rounded-lg gap-1.5 border-lp-outline-variant/50 font-semibold text-lp-brand hover:bg-lp-surface-container-low"
                 disabled={isPending && verifyMutatingId === professional.id}
                 onClick={() => runVerifyToggle(professional, true)}
               >
@@ -257,7 +257,7 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
               variant="ghost"
               size="icon"
               onClick={() => handleEdit(professional)}
-              className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+              className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
               aria-label="Edit professional"
             >
               <Edit className="w-4 h-4" />

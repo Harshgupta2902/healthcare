@@ -47,7 +47,7 @@ export function CampaignViewDialog({ open, onOpenChange, campaign }: CampaignVie
             onClick={() => setTab('preview')}
             className={cn(
               'rounded-xl gap-2',
-              tab === 'preview' && 'bg-gradient-to-r from-teal-500 to-cyan-500'
+              tab === 'preview' && 'bg-gradient-to-r from-lp-brand to-lp-brand-bright'
             )}
           >
             <Eye className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function CampaignViewDialog({ open, onOpenChange, campaign }: CampaignVie
             onClick={() => setTab('html')}
             className={cn(
               'rounded-xl gap-2',
-              tab === 'html' && 'bg-gradient-to-r from-teal-500 to-cyan-500'
+              tab === 'html' && 'bg-gradient-to-r from-lp-brand to-lp-brand-bright'
             )}
           >
             <Code2 className="h-4 w-4" />
@@ -71,7 +71,7 @@ export function CampaignViewDialog({ open, onOpenChange, campaign }: CampaignVie
         <div className="flex-1 min-h-0 overflow-auto bg-muted/30">
           {tab === 'preview' ? (
             <div className="p-4">
-              <div className="rounded-xl border border-teal-200/50 dark:border-gray-700 bg-white dark:bg-gray-950 shadow-inner p-6">
+              <div className="rounded-xl border border-lp-outline-variant/40 dark:border-white/10 bg-white dark:bg-gray-950 shadow-inner p-6">
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-foreground"
                   dangerouslySetInnerHTML={{ __html: campaign.body_html }}

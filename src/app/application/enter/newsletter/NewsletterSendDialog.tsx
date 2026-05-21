@@ -26,8 +26,8 @@ const LexicalPrescriptionEditor = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center min-h-[320px] rounded-xl border border-teal-200/50 bg-muted/30">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="flex items-center justify-center min-h-[320px] rounded-xl border border-lp-outline-variant/40 bg-muted/30">
+        <Loader2 className="h-8 w-8 animate-spin text-lp-brand" />
       </div>
     ),
   }
@@ -84,7 +84,7 @@ export function NewsletterSendDialog({
       <DialogContent className="rounded-2xl max-w-[95vw] w-full lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Mail className="h-5 w-5 text-teal-600" />
+            <Mail className="h-5 w-5 text-lp-brand" />
             Send newsletter
           </DialogTitle>
           <DialogDescription className="text-left">
@@ -135,13 +135,13 @@ export function NewsletterSendDialog({
                 initialHtml=""
                 onHtmlChange={setHtmlBody}
                 compact
-                className="flex-1 border-teal-200/60 dark:border-gray-700 min-h-[280px]"
+                className="flex-1 border-lp-outline-variant/40 dark:border-white/10 min-h-[280px]"
               />
             </div>
             {showPreview && (
               <div className="flex flex-col min-h-[320px]">
                 <p className="text-xs text-muted-foreground mb-2">Preview (how readers see it)</p>
-                <div className="rounded-xl border border-teal-200/50 dark:border-gray-700 bg-white dark:bg-gray-950 overflow-auto flex-1 p-4 shadow-inner">
+                <div className="rounded-xl border border-lp-outline-variant/40 dark:border-white/10 bg-white dark:bg-gray-950 overflow-auto flex-1 p-4 shadow-inner">
                   {htmlBody.trim() ? (
                     <div
                       className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-foreground prose-p:text-foreground"
@@ -175,7 +175,7 @@ export function NewsletterSendDialog({
             type="button"
             onClick={handleSend}
             disabled={!canSend || isPending}
-            className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 gap-2"
+            className="rounded-xl gap-2 rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand shadow-lg shadow-lp-brand/25 hover:shadow-xl"
           >
             {isPending ? (
               <>

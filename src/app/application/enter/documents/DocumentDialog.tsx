@@ -242,7 +242,7 @@ export function DocumentDialog({ open, onOpenChange, document, onSuccess }: Docu
               <Button
                 type="submit"
                 disabled={isPending}
-                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 rounded-xl"
+                className="rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand shadow-lg shadow-lp-brand/25 hover:shadow-xl"
               >
                 {isPending ? 'Saving...' : document ? 'Update' : 'Create'}
               </Button>

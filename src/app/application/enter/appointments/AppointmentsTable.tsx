@@ -78,7 +78,7 @@ function GuestProfessionalSelect({
   return (
     <div className="min-w-[200px] max-w-[300px]">
       <Select onValueChange={handleValueChange} disabled={pendingRowId === row.id}>
-        <SelectTrigger className="w-full rounded-xl h-10 bg-white/50 dark:bg-gray-800/50 border-teal-200 dark:border-gray-700 text-left">
+        <SelectTrigger className="w-full rounded-xl h-10 bg-white/50 dark:bg-gray-800/50 border-lp-outline-variant/40 dark:border-white/10 text-left">
           <SelectValue placeholder="Assign consultant…" />
         </SelectTrigger>
         <SelectContent className="rounded-xl max-h-72">

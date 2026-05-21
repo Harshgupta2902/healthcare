@@ -128,7 +128,7 @@ export function DocumentsTable({ initialData, initialPage, totalPages, count }: 
           href={document.file_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-teal-600 hover:text-teal-700"
+          className="flex items-center gap-1 text-lp-brand hover:text-lp-brand-bright"
         >
           View <ExternalLink className="w-3 h-3" />
         </a>

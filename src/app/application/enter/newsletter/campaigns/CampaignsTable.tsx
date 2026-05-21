@@ -115,7 +115,7 @@ export function CampaignsTable({ initialData, initialPage, totalPages, count }: 
               variant="ghost"
               size="icon"
               onClick={() => openView(row)}
-              className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+              className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
               aria-label="View HTML"
               title="View HTML"
             >
@@ -125,7 +125,7 @@ export function CampaignsTable({ initialData, initialPage, totalPages, count }: 
               variant="ghost"
               size="icon"
               onClick={() => openRecipients(row)}
-              className="rounded-lg hover:bg-cyan-100 dark:hover:bg-gray-800"
+              className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
               aria-label="View recipients"
               title="View recipients"
             >

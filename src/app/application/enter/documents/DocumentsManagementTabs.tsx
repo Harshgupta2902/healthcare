@@ -39,18 +39,18 @@ export function DocumentsManagementTabs({ medical, qualifications }: DocumentsMa
   const [tab, setTab] = useState('medical')
 
   return (
-    <Tabs value={tab} onValueChange={setTab} className="w-full">
-      <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-teal-50/80 dark:bg-gray-800/80 p-1 h-auto">
+    <Tabs value={tab} onValueChange={setTab} className="liquid-glass w-full rounded-2xl p-4 sm:p-6">
+      <TabsList className="liquid-glass-strong grid h-auto w-full max-w-md grid-cols-2 rounded-xl p-1">
         <TabsTrigger
           value="medical"
-          className="rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5"
+          className="gap-2 rounded-lg py-2.5 data-[state=active]:bg-white/90 data-[state=active]:text-lp-brand data-[state=active]:shadow-sm"
         >
           <FileCheck className="h-4 w-4" />
           Patient documents
         </TabsTrigger>
         <TabsTrigger
           value="qualifications"
-          className="rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5"
+          className="gap-2 rounded-lg py-2.5 data-[state=active]:bg-white/90 data-[state=active]:text-lp-brand data-[state=active]:shadow-sm"
         >
           <GraduationCap className="h-4 w-4" />
           Qualification docs
@@ -77,7 +77,7 @@ export function DocumentsManagementTabs({ medical, qualifications }: DocumentsMa
             {qualifications.error}
           </p>
         )}
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-lp-on-surface-variant">
           Review verification files uploaded by professionals. Approve to allow the verification link on their profile
           and public consultant page; decline if the document does not meet requirements.
         </p>

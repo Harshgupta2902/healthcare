@@ -138,7 +138,7 @@ export function QualificationCredentialsTable({
             type="button"
             variant="ghost"
             size="icon"
-            className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+            className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
             title="Review document"
             onClick={() => openReview(r)}
           >

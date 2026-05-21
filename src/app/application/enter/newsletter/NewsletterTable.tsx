@@ -186,7 +186,7 @@ export function NewsletterTable({
           <Button
             type="button"
             variant="outline"
-            className="rounded-xl border-teal-300 dark:border-teal-700 gap-2"
+            className="rounded-xl border-lp-outline-variant/50 gap-2"
             onClick={() => setIsSendOpen(true)}
           >
             Send newsletter
@@ -206,7 +206,7 @@ export function NewsletterTable({
                 variant="ghost"
                 size="icon"
                 onClick={() => handleEdit(subscriber)}
-                className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+                className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
                 aria-label="Edit subscriber"
                 title="Edit"
               >

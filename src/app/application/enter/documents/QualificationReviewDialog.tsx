@@ -87,7 +87,7 @@ export function QualificationReviewDialog({
         </DialogHeader>
 
         {row && (
-          <div className="flex-1 min-h-[320px] rounded-xl border border-teal-200/50 dark:border-gray-700 overflow-hidden bg-slate-50 dark:bg-gray-900/50">
+          <div className="liquid-glass flex-1 min-h-[320px] overflow-hidden rounded-xl border border-lp-outline-variant/40 dark:border-white/10">
             {kind === 'pdf' && (
               <iframe
                 title="Qualification document"
@@ -104,7 +104,7 @@ export function QualificationReviewDialog({
             )}
             {kind === 'other' && (
               <div className="flex flex-col items-center justify-center h-[min(60vh,320px)] gap-4 p-6">
-                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                <p className="text-sm text-lp-on-surface-variant text-center">
                   Preview is not available for this file type. Open in a new tab to review.
                 </p>
                 <Button variant="outline" className="rounded-xl" asChild>
@@ -139,7 +139,7 @@ export function QualificationReviewDialog({
           </Button>
           <Button
             type="button"
-            className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
+            className="rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright hover:shadow-xl"
             disabled={isPending || !row}
             onClick={() => handleDecision(true)}
           >

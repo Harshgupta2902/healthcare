@@ -84,7 +84,7 @@ export function EnquiriesTable({ initialData, initialPage, totalPages, count }: 
       key: 'message',
       label: 'Preview',
       render: (row: ContactMessageRow) => (
-        <span className="line-clamp-2 max-w-[260px] text-gray-600 dark:text-gray-400">{row.message}</span>
+        <span className="line-clamp-2 max-w-[260px] text-lp-on-surface-variant">{row.message}</span>
       ),
     },
     {
@@ -112,7 +112,7 @@ export function EnquiriesTable({ initialData, initialPage, totalPages, count }: 
               variant="ghost"
               size="icon"
               onClick={() => openView(row)}
-              className="rounded-lg hover:bg-teal-100 dark:hover:bg-gray-800"
+              className="rounded-lg hover:bg-lp-surface-container/80 dark:hover:bg-white/5"
               aria-label="View enquiry"
             >
               <Eye className="w-4 h-4" />

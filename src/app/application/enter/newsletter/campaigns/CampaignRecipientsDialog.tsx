@@ -112,7 +112,7 @@ export function CampaignRecipientsDialog({ open, onOpenChange, campaign }: Campa
                 <p className="text-xs font-semibold text-muted-foreground mb-2">
                   Comma-separated list ({recipients.length})
                 </p>
-                <div className="rounded-xl border border-teal-200/50 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 max-h-48 overflow-auto text-sm leading-relaxed break-words">
+                <div className="rounded-xl border border-lp-outline-variant/40 dark:border-white/10 bg-white dark:bg-gray-950 p-4 max-h-48 overflow-auto text-sm leading-relaxed break-words">
                   {csv}
                 </div>
               </div>
