@@ -10,10 +10,12 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { adminTheme } from '../_components/admin-theme'
+import { todayDateOnly } from './notification-date-utils'
 
 interface NotificationDateFilterProps {
-  from?: string
-  to?: string
+  /** Set only when the user applied a range (present in URL). */
+  urlFrom?: string
+  urlTo?: string
 }
 
 function parseDateOnly(value?: string): Date | undefined {
@@ -27,51 +29,62 @@ function toDateOnlyString(date?: Date): string | undefined {
   return format(date, 'yyyy-MM-dd')
 }
 
-function rangeFromUrl(from?: string, to?: string): DateRange | undefined {
+function rangeFromDates(from?: string, to?: string): DateRange | undefined {
   const fromDate = parseDateOnly(from)
   const toDate = parseDateOnly(to)
   if (!fromDate && !toDate) return undefined
   return { from: fromDate, to: toDate }
 }
 
-function formatRangeLabel(from?: string, to?: string): string {
-  if (!from && !to) return 'Date range'
-  const fromLabel = from ? format(parseISO(from), 'MMM d, yyyy') : null
-  const toLabel = to ? format(parseISO(to), 'MMM d, yyyy') : null
-  if (fromLabel && toLabel) return `${fromLabel} – ${toLabel}`
-  if (fromLabel) return `From ${fromLabel}`
-  if (toLabel) return `Until ${toLabel}`
-  return 'Date range'
+function formatRangeLabel(from: string, to: string): string {
+  const fromLabel = format(parseISO(from), 'MMM d, yyyy')
+  const toLabel = format(parseISO(to), 'MMM d, yyyy')
+  if (fromLabel === toLabel) return fromLabel
+  return `${fromLabel} – ${toLabel}`
 }
 
-export function NotificationDateFilter({ from, to }: NotificationDateFilterProps) {
+export function NotificationDateFilter({ urlFrom, urlTo }: NotificationDateFilterProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [range, setRange] = useState<DateRange | undefined>(() => rangeFromUrl(from, to))
-  const hasActiveFilter = Boolean(from || to)
+  const today = useMemo(() => todayDateOnly(), [])
+  const displayFrom = urlFrom ?? today
+  const displayTo = urlTo ?? today
+  const hasUserFilter = Boolean(urlFrom || urlTo)
+
+  const [range, setRange] = useState<DateRange | undefined>(() =>
+    rangeFromDates(displayFrom, displayTo)
+  )
 
   useEffect(() => {
-    setRange(rangeFromUrl(from, to))
-  }, [from, to])
+    setRange(rangeFromDates(urlFrom ?? today, urlTo ?? today))
+  }, [urlFrom, urlTo, today])
 
-  const triggerLabel = useMemo(() => formatRangeLabel(from, to), [from, to])
+  const triggerLabel = useMemo(
+    () => formatRangeLabel(displayFrom, displayTo),
+    [displayFrom, displayTo]
+  )
   const canApply = Boolean(range?.from || range?.to)
 
   const applyFilter = () => {
     const fromStr = toDateOnlyString(range?.from)
     const toStr = toDateOnlyString(range?.to ?? range?.from)
-    if (fromStr && toStr && fromStr > toStr) return
+    if (!fromStr || !toStr || fromStr > toStr) return
+
+    setOpen(false)
+
+    if (fromStr === today && toStr === today) {
+      router.push('/application/enter/notifications')
+      return
+    }
 
     const params = new URLSearchParams()
-    if (fromStr) params.set('from', fromStr)
-    if (toStr) params.set('to', toStr)
-    const q = params.toString()
-    setOpen(false)
-    router.push(q ? `/application/enter/notifications?${q}` : '/application/enter/notifications')
+    params.set('from', fromStr)
+    params.set('to', toStr)
+    router.push(`/application/enter/notifications?${params.toString()}`)
   }
 
   const clearFilter = () => {
-    setRange(undefined)
+    setRange(rangeFromDates(today, today))
     setOpen(false)
     router.push('/application/enter/notifications')
   }
@@ -86,7 +99,7 @@ export function NotificationDateFilter({ from, to }: NotificationDateFilterProps
             size="sm"
             className={cn(
               'h-9 max-w-[min(100%,14rem)] justify-start gap-2 rounded-xl border-lp-outline-variant/40 font-normal sm:max-w-none sm:min-w-[10rem]',
-              hasActiveFilter && 'border-lp-brand/40 text-lp-on-surface'
+              hasUserFilter && 'border-lp-brand/40 text-lp-on-surface'
             )}
           >
             <CalendarRange className="h-4 w-4 shrink-0 text-lp-brand" />
@@ -128,14 +141,14 @@ export function NotificationDateFilter({ from, to }: NotificationDateFilterProps
         </PopoverContent>
       </Popover>
 
-      {hasActiveFilter ? (
+      {hasUserFilter ? (
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={clearFilter}
           className="h-9 gap-1 rounded-xl border-lp-outline-variant/40 px-2.5"
-          aria-label="Clear date filter"
+          aria-label="Reset to today"
         >
           <X className="h-4 w-4" />
         </Button>

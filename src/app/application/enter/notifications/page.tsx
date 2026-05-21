@@ -1,5 +1,6 @@
 import { getAdminNotifications } from '@/features/admin/actions'
 import { format } from 'date-fns'
+import { resolveNotificationQueryDates } from './notification-date-utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -31,8 +32,9 @@ export default async function AdminNotificationsPage({
   searchParams: Promise<{ from?: string; to?: string }>
 }) {
   const params = await searchParams
-  const from = typeof params.from === 'string' ? params.from : undefined
-  const to = typeof params.to === 'string' ? params.to : undefined
+  const urlFrom = typeof params.from === 'string' ? params.from : undefined
+  const urlTo = typeof params.to === 'string' ? params.to : undefined
+  const { from, to } = resolveNotificationQueryDates(urlFrom, urlTo)
 
   const res = await getAdminNotifications(200, { from, to })
 
@@ -40,7 +42,7 @@ export default async function AdminNotificationsPage({
     return (
       <div className="space-y-6">
         <AdminPageHeader title="Notifications">
-          <NotificationDateFilter from={from} to={to} />
+          <NotificationDateFilter urlFrom={urlFrom} urlTo={urlTo} />
         </AdminPageHeader>
         <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
           {res.error}
@@ -50,15 +52,12 @@ export default async function AdminNotificationsPage({
   }
 
   const rows = res.data
-  const hasDateFilter = Boolean(from || to)
-  const emptyMessage = hasDateFilter
-    ? 'No notifications in this date range.'
-    : 'No notifications yet.'
+  const emptyMessage = 'No notifications in this date range.'
 
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Notifications">
-        <NotificationDateFilter from={from} to={to} />
+        <NotificationDateFilter urlFrom={urlFrom} urlTo={urlTo} />
         {rows.some((r) => !r.read_at) ? <MarkAllReadButton /> : null}
       </AdminPageHeader>
 
