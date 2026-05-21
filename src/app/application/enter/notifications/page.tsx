@@ -39,10 +39,7 @@ export default async function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Notifications"
-        description="Signups, guest requests, profile changes, and credential uploads from clients and professionals."
-      >
+      <AdminPageHeader title="Notifications">
         {rows.some((r) => !r.read_at) ? <MarkAllReadButton /> : null}
       </AdminPageHeader>
 

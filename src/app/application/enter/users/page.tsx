@@ -27,10 +27,7 @@ export default async function UsersPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Users Management"
-        description="Manage client (patient) accounts. Providers are under Professionals."
-      />
+      <AdminPageHeader title="Users Management" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

@@ -91,10 +91,7 @@ export function DashboardContent({ stats, recentAppointments, recentUsers, loadE
         </p>
       )}
 
-      <AdminPageHeader
-        title="Dashboard Overview"
-        description="Welcome to the healthcare admin dashboard"
-      />
+      <AdminPageHeader title="Dashboard Overview" />
 
       <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((stat, index) => {

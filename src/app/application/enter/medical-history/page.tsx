@@ -27,10 +27,7 @@ export default async function MedicalHistoryPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Medical History Management"
-        description="Manage patient medical history records"
-      />
+      <AdminPageHeader title="Medical History Management" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

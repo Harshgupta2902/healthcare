@@ -27,10 +27,7 @@ export default async function ProfessionalsPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Professionals Management"
-        description="Manage healthcare professionals"
-      />
+      <AdminPageHeader title="Professionals Management" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

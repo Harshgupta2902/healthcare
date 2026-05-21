@@ -27,10 +27,7 @@ export default async function EnquiriesPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Enquiries"
-        description="Messages submitted from the public contact page"
-      />
+      <AdminPageHeader title="Enquiries" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {result.error}

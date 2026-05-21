@@ -36,10 +36,7 @@ export default async function NewsletterCampaignsPage({
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to subscribers
       </Link>
-      <AdminPageHeader
-        title="Newsletter Campaigns"
-        description="Every newsletter you've sent — view the HTML body and which subscribers received it."
-      />
+      <AdminPageHeader title="Newsletter Campaigns" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

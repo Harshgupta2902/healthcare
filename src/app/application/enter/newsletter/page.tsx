@@ -48,10 +48,7 @@ export default async function NewsletterPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Newsletter Subscribers"
-        description="Manage newsletter subscribers and send broadcasts to active contacts."
-      >
+      <AdminPageHeader title="Newsletter Subscribers">
         <Button asChild variant="outline" className="liquid-glass gap-2 rounded-xl border-lp-outline-variant/40">
           <Link href="/application/enter/newsletter/campaigns">
             <Send className="h-4 w-4" />

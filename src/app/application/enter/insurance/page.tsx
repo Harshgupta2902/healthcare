@@ -27,10 +27,7 @@ export default async function InsurancePage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Insurance Management"
-        description="Manage patient insurance information"
-      />
+      <AdminPageHeader title="Insurance Management" />
       {!result.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{result.error}</p>
       )}

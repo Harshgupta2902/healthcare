@@ -32,10 +32,7 @@ export default async function AppointmentsPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Guest appointments"
-        description='Public booking requests from "Book consultation". Assign a consultant when needed; once guest and consultant emails exist, use the calendar icon in Actions to build a Google Calendar link (saved and copied). After that, the copy icon reuses the stored link.'
-      />
+      <AdminPageHeader title="Guest appointments" />
       {!apptRes.success && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">{apptRes.error}</p>
       )}

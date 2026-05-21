@@ -38,10 +38,7 @@ export default async function DocumentsPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Documents Management"
-        description="Patient medical documents and professional qualification verification files"
-      />
+      <AdminPageHeader title="Documents Management" />
 
       <DocumentsManagementTabs
         medical={{
