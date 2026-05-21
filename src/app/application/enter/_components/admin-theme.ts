@@ -18,4 +18,7 @@ export const adminTheme = {
   link: "text-lp-brand hover:text-lp-brand-bright",
   mobileCard: "liquid-glass liquid-glass-interactive rounded-2xl p-4",
   emptyState: "liquid-glass rounded-2xl border border-dashed border-lp-outline-variant/50 p-6 text-center text-sm text-lp-on-surface-variant",
+  /** Opaque surfaces for portaled menus/popovers (do not use liquid-glass here). */
+  overlay:
+    "z-50 border border-lp-outline-variant/40 bg-lp-surface-container-lowest text-lp-on-surface shadow-xl dark:bg-lp-primary-container dark:border-white/10",
 } as const

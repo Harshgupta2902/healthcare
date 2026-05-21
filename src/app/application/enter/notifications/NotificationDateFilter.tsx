@@ -108,10 +108,11 @@ export function NotificationDateFilter({ urlFrom, urlTo }: NotificationDateFilte
         </PopoverTrigger>
         <PopoverContent
           align="end"
-          className="liquid-glass-strong w-auto rounded-2xl border-white/60 p-0 dark:border-white/10"
+          className={cn(adminTheme.overlay, 'w-auto rounded-2xl p-0')}
         >
           <Calendar
             mode="range"
+            className="rounded-2xl bg-lp-surface-container-lowest"
             defaultMonth={range?.from ?? range?.to ?? new Date()}
             selected={range}
             onSelect={setRange}

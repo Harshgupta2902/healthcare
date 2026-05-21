@@ -304,7 +304,7 @@ nextjs-portal {
     border: 1px solid rgba(15, 23, 42, 0.08);
   }
 
-  /* Admin panel: liquid glass (distinct from client dashboards) */
+  /* Admin panel: liquid glass for page panels only — not dropdowns/dialogs */
   .liquid-glass {
     background: linear-gradient(
       145deg,

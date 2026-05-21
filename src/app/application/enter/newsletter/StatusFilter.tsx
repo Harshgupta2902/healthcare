@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
+import { adminTheme } from '../_components/admin-theme'
 
 export type SubscriberStatus = 'active' | 'resubscribed' | 'unsubscribed'
 
@@ -67,7 +68,7 @@ export function StatusFilter({ value, onChange }: StatusFilterProps) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-3 space-y-2">
+      <PopoverContent align="start" className={`${adminTheme.overlay} w-64 space-y-2 rounded-xl p-3`}>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Filter by status</p>
           <button
