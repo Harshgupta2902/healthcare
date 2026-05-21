@@ -9,7 +9,6 @@ interface AdminPageHeaderProps {
 
 export function AdminPageHeader({ title, children }: AdminPageHeaderProps) {
   return (
-    <header className="liquid-glass w-full rounded-2xl px-4 py-4 sm:px-5">
       <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         <h1 className={cn(adminTheme.pageTitle, "min-w-0 shrink-0")}>{title}</h1>
         {children ? (
@@ -18,6 +17,5 @@ export function AdminPageHeader({ title, children }: AdminPageHeaderProps) {
           </div>
         ) : null}
       </div>
-    </header>
   )
 }
