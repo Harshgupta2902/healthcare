@@ -17,24 +17,24 @@ export function HeroSection() {
             <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
             <span className="font-sans text-sm font-semibold uppercase tracking-wide">Trusted by 10k+ patients</span>
           </div>
-          <h1 className="sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] text-foreground">
-              Healthcare that <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
-                Actually Works
-              </span>
-            </h1>
+          <h1 className="font-heading text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
+            Healthcare that <br />
+            <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Actually Works
+            </span>
+          </h1>
 
-          <p className="max-w-2xl font-sans text-lg leading-7 text-lp-on-surface-variant">
+          <p className="max-w-2xl font-sans text-base leading-7 text-lp-on-surface-variant sm:text-lg">
             Ditch the waiting room. Access world-class medical experts, personalized treatment plans, and secure care
             from anywhere in the world.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-4 pt-8">
+          <div className="flex max-[992px]:flex-row max-[992px]:flex-nowrap max-[992px]:gap-3 flex-wrap justify-center gap-4 pt-8">
             <Link
               href="/book-consultation"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl bg-lp-brand px-8 py-4 font-heading text-xl font-semibold text-lp-on-brand shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-lp-brand px-4 py-3 font-heading text-sm font-semibold text-lp-on-brand shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl min-[993px]:px-8 min-[993px]:py-4 min-[993px]:text-xl"
             >
               Get Started For Free
             </Link>
@@ -42,7 +42,7 @@ export function HeroSection() {
               href="/consultants"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-xl bg-lp-surface-container px-8 py-4 font-heading text-xl font-semibold text-lp-brand transition-all hover:bg-lp-surface-container-high"
+              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-lp-surface-container px-4 py-3 font-heading text-sm font-semibold text-lp-brand transition-all hover:bg-lp-surface-container-high min-[993px]:px-8 min-[993px]:py-4 min-[993px]:text-xl"
             >
               Find Specialist
             </Link>
