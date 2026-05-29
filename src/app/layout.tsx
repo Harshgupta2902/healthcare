@@ -5,6 +5,7 @@ import SiteChrome from "@/components/SiteChrome";
 import { HealthHereAssistant } from "@/components/HealthHereAssistant";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { FirebaseProvider } from "@/components/firebase/FirebaseProvider";
 import { rootMetadata } from "@/lib/seo/root-metadata";
 import { RootJsonLd } from "@/lib/seo/root-json-ld";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         <RootJsonLd />
         <ErrorReporter />
         <Analytics />
+        <FirebaseProvider />
         <SiteChrome>{children}</SiteChrome>
         <HealthHereAssistant />
         <Toaster position="top-right" richColors />
