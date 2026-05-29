@@ -209,6 +209,17 @@ export function PrivacyPageContent() {
                 verify professional profiles, respond to support requests, send service notifications, improve security,
                 and maintain legal or operational records where required.
               </p>
+              <p className="mb-4 text-base leading-relaxed text-lp-on-surface-variant">
+                <strong className="font-semibold text-lp-on-surface">Analytics and diagnostics.</strong> We use
+                third-party services to understand how the website is used and to improve reliability. This includes{" "}
+                <strong className="font-semibold text-lp-on-surface">Google Firebase Analytics</strong> (page views and
+                product usage events), <strong className="font-semibold text-lp-on-surface">Firebase Crashlytics</strong>{" "}
+                (client and server error reports), and <strong className="font-semibold text-lp-on-surface">Vercel
+                Analytics</strong> (performance and traffic on our hosting platform). These tools may collect technical
+                data such as device type, browser, approximate location, pages visited, and crash logs. We configure them
+                not to receive medical records, form field contents, or other protected health information. You may limit
+                some collection through browser settings or ad blockers; core care features do not depend on analytics.
+              </p>
               <p className="text-base leading-relaxed text-lp-on-surface-variant">
                 Our data processing is governed by strict internal protocols to ensure that your information is only
                 accessible to authorized personnel during the fulfillment of their specific duties.
