@@ -104,6 +104,15 @@ const guestMeetingCreateSchema = z.object({
   guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
 })
 
+const guestMeetingStepIdSchema = z.object({
+  guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
+})
+
+const guestMeetingPersistSchema = guestMeetingStepIdSchema.extend({
+  meetUrl: z.string().url('Invalid meeting URL').max(4000),
+  provider: z.enum(['google', 'jitsi']),
+})
+
 /** Guest row for admin list + merged `users` row for `professional_id`. */
 export type GuestAppointmentAdminRow = {
   id: string
@@ -520,7 +529,149 @@ export async function saveGuestAppointmentCalendarInviteUrl(input: unknown) {
   return { success: true as const }
 }
 
-/** Creates a video meeting link and emails invites to the patient and consultant. */
+/** Step 1: Validate appointment and load patient/consultant details. */
+export async function guestMeetingValidateStep(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingStepIdSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  try {
+    const supabase = await createClient()
+    const { loadGuestMeetingContext } = await import('@/lib/calendar/guestMeetingPipeline')
+    const ctx = await loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    return {
+      success: true as const,
+      patientName: ctx.guestName,
+      patientEmail: ctx.guestEmail,
+      consultantName: ctx.professionalName,
+      consultantEmail: ctx.professionalEmail,
+    }
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Validation failed.',
+    }
+  }
+}
+
+/** Step 2: Create Google Meet or Jitsi meeting link. */
+export async function guestMeetingCreateLinkStep(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingStepIdSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  try {
+    const supabase = await createClient()
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    const { meetUrl, provider } = await pipeline.generateGuestMeetingLink(ctx)
+    return {
+      success: true as const,
+      meetUrl,
+      provider,
+      providerLabel: provider === 'google' ? 'Google Meet' : 'Jitsi',
+    }
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not create meeting link.',
+    }
+  }
+}
+
+/** Step 3: Email invite to patient (Jitsi path only). */
+export async function guestMeetingEmailPatientStep(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingPersistSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+  if (parsed.data.provider !== 'jitsi') {
+    return { success: true as const, skipped: true as const }
+  }
+
+  try {
+    const supabase = await createClient()
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    )
+    await pipeline.emailGuestMeetingInvitePatient(ctx, parsed.data.meetUrl)
+    return { success: true as const, skipped: false as const, sentTo: ctx.guestEmail }
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not email the patient.',
+    }
+  }
+}
+
+/** Step 4: Email invite to consultant (Jitsi path only). */
+export async function guestMeetingEmailConsultantStep(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingPersistSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+  if (parsed.data.provider !== 'jitsi') {
+    return { success: true as const, skipped: true as const }
+  }
+
+  try {
+    const supabase = await createClient()
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    )
+    await pipeline.emailGuestMeetingInviteConsultant(ctx, parsed.data.meetUrl)
+    return { success: true as const, skipped: false as const, sentTo: ctx.professionalEmail }
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not email the consultant.',
+    }
+  }
+}
+
+/** Step 5: Persist meeting URL on the appointment. */
+export async function guestMeetingSaveStep(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingPersistSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  try {
+    const supabase = await createClient()
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    )
+    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl)
+    revalidatePath('/application/enter/appointments')
+    return { success: true as const, meetUrl: parsed.data.meetUrl }
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not save meeting link.',
+    }
+  }
+}
+
+/** Creates a video meeting link and emails invites (single request; prefer stepped dialog in UI). */
 export async function createAndSendGuestAppointmentMeeting(input: unknown) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error }
@@ -528,65 +679,13 @@ export async function createAndSendGuestAppointmentMeeting(input: unknown) {
   const parsed = guestMeetingCreateSchema.safeParse(input)
   if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
-  const supabase = await createClient()
-  const { guestAppointmentId } = parsed.data
-
-  const { data: row, error: readErr } = await supabase
-    .from('guest_appointments')
-    .select(
-      'id, first_name, last_name, email, appointment_date, appointment_time, calendar_invite_url, professional_id'
-    )
-    .eq('id', guestAppointmentId)
-    .maybeSingle()
-
-  if (readErr) return { success: false as const, error: readErr.message }
-  if (!row) return { success: false as const, error: 'Appointment not found.' }
-  if (row.calendar_invite_url?.trim()) {
-    return { success: false as const, error: 'A meeting link already exists for this appointment.' }
-  }
-
-  const guestEmail = (row.email as string)?.trim()
-  if (!guestEmail) {
-    return { success: false as const, error: 'Patient email is missing on this request.' }
-  }
-
-  const professionalId = row.professional_id as string | null
-  if (!professionalId) {
-    return { success: false as const, error: 'Assign a consultant before creating a meeting.' }
-  }
-
-  const { data: prof, error: profErr } = await supabase
-    .from('users')
-    .select('name, email')
-    .eq('id', professionalId)
-    .maybeSingle()
-
-  if (profErr) return { success: false as const, error: profErr.message }
-  const profEmail = (prof?.email as string | undefined)?.trim()
-  if (!profEmail) {
-    return { success: false as const, error: 'Consultant email is missing.' }
-  }
-
   try {
+    const supabase = await createClient()
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
     const { createConsultationMeeting } = await import('@/lib/calendar/createConsultationMeeting')
-    const guestName = `${row.first_name} ${row.last_name}`.trim()
-    const result = await createConsultationMeeting({
-      guestAppointmentId,
-      guestName,
-      guestEmail,
-      professionalName: (prof?.name as string | null) || profEmail,
-      professionalEmail: profEmail,
-      appointmentDate: row.appointment_date as string,
-      appointmentTime: row.appointment_time as string,
-    })
-
-    const { error: updateErr } = await supabase
-      .from('guest_appointments')
-      .update({ calendar_invite_url: result.meetUrl })
-      .eq('id', guestAppointmentId)
-
-    if (updateErr) return { success: false as const, error: updateErr.message }
-
+    const result = await createConsultationMeeting(ctx)
+    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, result.meetUrl)
     revalidatePath('/application/enter/appointments')
     return {
       success: true as const,
