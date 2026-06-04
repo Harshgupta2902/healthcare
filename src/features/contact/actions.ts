@@ -25,7 +25,8 @@ export async function submitContactForm(formData: ContactSubmitInput) {
         };
     }
 
-    const { email, subject, message, deviceHash } = validatedFields.data;
+    const { name, email, subject, message, deviceHash } = validatedFields.data;
+    const messageWithSender = `From: ${name}\n\n${message}`;
 
     const headerStore = await headers();
     const clientIp = getClientIpFromHeaders(headerStore);
@@ -50,7 +51,7 @@ export async function submitContactForm(formData: ContactSubmitInput) {
                 {
                     email,
                     subject,
-                    message,
+                    message: messageWithSender,
                 },
             ]);
 
