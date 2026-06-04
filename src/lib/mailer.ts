@@ -199,3 +199,115 @@ export async function sendNewsletterBroadcastEmail(
 
     console.log('[mailer] Broadcast sent:', info.messageId, '→', to)
 }
+
+function consultationMeetingInviteTemplate(params: {
+    recipientName: string
+    meetUrl: string
+    slotLabel: string
+    otherPartyLabel: string
+}): string {
+    const appUrl = getAppUrl()
+
+    return `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;font-family: Arial, Helvetica, sans-serif; background:#f4f4f4;">
+  <table width="100%" cellspacing="0" cellpadding="0" role="presentation">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table width="600" cellspacing="0" cellpadding="0" role="presentation"
+          style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 28px;">
+              <h1 style="margin:0 0 12px;color:#0f766e;font-size:22px;">Your consultation is scheduled</h1>
+              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
+                Hi ${params.recipientName},
+              </p>
+              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 8px;">
+                <strong>When:</strong> ${params.slotLabel}
+              </p>
+              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 20px;">
+                <strong>With:</strong> ${params.otherPartyLabel}
+              </p>
+              <a href="${params.meetUrl}"
+                style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
+                Join video meeting
+              </a>
+              <p style="margin-top:20px;color:#6b7280;font-size:14px;line-height:1.5;word-break:break-all;">
+                Or copy this link: <a href="${params.meetUrl}" style="color:#0f766e;">${params.meetUrl}</a>
+              </p>
+              <p style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.5;">
+                A calendar invite (.ics) is attached. Open it to add this appointment to your calendar.
+                <br /><br />
+                <a href="${appUrl}" style="color:#0f766e;">Visit HealthHere</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`
+}
+
+/**
+ * Sends consultation meeting invites to the guest and professional (Jitsi / email path).
+ * When Google Calendar API is used, Google sends calendar invites instead — do not call this.
+ */
+export async function sendConsultationMeetingInviteEmails(params: {
+    meetUrl: string
+    slotLabel: string
+    guestName: string
+    guestEmail: string
+    professionalName: string
+    professionalEmail: string
+    icsContent: string
+    icsFilename: string
+}): Promise<void> {
+    const t = getTransporter()
+    const subject = `HealthHere consultation — ${params.slotLabel}`
+
+    const guestDisplay = params.guestName.trim() || params.guestEmail.split('@')[0] || 'there'
+    const profDisplay =
+        params.professionalName.trim() || params.professionalEmail.split('@')[0] || 'your consultant'
+
+    const icsAttachment = {
+        filename: params.icsFilename,
+        content: params.icsContent,
+        contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+    }
+
+    await t.sendMail({
+        from: getFromAddress(),
+        to: params.guestEmail,
+        subject,
+        html: consultationMeetingInviteTemplate({
+            recipientName: guestDisplay,
+            meetUrl: params.meetUrl,
+            slotLabel: params.slotLabel,
+            otherPartyLabel: profDisplay,
+        }),
+        attachments: [icsAttachment],
+    })
+
+    await t.sendMail({
+        from: getFromAddress(),
+        to: params.professionalEmail,
+        subject,
+        html: consultationMeetingInviteTemplate({
+            recipientName: profDisplay,
+            meetUrl: params.meetUrl,
+            slotLabel: params.slotLabel,
+            otherPartyLabel: guestDisplay,
+        }),
+        attachments: [icsAttachment],
+    })
+
+    console.log(
+        '[mailer] Consultation invites sent →',
+        params.guestEmail,
+        params.professionalEmail
+    )
+}

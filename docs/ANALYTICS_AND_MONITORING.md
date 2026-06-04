@@ -228,7 +228,7 @@ export async function register() {
 }
 
 export const onRequestError = nextOnRequestError({
-  appVersion: process.env.NEXT_PUBLIC_APP_VERSION,
+  appVersion: "healthere-redesign",
 });
 ```
 
@@ -257,7 +257,6 @@ Copy from `.env.example` into `.env.local` (local) and Vercel project settings (
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | No | Defaults to `{projectId}.firebaseapp.com` |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | No | Defaults to `{projectId}.appspot.com` |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | No | Defaults to empty string |
-| `NEXT_PUBLIC_APP_VERSION` | No | Attached to Crashlytics reports (e.g. `1.0.0` or git SHA) |
 
 **Where to get values:** Firebase Console → Project settings → Your apps → Web app → SDK setup and configuration.
 
@@ -342,6 +341,17 @@ Custom events appear in Firebase Console → Analytics → Events (and linked GA
 
 ## 10. Verification & debugging
 
+### Console diagnostics (development)
+
+With `npm run dev`, the browser and terminal log **`[HealthHere Firebase]`** messages that show:
+
+- Which `NEXT_PUBLIC_FIREBASE_*` env vars are present (secrets masked)
+- Whether the Firebase app, Analytics, and Crashlytics initialized
+- Each `page_view` when logging is enabled
+- Why Analytics or Crashlytics was skipped (missing env, ad blocker / `isSupported()`, etc.)
+
+Optional: set `NEXT_PUBLIC_FIREBASE_DEBUG=true` in `.env` to force logs in production builds, or `NEXT_PUBLIC_FIREBASE_DEBUG=false` to silence them during local dev.
+
 ### Firebase Analytics (GA4)
 
 1. Firebase Console → **Analytics** → **DebugView** (or GA4 → Configure → DebugView).  
@@ -383,7 +393,6 @@ Build may show a webpack warning from `@protobufjs/inquire` (OpenTelemetry depen
 - [ ] `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` set for Analytics.  
 - [ ] Privacy Policy deployed with analytics section.  
 - [ ] Smoke test: production URL → navigate 3 pages → check GA4 Realtime.  
-- [ ] Optional: set `NEXT_PUBLIC_APP_VERSION` to release tag for Crashlytics grouping.
 
 ---
 

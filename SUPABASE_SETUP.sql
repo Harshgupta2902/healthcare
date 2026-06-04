@@ -23,7 +23,7 @@ create table if not exists public.guest_appointments (
   professional_id uuid null
 );
 comment on column public.guest_appointments.professional_id is 'Professional (public.users.id) requested via consultant deeplink (?cref); null for generic bookings.';
-comment on column public.guest_appointments.calendar_invite_url is 'Google Calendar TEMPLATE link generated in admin; copy-only after set.';
+comment on column public.guest_appointments.calendar_invite_url is 'Video meeting URL (Google Meet or Jitsi); set when admin creates meeting and sends invites.';
 comment on column public.guest_appointments.prescription_html is 'Rich HTML prescription written by assigned professional.';
 comment on column public.guest_appointments.prescription_updated_at is 'Timestamp when prescription_html was last updated.';
 

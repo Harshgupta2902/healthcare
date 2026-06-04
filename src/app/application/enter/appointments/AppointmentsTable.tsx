@@ -15,10 +15,9 @@ import {
 import {
   deleteAppointment,
   updateGuestAppointmentProfessional,
-  saveGuestAppointmentCalendarInviteUrl,
+  createAndSendGuestAppointmentMeeting,
   type GuestAppointmentAdminRow,
 } from '@/features/admin/actions'
-import { generateGoogleCalendarLink, guestSlotToUtcDates } from '@/lib/calendar/generateGoogleCalendarLink'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { CalendarCheck, Copy, Trash2 } from 'lucide-react'
@@ -115,30 +114,22 @@ function GuestTableRowActions({
     await navigator.clipboard.writeText(text)
   }
 
-  const handleCreateAndCopy = async () => {
+  const handleCreateMeeting = async () => {
     if (!guestEmail || !profEmail) return
     setCalendarBusyId(row.id)
     try {
-      const { start, end } = guestSlotToUtcDates(row.appointment_date, row.appointment_time)
-      const url = generateGoogleCalendarLink({
-        title: 'Consultation Meeting',
-        start,
-        end,
-        attendeeEmails: [guestEmail, profEmail],
-      })
-      const res = await saveGuestAppointmentCalendarInviteUrl({
+      const res = await createAndSendGuestAppointmentMeeting({
         guestAppointmentId: row.id,
-        url,
       })
       if (!res.success) {
         toast.error(res.error)
         return
       }
-      await copyText(url)
-      toast.success('Calendar link created and copied')
+      const providerLabel = res.provider === 'google' ? 'Google Meet' : 'video meeting'
+      toast.success(`Meeting created (${providerLabel}). Invites sent to patient and consultant.`)
       onCalendarDone()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not build calendar link')
+      toast.error(e instanceof Error ? e.message : 'Could not create meeting')
     } finally {
       setCalendarBusyId(null)
     }
@@ -163,7 +154,7 @@ function GuestTableRowActions({
           variant="ghost"
           size="icon"
           className="rounded-lg"
-          title="Copy calendar link"
+          title="Copy meeting link"
           onClick={handleCopySaved}
         >
           <Copy className="h-4 w-4" />
@@ -177,10 +168,10 @@ function GuestTableRowActions({
           disabled={!canBuild || calendarBusyId === row.id}
           title={
             canBuild
-              ? 'Create Google Calendar link and copy to clipboard'
-              : 'Assign a consultant (with email) to enable calendar link'
+              ? 'Create meeting link and email invites to patient and consultant'
+              : 'Assign a consultant (with email) to create a meeting'
           }
-          onClick={handleCreateAndCopy}
+          onClick={handleCreateMeeting}
         >
           <CalendarCheck className="h-4 w-4" />
         </Button>

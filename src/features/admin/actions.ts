@@ -100,6 +100,10 @@ const guestCalendarInviteSchema = z.object({
   url: z.string().url('Invalid URL').max(4000),
 })
 
+const guestMeetingCreateSchema = z.object({
+  guestAppointmentId: z.string().uuid('Invalid guest appointment id'),
+})
+
 /** Guest row for admin list + merged `users` row for `professional_id`. */
 export type GuestAppointmentAdminRow = {
   id: string
@@ -514,6 +518,86 @@ export async function saveGuestAppointmentCalendarInviteUrl(input: unknown) {
   if (error) return { success: false as const, error: error.message }
   revalidatePath('/application/enter/appointments')
   return { success: true as const }
+}
+
+/** Creates a video meeting link and emails invites to the patient and consultant. */
+export async function createAndSendGuestAppointmentMeeting(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = guestMeetingCreateSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  const supabase = await createClient()
+  const { guestAppointmentId } = parsed.data
+
+  const { data: row, error: readErr } = await supabase
+    .from('guest_appointments')
+    .select(
+      'id, first_name, last_name, email, appointment_date, appointment_time, calendar_invite_url, professional_id'
+    )
+    .eq('id', guestAppointmentId)
+    .maybeSingle()
+
+  if (readErr) return { success: false as const, error: readErr.message }
+  if (!row) return { success: false as const, error: 'Appointment not found.' }
+  if (row.calendar_invite_url?.trim()) {
+    return { success: false as const, error: 'A meeting link already exists for this appointment.' }
+  }
+
+  const guestEmail = (row.email as string)?.trim()
+  if (!guestEmail) {
+    return { success: false as const, error: 'Patient email is missing on this request.' }
+  }
+
+  const professionalId = row.professional_id as string | null
+  if (!professionalId) {
+    return { success: false as const, error: 'Assign a consultant before creating a meeting.' }
+  }
+
+  const { data: prof, error: profErr } = await supabase
+    .from('users')
+    .select('name, email')
+    .eq('id', professionalId)
+    .maybeSingle()
+
+  if (profErr) return { success: false as const, error: profErr.message }
+  const profEmail = (prof?.email as string | undefined)?.trim()
+  if (!profEmail) {
+    return { success: false as const, error: 'Consultant email is missing.' }
+  }
+
+  try {
+    const { createConsultationMeeting } = await import('@/lib/calendar/createConsultationMeeting')
+    const guestName = `${row.first_name} ${row.last_name}`.trim()
+    const result = await createConsultationMeeting({
+      guestAppointmentId,
+      guestName,
+      guestEmail,
+      professionalName: (prof?.name as string | null) || profEmail,
+      professionalEmail: profEmail,
+      appointmentDate: row.appointment_date as string,
+      appointmentTime: row.appointment_time as string,
+    })
+
+    const { error: updateErr } = await supabase
+      .from('guest_appointments')
+      .update({ calendar_invite_url: result.meetUrl })
+      .eq('id', guestAppointmentId)
+
+    if (updateErr) return { success: false as const, error: updateErr.message }
+
+    revalidatePath('/application/enter/appointments')
+    return {
+      success: true as const,
+      meetUrl: result.meetUrl,
+      provider: result.provider,
+      invitesSent: result.invitesSent,
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Could not create meeting or send invites.'
+    return { success: false as const, error: msg }
+  }
 }
 
 export async function createAppointment(data: z.infer<typeof appointmentSchema>) {
