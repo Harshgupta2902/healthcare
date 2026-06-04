@@ -215,16 +215,16 @@
     max-width: 100%;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-lp-brand) 45%, #b8c5dc) transparent;
+    scrollbar-color: #b4b8c0 transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
-  /* Slim branded scrollbar (replaces default OS chrome with arrows) */
+  /* Slim neutral grey scrollbar (no OS arrow buttons on WebKit) */
   * {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-lp-brand) 45%, #b8c5dc) transparent;
+    scrollbar-color: #b4b8c0 transparent;
   }
 
   *::-webkit-scrollbar {
@@ -237,14 +237,14 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--color-lp-brand) 40%, #c5c6cd);
+    background-color: #c5c6cd;
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--color-lp-brand) 70%, #0059bb);
+    background-color: #9ca3af;
   }
 
   *::-webkit-scrollbar-corner {
