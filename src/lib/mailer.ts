@@ -252,26 +252,20 @@ function consultationMeetingInviteTemplate(params: {
 `
 }
 
-/**
- * Sends consultation meeting invites to the guest and professional (Jitsi / email path).
- * When Google Calendar API is used, Google sends calendar invites instead — do not call this.
- */
-export async function sendConsultationMeetingInviteEmails(params: {
+export async function sendConsultationMeetingInviteToGuest(params: {
     meetUrl: string
     slotLabel: string
     guestName: string
     guestEmail: string
     professionalName: string
-    professionalEmail: string
     icsContent: string
     icsFilename: string
 }): Promise<void> {
     const t = getTransporter()
     const subject = `HealthHere consultation — ${params.slotLabel}`
-
     const guestDisplay = params.guestName.trim() || params.guestEmail.split('@')[0] || 'there'
     const profDisplay =
-        params.professionalName.trim() || params.professionalEmail.split('@')[0] || 'your consultant'
+        params.professionalName.trim() || 'your consultant'
 
     const icsAttachment = {
         filename: params.icsFilename,
@@ -292,6 +286,28 @@ export async function sendConsultationMeetingInviteEmails(params: {
         attachments: [icsAttachment],
     })
 
+    console.log('[mailer] Consultation invite sent to patient →', params.guestEmail)
+}
+
+export async function sendConsultationMeetingInviteToProfessional(params: {
+    meetUrl: string
+    slotLabel: string
+    guestName: string
+    professionalEmail: string
+    icsContent: string
+    icsFilename: string
+}): Promise<void> {
+    const t = getTransporter()
+    const subject = `HealthHere consultation — ${params.slotLabel}`
+    const guestDisplay = params.guestName.trim() || 'the patient'
+    const profDisplay = params.professionalEmail.split('@')[0] || 'there'
+
+    const icsAttachment = {
+        filename: params.icsFilename,
+        content: params.icsContent,
+        contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+    }
+
     await t.sendMail({
         from: getFromAddress(),
         to: params.professionalEmail,
@@ -305,9 +321,35 @@ export async function sendConsultationMeetingInviteEmails(params: {
         attachments: [icsAttachment],
     })
 
-    console.log(
-        '[mailer] Consultation invites sent →',
-        params.guestEmail,
-        params.professionalEmail
-    )
+    console.log('[mailer] Consultation invite sent to consultant →', params.professionalEmail)
+}
+
+/** Sends both invites (used when not stepping through the admin progress dialog). */
+export async function sendConsultationMeetingInviteEmails(params: {
+    meetUrl: string
+    slotLabel: string
+    guestName: string
+    guestEmail: string
+    professionalName: string
+    professionalEmail: string
+    icsContent: string
+    icsFilename: string
+}): Promise<void> {
+    await sendConsultationMeetingInviteToGuest({
+        meetUrl: params.meetUrl,
+        slotLabel: params.slotLabel,
+        guestName: params.guestName,
+        guestEmail: params.guestEmail,
+        professionalName: params.professionalName,
+        icsContent: params.icsContent,
+        icsFilename: params.icsFilename,
+    })
+    await sendConsultationMeetingInviteToProfessional({
+        meetUrl: params.meetUrl,
+        slotLabel: params.slotLabel,
+        guestName: params.guestName,
+        professionalEmail: params.professionalEmail,
+        icsContent: params.icsContent,
+        icsFilename: params.icsFilename,
+    })
 }

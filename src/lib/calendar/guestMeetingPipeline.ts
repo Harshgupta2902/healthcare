@@ -1,0 +1,197 @@
+import 'server-only'
+
+import { format } from 'date-fns'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createGoogleCalendarMeetEvent } from '@/lib/calendar/googleCalendarApi'
+import { buildConsultationIcs } from '@/lib/calendar/ics'
+import { guestSlotToUtcDates } from '@/lib/calendar/generateGoogleCalendarLink'
+import {
+  sendConsultationMeetingInviteToGuest,
+  sendConsultationMeetingInviteToProfessional,
+} from '@/lib/mailer'
+
+export type GuestMeetingContext = {
+  guestAppointmentId: string
+  guestName: string
+  guestEmail: string
+  professionalName: string
+  professionalEmail: string
+  appointmentDate: string
+  appointmentTime: string
+}
+
+export type MeetingProvider = 'google' | 'jitsi'
+
+export function buildJitsiMeetUrl(guestAppointmentId: string): string {
+  const slug = guestAppointmentId.replace(/-/g, '').slice(0, 12)
+  return `https://meet.jit.si/HealthHere-${slug}`
+}
+
+export function formatSlotLabel(appointmentDate: string, appointmentTime: string): string {
+  try {
+    const d = new Date(`${appointmentDate}T12:00:00`)
+    const dateLabel = format(d, 'EEEE, MMMM d, yyyy')
+    return `${dateLabel} at ${appointmentTime} (India Standard Time)`
+  } catch {
+    return `${appointmentDate} at ${appointmentTime}`
+  }
+}
+
+export async function loadGuestMeetingContext(
+  supabase: SupabaseClient,
+  guestAppointmentId: string,
+): Promise<GuestMeetingContext> {
+  const { data: row, error: readErr } = await supabase
+    .from('guest_appointments')
+    .select(
+      'id, first_name, last_name, email, appointment_date, appointment_time, calendar_invite_url, professional_id',
+    )
+    .eq('id', guestAppointmentId)
+    .maybeSingle()
+
+  if (readErr) throw new Error(readErr.message)
+  if (!row) throw new Error('Appointment not found.')
+  if (row.calendar_invite_url?.trim()) {
+    throw new Error('A meeting link already exists for this appointment.')
+  }
+
+  const guestEmail = (row.email as string)?.trim()
+  if (!guestEmail) throw new Error('Patient email is missing on this request.')
+
+  const professionalId = row.professional_id as string | null
+  if (!professionalId) {
+    throw new Error('Assign a consultant before creating a meeting.')
+  }
+
+  const { data: prof, error: profErr } = await supabase
+    .from('users')
+    .select('name, email')
+    .eq('id', professionalId)
+    .maybeSingle()
+
+  if (profErr) throw new Error(profErr.message)
+  const profEmail = (prof?.email as string | undefined)?.trim()
+  if (!profEmail) throw new Error('Consultant email is missing.')
+
+  return {
+    guestAppointmentId,
+    guestName: `${row.first_name} ${row.last_name}`.trim(),
+    guestEmail,
+    professionalName: (prof?.name as string | null) || profEmail,
+    professionalEmail: profEmail,
+    appointmentDate: row.appointment_date as string,
+    appointmentTime: row.appointment_time as string,
+  }
+}
+
+export function assertMeetUrlForAppointment(
+  guestAppointmentId: string,
+  meetUrl: string,
+  provider: MeetingProvider,
+): void {
+  const trimmed = meetUrl.trim()
+  if (provider === 'jitsi') {
+    const expected = buildJitsiMeetUrl(guestAppointmentId)
+    if (trimmed !== expected) {
+      throw new Error('Meeting link does not match the expected Jitsi room for this appointment.')
+    }
+    return
+  }
+  if (!trimmed.includes('meet.google.com') && !trimmed.includes('google.com')) {
+    throw new Error('Invalid Google Meet link.')
+  }
+}
+
+export async function generateGuestMeetingLink(
+  ctx: GuestMeetingContext,
+): Promise<{ meetUrl: string; provider: MeetingProvider }> {
+  const { start, end } = guestSlotToUtcDates(ctx.appointmentDate, ctx.appointmentTime)
+  const title = 'HealthHere Consultation'
+  const attendeeEmails = [ctx.guestEmail, ctx.professionalEmail]
+
+  const google = await createGoogleCalendarMeetEvent({
+    title,
+    start,
+    end,
+    attendeeEmails,
+  })
+
+  if (google) {
+    return { meetUrl: google.meetUrl, provider: 'google' }
+  }
+
+  return {
+    meetUrl: buildJitsiMeetUrl(ctx.guestAppointmentId),
+    provider: 'jitsi',
+  }
+}
+
+function buildIcsForMeeting(ctx: GuestMeetingContext, meetUrl: string): string {
+  const { start, end } = guestSlotToUtcDates(ctx.appointmentDate, ctx.appointmentTime)
+  const slotLabel = formatSlotLabel(ctx.appointmentDate, ctx.appointmentTime)
+  const description = [
+    `Video consultation for ${ctx.guestName.trim() || 'patient'}.`,
+    '',
+    `Join meeting: ${meetUrl}`,
+    '',
+    `Scheduled: ${slotLabel}`,
+  ].join('\n')
+
+  return buildConsultationIcs({
+    uid: `${ctx.guestAppointmentId}@healthhere.com`,
+    title: 'HealthHere Consultation',
+    description,
+    location: meetUrl,
+    start,
+    end,
+    organizerEmail: process.env.SMTP_USER || 'noreply@healthhere.com',
+    organizerName: process.env.SMTP_FROM_NAME || 'HealthHere',
+    attendeeEmails: [ctx.guestEmail, ctx.professionalEmail],
+  })
+}
+
+export async function emailGuestMeetingInvitePatient(
+  ctx: GuestMeetingContext,
+  meetUrl: string,
+): Promise<void> {
+  const slotLabel = formatSlotLabel(ctx.appointmentDate, ctx.appointmentTime)
+  const ics = buildIcsForMeeting(ctx, meetUrl)
+  await sendConsultationMeetingInviteToGuest({
+    meetUrl,
+    slotLabel,
+    guestName: ctx.guestName,
+    guestEmail: ctx.guestEmail,
+    professionalName: ctx.professionalName,
+    icsContent: ics,
+    icsFilename: `healthhere-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
+  })
+}
+
+export async function emailGuestMeetingInviteConsultant(
+  ctx: GuestMeetingContext,
+  meetUrl: string,
+): Promise<void> {
+  const slotLabel = formatSlotLabel(ctx.appointmentDate, ctx.appointmentTime)
+  const ics = buildIcsForMeeting(ctx, meetUrl)
+  await sendConsultationMeetingInviteToProfessional({
+    meetUrl,
+    slotLabel,
+    guestName: ctx.guestName,
+    professionalEmail: ctx.professionalEmail,
+    icsContent: ics,
+    icsFilename: `healthhere-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
+  })
+}
+
+export async function saveGuestMeetingUrl(
+  supabase: SupabaseClient,
+  guestAppointmentId: string,
+  meetUrl: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('guest_appointments')
+    .update({ calendar_invite_url: meetUrl.trim() })
+    .eq('id', guestAppointmentId)
+
+  if (error) throw new Error(error.message)
+}
