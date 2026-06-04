@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { recordClientError } from "@/lib/firebase/crashlytics";
 
 type ReporterProps = {
   /*  ⎯⎯ props are only provided on the global-error page ⎯⎯ */
@@ -21,7 +20,6 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
     const send = (payload: unknown) => window.parent.postMessage(payload, "*");
 
     const onError = (e: ErrorEvent) => {
-      recordClientError(e.error ?? e.message, { source: "window.onerror" });
       send({
         type: "ERROR_CAPTURED",
         error: {
@@ -37,7 +35,6 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
     };
 
     const onReject = (e: PromiseRejectionEvent) => {
-      recordClientError(e.reason, { source: "unhandledrejection" });
       send({
         type: "ERROR_CAPTURED",
         error: {
@@ -80,10 +77,6 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
   /* ─ extra postMessage when on the global-error route ─ */
   useEffect(() => {
     if (!error) return;
-    recordClientError(error, {
-      source: "global-error",
-      digest: error.digest ?? "",
-    });
     window.parent.postMessage(
       {
         type: "global-error-reset",

@@ -48,7 +48,7 @@ Visitors browse services and consultants, then book a consultation **with or wit
 | Email | Nodemailer (Gmail SMTP) |
 | Video meetings | Google Calendar API + Meet (optional) or Jitsi (fallback) |
 | Maps | Google Maps / Places |
-| Analytics | Firebase (Crashlytics, measurement) |
+| Analytics | Vercel Analytics (on Vercel deployments) |
 | Hosting | Vercel (typical deployment) |
 
 ---
@@ -105,7 +105,7 @@ flowchart TB
     SMTP[Email SMTP]
     GCAL[Google Calendar API - optional]
     MAPS[Google Maps]
-    FB[Firebase Analytics]
+    VA[Vercel Analytics]
   end
   UI --> RSC
   UI --> SA
@@ -116,7 +116,7 @@ flowchart TB
   SA --> SMTP
   SA --> GCAL
   UI --> MAPS
-  UI --> FB
+  UI --> VA
 ```
 
 **Design principles**
@@ -368,8 +368,7 @@ Access is enforced with storage policies aligned to user ownership and admin rev
 | **Google Calendar API** | Optional real Google Meet links + native calendar invites |
 | **Jitsi** | Fallback video rooms when Google is not configured |
 | **Google Maps / Places** | Location autocomplete and maps on booking |
-| **Firebase** | Client-side analytics and crash reporting |
-| **Vercel Analytics** | Web vitals / traffic (when deployed on Vercel) |
+| **Vercel Analytics** | Web vitals and traffic (when deployed on Vercel) |
 
 ---
 
@@ -406,7 +405,6 @@ Variables commonly required (names only—set values in `.env` locally and in Ve
 | `NEWSLETTER_UNSUBSCRIBE_SECRET` | HMAC for unsubscribe tokens |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Maps on booking |
 | `GOOGLE_PLACES_API_KEY` | Places autocomplete (server) |
-| `NEXT_PUBLIC_FIREBASE_*` | Firebase web config |
 | `GOOGLE_CALENDAR_CLIENT_ID` | Optional Meet integration |
 | `GOOGLE_CALENDAR_CLIENT_SECRET` | Optional Meet integration |
 | `GOOGLE_CALENDAR_REFRESH_TOKEN` | Optional Meet integration |
@@ -433,7 +431,7 @@ Variables commonly required (names only—set values in `.env` locally and in Ve
 | Document | Contents |
 |----------|----------|
 | [docs/RATE_LIMITS.md](./docs/RATE_LIMITS.md) | Sign-up, login, newsletter, booking, contact limits |
-| [docs/ANALYTICS_AND_MONITORING.md](./docs/ANALYTICS_AND_MONITORING.md) | Firebase analytics and Crashlytics |
+| [docs/ANALYTICS_AND_MONITORING.md](./docs/ANALYTICS_AND_MONITORING.md) | Vercel Analytics |
 | [src/DEVELOPMENT_RULES.md](./src/DEVELOPMENT_RULES.md) | Server Actions, Zod, RLS, UI conventions |
 
 ---
