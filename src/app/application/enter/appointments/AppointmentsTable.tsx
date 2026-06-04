@@ -15,9 +15,9 @@ import {
 import {
   deleteAppointment,
   updateGuestAppointmentProfessional,
-  createAndSendGuestAppointmentMeeting,
   type GuestAppointmentAdminRow,
 } from '@/features/admin/actions'
+import { CreateMeetingProgressDialog } from './CreateMeetingProgressDialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { CalendarCheck, Copy, Trash2 } from 'lucide-react'
@@ -95,15 +95,11 @@ function GuestProfessionalSelect({
 function GuestTableRowActions({
   row,
   onDelete,
-  calendarBusyId,
-  setCalendarBusyId,
-  onCalendarDone,
+  onCreateMeeting,
 }: {
   row: GuestAppointmentRow
   onDelete: (row: GuestAppointmentRow) => void
-  calendarBusyId: string | null
-  setCalendarBusyId: (id: string | null) => void
-  onCalendarDone: () => void
+  onCreateMeeting: (row: GuestAppointmentRow) => void
 }) {
   const hasLink = Boolean(row.calendar_invite_url?.trim())
   const guestEmail = row.email?.trim()
@@ -112,27 +108,6 @@ function GuestTableRowActions({
 
   const copyText = async (text: string) => {
     await navigator.clipboard.writeText(text)
-  }
-
-  const handleCreateMeeting = async () => {
-    if (!guestEmail || !profEmail) return
-    setCalendarBusyId(row.id)
-    try {
-      const res = await createAndSendGuestAppointmentMeeting({
-        guestAppointmentId: row.id,
-      })
-      if (!res.success) {
-        toast.error(res.error)
-        return
-      }
-      const providerLabel = res.provider === 'google' ? 'Google Meet' : 'video meeting'
-      toast.success(`Meeting created (${providerLabel}). Invites sent to patient and consultant.`)
-      onCalendarDone()
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not create meeting')
-    } finally {
-      setCalendarBusyId(null)
-    }
   }
 
   const handleCopySaved = async () => {
@@ -147,46 +122,48 @@ function GuestTableRowActions({
   }
 
   return (
-    <div className="flex items-center justify-end gap-1">
-      {hasLink ? (
+    <>
+      <div className="flex items-center justify-end gap-1">
+        {hasLink ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-lg"
+            title="Copy meeting link"
+            onClick={handleCopySaved}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-lg"
+            disabled={!canBuild}
+            title={
+              canBuild
+                ? 'Create meeting link and email invites to patient and consultant'
+                : 'Assign a consultant (with email) to create a meeting'
+            }
+            onClick={() => onCreateMeeting(row)}
+          >
+            <CalendarCheck className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="rounded-lg"
-          title="Copy meeting link"
-          onClick={handleCopySaved}
+          onClick={() => onDelete(row)}
+          className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+          title="Delete"
         >
-          <Copy className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
         </Button>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="rounded-lg"
-          disabled={!canBuild || calendarBusyId === row.id}
-          title={
-            canBuild
-              ? 'Create meeting link and email invites to patient and consultant'
-              : 'Assign a consultant (with email) to create a meeting'
-          }
-          onClick={handleCreateMeeting}
-        >
-          <CalendarCheck className="h-4 w-4" />
-        </Button>
-      )}
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={() => onDelete(row)}
-        className="rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-        title="Delete"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -211,7 +188,11 @@ export function AppointmentsTable({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState<GuestAppointmentRow | null>(null)
   const [pendingRowId, setPendingRowId] = useState<string | null>(null)
-  const [calendarBusyId, setCalendarBusyId] = useState<string | null>(null)
+  const [meetingDialog, setMeetingDialog] = useState<{
+    guestAppointmentId: string
+    patientLabel: string
+    sessionKey: number
+  } | null>(null)
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -336,9 +317,13 @@ export function AppointmentsTable({
           <GuestTableRowActions
             row={row}
             onDelete={handleDelete}
-            calendarBusyId={calendarBusyId}
-            setCalendarBusyId={setCalendarBusyId}
-            onCalendarDone={() => router.refresh()}
+            onCreateMeeting={(r) =>
+              setMeetingDialog({
+                guestAppointmentId: r.id,
+                patientLabel: `${r.first_name} ${r.last_name}`.trim(),
+                sessionKey: Date.now(),
+              })
+            }
           />
         )}
         page={initialPage}
@@ -354,6 +339,18 @@ export function AppointmentsTable({
         description="Remove this public booking request from the list? This cannot be undone."
         isPending={isPending}
       />
+      {meetingDialog ? (
+        <CreateMeetingProgressDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setMeetingDialog(null)
+          }}
+          guestAppointmentId={meetingDialog.guestAppointmentId}
+          patientLabel={meetingDialog.patientLabel}
+          sessionKey={meetingDialog.sessionKey}
+          onComplete={() => router.refresh()}
+        />
+      ) : null}
     </>
   )
 }
