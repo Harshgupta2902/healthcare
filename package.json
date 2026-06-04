@@ -6,7 +6,9 @@
         "dev": "next dev --turbopack",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "db:backup": "node scripts/backup-database.mjs",
+        "db:restore": "node scripts/restore-database.mjs"
     },
     "dependencies": {
         "@babel/parser": "^7.28.0",
