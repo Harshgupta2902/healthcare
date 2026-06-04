@@ -1,244 +1,217 @@
 "use client";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Search,
-  Sparkles,
-  HelpCircle,
-  ShieldCheck,
-  Calendar,
-  CreditCard,
-  FileText,
-  LifeBuoy,
-  MessageSquare,
-  ArrowRight,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  Plus,
+  Search,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import {
+  SUPPORT_CATEGORIES,
+  SUPPORT_CTA_FEATURES,
+  SUPPORT_FAQ_TOPICS,
+} from "@/app/support/constants";
 
-const faqs = [
-  {
-    category: "Appointments & Booking",
-    questions: [
-      {
-        q: "How do I book a free consultation?",
-        a: "You can book a free consultation by clicking the 'Book a free consultation' button on our landing page. This will guide you through a quick process to select your health concerns and choose a specialist.",
-      },
-      {
-        q: "How can I cancel or reschedule my appointment?",
-        a: "You can manage your appointments directly from your Dashboard under the 'Upcoming Appointments' section. We request a minimum of 2 hours notice for cancellations.",
-      },
-      {
-        q: "Are the consultations video-based?",
-        a: "Yes, all consultations are conducted via our secure integrated video platform. You'll receive a link in your dashboard 10 minutes before your scheduled time.",
-      },
-    ],
-  },
-  {
-    category: "Account & Security",
-    questions: [
-      {
-        q: "Is my medical data secure?",
-        a: "Absolutely. We use industry-standard end-to-end encryption for all medical records and consultations. Your data is stored in compliance with healthcare data protection regulations.",
-      },
-      {
-        q: "How do I update my profile information?",
-        a: "Navigate to your Dashboard and select 'Profile Settings'. You can update your contact details, insurance information, and medical history from there.",
-      },
-    ],
-  },
-  {
-    category: "Medical Services",
-    questions: [
-      {
-        q: "What specialties are available?",
-        a: "We offer a wide range of specialties including General Medicine, Mental Health, Pediatrics, Women's Health, Dermatology, and Cardiology.",
-      },
-      {
-        q: "Do you provide emergency services?",
-        a: "No, we are an outpatient consultation platform. In case of a medical emergency, please call 108 immediately or visit your nearest emergency department.",
-      },
-    ],
-  },
-];
-
-const categories = [
-  { icon: ShieldCheck, title: "Account & Privacy", description: "Manage security and personal data" },
-  { icon: Calendar, title: "Booking Flow", description: "How to schedule and manage visits" },
-  { icon: CreditCard, title: "Payments & Refunds", description: "Pricing, billing, and insurance" },
-  { icon: FileText, title: "Medical Records", description: "Accessing your history and reports" },
-];
+function normalizeSearch(value: string) {
+  return value.trim().toLowerCase();
+}
 
 export default function SupportPage() {
+  const [search, setSearch] = useState("");
+  const [activeTopic, setActiveTopic] = useState(SUPPORT_FAQ_TOPICS[0]?.id ?? "appointments");
+
+  const query = normalizeSearch(search);
+
+  const filteredTopics = useMemo(() => {
+    if (!query) return SUPPORT_FAQ_TOPICS;
+
+    return SUPPORT_FAQ_TOPICS.map((topic) => ({
+      ...topic,
+      questions: topic.questions.filter(
+        (item) =>
+          item.q.toLowerCase().includes(query) || item.a.toLowerCase().includes(query),
+      ),
+    })).filter((topic) => topic.questions.length > 0);
+  }, [query]);
+
   return (
-    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
-      {/* Designer Background: Subtle texture across the whole page */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-
-
-      <main className="relative z-10">
-        {/* Support Hero Section */}
-        <section className="relative w-full py-16 md:py-32 overflow-hidden">
-          {/* Atmospheric Glows */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Help & Support Center</span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight mb-6 md:mb-8 leading-[1.1]"
-            >
-              How can we <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
-                Support You Today?
-              </span>
-            </motion.h1>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="max-w-2xl mx-auto relative group mt-8 md:mt-12"
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative">
-                <Input
-                  placeholder="Search for articles, guides, or questions..."
-                  className="h-12 md:h-16 pl-5 pr-5 md:pl-6 md:pr-6 rounded-2xl border-border/50 bg-secondary/20 backdrop-blur-sm text-base md:text-lg font-medium focus:bg-background transition-all"
-                />
-              </div>
-            </motion.div>
-          </div>
+    <div className="min-h-screen bg-background text-lp-on-surface">
+      <main className="pb-0 pt-24 md:pt-28">
+        {/* Hero */}
+        <section className="mx-auto mb-16 max-w-4xl px-5 text-center md:mb-24 md:px-8 lg:px-12">
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-heading text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl"
+          >
+            How can we help you today?
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-lp-on-surface-variant md:text-xl"
+          >
+            Search our knowledge base for answers regarding appointments, clinical records, and
+            billing services.
+          </motion.p>
         </section>
 
-        {/* Category Grid */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {categories.map((cat, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group p-5 md:p-8 rounded-[32px] bg-background border border-primary/10 shadow-2xl shadow-primary/5 transition-all"
-                >
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 md:mb-6">
-                    <cat.icon className="w-5 h-5 md:w-6 md:h-6" />
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold mb-1.5 md:mb-2">{cat.title}</h3>
-                  <p className="text-muted-foreground text-sm font-medium leading-relaxed">{cat.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQs Section */}
-        <section className="lg:pt-32 py-8 md:py-10 relative overflow-hidden">
-          <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="container mx-auto px-4 max-w-4xl">
-            <div className="text-center mb-10 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-3 md:mb-4 italic">Frequently Asked Questions</h2>
-              <div className="h-1.5 w-24 bg-gradient-to-r from-primary to-blue-600 mx-auto rounded-full" />
-            </div>
-
-            <div className="space-y-10 md:space-y-16">
-              {faqs.map((group, groupIdx) => (
-                <div key={groupIdx} className="space-y-6">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
-                    <span className="w-8 h-px bg-primary/20" />
-                    {group.category}
-                  </h3>
-
-                  <Accordion type="single" collapsible className="w-full space-y-3 md:space-y-4">
-                    {group.questions.map((faq, faqIdx) => (
-                      <AccordionItem
-                        key={faqIdx}
-                        value={`${groupIdx}-${faqIdx}`}
-                        className="border border-border/50 rounded-2xl bg-background px-4 md:px-6 overflow-hidden transition-all data-[state=open]:border-primary/20 data-[state=open]:shadow-lg"
-                      >
-                        <AccordionTrigger className="text-base md:text-lg font-bold py-4 md:py-6 hover:no-underline hover:text-primary transition-colors">
-                          {faq.q}
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground font-medium text-sm md:text-base pb-4 md:pb-6 leading-relaxed">
-                          {faq.a}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+        {/* Category grid */}
+        <section className="mx-auto mb-16 max-w-6xl px-5 md:mb-24 md:px-8 lg:px-12">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {SUPPORT_CATEGORIES.map((cat, index) => (
+              <motion.a
+                key={cat.title}
+                href={cat.href}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.06 }}
+                className="group border border-lp-outline-variant/50 bg-white p-8 transition-all duration-300 hover:border-lp-brand"
+              >
+                <div className="mb-6 flex size-12 items-center justify-center bg-lp-surface-container-low text-lp-on-surface transition-colors group-hover:bg-lp-brand group-hover:text-white">
+                  <cat.icon className="size-6" aria-hidden />
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Still Need Help? */}
-        <section className="lg:py-32 py-8 container mx-auto px-4 max-w-6xl">
-          <div className="relative lg:rounded-[48px] rounded-xl bg-foreground text-background p-5 md:p-8 lg:p-20 overflow-hidden group">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] opacity-50 group-hover:opacity-100 transition-opacity" />
-
-            <div className="relative z-10 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-              <div>
-                <h2 className="text-3xl md:text-6xl font-black tracking-tighter text-white mb-4 md:mb-6 leading-[1.1]">
-                      Still have questions?
-                </h2>
-                <p className="text-background/70 text-base md:text-xl font-medium mb-6 md:mb-10 max-w-md">
-                  Can't find the answer you're looking for? Please chat to our friendly team.
+                <h3 className="font-heading mb-2 text-xl font-bold">{cat.title}</h3>
+                <p className="text-sm leading-relaxed text-lp-on-surface-variant">
+                  {cat.description}
                 </p>
+              </motion.a>
+            ))}
+          </div>
+        </section>
 
-                <div className="flex flex-wrap gap-3 md:gap-4">
-                  <Link href="/contact">
-                    <button className="h-12 md:h-16 px-6 md:px-10 rounded-2xl bg-primary text-primary-foreground font-black text-base md:text-lg hover:scale-105 transition-transform flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 md:w-5 md:h-5" />
-                      Contact Support
-                    </button>
-                  </Link>
-                  <Link href="/services">
-                    <button className="h-12 md:h-16 px-6 md:px-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-black text-base md:text-lg hover:bg-white/20 transition-all flex items-center gap-2 group/btn">
-                      Browse Services
-                      <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
-                  </Link>
+        {/* FAQ */}
+        <section className="mx-auto mb-16 max-w-6xl px-5 md:mb-24 md:px-8 lg:px-12">
+          <h2 className="font-heading mb-12 text-center text-3xl font-bold text-lp-on-surface md:mb-16 md:text-4xl">
+            Frequently Asked Questions
+          </h2>
+
+          {filteredTopics.length === 0 ? (
+            <p className="text-center text-lp-on-surface-variant">
+              No articles match your search. Try different keywords or{" "}
+              <Link href="/contact" className="font-semibold text-lp-brand hover:underline">
+                contact support
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+              {/* Sidebar */}
+              <div className="lg:col-span-4">
+                <div className="lg:sticky lg:top-24">
+                  <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
+                    Topics
+                  </p>
+                  <nav className="flex flex-col gap-1 sm:flex-row sm:flex-wrap lg:flex-col">
+                    {SUPPORT_FAQ_TOPICS.map((topic) => {
+                      const isActive = activeTopic === topic.id;
+                      const visible = filteredTopics.some((t) => t.id === topic.id);
+                      if (!visible && query) return null;
+
+                      return (
+                        <a
+                          key={topic.id}
+                          href={`#${topic.id}`}
+                          onClick={() => setActiveTopic(topic.id)}
+                          className={cn(
+                            "py-2 text-base font-medium transition-colors",
+                            isActive
+                              ? "border-b-2 border-lp-on-surface font-semibold text-lp-on-surface"
+                              : "text-lp-on-surface-variant hover:text-lp-brand",
+                          )}
+                        >
+                          {topic.label}
+                        </a>
+                      );
+                    })}
+                  </nav>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                {[
-                  { icon: LifeBuoy, label: "24/7 Support" },
-                  { icon: MessageSquare, label: "Live Chat" },
-                  { icon: HelpCircle, label: "Help Guides" },
-                  { icon: FileText, label: "Tutorials" },
-                ].map((item, i) => (
-                  <div key={i} className="p-5 md:p-8 rounded-3xl bg-white/5 border border-white/10 text-center space-y-3 md:space-y-4 hover:bg-white/10 transition-colors">
-                    <item.icon className="w-6 h-6 md:w-8 md:h-8 mx-auto text-white" />
-                    <div className="text-xs md:text-sm font-black uppercase tracking-widest">{item.label}</div>
+              {/* FAQ list */}
+              <div className="space-y-12 lg:col-span-8">
+                {filteredTopics.map((topic) => (
+                  <div key={topic.id} id={topic.id} className="scroll-mt-28">
+                    <h3 className="font-heading mb-6 border-b border-lp-outline-variant/30 pb-4 text-2xl font-semibold text-lp-on-surface">
+                      {topic.title}
+                    </h3>
+                    <div className="space-y-4">
+                      {topic.questions.map((faq) => (
+                        <details
+                          key={faq.q}
+                          className="group rounded-lg bg-lp-surface-container-low/50"
+                        >
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
+                            <span className="font-heading text-left text-lg font-semibold text-lp-on-surface">
+                              {faq.q}
+                            </span>
+                            <Plus
+                              className="size-5 shrink-0 text-lp-brand transition-transform duration-300 group-open:rotate-45"
+                              aria-hidden
+                            />
+                          </summary>
+                          <div className="px-6 pb-6 text-base leading-relaxed text-lp-on-surface-variant">
+                            {faq.a}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
+          )}
+        </section>
+
+        {/* CTA */}
+        <section className="bg-lp-primary-container py-16 text-white md:py-24">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-5 md:px-8 lg:flex-row lg:gap-16 lg:px-12">
+            <div className="flex-1 text-center lg:text-left">
+              <h2 className="font-heading mb-6 text-3xl font-bold md:text-4xl">
+                Still have questions?
+              </h2>
+              <p className="mx-auto mb-10 max-w-lg text-lg text-white/70 lg:mx-0">
+                Our dedicated support team is available to help you with clinical or technical
+                inquiries.
+              </p>
+              <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
+                <Button
+                  asChild
+                  className="h-12 rounded-lg bg-white px-8 font-bold text-lp-primary-container hover:bg-lp-surface-container-low"
+                >
+                  <Link href="/contact">Contact Support</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-12 rounded-lg border-white/30 bg-transparent px-8 font-bold text-white hover:bg-white/10 hover:text-white"
+                >
+                  <Link href="/services">Browse Services</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid w-full max-w-lg flex-1 grid-cols-2 gap-8">
+              {SUPPORT_CTA_FEATURES.map((item) => (
+                <div
+                  key={item.title}
+                  className="flex flex-col items-center text-center lg:items-start lg:text-left"
+                >
+                  <item.icon className="mb-4 size-10 text-white/50" aria-hidden />
+                  <h4 className="mb-1 font-bold">{item.title}</h4>
+                  <p className="text-xs text-white/50">{item.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
-
     </div>
   );
 }
