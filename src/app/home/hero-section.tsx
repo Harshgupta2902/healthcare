@@ -32,7 +32,6 @@ export function HeroSection() {
           <div className="flex max-[992px]:flex-row max-[992px]:flex-nowrap max-[992px]:gap-3 flex-wrap justify-center gap-4 pt-8">
             <Link
               href="/book-consultation"
-              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-lp-brand px-4 py-3 font-heading text-sm font-semibold text-lp-on-brand shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl min-[993px]:px-8 min-[993px]:py-4 min-[993px]:text-xl"
             >
@@ -40,7 +39,6 @@ export function HeroSection() {
             </Link>
             <Link
               href="/consultants"
-              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-lp-surface-container px-4 py-3 font-heading text-sm font-semibold text-lp-brand transition-all hover:bg-lp-surface-container-high min-[993px]:px-8 min-[993px]:py-4 min-[993px]:text-xl"
             >
