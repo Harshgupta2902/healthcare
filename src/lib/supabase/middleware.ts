@@ -68,8 +68,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     const pathname = request.nextUrl.pathname
-    const isBookConsultationRoute =
-        pathname === '/book-consultation' || pathname.startsWith('/book-consultation/')
+    const isBookConsultationSuccessRoute = pathname.startsWith('/book-consultation/success')
 
     if (
         !user &&
@@ -79,7 +78,7 @@ export async function updateSession(request: NextRequest) {
         !request.nextUrl.pathname.startsWith('/consultants') &&
         !request.nextUrl.pathname.startsWith('/application/enter') &&
         request.nextUrl.pathname !== '/' &&
-        !isBookConsultationRoute
+        !isBookConsultationSuccessRoute
     ) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'

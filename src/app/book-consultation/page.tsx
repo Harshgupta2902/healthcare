@@ -7,19 +7,18 @@ type PageProps = {
 };
 
 export default async function BookConsultationPage({ searchParams }: PageProps) {
-  const { cref } = await searchParams;
-  const crefToken = cref?.trim();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (crefToken) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      const returnTo = `/book-consultation?cref=${encodeURIComponent(crefToken)}`;
-      redirect(`/login?redirect=${encodeURIComponent(returnTo)}`);
-    }
+  if (!user) {
+    const params = await searchParams;
+    const query = new URLSearchParams();
+    const cref = params.cref?.trim();
+    if (cref) query.set("cref", cref);
+    const returnTo = query.toString() ? `/book-consultation?${query.toString()}` : "/book-consultation";
+    redirect(`/login?redirect=${encodeURIComponent(returnTo)}`);
   }
 
   return <BookConsultationPageClient />;
