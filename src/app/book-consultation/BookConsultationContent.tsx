@@ -331,6 +331,14 @@ export function BookConsultationContent() {
 
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
   const locationError = errors.city?.message || errors.state?.message;
+  const selectedCategory = watch("category");
+  const categoryOptions = useMemo(() => {
+    const trimmed = selectedCategory?.trim();
+    if (trimmed && !(healthCategories as readonly string[]).includes(trimmed)) {
+      return [trimmed, ...healthCategories];
+    }
+    return healthCategories;
+  }, [selectedCategory]);
 
   return (
     <div className="w-full bg-lp-surface px-5 py-12 sm:px-8 sm:py-16 lg:px-16">
@@ -348,7 +356,7 @@ export function BookConsultationContent() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
-            <div className={cn("space-y-6", isConsultantBooking ? "lg:col-span-7" : "lg:col-span-8")}>
+            <div className="space-y-6 lg:col-span-8">
 
               <BookingSection icon={<User className="size-6" aria-hidden />} title="Patient Information">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4">
@@ -414,7 +422,6 @@ export function BookConsultationContent() {
 
               <BookingSection icon={<Calendar className="size-6" aria-hidden />} title="Appointment Details">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4">
-                  {!isConsultantBooking && (
                   <BookingSelect id="location" label="Location Search" error={locationError} className="md:col-span-1">
                     <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                       <PopoverTrigger asChild>
@@ -487,9 +494,7 @@ export function BookConsultationContent() {
                       </PopoverContent>
                     </Popover>
                   </BookingSelect>
-                  )}
 
-                  {!isConsultantBooking && (
                   <BookingSelect id="category" label="Medical Category" error={errors.category?.message}>
                     <select
                       id="category"
@@ -498,14 +503,13 @@ export function BookConsultationContent() {
                       onChange={(e) => setValue("category", e.target.value, { shouldValidate: true })}
                     >
                       <option value="">Select category</option>
-                      {healthCategories.map((name) => (
+                      {categoryOptions.map((name) => (
                         <option key={name} value={name}>
                           {name}
                         </option>
                       ))}
                     </select>
                   </BookingSelect>
-                  )}
 
                   <LpTextField
                     id="date"
