@@ -17,11 +17,10 @@ export function BookConsultationSuccessView({
           </div>
 
           <h1 className="mb-2 font-heading text-3xl font-semibold tracking-tight text-lp-on-surface sm:text-[32px] sm:leading-10">
-            Appointment Requested Successfully
+            Consultation Booked Successfully
           </h1>
           <p className="mx-auto mb-10 max-w-lg font-sans text-lg leading-relaxed text-lp-on-surface-variant">
-            We&apos;ve received your request. The clinic will review the schedule and contact you shortly to confirm
-            your booking.
+            Your meeting link has been created and calendar invites have been sent to you and your consultant.
           </p>
 
           <div className="mb-10 grid grid-cols-1 gap-4 text-left md:grid-cols-3">
@@ -39,8 +38,8 @@ export function BookConsultationSuccessView({
           <div className="mb-10 flex items-start gap-3 rounded-lg border-l-4 border-lp-brand bg-lp-surface-container p-4 text-left">
             <Info className="mt-0.5 size-5 shrink-0 text-lp-brand" aria-hidden />
             <p className="font-sans text-sm leading-5 text-lp-on-surface-variant">
-              <strong className="font-semibold text-lp-on-surface">Note:</strong> You will receive an email and a
-              WhatsApp notification once the status of your appointment is updated by the administrative team.
+              <strong className="font-semibold text-lp-on-surface">Note:</strong> Check your email for the meeting link
+              and calendar invite. You can also view this appointment from your dashboard.
             </p>
           </div>
 
