@@ -36,10 +36,12 @@ import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 import { getBookingFormPrefill, searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
-import { decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
+import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BOOKING_TIME_SLOTS } from "./constants";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
+import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
+import { BookingChooseSpecialistCard } from "./booking-choose-specialist-card";
 
 const healthCategories = [
   "General Medicine",
@@ -106,6 +108,18 @@ const appointmentSchema = z
 
 type AppointmentForm = z.infer<typeof appointmentSchema>;
 
+function resolveBookingSubmitError(
+  err: string | Record<string, string[] | undefined> | undefined,
+): string {
+  if (!err) return "Something went wrong. Please try again.";
+  if (typeof err === "string") return err;
+  for (const messages of Object.values(err)) {
+    const first = messages?.[0]?.trim();
+    if (first) return first;
+  }
+  return "Something went wrong. Please try again.";
+}
+
 const lpBookingFieldClass =
   "block w-full appearance-none rounded-lg border border-lp-outline-variant/50 bg-lp-surface-container-low py-3 px-4 font-sans text-base leading-6 text-lp-on-surface outline-none transition-all focus:border-lp-brand focus:ring-2 focus:ring-lp-brand/20 disabled:opacity-50 md:text-sm";
 
@@ -166,6 +180,7 @@ export function BookConsultationContent() {
     Awaited<ReturnType<typeof getProfessionalById>> | undefined
   >(undefined);
   const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
+  const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [city, setCity] = useState("");
@@ -293,6 +308,14 @@ export function BookConsultationContent() {
   }, [searchQuery]);
 
   const onSubmit = async (data: AppointmentForm) => {
+    if (!decodedConsultantId) {
+      toast.error("Please select a consultant before booking.", {
+        description: 'Use "Browse & select" on the right to choose a specialist.',
+      });
+      setConsultantPickerOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const deviceHash = await getDeviceFingerprintHash();
@@ -308,17 +331,15 @@ export function BookConsultationContent() {
         date: data.date,
         time: data.time,
         message: data.message ?? "",
-        professionalId: decodedConsultantId ?? undefined,
+        professionalId: decodedConsultantId,
         deviceHash,
       });
-      const err = (res as { error?: string | Record<string, string[]> })?.error;
+      const err = (res as { error?: string | Record<string, string[] | undefined> })?.error;
       if (err) {
-        if (typeof err === "string") {
-          toast.error(err);
-        } else {
-          toast.error("Failed to book appointment", {
-            description: "Please check the form and try again.",
-          });
+        const message = resolveBookingSubmitError(err);
+        toast.error(message);
+        if (message.toLowerCase().includes("consultant")) {
+          setConsultantPickerOpen(true);
         }
         return;
       }
@@ -327,6 +348,10 @@ export function BookConsultationContent() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSelectConsultant = (consultantId: string) => {
+    router.push(buildBookConsultationHref(consultantId));
   };
 
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
@@ -587,6 +612,8 @@ export function BookConsultationContent() {
               <BookingConsultantSidebar consultant={bookingConsultant ?? undefined} loading={bookingConsultantLoading} />
             ) : (
             <aside className="space-y-6 lg:col-span-4">
+              <BookingChooseSpecialistCard onClick={() => setConsultantPickerOpen(true)} />
+
               <div className="relative overflow-hidden rounded-xl bg-lp-brand-bright p-6 text-lp-on-secondary-container sm:p-8">
                 <div className="relative z-10">
                   <h3 className="mb-2 font-heading text-2xl font-bold text-white">Expert Care Awaits</h3>
@@ -647,6 +674,11 @@ export function BookConsultationContent() {
             )}
           </div>
         </form>
+        <BookingConsultantPickerDialog
+          open={consultantPickerOpen}
+          onOpenChange={setConsultantPickerOpen}
+          onSelect={handleSelectConsultant}
+        />
       </div>
     </div>
   );
