@@ -8,6 +8,7 @@ import {
   deviceHashZodField,
   getClientIpFromHeaders,
 } from "@/lib/device-rate-limit";
+import { zodFirstError } from "@/lib/server-action-result";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
 import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
 import { formatBookingDateLabel, formatBookingTimeLabel } from "@/lib/booking-display";
@@ -97,26 +98,26 @@ export async function searchPlaces(input: string): Promise<PlacePrediction[]> {
 // ============================================
 
 const guestAppointmentSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  age: z.coerce.number().int().min(0).max(120),
-  phone: z.string().min(8),
-  email: z.string().email(),
-  category: z.string().min(1),
-  state: z.string().min(1),
-  city: z.string().min(1),
-  date: z.string().min(1), // yyyy-mm-dd
-  time: z.string().min(1), // HH:mm
+  firstName: z.string().min(2, "First name is required"),
+  lastName: z.string().min(2, "Last name is required"),
+  age: z.coerce.number().int().min(0, "Age cannot be negative").max(120, "Age must be 120 or less"),
+  phone: z.string().min(10, "Phone number is required").max(10, "Phone must be exactly 10 digits"),
+  email: z.string().email("Enter a valid email address"),
+  category: z.string().min(1, "Medical category is required"),
+  state: z.string().min(1, "State is required"),
+  city: z.string().min(1, "City is required"),
+  date: z.string().min(1, "Preferred date is required"), // yyyy-mm-dd
+  time: z.string().min(1, "Preferred time is required"), // HH:mm
   message: z.string().optional().nullable(),
-  /** From `?cref=` — professional `users.id`; omit or null for generic booking */
-  professionalId: z.string().uuid().nullish(),
+  /** Required — professional `users.id` from consultant selection (`?cref=`). */
+  professionalId: z.string().uuid("Please select a consultant before booking."),
   deviceHash: deviceHashZodField,
 });
 
 export async function submitGuestAppointment(form: unknown) {
   const validated = guestAppointmentSchema.safeParse(form);
   if (!validated.success) {
-    return { error: validated.error.flatten().fieldErrors };
+    return { error: zodFirstError(validated.error) };
   }
 
   const headerStore = await headers();
@@ -148,7 +149,7 @@ export async function submitGuestAppointment(form: unknown) {
     appointment_time: validated.data.time,
     message: validated.data.message ?? null,
     created_by: user?.id ?? null,
-    professional_id: validated.data.professionalId ?? null,
+    professional_id: validated.data.professionalId,
   };
 
   const { data, error } = await supabase.from("guest_appointments").insert(payload).select("id").single();
