@@ -52,7 +52,7 @@ function summarizeAvailability(
 
 function SidebarShell({ children }: { children: React.ReactNode }) {
   return (
-    <aside className="lg:col-span-5">
+    <aside className="lg:col-span-4">
       <div className="lg:sticky lg:top-28">{children}</div>
     </aside>
   );
