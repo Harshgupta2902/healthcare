@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createGoogleCalendarMeetEvent } from '@/lib/calendar/googleCalendarApi'
 import { buildConsultationIcs } from '@/lib/calendar/ics'
+import { assertGuestSlotIsFuture } from '@/lib/calendar/guestAppointmentSlot'
 import { guestSlotToUtcDates } from '@/lib/calendar/generateGoogleCalendarLink'
 import {
   sendConsultationMeetingInviteToGuest,
@@ -73,14 +74,18 @@ export async function loadGuestMeetingContext(
   const profEmail = (prof?.email as string | undefined)?.trim()
   if (!profEmail) throw new Error('Consultant email is missing.')
 
+  const appointmentDate = row.appointment_date as string
+  const appointmentTime = row.appointment_time as string
+  assertGuestSlotIsFuture(appointmentDate, appointmentTime)
+
   return {
     guestAppointmentId,
     guestName: `${row.first_name} ${row.last_name}`.trim(),
     guestEmail,
     professionalName: (prof?.name as string | null) || profEmail,
     professionalEmail: profEmail,
-    appointmentDate: row.appointment_date as string,
-    appointmentTime: row.appointment_time as string,
+    appointmentDate,
+    appointmentTime,
   }
 }
 
