@@ -33,6 +33,7 @@ import {
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
 import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
+import { createClient } from "@/lib/supabase/client";
 import { getBookingFormPrefill, searchPlaces, submitGuestAppointment, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
@@ -351,7 +352,21 @@ export function BookConsultationContent() {
   };
 
   const handleSelectConsultant = (consultantId: string) => {
-    router.push(buildBookConsultationHref(consultantId));
+    void (async () => {
+      const href = buildBookConsultationHref(consultantId);
+      const supabase = createClient();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        router.push(`/login?redirect=${encodeURIComponent(href)}`);
+        return;
+      }
+
+      router.push(href);
+    })();
   };
 
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
