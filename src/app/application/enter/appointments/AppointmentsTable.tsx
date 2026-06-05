@@ -17,6 +17,19 @@ import {
   updateGuestAppointmentProfessional,
   type GuestAppointmentAdminRow,
 } from '@/features/admin/actions'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  buildPastGuestSlotMessage,
+  isGuestSlotInFuture,
+} from '@/lib/calendar/guestAppointmentSlot'
 import { CreateMeetingProgressDialog } from './CreateMeetingProgressDialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -193,6 +206,10 @@ export function AppointmentsTable({
     patientLabel: string
     sessionKey: number
   } | null>(null)
+  const [pastSlotDialog, setPastSlotDialog] = useState<{
+    patientLabel: string
+    message: string
+  } | null>(null)
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -317,13 +334,20 @@ export function AppointmentsTable({
           <GuestTableRowActions
             row={row}
             onDelete={handleDelete}
-            onCreateMeeting={(r) =>
+            onCreateMeeting={(r) => {
+              if (!isGuestSlotInFuture(r.appointment_date, r.appointment_time)) {
+                setPastSlotDialog({
+                  patientLabel: `${r.first_name} ${r.last_name}`.trim(),
+                  message: buildPastGuestSlotMessage(r.appointment_date, r.appointment_time),
+                })
+                return
+              }
               setMeetingDialog({
                 guestAppointmentId: r.id,
                 patientLabel: `${r.first_name} ${r.last_name}`.trim(),
                 sessionKey: Date.now(),
               })
-            }
+            }}
           />
         )}
         page={initialPage}
@@ -339,6 +363,31 @@ export function AppointmentsTable({
         description="Remove this public booking request from the list? This cannot be undone."
         isPending={isPending}
       />
+      <AlertDialog
+        open={Boolean(pastSlotDialog)}
+        onOpenChange={(open) => {
+          if (!open) setPastSlotDialog(null)
+        }}
+      >
+        <AlertDialogContent className="rounded-2xl sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-heading">Cannot create meeting link</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                {pastSlotDialog?.patientLabel ? (
+                  <p className="font-medium text-foreground">{pastSlotDialog.patientLabel}</p>
+                ) : null}
+                <p>{pastSlotDialog?.message}</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction className="rounded-xl" onClick={() => setPastSlotDialog(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {meetingDialog ? (
         <CreateMeetingProgressDialog
           open
