@@ -160,6 +160,181 @@ export async function submitGuestAppointment(form: unknown) {
   return { success: true, id: data.id };
 }
 
+const guestBookingStepIdSchema = z.object({
+  guestAppointmentId: z.string().uuid('Invalid booking reference.'),
+});
+
+const guestMeetingPersistSchema = guestBookingStepIdSchema.extend({
+  meetUrl: z.string().url('Invalid meeting URL').max(4000),
+  provider: z.enum(['google', 'jitsi']),
+});
+
+async function requireBookingSession() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: 'You must be signed in.' };
+  return { ok: true as const, supabase, userId: user.id };
+}
+
+async function assertGuestAppointmentOwner(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  guestAppointmentId: string,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from('guest_appointments')
+    .select('created_by')
+    .eq('id', guestAppointmentId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Appointment not found.');
+  if (data.created_by !== userId) throw new Error('You do not have access to this booking.');
+}
+
+/** Step 2: Validate appointment and load patient/consultant details. */
+export async function bookConsultationMeetingValidateStep(input: unknown) {
+  const auth = await requireBookingSession();
+  if (!auth.ok) return { success: false as const, error: auth.error };
+
+  const parsed = guestBookingStepIdSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) };
+
+  try {
+    await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    return {
+      success: true as const,
+      patientName: ctx.guestName,
+      patientEmail: ctx.guestEmail,
+      consultantName: ctx.professionalName,
+      consultantEmail: ctx.professionalEmail,
+    };
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Validation failed.',
+    };
+  }
+}
+
+/** Step 3: Create Google Meet or Jitsi meeting link. */
+export async function bookConsultationMeetingCreateLinkStep(input: unknown) {
+  const auth = await requireBookingSession();
+  if (!auth.ok) return { success: false as const, error: auth.error };
+
+  const parsed = guestBookingStepIdSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) };
+
+  try {
+    await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    const { meetUrl, provider } = await pipeline.generateGuestMeetingLink(ctx);
+    return {
+      success: true as const,
+      meetUrl,
+      provider,
+      providerLabel: provider === 'google' ? 'Google Meet' : 'Jitsi',
+    };
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not create meeting link.',
+    };
+  }
+}
+
+/** Step 4: Email invite to patient (Jitsi path only). */
+export async function bookConsultationMeetingEmailPatientStep(input: unknown) {
+  const auth = await requireBookingSession();
+  if (!auth.ok) return { success: false as const, error: auth.error };
+
+  const parsed = guestMeetingPersistSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) };
+  if (parsed.data.provider !== 'jitsi') {
+    return { success: true as const, skipped: true as const };
+  }
+
+  try {
+    await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    );
+    await pipeline.emailGuestMeetingInvitePatient(ctx, parsed.data.meetUrl);
+    return { success: true as const, skipped: false as const, sentTo: ctx.guestEmail };
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not email the patient.',
+    };
+  }
+}
+
+/** Step 5: Email invite to consultant (Jitsi path only). */
+export async function bookConsultationMeetingEmailConsultantStep(input: unknown) {
+  const auth = await requireBookingSession();
+  if (!auth.ok) return { success: false as const, error: auth.error };
+
+  const parsed = guestMeetingPersistSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) };
+  if (parsed.data.provider !== 'jitsi') {
+    return { success: true as const, skipped: true as const };
+  }
+
+  try {
+    await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    );
+    await pipeline.emailGuestMeetingInviteConsultant(ctx, parsed.data.meetUrl);
+    return { success: true as const, skipped: false as const, sentTo: ctx.professionalEmail };
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not email the consultant.',
+    };
+  }
+}
+
+/** Step 6: Persist meeting URL on the appointment. */
+export async function bookConsultationMeetingSaveStep(input: unknown) {
+  const auth = await requireBookingSession();
+  if (!auth.ok) return { success: false as const, error: auth.error };
+
+  const parsed = guestMeetingPersistSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) };
+
+  try {
+    await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
+    await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    pipeline.assertMeetUrlForAppointment(
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      parsed.data.provider,
+    );
+    await pipeline.saveGuestMeetingUrl(auth.supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl);
+    return { success: true as const, meetUrl: parsed.data.meetUrl };
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not save meeting link.',
+    };
+  }
+}
+
 // ============================================
 // Prefill booking form from signed-in profile
 // ============================================
