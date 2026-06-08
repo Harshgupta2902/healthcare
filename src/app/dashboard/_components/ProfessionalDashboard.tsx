@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
@@ -769,6 +770,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 <p className={dashboardPageSubtitle}>
                     Manage your practice, appointments, and client consultations
                 </p>
+                <Link
+                    href="/dashboard/blog"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-lp-brand hover:underline"
+                >
+                    <FileText className="h-4 w-4" />
+                    Write a blog article
+                </Link>
             </div>
 
             <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

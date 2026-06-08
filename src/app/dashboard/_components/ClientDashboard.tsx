@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
@@ -814,6 +815,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <p className={dashboardPageSubtitle}>
                     Centralized hub for your health metrics, prescriptions, and medical history.
                 </p>
+                <Link
+                    href="/dashboard/blog"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-lp-brand hover:underline"
+                >
+                    <FileText className="h-4 w-4" />
+                    Write a blog article
+                </Link>
             </div>
 
             <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 md:gap-6 lg:grid-cols-4">
