@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, ExternalLink, ImagePlus, Loader2, Save, X } from 'lucide-react'
+import { Eye, ExternalLink, FileText, ImagePlus, Loader2, Save, X } from 'lucide-react'
+import { hasBlogArticleContent } from '@/components/blog/BlogArticleContent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -57,6 +58,7 @@ export function BlogPostEditor({ categories, post, mode = 'admin' }: BlogPostEdi
   const isAuthor = mode === 'author'
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
+  const mdFileRef = useRef<HTMLInputElement>(null)
   const slugTouched = useRef(Boolean(post?.slug))
   const [isPending, startTransition] = useTransition()
   const [uploading, setUploading] = useState(false)
@@ -96,6 +98,21 @@ export function BlogPostEditor({ categories, post, mode = 'admin' }: BlogPostEdi
     },
     [isAuthor]
   )
+
+  const handleMarkdownImport = async (file: File) => {
+    try {
+      const text = await file.text()
+      if (!text.trim()) {
+        toast.error('The Markdown file is empty.')
+        return
+      }
+      setContentHtml(text)
+      setEditorKey((k) => k + 1)
+      toast.success('Markdown imported')
+    } catch {
+      toast.error('Could not read the Markdown file.')
+    }
+  }
 
   const handleCoverUpload = async (file: File) => {
     setUploading(true)
@@ -173,7 +190,7 @@ export function BlogPostEditor({ categories, post, mode = 'admin' }: BlogPostEdi
   const canSave =
     !isLockedForAuthor &&
     title.trim().length > 0 &&
-    contentHtml.replace(/<[^>]+>/g, '').trim().length > 0 &&
+    hasBlogArticleContent(contentHtml) &&
     (isAuthor
       ? status !== 'pending_review' || Boolean(categoryId)
       : !['published', 'pending_review'].includes(status) || Boolean(categoryId))
@@ -409,12 +426,39 @@ export function BlogPostEditor({ categories, post, mode = 'admin' }: BlogPostEdi
 
             {(mobileTab === 'write' || showPreview) && (
               <div className={cn(mobileTab === 'preview' && 'hidden lg:block', !showPreview && 'lg:block')}>
-                <Label className="mb-2 block">Article body</Label>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <Label>Article body</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={mdFileRef}
+                      type="file"
+                      accept=".md,.markdown,text/markdown,text/plain"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) void handleMarkdownImport(file)
+                        e.target.value = ''
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-lg gap-2"
+                      disabled={fieldsDisabled}
+                      onClick={() => mdFileRef.current?.click()}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Import .md
+                    </Button>
+                  </div>
+                </div>
                 <LexicalPrescriptionEditor
                   key={editorKey}
-                  initialHtml={post?.content_html ?? ''}
+                  initialHtml={contentHtml}
                   onHtmlChange={setContentHtml}
                   compact
+                  markdown
                   className="min-h-[360px] border-lp-outline-variant/40 dark:border-white/10"
                 />
               </div>

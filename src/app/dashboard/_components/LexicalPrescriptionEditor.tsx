@@ -32,17 +32,23 @@ import {
     TableRowNode,
 } from "@lexical/table";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
+import { $convertFromMarkdownString, $convertToMarkdownString, TRANSFORMERS } from "@lexical/markdown";
+import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
+import { CodeNode } from "@lexical/code";
 import { $setBlocksType } from "@lexical/selection";
 import {
     $createParagraphNode,
     $getRoot,
     $getSelection,
     $isRangeSelection,
+    COMMAND_PRIORITY_HIGH,
     FORMAT_ELEMENT_COMMAND,
     FORMAT_TEXT_COMMAND,
+    PASTE_COMMAND,
     REDO_COMMAND,
     UNDO_COMMAND,
 } from "lexical";
+import { isLikelyMarkdown } from "@/lib/blog/sanitize-html";
 import {
     AlignCenter,
     AlignLeft,
@@ -107,7 +113,7 @@ const theme = {
  * If we skip when `root.getFirstChild()` exists, saved HTML never loads on "Edit Prescription".
  * We therefore replace the root exactly once per editor mount (parent remounts via `key` when reopening).
  */
-function InitialHtmlPlugin({ html }: { html: string }) {
+function InitialContentPlugin({ content, markdown }: { content: string; markdown: boolean }) {
     const [editor] = useLexicalComposerContext();
     const didReplaceRoot = useRef(false);
 
@@ -116,10 +122,18 @@ function InitialHtmlPlugin({ html }: { html: string }) {
             return;
         }
         didReplaceRoot.current = true;
-        const snapshot = html;
+        const snapshot = content;
         editor.update(() => {
             const root = $getRoot();
             root.clear();
+            if (!snapshot?.trim()) {
+                root.append($createParagraphNode());
+                return;
+            }
+            if (markdown && isLikelyMarkdown(snapshot)) {
+                $convertFromMarkdownString(snapshot, TRANSFORMERS, root);
+                return;
+            }
             const dom = new DOMParser().parseFromString(snapshot || "<p></p>", "text/html");
             const nodes = $generateNodesFromDOM(editor, dom.body);
             if (nodes.length > 0) {
@@ -128,7 +142,37 @@ function InitialHtmlPlugin({ html }: { html: string }) {
                 root.append($createParagraphNode());
             }
         });
-    }, [editor, html]);
+    }, [editor, content, markdown]);
+
+    return null;
+}
+
+function MarkdownPastePlugin() {
+    const [editor] = useLexicalComposerContext();
+
+    useEffect(() => {
+        return editor.registerCommand(
+            PASTE_COMMAND,
+            (event: ClipboardEvent) => {
+                const text = event.clipboardData?.getData("text/plain") ?? "";
+                const html = event.clipboardData?.getData("text/html") ?? "";
+                if (!text.trim() || html.trim()) {
+                    return false;
+                }
+                if (!isLikelyMarkdown(text)) {
+                    return false;
+                }
+                event.preventDefault();
+                editor.update(() => {
+                    const root = $getRoot();
+                    root.clear();
+                    $convertFromMarkdownString(text, TRANSFORMERS, root);
+                });
+                return true;
+            },
+            COMMAND_PRIORITY_HIGH
+        );
+    }, [editor]);
 
     return null;
 }
@@ -335,6 +379,8 @@ export type LexicalPrescriptionEditorProps = {
     className?: string;
     /** Use a shorter editing area (e.g. admin newsletter modal). */
     compact?: boolean;
+    /** Blog mode: import/export Markdown, shortcuts, and paste .md content. */
+    markdown?: boolean;
 };
 
 export function LexicalPrescriptionEditor({
@@ -342,14 +388,32 @@ export function LexicalPrescriptionEditor({
     onHtmlChange,
     className,
     compact = false,
+    markdown = false,
 }: LexicalPrescriptionEditorProps) {
+    const placeholder = markdown
+        ? "Write in Markdown — use ## headings, **bold**, lists, or paste a .md file…"
+        : compact
+          ? "Write your newsletter content…"
+          : "Enter diagnosis, medicines and instructions…";
+
     const initialConfig = {
-        namespace: compact ? "NewsletterEditor" : "PrescriptionEditor",
+        namespace: markdown ? "BlogMarkdownEditor" : compact ? "NewsletterEditor" : "PrescriptionEditor",
         theme,
         onError: (error: Error) => {
             console.error(error);
         },
-        nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, LinkNode, AutoLinkNode, TableCellNode, TableRowNode, TableNode],
+        nodes: [
+            HeadingNode,
+            QuoteNode,
+            ListNode,
+            ListItemNode,
+            LinkNode,
+            AutoLinkNode,
+            CodeNode,
+            TableCellNode,
+            TableRowNode,
+            TableNode,
+        ],
         editable: true,
     };
 
@@ -366,15 +430,11 @@ export function LexicalPrescriptionEditor({
                                     "px-3 py-2 outline-none prose prose-sm max-w-none",
                                     compact ? "min-h-[280px]" : "min-h-[520px]"
                                 )}
-                                aria-placeholder={
-                                    compact ? "Write your newsletter content…" : "Enter diagnosis, medicines and instructions…"
-                                }
+                                aria-placeholder={placeholder}
                                 placeholder={(isEditable) =>
                                     isEditable ? (
                                         <div className="pointer-events-none absolute left-3 top-2 text-slate-400 text-sm select-none">
-                                            {compact
-                                                ? "Write your newsletter content…"
-                                                : "Enter diagnosis, medicines and instructions…"}
+                                            {placeholder}
                                         </div>
                                     ) : null
                                 }
@@ -387,11 +447,21 @@ export function LexicalPrescriptionEditor({
                 <ListPlugin />
                 <LinkPlugin />
                 <AutoFocusPlugin />
-                <InitialHtmlPlugin html={initialHtml} />
+                <InitialContentPlugin content={initialHtml} markdown={markdown} />
+                {markdown ? (
+                    <>
+                        <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+                        <MarkdownPastePlugin />
+                    </>
+                ) : null}
                 <OnChangePlugin
                     onChange={(editorState, editor) => {
                         editorState.read(() => {
-                            onHtmlChange($generateHtmlFromNodes(editor, null));
+                            onHtmlChange(
+                                markdown
+                                    ? $convertToMarkdownString(TRANSFORMERS)
+                                    : $generateHtmlFromNodes(editor, null)
+                            );
                         });
                     }}
                 />
