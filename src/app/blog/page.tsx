@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { NewsletterSubscribe } from '@/components/NewsletterSubscribe'
 import { buildPageMetadata } from '@/lib/seo/page-metadata'
 import { getActiveBlogCategories, getPublishedBlogPosts } from '@/features/blog/actions'
 import { BlogListingContent } from './BlogListingContent'
@@ -38,12 +39,15 @@ export default async function BlogPage({
   const totalPages = postsResult.success ? postsResult.totalPages : 0
 
   return (
-    <BlogListingContent
-      posts={posts}
-      categories={categories}
-      activeCategorySlug={categorySlug}
-      page={page}
-      totalPages={totalPages}
-    />
+    <>
+      <BlogListingContent
+        posts={posts}
+        categories={categories}
+        activeCategorySlug={categorySlug}
+        page={page}
+        totalPages={totalPages}
+      />
+      <NewsletterSubscribe inputId="blog-newsletter-email" />
+    </>
   )
 }
