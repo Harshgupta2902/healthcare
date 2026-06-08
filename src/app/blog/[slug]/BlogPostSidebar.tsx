@@ -47,15 +47,12 @@ export function BlogPostSidebar({ recommended }: BlogPostSidebarProps) {
         </div>
       )}
 
-      <div className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-8">
-        <NewsletterSubscribe
-          variant="embedded"
-          inputId="blog-article-newsletter-email"
-          title="Weekly Briefing"
-          description="Latest clinical research and health insights delivered to your inbox."
-          className="[&_.mx-auto]:mx-0 [&_.max-w-7xl]:max-w-none [&_.px-5]:px-0 [&_.text-center]:text-left [&_form]:flex-col [&_form]:sm:flex-col"
-        />
-      </div>
+      <NewsletterSubscribe
+        variant="card"
+        inputId="blog-article-newsletter-email"
+        title="Weekly Briefing"
+        description="Latest clinical research and health insights delivered to your inbox."
+      />
     </aside>
   )
 }
