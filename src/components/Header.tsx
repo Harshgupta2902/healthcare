@@ -232,6 +232,9 @@ export default function Header({ className }: HeaderProps) {
           <Link href="/how-it-works" className={desktopNavClass(pathname === "/how-it-works")}>
             How it works
           </Link>
+          <Link href="/blog" className={desktopNavClass(pathname?.startsWith("/blog") ?? false)}>
+            Blog
+          </Link>
           <Link href="/support" className={desktopNavClass(pathname?.startsWith("/support") ?? false)}>
             Support
           </Link>
@@ -280,6 +283,13 @@ export default function Header({ className }: HeaderProps) {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               How it works
+            </Link>
+            <Link
+              href="/blog"
+              className={mobileNavClass(pathname?.startsWith("/blog") ?? false)}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             <Link
               href="/support"
