@@ -1,6 +1,6 @@
 'use client'
 
-import { sanitizeBlogHtml } from '@/lib/blog/sanitize-html'
+import { hasBlogArticleContent, BlogArticleContent } from '@/components/blog/BlogArticleContent'
 import type { BlogCategoryRow } from '@/features/blog/schema'
 import { Calendar, Eye, Tag } from 'lucide-react'
 import Image from 'next/image'
@@ -27,8 +27,7 @@ export function BlogPreviewPanel({
   category,
   className,
 }: BlogPreviewPanelProps) {
-  const safeHtml = sanitizeBlogHtml(contentHtml)
-  const hasContent = safeHtml.replace(/<[^>]+>/g, '').trim().length > 0
+  const hasContent = hasBlogArticleContent(contentHtml)
 
   return (
     <div
@@ -83,10 +82,7 @@ export function BlogPreviewPanel({
 
         <div className="mt-6 border-t border-lp-outline-variant/20 pt-6">
           {hasContent ? (
-            <div
-              className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-heading prose-headings:text-lp-on-surface prose-p:text-lp-on-surface-variant prose-a:text-lp-brand"
-              dangerouslySetInnerHTML={{ __html: safeHtml }}
-            />
+            <BlogArticleContent content={contentHtml} size="sm" />
           ) : (
             <p className="py-12 text-center text-sm italic text-lp-on-surface-variant">
               Start writing in the editor — your article preview will appear here.
