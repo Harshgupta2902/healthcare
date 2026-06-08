@@ -4,11 +4,18 @@ import { getActiveBlogCategories, getPublishedBlogPosts } from '@/features/blog/
 import { BlogListingContent } from './BlogListingContent'
 
 export const metadata: Metadata = buildPageMetadata({
+  absoluteTitle: 'HealthHere Blog | Clinical Insights & Wellness',
   title: 'Blog',
   description:
-    'Health and care insights from HealthHere — telehealth tips, wellness guides, and expert articles for patients and consultants.',
+    'Clinical insights, wellness guides, and expert articles from HealthHere — personalized care, research, and patient stories.',
   pathname: '/blog',
-  keywords: ['HealthHere blog', 'health articles', 'telehealth tips', 'wellness'],
+  keywords: [
+    'HealthHere blog',
+    'clinical insights',
+    'wellness',
+    'health articles',
+    'medical research',
+  ],
 })
 
 export const revalidate = 300
