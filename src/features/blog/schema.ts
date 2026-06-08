@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-export const blogPostStatusSchema = z.enum(['draft', 'published', 'archived'])
+export const blogPostStatusSchema = z.enum(['draft', 'pending_review', 'published', 'archived'])
+export const blogPostAuthorStatusSchema = z.enum(['draft', 'pending_review'])
 
 export const blogCategorySchema = z.object({
   name: z.string().min(1, 'Name is required').max(80),
@@ -14,28 +15,45 @@ export const blogCategorySchema = z.object({
   isActive: z.boolean(),
 })
 
-export const blogPostSchema = z
-  .object({
-    title: z.string().min(1, 'Title is required').max(200),
-    slug: z
-      .string()
-      .min(1, 'Slug is required')
-      .max(200)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers, and hyphens'),
-    excerpt: z.string().max(500).optional().nullable(),
-    contentHtml: z.string().min(1, 'Content is required').max(800_000),
-    coverImageUrl: z.string().max(500).optional().nullable(),
-    categoryId: z.string().uuid('Category is required').optional().nullable(),
+const blogPostFieldsSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .max(200)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers, and hyphens'),
+  excerpt: z.string().max(500).optional().nullable(),
+  contentHtml: z.string().min(1, 'Content is required').max(800_000),
+  coverImageUrl: z.string().max(500).optional().nullable(),
+  categoryId: z.string().uuid('Category is required').optional().nullable(),
+  metaTitle: z.string().max(70).optional().nullable(),
+  metaDescription: z.string().max(160).optional().nullable(),
+  tags: z.array(z.string().max(40)).max(10).default([]),
+})
+
+export const blogPostSchema = blogPostFieldsSchema
+  .extend({
     status: blogPostStatusSchema.default('draft'),
-    metaTitle: z.string().max(70).optional().nullable(),
-    metaDescription: z.string().max(160).optional().nullable(),
-    tags: z.array(z.string().max(40)).max(10).default([]),
   })
   .superRefine((data, ctx) => {
-    if (data.status === 'published' && !data.categoryId) {
+    if (['published', 'pending_review'].includes(data.status) && !data.categoryId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Category is required to publish',
+        message: 'Category is required to publish or submit for review',
+        path: ['categoryId'],
+      })
+    }
+  })
+
+export const blogPostAuthorSchema = blogPostFieldsSchema
+  .extend({
+    status: blogPostAuthorStatusSchema.default('draft'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === 'pending_review' && !data.categoryId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Category is required to submit for review',
         path: ['categoryId'],
       })
     }
@@ -57,6 +75,7 @@ export const blogLikeSchema = z.object({
 })
 
 export type BlogPostFormData = z.infer<typeof blogPostSchema>
+export type BlogPostAuthorFormData = z.infer<typeof blogPostAuthorSchema>
 export type BlogCategoryFormData = z.infer<typeof blogCategorySchema>
 
 export type BlogCategoryRow = {
@@ -79,8 +98,11 @@ export type BlogPostRow = {
   cover_image_url: string | null
   category_id: string | null
   author_id: string | null
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'pending_review' | 'published' | 'archived'
   published_at: string | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  reviewed_by: string | null
   meta_title: string | null
   meta_description: string | null
   tags: string[]
