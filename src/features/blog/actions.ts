@@ -5,7 +5,7 @@ import { createSupabasePublic } from '@/lib/supabase/public'
 import { revalidatePath } from 'next/cache'
 import { zodFirstError } from '@/lib/server-action-result'
 import { sanitizeBlogHtml } from '@/lib/blog/sanitize-html'
-import { requireAdminForBlogPreview, requireBlogEngagementUser } from './auth'
+import { requireAuthorBlogPreview, requireBlogEngagementUser } from './auth'
 import {
   blogCommentSchema,
   blogLikeSchema,
@@ -107,17 +107,22 @@ export async function getBlogPostBySlug(slug: string, preview = false) {
   try {
     const supabase = preview ? await createClient() : createSupabasePublic()
 
-    if (preview) {
-      const auth = await requireAdminForBlogPreview()
-      if (!auth.ok) return { success: false as const, error: auth.error, data: null }
-    }
-
     let query = supabase.from('blog_posts').select(POST_DETAIL_SELECT).eq('slug', slug)
-    if (!preview) query = query.eq('status', 'published')
+    if (!preview) {
+      query = query.eq('status', 'published')
+    }
 
     const { data, error } = await query.maybeSingle()
     if (error) return { success: false as const, error: error.message, data: null }
     if (!data) return { success: false as const, error: 'Post not found.', data: null }
+
+    if (preview) {
+      const auth = await requireAuthorBlogPreview(data.author_id as string | null)
+      if (!auth.ok) return { success: false as const, error: auth.error, data: null }
+      if (!['draft', 'pending_review', 'published', 'archived'].includes(data.status as string)) {
+        return { success: false as const, error: 'Post not found.', data: null }
+      }
+    }
     return { success: true as const, data: mapPost(data), isPreview: preview }
   } catch (e: unknown) {
     return { success: false as const, error: e instanceof Error ? e.message : 'Failed to load post.', data: null }

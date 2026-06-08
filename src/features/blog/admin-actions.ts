@@ -166,6 +166,7 @@ export async function createBlogPost(input: unknown) {
 
   const now = new Date().toISOString()
   const isPublished = parsed.data.status === 'published'
+  const isPending = parsed.data.status === 'pending_review'
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -179,6 +180,7 @@ export async function createBlogPost(input: unknown) {
       author_id: user?.id ?? null,
       status: parsed.data.status,
       published_at: isPublished ? now : null,
+      submitted_at: isPending ? now : null,
       meta_title: parsed.data.metaTitle ?? null,
       meta_description: parsed.data.metaDescription ?? null,
       tags: parsed.data.tags,
@@ -202,12 +204,24 @@ export async function updateBlogPost(id: string, input: unknown) {
   if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
 
   const supabase = await createClient()
-  const { data: existing } = await supabase.from('blog_posts').select('slug, status, published_at, cover_image_url').eq('id', id).single()
+  const { data: existing } = await supabase
+    .from('blog_posts')
+    .select('slug, status, published_at, submitted_at, cover_image_url')
+    .eq('id', id)
+    .single()
 
   const now = new Date().toISOString()
   const isPublished = parsed.data.status === 'published'
-  let publishedAt = existing?.published_at ?? null
-  if (isPublished && !publishedAt) publishedAt = now
+  const isPending = parsed.data.status === 'pending_review'
+  let publishedAt: string | null = null
+  if (isPublished) {
+    publishedAt = existing?.published_at ?? now
+  }
+  let submittedAt = existing?.submitted_at ?? null
+  if (isPending && !submittedAt) submittedAt = now
+  if (!isPending && existing?.status === 'pending_review' && parsed.data.status === 'draft') {
+    submittedAt = null
+  }
 
   if (
     existing?.cover_image_url &&
@@ -228,6 +242,11 @@ export async function updateBlogPost(id: string, input: unknown) {
       category_id: parsed.data.categoryId ?? null,
       status: parsed.data.status,
       published_at: publishedAt,
+      submitted_at: isPending
+        ? submittedAt ?? now
+        : parsed.data.status === 'draft'
+          ? null
+          : submittedAt,
       meta_title: parsed.data.metaTitle ?? null,
       meta_description: parsed.data.metaDescription ?? null,
       tags: parsed.data.tags,
@@ -243,6 +262,87 @@ export async function updateBlogPost(id: string, input: unknown) {
   if (existing?.slug) revalidatePath(`/blog/${existing.slug}`)
   if (data?.slug) revalidatePath(`/blog/${data.slug}`)
   return { success: true as const, slug: data!.slug }
+}
+
+export async function approveBlogPost(id: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: existing } = await supabase
+    .from('blog_posts')
+    .select('slug, status, category_id')
+    .eq('id', id)
+    .single()
+
+  if (!existing) return { success: false as const, error: 'Article not found.' }
+  if (existing.status !== 'pending_review') {
+    return { success: false as const, error: 'Only articles pending review can be approved.' }
+  }
+  if (!existing.category_id) {
+    return { success: false as const, error: 'Assign a category before approving.' }
+  }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('blog_posts')
+    .update({
+      status: 'published',
+      published_at: now,
+      reviewed_at: now,
+      reviewed_by: user?.id ?? null,
+      updated_at: now,
+    })
+    .eq('id', id)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/blog')
+  revalidatePath('/blog')
+  if (existing.slug) revalidatePath(`/blog/${existing.slug}`)
+  return { success: true as const }
+}
+
+export async function rejectBlogPost(id: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: existing } = await supabase
+    .from('blog_posts')
+    .select('slug, status')
+    .eq('id', id)
+    .single()
+
+  if (!existing) return { success: false as const, error: 'Article not found.' }
+  if (existing.status !== 'pending_review') {
+    return { success: false as const, error: 'Only articles pending review can be rejected.' }
+  }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('blog_posts')
+    .update({
+      status: 'draft',
+      published_at: null,
+      submitted_at: null,
+      reviewed_at: now,
+      reviewed_by: user?.id ?? null,
+      updated_at: now,
+    })
+    .eq('id', id)
+
+  if (error) return { success: false as const, error: error.message }
+  revalidatePath('/application/enter/blog')
+  revalidatePath('/dashboard/blog')
+  return { success: true as const }
 }
 
 export async function deleteBlogPost(id: string) {
