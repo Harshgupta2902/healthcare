@@ -1,6 +1,6 @@
 # HealthHere
 
-**HealthHere** is a modern healthcare platform for discovering consultants, booking consultations, and managing patient and professional health records—all in one place. The product combines a public marketing site, role-based dashboards, and an admin operations panel, backed by Supabase and deployed on Next.js.
+**HealthHere** is a modern healthcare platform for discovering consultants, booking consultations, reading clinical insights, and managing patient and professional health records—all in one place. The product combines a public marketing site and blog, role-based dashboards, and an admin operations panel, backed by Supabase and deployed on Next.js.
 
 ---
 
@@ -10,11 +10,12 @@ Visitors browse services and consultants, then book a consultation **with or wit
 
 | Area | What happens |
 |------|----------------|
-| **Public site** | Marketing pages, consultant directory, contact form, newsletter signup, AI assistant |
+| **Public site** | Marketing pages, consultant directory, **blog**, contact form, newsletter signup, AI assistant |
+| **Blog** | Published articles with categories, engagement (views/likes/comments), and recommended reading |
 | **Booking** | Guest fills the consultation form → confirmation page → optional account link later |
-| **Patient dashboard** | Profile, medical history, medications, documents, insurance, own bookings |
-| **Professional dashboard** | Profile, qualifications, weekly availability, clients, appointments, prescriptions for assigned guests |
-| **Admin panel** | Users, professionals, appointments, clinical records, newsletter, enquiries, notifications |
+| **Patient dashboard** | Profile, medical history, medications, documents, insurance, own bookings, **write blog drafts** |
+| **Professional dashboard** | Profile, qualifications, weekly availability, clients, appointments, prescriptions, **write blog drafts** |
+| **Admin panel** | Users, professionals, appointments, clinical records, **blog publishing**, newsletter, enquiries, notifications |
 | **Meetings** | Admin creates link + sends invites (Google Meet if Calendar API is configured; otherwise Jitsi + email) |
 
 ---
@@ -45,6 +46,7 @@ Visitors browse services and consultants, then book a consultation **with or wit
 | Typography | Inter (body), Manrope (headings) |
 | Backend & database | Supabase (Auth, Postgres, Storage, Row Level Security) |
 | Mutations | Next.js Server Actions with Zod validation |
+| Content authoring | Lexical editor (rich text + Markdown mode), `react-markdown`, remark-gfm |
 | Email | Nodemailer (Gmail SMTP) |
 | Video meetings | Google Calendar API + Meet (optional) or Jitsi (fallback) |
 | Maps | Google Maps / Places |
@@ -75,7 +77,7 @@ flowchart LR
 
 | Role | Access | Primary goals |
 |------|--------|----------------|
-| **Visitor** | Public pages, guest booking, contact, newsletter | Find care, book a consultation, learn about services |
+| **Visitor** | Public pages, blog, guest booking, contact, newsletter | Find care, read clinical insights, book a consultation |
 | **Client** | `/dashboard` (client view) | Manage health profile, documents, and consultation requests |
 | **Professional** | `/dashboard` (professional view) | Manage availability, clients, appointments, qualifications, guest prescriptions |
 | **Admin** | `/application/enter/*` | Operate the platform: users, bookings, content, campaigns, enquiries |
@@ -142,10 +144,16 @@ Marketing and trust content for patients and professionals.
 | Book consultation | Multi-step guest form (patient details, location, slot, message) |
 | Booking success | Confirmation using a secure appointment reference |
 | Contact | Enquiry form stored for admin review |
+| **Blog** (`/blog`) | Clinical insights listing with category filters, featured hero, and pagination |
+| **Blog article** (`/blog/[slug]`) | Full article layout: author meta, views/likes, cover image, markdown/HTML body, share row, sidebar recommendations, comments |
 | Support, Terms, Privacy, Accessibility | Legal and help content |
 | Login / Register | Supabase Auth; rate-limited sign-up and sign-in |
 
 **HealthHere Assistant** — contextual help on public and dashboard pages (suggested questions, links into booking and dashboard).
+
+**Blog listing** — featured article on page 1, sticky category pills, responsive card grid, and shared `NewsletterSubscribe` band above the footer.
+
+**Blog article detail** — two-column layout: article body (2/3) plus sidebar (1/3) with five latest recommended posts and a stacked **Weekly Briefing** newsletter card. Signed-in patients and consultants can like articles and join threaded discussions at the end of the page.
 
 ---
 
@@ -174,6 +182,7 @@ Single entry point; the UI switches based on `users.role`.
 - Uploaded medical documents (Supabase Storage)  
 - Insurance information  
 - **Consultation requests** — guest bookings linked by email, including meeting link when admin has created one  
+- **My articles** (`/dashboard/blog`) — write drafts, submit for admin review, preview unpublished work  
 
 ---
 
@@ -187,6 +196,7 @@ Single entry point; the UI switches based on `users.role`.
 - **Calendar view** — availability vs. fixed appointments  
 - Registered **appointments** and **consultation requests** with clients  
 - **Guest bookings assigned to them** — read details, write **prescription** (rich HTML), view meeting URL when set  
+- **My articles** (`/dashboard/blog`) — same author workflow as clients (draft → submit for review)  
 
 Activity (e.g. new calendar slot) can surface as in-app notifications.
 
@@ -209,9 +219,77 @@ Restricted to users with `role = admin`. Glass-style sidebar navigation.
 | **Insurance** | Insurance records per client |
 | **Newsletter** | Subscriber list, status, ban/resubscribe |
 | **Campaigns** | Rich-email broadcasts to subscribers (Lexical editor) |
+| **Blog** | Article queue, categories, approve/reject workflow, direct publish |
 | **Enquiries** | Contact form submissions |
 
 All mutations go through **admin Server Actions** with Zod schemas and `requireAdmin()` checks.
+
+---
+
+### Blog & content publishing
+
+HealthHere includes a full editorial workflow for clinical insights and wellness articles.
+
+#### Public blog (`/blog`, `/blog/[slug]`)
+
+| Feature | Behavior |
+|---------|----------|
+| **Listing** | Published posts with category filter, pagination, featured hero on page 1 |
+| **Article page** | Category pill, title, author row, view/like counts, 21:9 cover image, rich content |
+| **Content rendering** | HTML or Markdown (auto-detected); GFM support via `react-markdown` + typography styles |
+| **Engagement** | View counter (device fingerprint), likes (signed-in clients/professionals), threaded comments with replies |
+| **Sidebar** | Five latest recommended articles + stacked newsletter signup card |
+| **Share row** | Web Share API / clipboard copy, bookmark toggle, tag pills |
+| **SEO** | Per-article `meta_title`, `meta_description`, Open Graph image, canonical paths |
+| **Preview** | Authors and admins can preview drafts via `?preview=1` (noindex) |
+
+#### Author workflow (clients & professionals)
+
+Routes under **`/dashboard/blog`** (login required).
+
+```mermaid
+flowchart LR
+  D[Draft] -->|Submit for review| P[pending_review]
+  P -->|Admin approves| Pub[published + published_at]
+  P -->|Admin rejects| D
+  Pub -->|Admin archives| A[archived]
+```
+
+| Step | Detail |
+|------|--------|
+| **Create / edit** | Lexical rich editor with **Markdown mode** and `.md` file import |
+| **Save as draft** | Stored with `status = draft`; not visible on the public site |
+| **Submit for review** | Sets `status = pending_review`; requires category |
+| **After approval** | Admin sets `published` and `published_at`; article appears on `/blog` |
+| **Ownership** | `author_id` is taken from the signed-in session on create |
+| **Cover image** | Upload to `public/uploads/blogs/` (JPEG, PNG, WebP, GIF; max 5 MB) |
+
+Authors can only edit their own posts while status is `draft` or `pending_review`.
+
+#### Admin blog (`/application/enter/blog`)
+
+| Area | Routes / actions |
+|------|------------------|
+| **Posts** | `/application/enter/blog` — search, filter by status/category, approve, reject, edit, delete |
+| **New / edit** | `/application/enter/blog/new`, `/application/enter/blog/[id]/edit` — full publish controls |
+| **Categories** | `/application/enter/blog/categories` — CRUD for `blog_categories` (slug, sort order, active flag) |
+| **Approve** | `pending_review` → `published`; sets `published_at`, `reviewed_at`, `reviewed_by` |
+| **Reject** | `pending_review` → `draft`; clears submission timestamps |
+
+Admins can publish immediately, bypassing the author review queue when needed.
+
+#### Blog Server Actions & libraries
+
+| Path | Responsibility |
+|------|----------------|
+| `src/features/blog/actions.ts` | Public reads, views, likes, comments |
+| `src/features/blog/author-actions.ts` | Author CRUD (draft / pending review only) |
+| `src/features/blog/admin-actions.ts` | Admin CRUD, categories, approve/reject |
+| `src/features/blog/schema.ts` | Zod schemas for posts, categories, comments, engagement |
+| `src/lib/blog/sanitize-html.ts` | Content sanitization and markdown detection |
+| `src/lib/blog/format.ts` | Date formatting, read-time estimate, count formatting |
+| `src/lib/blog/comment-tree.ts` | Nested comment thread builder |
+| `src/components/blog/BlogArticleContent.tsx` | Markdown/HTML article renderer |
 
 ---
 
@@ -256,6 +334,8 @@ Appointment times for guest slots are interpreted as **India Standard Time (IST)
 | Feature | Behavior |
 |---------|----------|
 | Footer / home subscribe | Adds to `newsletter_subscribers`; welcome email via SMTP |
+| Blog listing band | Full-width `NewsletterSubscribe` variant on `/blog` |
+| Blog article sidebar | Stacked **card** variant (`Weekly Briefing`) with email input + subscribe button |
 | Unsubscribe | Tokenized one-click page (`/unsubscribe`); RFC 8058 headers on marketing mail |
 | Admin campaigns | Compose HTML, send broadcast, archive in `newsletter_campaigns` with per-recipient delivery rows |
 | Rate limits | Separate buckets for subscribe vs. register vs. login (documented in [docs/RATE_LIMITS.md](./docs/RATE_LIMITS.md)) |
@@ -323,6 +403,29 @@ flowchart LR
   A -->|Reject| R[Not approved]
 ```
 
+### Blog publishing (author → admin → public)
+
+```mermaid
+sequenceDiagram
+  participant Author as Client / Professional
+  participant Dash as /dashboard/blog
+  participant DB as Supabase
+  participant Admin as Admin panel
+  participant Public as /blog
+
+  Author->>Dash: Write article (HTML or Markdown)
+  Author->>DB: Save draft or submit pending_review
+  Admin->>DB: Review queue
+  alt Approved
+    Admin->>DB: status=published, published_at=now
+    Public->>DB: Read published post
+    Public->>Public: Views, likes, comments
+  else Rejected
+    Admin->>DB: status=draft
+    Author->>Dash: Revise and resubmit
+  end
+```
+
 ---
 
 ## Data & security
@@ -337,7 +440,10 @@ flowchart LR
 | Clinical | `client_medical_profiles`, `medical_history`, `medications`, `medical_documents` | Client-owned; admin override |
 | Professionals | `professional_profiles`, `professional_qualifications` | Verification workflow |
 | Comms | `newsletter_subscribers`, `newsletter_campaigns`, `contact_enquiries` | Marketing & support |
+| **Blog** | `blog_categories`, `blog_posts`, `blog_comments`, `blog_post_likes`, `blog_post_views` | Content, engagement, moderation |
 | Ops | `admin_notifications`, rate limit buckets | Internal visibility |
+
+**Blog post statuses:** `draft`, `pending_review`, `published`, `archived`. Only `published` posts are public; `published_at` is set on admin approval, not on author submit.
 
 Schema source of truth: **`SUPABASE_SETUP.sql`** (initial) and **`updates.sql`** (incremental migrations you apply in Supabase SQL editor).
 
@@ -378,10 +484,16 @@ High-level folders (no implementation detail):
 
 | Path | Responsibility |
 |------|----------------|
-| `src/app/` | Routes: marketing pages, `book-consultation`, `dashboard`, `application/enter` admin |
-| `src/features/` | Server Actions grouped by domain (`admin`, `client`, `professional`, `assistant`, `profile`) |
-| `src/components/` | Shared UI, layout chrome, assistant, marketing sections |
+| `src/app/` | Routes: marketing pages, `blog`, `book-consultation`, `dashboard`, `application/enter` admin |
+| `src/app/blog/` | Public listing (`BlogListingContent`) and article detail (`[slug]`) |
+| `src/app/dashboard/blog/` | Author dashboard: list, create, edit own articles |
+| `src/app/application/enter/blog/` | Admin blog: posts table, editor, categories, approve/reject |
+| `src/features/` | Server Actions by domain (`admin`, `client`, `professional`, `assistant`, `profile`, **`blog`**) |
+| `src/features/blog/` | Public engagement, author CRUD, admin publishing, Zod schemas |
+| `src/components/` | Shared UI, layout chrome, assistant, marketing sections, **`blog/BlogArticleContent`** |
+| `src/lib/blog/` | Sanitization, markdown detection, slugify, cover uploads, comment tree, formatting |
 | `src/lib/` | Supabase clients, mailer, calendar/meeting helpers, SEO, utilities |
+| `public/uploads/blogs/` | Blog cover images (local filesystem) |
 | `docs/` | Rate limits, analytics runbooks |
 | `SUPABASE_SETUP.sql` | Full database bootstrap |
 | `updates.sql` | Patches to apply after initial setup |
