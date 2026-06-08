@@ -147,6 +147,22 @@ export async function getRelatedBlogPosts(postId: string, categoryId: string | n
   }
 }
 
+export async function getRecommendedBlogPosts(postId: string, limit = 5) {
+  try {
+    const supabase = createSupabasePublic()
+    const { data } = await supabase
+      .from('blog_posts')
+      .select(POST_LIST_SELECT)
+      .eq('status', 'published')
+      .neq('id', postId)
+      .order('published_at', { ascending: false })
+      .limit(limit)
+    return (data || []).map(mapPost)
+  } catch {
+    return []
+  }
+}
+
 export async function getBlogComments(postId: string, page = 1, limit = 20) {
   try {
     const supabase = createSupabasePublic()
