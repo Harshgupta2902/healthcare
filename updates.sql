@@ -447,4 +447,101 @@ ALTER TABLE public.blog_comments
 CREATE INDEX IF NOT EXISTS blog_comments_parent_id_idx
   ON public.blog_comments (parent_id)
   WHERE parent_id IS NOT NULL AND deleted_at IS NULL;
-  
+
+-- 2026-06-08: Blog approval workflow — clients/professionals submit; admin approves to publish.
+-- published_at is set only when status becomes 'published' (on admin approval).
+
+ALTER TABLE public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_status_check;
+ALTER TABLE public.blog_posts
+  ADD CONSTRAINT blog_posts_status_check
+  CHECK (status IN ('draft', 'pending_review', 'published', 'archived'));
+
+ALTER TABLE public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_published_requires_category;
+ALTER TABLE public.blog_posts
+  ADD CONSTRAINT blog_posts_published_requires_category CHECK (
+    status NOT IN ('published', 'pending_review') OR category_id IS NOT NULL
+  );
+
+ALTER TABLE public.blog_posts ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ;
+ALTER TABLE public.blog_posts ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE public.blog_posts ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL;
+
+GRANT INSERT, UPDATE ON public.blog_posts TO authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors read own blog posts'
+  ) THEN
+    CREATE POLICY "Authors read own blog posts" ON public.blog_posts FOR SELECT TO authenticated
+    USING (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors insert own blog posts'
+  ) THEN
+    CREATE POLICY "Authors insert own blog posts" ON public.blog_posts FOR INSERT TO authenticated
+    WITH CHECK (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+      AND published_at IS NULL
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors update own blog posts'
+  ) THEN
+    CREATE POLICY "Authors update own blog posts" ON public.blog_posts FOR UPDATE TO authenticated
+    USING (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+    )
+    WITH CHECK (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+      AND published_at IS NULL
+    );
+  END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION public.blog_posts_enforce_publish_rules()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  IF NEW.status = 'published' OR NEW.published_at IS NOT NULL THEN
+    SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+    IF v_role IS DISTINCT FROM 'admin' THEN
+      RAISE EXCEPTION 'Only admins can publish blog posts.';
+    END IF;
+  END IF;
+
+  IF NEW.status = 'published' AND NEW.published_at IS NULL THEN
+    NEW.published_at := NOW();
+  END IF;
+
+  IF NEW.status IN ('draft', 'pending_review') THEN
+    NEW.published_at := NULL;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_blog_posts_enforce_publish_rules ON public.blog_posts;
+CREATE TRIGGER trg_blog_posts_enforce_publish_rules
+  BEFORE INSERT OR UPDATE ON public.blog_posts
+  FOR EACH ROW EXECUTE PROCEDURE public.blog_posts_enforce_publish_rules();

@@ -1072,8 +1072,11 @@ CREATE TABLE IF NOT EXISTS public.blog_posts (
   cover_image_url TEXT,
   category_id UUID REFERENCES public.blog_categories(id) ON DELETE SET NULL,
   author_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending_review', 'published', 'archived')),
   published_at TIMESTAMPTZ,
+  submitted_at TIMESTAMPTZ,
+  reviewed_at TIMESTAMPTZ,
+  reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
   meta_title TEXT,
   meta_description TEXT,
   tags TEXT[] NOT NULL DEFAULT '{}',
@@ -1083,7 +1086,7 @@ CREATE TABLE IF NOT EXISTS public.blog_posts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT blog_posts_published_requires_category CHECK (
-    status <> 'published' OR category_id IS NOT NULL
+    status NOT IN ('published', 'pending_review') OR category_id IS NOT NULL
   )
 );
 
@@ -1133,6 +1136,7 @@ ALTER TABLE public.blog_post_likes ENABLE ROW LEVEL SECURITY;
 
 GRANT SELECT ON public.blog_categories TO anon, authenticated;
 GRANT SELECT ON public.blog_posts TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.blog_posts TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.blog_comments TO authenticated;
 GRANT SELECT, INSERT, DELETE ON public.blog_post_likes TO authenticated;
 
@@ -1159,6 +1163,36 @@ BEGIN
     CREATE POLICY "Admins manage blog posts" ON public.blog_posts FOR ALL TO authenticated
     USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
     WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors read own blog posts') THEN
+    CREATE POLICY "Authors read own blog posts" ON public.blog_posts FOR SELECT TO authenticated
+    USING (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors insert own blog posts') THEN
+    CREATE POLICY "Authors insert own blog posts" ON public.blog_posts FOR INSERT TO authenticated
+    WITH CHECK (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+      AND published_at IS NULL
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Authors update own blog posts') THEN
+    CREATE POLICY "Authors update own blog posts" ON public.blog_posts FOR UPDATE TO authenticated
+    USING (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+    )
+    WITH CHECK (
+      author_id = auth.uid()
+      AND (SELECT role FROM public.users WHERE id = auth.uid()) IN ('client', 'professional')
+      AND status IN ('draft', 'pending_review')
+      AND published_at IS NULL
+    );
   END IF;
 END$$;
 
@@ -1308,3 +1342,36 @@ DROP TRIGGER IF EXISTS trg_refresh_blog_comment_count ON public.blog_comments;
 CREATE TRIGGER trg_refresh_blog_comment_count
   AFTER INSERT OR UPDATE OR DELETE ON public.blog_comments
   FOR EACH ROW EXECUTE PROCEDURE public.refresh_blog_comment_count();
+
+CREATE OR REPLACE FUNCTION public.blog_posts_enforce_publish_rules()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  IF NEW.status = 'published' OR NEW.published_at IS NOT NULL THEN
+    SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+    IF v_role IS DISTINCT FROM 'admin' THEN
+      RAISE EXCEPTION 'Only admins can publish blog posts.';
+    END IF;
+  END IF;
+
+  IF NEW.status = 'published' AND NEW.published_at IS NULL THEN
+    NEW.published_at := NOW();
+  END IF;
+
+  IF NEW.status IN ('draft', 'pending_review') THEN
+    NEW.published_at := NULL;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_blog_posts_enforce_publish_rules ON public.blog_posts;
+CREATE TRIGGER trg_blog_posts_enforce_publish_rules
+  BEFORE INSERT OR UPDATE ON public.blog_posts
+  FOR EACH ROW EXECUTE PROCEDURE public.blog_posts_enforce_publish_rules();
