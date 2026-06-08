@@ -2,19 +2,23 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, BadgeCheck, Calendar, Clock, Sparkles, Tag } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 import {
   getBlogComments,
   getBlogPostBySlug,
   getCurrentUserLike,
-  getRelatedBlogPosts,
+  getRecommendedBlogPosts,
 } from '@/features/blog/actions'
 import { getBlogSessionUser } from '@/features/blog/auth'
 import { formatBlogDate, estimateReadMinutes } from '@/lib/blog/format'
 import { BlogArticleBody } from './BlogArticleBody'
 import { BlogPostInteractive } from './BlogPostInteractive'
+import { BlogPostEngagementBar } from './BlogPostEngagementBar'
+import { BlogPostSidebar } from './BlogPostSidebar'
+import { BlogPostShareRow } from './BlogPostShareRow'
 import { LpButton } from '@/components/ui/lp-button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -52,11 +56,11 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
 
   const post = result.data
 
-  const [commentsResult, liked, engagementUser, related] = await Promise.all([
+  const [commentsResult, liked, engagementUser, recommended] = await Promise.all([
     getBlogComments(post.id),
     isPreview ? Promise.resolve(false) : getCurrentUserLike(post.id),
     isPreview ? Promise.resolve(null) : getBlogSessionUser(),
-    getRelatedBlogPosts(post.id, post.category_id),
+    getRecommendedBlogPosts(post.id, 5),
   ])
 
   const comments = commentsResult.success ? commentsResult.data : []
@@ -71,56 +75,56 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
         </div>
       )}
 
-      <article className="pb-16 md:pb-24">
-        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_30%_20%,rgba(0,89,187,0.08)_0%,transparent_55%)]">
-          <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8 md:py-16 lg:px-16">
-            <LpButton asChild variant="ghost" size="sm" className="mb-8 -ml-2 rounded-xl gap-2 text-lp-on-surface-variant">
-              <Link href="/blog">
-                <ArrowLeft className="h-4 w-4" />
-                All articles
-              </Link>
-            </LpButton>
+      <main className="pb-16 md:pb-24">
+        {/* Article header */}
+        <section className="mx-auto mb-8 max-w-[1280px] px-5 md:px-16">
+          <div className="flex flex-col gap-4">
+            
 
-            {post.category && (
-              <Link
-                href={`/blog?category=${post.category.slug}`}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-lp-brand/20 bg-lp-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-lp-brand transition-colors hover:bg-lp-brand/15"
-              >
-                <Tag className="h-3 w-3" />
-                {post.category.name}
-              </Link>
-            )}
-
-            <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
+            <h1 className="font-heading pt-12 text-3xl font-bold leading-tight tracking-tight text-lp-on-surface sm:text-4xl md:text-5xl">
               {post.title}
             </h1>
 
             {post.excerpt && (
-              <p className="mt-4 text-lg leading-relaxed text-lp-on-surface-variant">{post.excerpt}</p>
+              <p className="text-lg leading-relaxed text-lp-on-surface-variant">{post.excerpt}</p>
             )}
 
-            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-lp-on-surface-variant">
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-lp-brand" />
-                {formatBlogDate(post.published_at)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-lp-brand" />
-                {readMin} min read
-              </span>
-              {post.author?.name && (
-                <span className="inline-flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-lp-brand" />
-                  {post.author.name}
-                </span>
-              )}
+            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border border-lp-outline-variant/30">
+                  <AvatarImage src={post.author?.image ?? undefined} alt={post.author?.name ?? 'Author'} />
+                  <AvatarFallback className="bg-lp-surface-container-high text-lp-on-surface">
+                    {(post.author?.name ?? 'A').slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  {post.author?.name && (
+                    <span className="text-sm font-semibold text-lp-on-surface">{post.author.name}</span>
+                  )}
+                  <span className="text-sm text-lp-on-surface-variant">
+                    {formatBlogDate(post.published_at)}
+                    {readMin > 0 && ` · ${readMin} min read`}
+                  </span>
+                </div>
+              </div>
+
+              <BlogPostEngagementBar
+                postId={post.id}
+                slug={post.slug}
+                initialLikeCount={post.like_count}
+                initialLiked={liked}
+                initialViewCount={post.view_count}
+                engagementUser={engagementUser}
+                isPreview={isPreview}
+              />
             </div>
           </div>
-        </div>
+        </section>
 
+        {/* Hero image */}
         {post.cover_image_url && (
-          <div className="mx-auto max-w-4xl px-5 sm:px-8 lg:px-16">
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-lp-outline-variant/30 shadow-lg">
+          <section className="mx-auto mb-12 max-w-[1280px] px-5 md:px-16">
+            <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl shadow-sm">
               <Image
                 src={post.cover_image_url}
                 alt={post.title}
@@ -130,53 +134,34 @@ export default async function BlogPostPage({ params, searchParams }: PageProps) 
                 unoptimized={post.cover_image_url.startsWith('/uploads/')}
               />
             </div>
-          </div>
+          </section>
         )}
 
-        <div className="mx-auto mt-10 max-w-3xl px-5 sm:px-8 lg:px-16">
-          <BlogArticleBody html={post.content_html} />
+        {/* Main content + sidebar */}
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-5 md:px-16 lg:flex-row lg:gap-6">
+          <article className="w-full lg:w-2/3">
+            <BlogArticleBody html={post.content_html} />
 
-          <div className="mt-12 border-t border-lp-outline-variant/25 pt-10">
+            <BlogPostShareRow title={post.title} tags={post.tags ?? []} />
+          </article>
+
+          <BlogPostSidebar recommended={recommended} />
+        </div>
+
+        {/* Comments at the end */}
+        {!isPreview && (
+          <div className="mx-auto mt-12 max-w-[1280px] px-5 md:px-16">
             <BlogPostInteractive
               postId={post.id}
               slug={post.slug}
-              initialLikeCount={post.like_count}
-              initialLiked={liked}
-              initialViewCount={post.view_count}
-              initialCommentCount={post.comment_count}
               initialComments={comments}
               initialCommentsTotal={commentsTotal}
               engagementUser={engagementUser}
               isPreview={isPreview}
             />
           </div>
-        </div>
-      </article>
-
-      {related.length > 0 && (
-        <section className="border-t border-lp-outline-variant/20 bg-lp-surface-container-high/40 py-12 md:py-16">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-16">
-            <h2 className="mb-8 font-heading text-2xl font-bold">Related articles</h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              {related.map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/blog/${r.slug}`}
-                  className="group rounded-2xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-5 transition-shadow hover:shadow-lg"
-                >
-                  {r.category && (
-                    <span className="text-xs font-semibold uppercase tracking-wide text-lp-brand">{r.category.name}</span>
-                  )}
-                  <h3 className="mt-2 font-heading text-lg font-bold group-hover:text-lp-brand">{r.title}</h3>
-                  {r.excerpt && (
-                    <p className="mt-2 line-clamp-2 text-sm text-lp-on-surface-variant">{r.excerpt}</p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+        )}
+      </main>
     </div>
   )
 }
