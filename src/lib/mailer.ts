@@ -2,6 +2,17 @@ import 'server-only'
 
 import nodemailer, { type Transporter } from 'nodemailer'
 import { createUnsubscribeToken } from '@/lib/newsletter-token'
+import {
+  buildEmailShell,
+  emailDetailRow,
+  emailHeading,
+  emailInlineLink,
+  emailList,
+  emailParagraph,
+  emailPrimaryButton,
+  emailUnsubscribeFooter,
+  escapeHtml,
+} from '@/lib/email/brand-template'
 
 /**
  * Singleton SMTP transporter.
@@ -52,70 +63,27 @@ function buildUnsubscribeUrl(email: string): string {
     return `${getAppUrl().replace(/\/+$/, '')}/unsubscribe?t=${encodeURIComponent(token)}`
 }
 
-/**
- * Newsletter welcome email template.
- * Returns the full HTML string. Kept separate so it is easy to tweak
- * without touching the send logic.
- */
 function newsletterWelcomeTemplate(userName: string, unsubscribeUrl: string): string {
     const appUrl = getAppUrl()
+    const safeName = escapeHtml(userName)
 
-    return `
-        <!DOCTYPE html>
-        <html>
-        <body style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
-            <table width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                    <td align="center">
-                        <table width="600" cellspacing="0" cellpadding="0"
-                            style="background:#ffffff; padding:40px; border-radius:12px;">
-                            <tr>
-                                <td align="center">
-                                    <h1 style="color:#0f766e; margin:0 0 16px;">Welcome to HealthHere, ${userName} 👋</h1>
-
-                                    <p style="color:#444; font-size:16px; line-height:24px;">
-                                        Thanks for subscribing to our newsletter. We're excited to have you with us.
-                                    </p>
-
-                                    <p style="color:#444; font-size:16px; line-height:24px;">
-                                        Here's what you can expect from us:
-                                    </p>
-
-                                    <ul style="text-align:left; color:#555; font-size:15px; line-height:22px;">
-                                        <li>Latest health tips and articles</li>
-                                        <li>Updates on new services and features</li>
-                                        <li>Special offers and announcements</li>
-                                    </ul>
-
-                                    <a href="${appUrl}"
-                                        style="
-                                            display:inline-block;
-                                            background:#0f766e;
-                                            color:#ffffff;
-                                            text-decoration:none;
-                                            padding:14px 28px;
-                                            border-radius:8px;
-                                            margin-top:24px;
-                                            font-weight:600;
-                                        ">
-                                        Visit HealthHere
-                                    </a>
-
-                                    <p style="margin-top:32px; color:#999; font-size:12px;">
-                                        Don't want these emails?
-                                        <a href="${unsubscribeUrl}" style="color:#0f766e; text-decoration:underline;">
-                                            Unsubscribe in one click
-                                        </a>.
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
+    const bodyHtml = `
+      ${emailHeading(`Welcome, ${safeName} 👋`)}
+      ${emailParagraph('Thanks for subscribing to our newsletter. We&rsquo;re excited to have you with us.')}
+      ${emailParagraph('Here&rsquo;s what you can expect from us:')}
+      ${emailList([
+        'Latest health tips and articles',
+        'Updates on new services and features',
+        'Special offers and announcements',
+      ])}
+      ${emailPrimaryButton(appUrl, 'Visit HealthHere')}
     `
+
+    return buildEmailShell({
+        appUrl,
+        bodyHtml,
+        footerHtml: emailUnsubscribeFooter(unsubscribeUrl),
+    })
 }
 
 /**
@@ -136,7 +104,6 @@ export async function sendNewsletterEmail(
         to: userEmail,
         subject: 'Welcome to the HealthHere Newsletter 🎉',
         html: newsletterWelcomeTemplate(safeName, unsubscribeUrl),
-        // RFC 8058 — let Gmail / Apple Mail render a native one-click unsubscribe button.
         headers: {
             'List-Unsubscribe': `<${unsubscribeUrl}>`,
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -147,7 +114,7 @@ export async function sendNewsletterEmail(
 }
 
 /**
- * Admin broadcast: rich HTML from Lexical (body fragment) wrapped in a simple shell
+ * Admin broadcast: rich HTML from Lexical (body fragment) wrapped in branded shell
  * with a per-recipient one-click unsubscribe link and RFC 8058 headers.
  */
 export async function sendNewsletterBroadcastEmail(
@@ -156,35 +123,23 @@ export async function sendNewsletterBroadcastEmail(
     innerContentHtml: string
 ): Promise<void> {
     const t = getTransporter()
+    const appUrl = getAppUrl()
     const unsubscribeUrl = buildUnsubscribeUrl(to)
 
-    const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;font-family: Arial, Helvetica, sans-serif; background:#f4f4f4;">
-  <table width="100%" cellspacing="0" cellpadding="0" role="presentation">
-    <tr>
-      <td align="center" style="padding:24px 16px;">
-        <table width="600" cellspacing="0" cellpadding="0" role="presentation"
-          style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
-          <tr>
-            <td style="padding:32px 28px;">
-              <div style="color:#1f2937;font-size:16px;line-height:1.6;">
-                ${innerContentHtml}
-              </div>
-              <p style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.5;">
-                You received this email because you subscribed to HealthHere updates.
-                <a href="${unsubscribeUrl}" style="color:#0f766e;">Unsubscribe</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`
+    const bodyHtml = `
+      <div style="font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#44474d;">
+        ${innerContentHtml}
+      </div>
+    `
+
+    const html = buildEmailShell({
+        appUrl,
+        bodyHtml,
+        footerHtml: emailUnsubscribeFooter(
+            unsubscribeUrl,
+            'You received this email because you subscribed to HealthHere updates.'
+        ),
+    })
 
     const info = await t.sendMail({
         from: getFromAddress(),
@@ -208,48 +163,26 @@ function consultationMeetingInviteTemplate(params: {
 }): string {
     const appUrl = getAppUrl()
 
-    return `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;font-family: Arial, Helvetica, sans-serif; background:#f4f4f4;">
-  <table width="100%" cellspacing="0" cellpadding="0" role="presentation">
-    <tr>
-      <td align="center" style="padding:24px 16px;">
-        <table width="600" cellspacing="0" cellpadding="0" role="presentation"
-          style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
-          <tr>
-            <td style="padding:32px 28px;">
-              <h1 style="margin:0 0 12px;color:#0f766e;font-size:22px;">Your consultation is scheduled</h1>
-              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
-                Hi ${params.recipientName},
-              </p>
-              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 8px;">
-                <strong>When:</strong> ${params.slotLabel}
-              </p>
-              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 20px;">
-                <strong>With:</strong> ${params.otherPartyLabel}
-              </p>
-              <a href="${params.meetUrl}"
-                style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;">
-                Join video meeting
-              </a>
-              <p style="margin-top:20px;color:#6b7280;font-size:14px;line-height:1.5;word-break:break-all;">
-                Or copy this link: <a href="${params.meetUrl}" style="color:#0f766e;">${params.meetUrl}</a>
-              </p>
-              <p style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.5;">
-                A calendar invite (.ics) is attached. Open it to add this appointment to your calendar.
-                <br /><br />
-                <a href="${appUrl}" style="color:#0f766e;">Visit HealthHere</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`
+    const bodyHtml = `
+      ${emailHeading('Your consultation is scheduled')}
+      ${emailParagraph(`Hi ${escapeHtml(params.recipientName)},`)}
+      ${emailDetailRow('When:', params.slotLabel)}
+      ${emailDetailRow('With:', params.otherPartyLabel)}
+      ${emailPrimaryButton(params.meetUrl, 'Join video meeting')}
+      ${emailParagraph(
+        `Or copy this link: ${emailInlineLink(params.meetUrl, params.meetUrl)}`
+      )}
+    `
+
+    return buildEmailShell({
+        appUrl,
+        bodyHtml,
+        footerHtml: `<p style="margin:0;font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#76849f;text-align:center;">
+          A calendar invite (.ics) is attached &mdash; open it to add this appointment to your calendar.
+          <br /><br />
+          ${emailInlineLink(appUrl, 'Visit HealthHere')}
+        </p>`,
+    })
 }
 
 export async function sendConsultationMeetingInviteToGuest(params: {
