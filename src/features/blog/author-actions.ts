@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { zodFirstError } from '@/lib/server-action-result'
-import { sanitizeBlogHtml } from '@/lib/blog/sanitize-html'
+import { sanitizeBlogContent } from '@/lib/blog/sanitize-html'
 import { saveBlogCoverImage, deleteBlogCoverImage } from '@/lib/blog/upload-cover-image'
 import { slugify } from '@/lib/blog/slugify'
 import { requireBlogAuthor } from './auth'
@@ -72,7 +72,7 @@ export async function createAuthorBlogPost(input: unknown) {
       title: parsed.data.title,
       slug: parsed.data.slug,
       excerpt: parsed.data.excerpt ?? null,
-      content_html: sanitizeBlogHtml(parsed.data.contentHtml),
+      content_html: sanitizeBlogContent(parsed.data.contentHtml),
       cover_image_url: parsed.data.coverImageUrl ?? null,
       category_id: parsed.data.categoryId ?? null,
       author_id: auth.user.id,
@@ -131,7 +131,7 @@ export async function updateAuthorBlogPost(id: string, input: unknown) {
       title: parsed.data.title,
       slug: parsed.data.slug,
       excerpt: parsed.data.excerpt ?? null,
-      content_html: sanitizeBlogHtml(parsed.data.contentHtml),
+      content_html: sanitizeBlogContent(parsed.data.contentHtml),
       cover_image_url: parsed.data.coverImageUrl ?? null,
       category_id: parsed.data.categoryId ?? null,
       status: parsed.data.status,

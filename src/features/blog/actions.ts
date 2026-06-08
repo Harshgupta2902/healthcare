@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createSupabasePublic } from '@/lib/supabase/public'
 import { revalidatePath } from 'next/cache'
 import { zodFirstError } from '@/lib/server-action-result'
-import { sanitizeBlogHtml } from '@/lib/blog/sanitize-html'
+import { sanitizeBlogContent } from '@/lib/blog/sanitize-html'
 import { requireAuthorBlogPreview, requireBlogEngagementUser } from './auth'
 import {
   blogCommentSchema,

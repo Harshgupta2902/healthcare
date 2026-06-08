@@ -9,7 +9,10 @@ export function formatBlogDate(iso: string | null): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(iso))
 }
 
-export function estimateReadMinutes(html: string): number {
-  const words = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
+export function estimateReadMinutes(content: string): number {
+  const plain = content
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[#>*_`~\[\]()!|-]/g, ' ')
+  const words = plain.split(/\s+/).filter(Boolean).length
   return Math.max(1, Math.ceil(words / 200))
 }
