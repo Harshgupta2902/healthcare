@@ -1050,3 +1050,261 @@ CREATE POLICY "Public qualification files are viewable by everyone" ON storage.o
 CREATE POLICY "Professionals can upload own qualification documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'qualifications' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Professionals can update own qualification documents" ON storage.objects FOR UPDATE USING (bucket_id = 'qualifications' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Professionals can delete own qualification documents" ON storage.objects FOR DELETE USING (bucket_id = 'qualifications' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- 📰 BLOG CMS (categories, posts, comments, likes, views)
+CREATE TABLE IF NOT EXISTS public.blog_categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.blog_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  excerpt TEXT,
+  content_html TEXT NOT NULL,
+  cover_image_url TEXT,
+  category_id UUID REFERENCES public.blog_categories(id) ON DELETE SET NULL,
+  author_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  published_at TIMESTAMPTZ,
+  meta_title TEXT,
+  meta_description TEXT,
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  view_count BIGINT NOT NULL DEFAULT 0,
+  like_count BIGINT NOT NULL DEFAULT 0,
+  comment_count BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT blog_posts_published_requires_category CHECK (
+    status <> 'published' OR category_id IS NOT NULL
+  )
+);
+
+CREATE INDEX IF NOT EXISTS blog_posts_status_published_at_idx
+  ON public.blog_posts (status, published_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS blog_posts_category_id_idx ON public.blog_posts (category_id);
+
+CREATE TABLE IF NOT EXISTS public.blog_post_views (
+  id BIGSERIAL PRIMARY KEY,
+  post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
+  viewer_key TEXT NOT NULL,
+  viewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (post_id, viewer_key)
+);
+
+CREATE TABLE IF NOT EXISTS public.blog_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  parent_id UUID REFERENCES public.blog_comments(id) ON DELETE CASCADE,
+  body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 2000),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS blog_comments_post_created_idx
+  ON public.blog_comments (post_id, created_at DESC)
+  WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS blog_comments_parent_id_idx
+  ON public.blog_comments (parent_id)
+  WHERE parent_id IS NOT NULL AND deleted_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS public.blog_post_likes (
+  post_id UUID NOT NULL REFERENCES public.blog_posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (post_id, user_id)
+);
+
+ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_post_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blog_post_likes ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON public.blog_categories TO anon, authenticated;
+GRANT SELECT ON public.blog_posts TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.blog_comments TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.blog_post_likes TO authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_categories' AND policyname = 'Public read active blog categories') THEN
+    CREATE POLICY "Public read active blog categories" ON public.blog_categories FOR SELECT TO anon, authenticated
+    USING (is_active = TRUE);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_categories' AND policyname = 'Admins manage blog categories') THEN
+    CREATE POLICY "Admins manage blog categories" ON public.blog_categories FOR ALL TO authenticated
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+    WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Public read published blog posts') THEN
+    CREATE POLICY "Public read published blog posts" ON public.blog_posts FOR SELECT TO anon, authenticated
+    USING (status = 'published');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_posts' AND policyname = 'Admins manage blog posts') THEN
+    CREATE POLICY "Admins manage blog posts" ON public.blog_posts FOR ALL TO authenticated
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+    WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_comments' AND policyname = 'Read comments on published posts') THEN
+    CREATE POLICY "Read comments on published posts" ON public.blog_comments FOR SELECT TO anon, authenticated
+    USING (
+      deleted_at IS NULL
+      AND EXISTS (SELECT 1 FROM public.blog_posts p WHERE p.id = post_id AND p.status = 'published')
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_comments' AND policyname = 'Engagement users insert comments') THEN
+    CREATE POLICY "Engagement users insert comments" ON public.blog_comments FOR INSERT TO authenticated
+    WITH CHECK (
+      user_id = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('client', 'professional'))
+      AND EXISTS (SELECT 1 FROM public.blog_posts p WHERE p.id = post_id AND p.status = 'published')
+    );
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_comments' AND policyname = 'Users update own comments') THEN
+    CREATE POLICY "Users update own comments" ON public.blog_comments FOR UPDATE TO authenticated
+    USING (user_id = auth.uid() AND deleted_at IS NULL)
+    WITH CHECK (user_id = auth.uid());
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_comments' AND policyname = 'Admins manage all blog comments') THEN
+    CREATE POLICY "Admins manage all blog comments" ON public.blog_comments FOR ALL TO authenticated
+    USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+    WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_post_likes' AND policyname = 'Read likes on published posts') THEN
+    CREATE POLICY "Read likes on published posts" ON public.blog_post_likes FOR SELECT TO anon, authenticated
+    USING (EXISTS (SELECT 1 FROM public.blog_posts p WHERE p.id = post_id AND p.status = 'published'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'blog_post_likes' AND policyname = 'Engagement users manage own likes') THEN
+    CREATE POLICY "Engagement users manage own likes" ON public.blog_post_likes FOR ALL TO authenticated
+    USING (
+      user_id = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('client', 'professional'))
+    )
+    WITH CHECK (
+      user_id = auth.uid()
+      AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('client', 'professional'))
+      AND EXISTS (SELECT 1 FROM public.blog_posts p WHERE p.id = post_id AND p.status = 'published')
+    );
+  END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION public.increment_blog_post_view(p_post_id UUID, p_viewer_key TEXT)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_inserted BOOLEAN := FALSE;
+  v_count BIGINT;
+BEGIN
+  IF p_viewer_key IS NULL OR length(trim(p_viewer_key)) < 8 THEN
+    SELECT view_count INTO v_count FROM public.blog_posts WHERE id = p_post_id AND status = 'published';
+    RETURN COALESCE(v_count, 0);
+  END IF;
+
+  INSERT INTO public.blog_post_views (post_id, viewer_key)
+  VALUES (p_post_id, p_viewer_key)
+  ON CONFLICT (post_id, viewer_key) DO NOTHING;
+
+  GET DIAGNOSTICS v_inserted = ROW_COUNT;
+  IF v_inserted THEN
+    UPDATE public.blog_posts
+       SET view_count = view_count + 1
+     WHERE id = p_post_id AND status = 'published';
+  END IF;
+
+  SELECT view_count INTO v_count FROM public.blog_posts WHERE id = p_post_id AND status = 'published';
+  RETURN COALESCE(v_count, 0);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.increment_blog_post_view(UUID, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.increment_blog_post_view(UUID, TEXT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.toggle_blog_post_like(p_post_id UUID, p_user_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_liked BOOLEAN := FALSE;
+  v_count BIGINT;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = p_user_id AND u.role IN ('client', 'professional')
+  ) THEN
+    RAISE EXCEPTION 'Only patients and consultants can like posts.';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.blog_posts WHERE id = p_post_id AND status = 'published') THEN
+    RAISE EXCEPTION 'Post not found or not published.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.blog_post_likes WHERE post_id = p_post_id AND user_id = p_user_id) THEN
+    DELETE FROM public.blog_post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
+    UPDATE public.blog_posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = p_post_id;
+    v_liked := FALSE;
+  ELSE
+    INSERT INTO public.blog_post_likes (post_id, user_id) VALUES (p_post_id, p_user_id);
+    UPDATE public.blog_posts SET like_count = like_count + 1 WHERE id = p_post_id;
+    v_liked := TRUE;
+  END IF;
+
+  SELECT like_count INTO v_count FROM public.blog_posts WHERE id = p_post_id;
+  RETURN json_build_object('liked', v_liked, 'likeCount', COALESCE(v_count, 0));
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.toggle_blog_post_like(UUID, UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.toggle_blog_post_like(UUID, UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.refresh_blog_comment_count()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_post_id UUID;
+BEGIN
+  v_post_id := COALESCE(NEW.post_id, OLD.post_id);
+  UPDATE public.blog_posts
+     SET comment_count = (
+       SELECT COUNT(*)::BIGINT FROM public.blog_comments
+       WHERE post_id = v_post_id AND deleted_at IS NULL
+     )
+   WHERE id = v_post_id;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_refresh_blog_comment_count ON public.blog_comments;
+CREATE TRIGGER trg_refresh_blog_comment_count
+  AFTER INSERT OR UPDATE OR DELETE ON public.blog_comments
+  FOR EACH ROW EXECUTE PROCEDURE public.refresh_blog_comment_count();
