@@ -14,8 +14,8 @@ export interface NewsletterSubscribeProps {
   inputId?: string;
   title?: string;
   description?: string;
-  /** Full-width band with background (default). Use `embedded` for a minimal wrapper only. */
-  variant?: "band" | "embedded";
+  /** `band` = full-width section; `card` = stacked sidebar card; `embedded` = minimal wrapper only. */
+  variant?: "band" | "card" | "embedded";
 }
 
 const DEFAULT_TITLE = "Stay Updated";
@@ -136,6 +136,57 @@ export function NewsletterSubscribe({
       )}
     </div>
   );
+
+  if (variant === "card") {
+    return (
+      <section
+        className={cn(
+          "rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-8",
+          className,
+        )}
+      >
+        <h4 className="mb-2 font-heading text-xl font-semibold text-lp-on-surface">{title}</h4>
+        <p className="mb-4 text-sm text-lp-on-surface-variant">{description}</p>
+
+        {isSuccess ? (
+          <p className="text-sm font-medium text-lp-on-surface">
+            Successfully subscribed. Check your inbox for confirmation.
+          </p>
+        ) : (
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3">
+            <input
+              id={inputId}
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
+              aria-label="Email address for newsletter"
+              aria-invalid={!!error}
+              className={cn(
+                "w-full rounded-lg border border-lp-outline-variant bg-lp-surface px-4 py-2 text-sm text-lp-on-surface transition-all placeholder:text-lp-on-surface-variant focus:border-lp-brand focus:outline-none focus:ring-1 focus:ring-lp-brand",
+                error && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
+              )}
+            />
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-lg bg-lp-on-surface py-2 text-sm font-semibold text-lp-surface transition-colors hover:bg-lp-brand disabled:opacity-60"
+            >
+              {isSubmitting ? "Subscribing..." : "Subscribe"}
+            </button>
+            {error ? (
+              <p className="text-xs font-medium text-red-600" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </form>
+        )}
+      </section>
+    );
+  }
 
   if (variant === "embedded") {
     return <section className={cn(className)}>{content}</section>;
