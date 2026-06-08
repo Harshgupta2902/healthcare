@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTransition } from 'react'
-import { ExternalLink, Eye, Heart, MessageSquare } from 'lucide-react'
+import { Check, ExternalLink, Eye, Heart, MessageSquare, X } from 'lucide-react'
 import { DataTable } from '../_components/DataTable'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { deleteBlogPost } from '@/features/blog/admin-actions'
+import { approveBlogPost, deleteBlogPost, rejectBlogPost } from '@/features/blog/admin-actions'
 import type { BlogCategoryRow, BlogPostRow } from '@/features/blog/schema'
 import { toast } from 'sonner'
 import { DeleteDialog } from '../_components/DeleteDialog'
@@ -23,6 +23,7 @@ import { useState } from 'react'
 function statusBadge(status: string) {
   const map: Record<string, string> = {
     draft: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+    pending_review: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300',
     published: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
     archived: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
   }
@@ -72,6 +73,30 @@ export function BlogPostsTable({
     router.push(`/application/enter/blog?${params.toString()}`)
   }
 
+  const handleApprove = (item: BlogPostRow) => {
+    startTransition(async () => {
+      const result = await approveBlogPost(item.id)
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Article approved and published')
+      router.refresh()
+    })
+  }
+
+  const handleReject = (item: BlogPostRow) => {
+    startTransition(async () => {
+      const result = await rejectBlogPost(item.id)
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Article sent back to draft')
+      router.refresh()
+    })
+  }
+
   const handleDelete = () => {
     if (!deleteTarget) return
     startTransition(async () => {
@@ -99,6 +124,13 @@ export function BlogPostsTable({
                 <p className="truncate font-medium text-lp-on-surface">{item.title}</p>
                 <p className="truncate font-mono text-xs text-lp-on-surface-variant">/blog/{item.slug}</p>
               </div>
+            ),
+          },
+          {
+            key: 'author',
+            label: 'Author',
+            render: (item) => (
+              <span className="text-sm text-lp-on-surface-variant">{item.author?.name ?? '—'}</span>
             ),
           },
           {
@@ -152,6 +184,7 @@ export function BlogPostsTable({
               <SelectContent>
                 <SelectItem value="all">All status</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="pending_review">Pending review</SelectItem>
                 <SelectItem value="published">Published</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
@@ -177,6 +210,32 @@ export function BlogPostsTable({
         onDelete={(item) => setDeleteTarget(item)}
         renderRowActions={(item) => (
           <div className="flex items-center gap-1">
+            {item.status === 'pending_review' && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg text-emerald-600 hover:text-emerald-700"
+                  disabled={isPending}
+                  onClick={() => handleApprove(item)}
+                  aria-label="Approve and publish"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg text-red-600 hover:text-red-700"
+                  disabled={isPending}
+                  onClick={() => handleReject(item)}
+                  aria-label="Reject and return to draft"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             {item.status === 'published' && (
               <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
                 <Link href={`/blog/${item.slug}`} target="_blank" rel="noopener noreferrer">

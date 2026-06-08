@@ -25,6 +25,12 @@ import {
   updateBlogPost,
   uploadBlogCoverImage,
 } from '@/features/blog/admin-actions'
+import {
+  createAuthorBlogPost,
+  suggestAuthorBlogSlug,
+  updateAuthorBlogPost,
+  uploadAuthorBlogCoverImage,
+} from '@/features/blog/author-actions'
 import type { BlogCategoryRow, BlogPostRow } from '@/features/blog/schema'
 import { BlogPreviewPanel } from './BlogPreviewPanel'
 
@@ -44,9 +50,11 @@ const LexicalPrescriptionEditor = dynamic(
 type BlogPostEditorProps = {
   categories: BlogCategoryRow[]
   post?: BlogPostRow | null
+  mode?: 'admin' | 'author'
 }
 
-export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
+export function BlogPostEditor({ categories, post, mode = 'admin' }: BlogPostEditorProps) {
+  const isAuthor = mode === 'author'
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const slugTouched = useRef(Boolean(post?.slug))
@@ -62,7 +70,13 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
   const [contentHtml, setContentHtml] = useState(post?.content_html ?? '')
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(post?.cover_image_url ?? null)
   const [categoryId, setCategoryId] = useState(post?.category_id ?? '')
-  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>(post?.status ?? 'draft')
+  const [status, setStatus] = useState<'draft' | 'pending_review' | 'published' | 'archived'>(
+    isAuthor
+      ? post?.status === 'pending_review'
+        ? 'pending_review'
+        : 'draft'
+      : (post?.status ?? 'draft')
+  )
   const [metaTitle, setMetaTitle] = useState(post?.meta_title ?? '')
   const [metaDescription, setMetaDescription] = useState(post?.meta_description ?? '')
 
@@ -76,18 +90,18 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
     async (value: string) => {
       setTitle(value)
       if (!slugTouched.current && value.trim()) {
-        const result = await suggestBlogSlug(value)
+        const result = isAuthor ? await suggestAuthorBlogSlug(value) : await suggestBlogSlug(value)
         if (result.success) setSlug(result.slug)
       }
     },
-    []
+    [isAuthor]
   )
 
   const handleCoverUpload = async (file: File) => {
     setUploading(true)
     const fd = new FormData()
     fd.set('file', file)
-    const result = await uploadBlogCoverImage(fd)
+    const result = isAuthor ? await uploadAuthorBlogCoverImage(fd) : await uploadBlogCoverImage(fd)
     setUploading(false)
     if (!result.success) {
       toast.error(result.error)
@@ -112,28 +126,57 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
         tags: post?.tags ?? [],
       }
 
-      const result = post
-        ? await updateBlogPost(post.id, payload)
-        : await createBlogPost(payload)
+      const authorPayload = {
+        ...payload,
+        status: status === 'pending_review' ? 'pending_review' as const : 'draft' as const,
+      }
+
+      const result = isAuthor
+        ? post
+          ? await updateAuthorBlogPost(post.id, authorPayload)
+          : await createAuthorBlogPost(authorPayload)
+        : post
+          ? await updateBlogPost(post.id, payload)
+          : await createBlogPost(payload)
 
       if (!result.success) {
         toast.error(result.error)
         return
       }
 
-      toast.success(post ? 'Article updated' : 'Article created')
+      toast.success(
+        isAuthor
+          ? status === 'pending_review'
+            ? 'Submitted for admin review'
+            : post
+              ? 'Draft saved'
+              : 'Draft created'
+          : post
+            ? 'Article updated'
+            : 'Article created'
+      )
       if (post) {
         router.refresh()
       } else if ('id' in result) {
-        router.replace(`/application/enter/blog/${result.id}/edit`)
+        router.replace(
+          isAuthor
+            ? `/dashboard/blog/${result.id}/edit`
+            : `/application/enter/blog/${result.id}/edit`
+        )
       }
     })
   }
 
+  const isLockedForAuthor = isAuthor && post?.status === 'pending_review'
+  const fieldsDisabled = isPending || isLockedForAuthor
+
   const canSave =
+    !isLockedForAuthor &&
     title.trim().length > 0 &&
     contentHtml.replace(/<[^>]+>/g, '').trim().length > 0 &&
-    (status !== 'published' || Boolean(categoryId))
+    (isAuthor
+      ? status !== 'pending_review' || Boolean(categoryId)
+      : !['published', 'pending_review'].includes(status) || Boolean(categoryId))
 
   const previewUrl = slug.trim() ? `/blog/${slug.trim()}?preview=1` : null
 
@@ -145,7 +188,9 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
             {post ? 'Edit article' : 'New article'}
           </h2>
           <p className="mt-1 text-sm text-lp-on-surface-variant">
-            Write content, pick a category, and preview before publishing.
+            {isAuthor
+              ? 'Write your article and submit for admin approval. It will go live only after review.'
+              : 'Write content, pick a category, and preview before publishing.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -170,7 +215,7 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
           <Button
             type="button"
             onClick={handleSave}
-            disabled={!canSave || isPending}
+            disabled={!canSave || fieldsDisabled}
             className="rounded-xl gap-2 bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand shadow-lg shadow-lp-brand/25"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -191,7 +236,7 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="e.g. 5 tips for better telehealth visits"
                   className="rounded-xl"
-                  disabled={isPending}
+                  disabled={fieldsDisabled}
                 />
               </div>
               <div className="space-y-2">
@@ -205,12 +250,15 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
                   }}
                   placeholder="5-tips-telehealth"
                   className="rounded-xl font-mono text-sm"
-                  disabled={isPending}
+                  disabled={fieldsDisabled}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Category {status === 'published' && <span className="text-red-500">*</span>}</Label>
-                <Select value={categoryId || undefined} onValueChange={setCategoryId} disabled={isPending}>
+                <Label>
+                  Category{' '}
+                  {['published', 'pending_review'].includes(status) && <span className="text-red-500">*</span>}
+                </Label>
+                <Select value={categoryId || undefined} onValueChange={setCategoryId} disabled={fieldsDisabled}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -225,16 +273,28 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as typeof status)} disabled={isPending}>
+                <Select value={status} onValueChange={(v) => setStatus(v as typeof status)} disabled={fieldsDisabled}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    {isAuthor ? (
+                      <SelectItem value="pending_review">Submit for review</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="pending_review">Pending review</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                {isAuthor && post?.status === 'pending_review' && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    This article is awaiting admin approval and cannot be edited.
+                  </p>
+                )}
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="blog-excerpt">Excerpt</Label>
@@ -244,7 +304,7 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
                   onChange={(e) => setExcerpt(e.target.value)}
                   placeholder="Short summary for listing cards and SEO…"
                   className="min-h-[80px] rounded-xl resize-none"
-                  disabled={isPending}
+                  disabled={fieldsDisabled}
                 />
               </div>
             </div>
@@ -267,7 +327,7 @@ export function BlogPostEditor({ categories, post }: BlogPostEditorProps) {
                   type="button"
                   variant="outline"
                   className="rounded-xl gap-2"
-                  disabled={uploading || isPending}
+                  disabled={uploading || fieldsDisabled}
                   onClick={() => fileRef.current?.click()}
                 >
                   {uploading ? (
