@@ -230,7 +230,7 @@ export async function updateBlogPost(id: string, input: unknown) {
     parsed.data.coverImageUrl &&
     existing.cover_image_url !== parsed.data.coverImageUrl
   ) {
-    await deleteBlogCoverImage(existing.cover_image_url)
+    await deleteBlogCoverImage(supabase, existing.cover_image_url)
   }
 
   const { data, error } = await supabase
@@ -357,7 +357,7 @@ export async function deleteBlogPost(id: string) {
   const { error } = await supabase.from('blog_posts').delete().eq('id', id)
   if (error) return { success: false as const, error: error.message }
 
-  if (existing?.cover_image_url) await deleteBlogCoverImage(existing.cover_image_url)
+  if (existing?.cover_image_url) await deleteBlogCoverImage(supabase, existing.cover_image_url)
   revalidatePath('/application/enter/blog')
   revalidatePath('/blog')
   if (existing?.slug) revalidatePath(`/blog/${existing.slug}`)
@@ -374,7 +374,13 @@ export async function uploadBlogCoverImage(formData: FormData) {
   }
 
   try {
-    const url = await saveBlogCoverImage(file)
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return { success: false as const, error: 'Not authenticated.' }
+
+    const url = await saveBlogCoverImage(supabase, user.id, file)
     return { success: true as const, url }
   } catch (e: unknown) {
     return { success: false as const, error: e instanceof Error ? e.message : 'Upload failed.' }

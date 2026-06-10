@@ -122,7 +122,7 @@ export async function updateAuthorBlogPost(id: string, input: unknown) {
     parsed.data.coverImageUrl &&
     existing.cover_image_url !== parsed.data.coverImageUrl
   ) {
-    await deleteBlogCoverImage(existing.cover_image_url)
+    await deleteBlogCoverImage(supabase, existing.cover_image_url)
   }
 
   const { data, error } = await supabase
@@ -175,7 +175,7 @@ export async function deleteAuthorBlogPost(id: string) {
   const { error } = await supabase.from('blog_posts').delete().eq('id', id).eq('author_id', auth.user.id)
   if (error) return { success: false as const, error: error.message }
 
-  if (existing.cover_image_url) await deleteBlogCoverImage(existing.cover_image_url)
+  if (existing.cover_image_url) await deleteBlogCoverImage(supabase, existing.cover_image_url)
   revalidatePath('/dashboard/blog')
   return { success: true as const }
 }
@@ -190,7 +190,8 @@ export async function uploadAuthorBlogCoverImage(formData: FormData) {
   }
 
   try {
-    const url = await saveBlogCoverImage(file)
+    const supabase = await createClient()
+    const url = await saveBlogCoverImage(supabase, auth.user.id, file)
     return { success: true as const, url }
   } catch (e: unknown) {
     return { success: false as const, error: e instanceof Error ? e.message : 'Upload failed.' }

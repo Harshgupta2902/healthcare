@@ -1,20 +1,18 @@
 import fs from 'fs/promises'
 import path from 'path'
-import { randomUUID } from 'crypto'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import sharp from 'sharp'
 
-const UPLOAD_REL = '/uploads/blogs'
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'blogs')
+const BUCKET = 'blog-covers'
+const LEGACY_UPLOAD_REL = '/uploads/blogs'
 const MAX_BYTES = 5 * 1024 * 1024
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 
-const EXT_BY_MIME: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-}
-
-export async function saveBlogCoverImage(file: File): Promise<string> {
+export async function saveBlogCoverImage(
+  supabase: SupabaseClient,
+  userId: string,
+  file: File
+): Promise<string> {
   if (!ALLOWED_MIME.has(file.type)) {
     throw new Error('Cover image must be JPEG, PNG, WebP, or GIF.')
   }
@@ -22,22 +20,62 @@ export async function saveBlogCoverImage(file: File): Promise<string> {
     throw new Error('Cover image must be 5 MB or smaller.')
   }
 
-  await fs.mkdir(UPLOAD_DIR, { recursive: true })
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
 
-  const ext = EXT_BY_MIME[file.type] ?? '.jpg'
-  const filename = `${randomUUID()}${ext}`
-  const buffer = Buffer.from(await file.arrayBuffer())
-  await fs.writeFile(path.join(UPLOAD_DIR, filename), buffer)
+  let optimizedBuffer: Buffer
+  try {
+    optimizedBuffer = await sharp(buffer)
+      .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer()
+  } catch {
+    optimizedBuffer = buffer
+  }
 
-  return `${UPLOAD_REL}/${filename}`
+  const filePath = `${userId}/${Date.now()}.webp`
+
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(filePath, optimizedBuffer, {
+    contentType: 'image/webp',
+    upsert: false,
+  })
+
+  if (uploadError) {
+    throw new Error(uploadError.message)
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(BUCKET).getPublicUrl(filePath)
+
+  return publicUrl
 }
 
-export async function deleteBlogCoverImage(publicUrl: string | null | undefined): Promise<void> {
-  if (!publicUrl?.startsWith(`${UPLOAD_REL}/`)) return
+function extractBlogCoverStoragePath(publicUrl: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`
+  const idx = publicUrl.indexOf(marker)
+  if (idx === -1) return null
+  return decodeURIComponent(publicUrl.slice(idx + marker.length).split('?')[0] ?? '')
+}
+
+export async function deleteBlogCoverImage(
+  supabase: SupabaseClient,
+  publicUrl: string | null | undefined
+): Promise<void> {
+  if (!publicUrl) return
+
+  const storagePath = extractBlogCoverStoragePath(publicUrl)
+  if (storagePath) {
+    await supabase.storage.from(BUCKET).remove([storagePath])
+    return
+  }
+
+  if (!publicUrl.startsWith(`${LEGACY_UPLOAD_REL}/`)) return
+
   const filePath = path.join(process.cwd(), 'public', publicUrl.replace(/^\//, ''))
   try {
     await fs.unlink(filePath)
   } catch {
-    /* file may already be gone */
+    /* legacy file may already be gone */
   }
 }
