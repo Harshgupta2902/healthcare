@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Loader2, Trash2, BadgeCheck, Reply, ChevronDown } from 'lucide-react'
+import { Loader2, Trash2, BadgeCheck, Reply, ChevronDown, Clock } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -81,14 +81,17 @@ export function BlogPostInteractive({
         return
       }
       setComments((prev) => [...prev, result.comment])
-      setCommentsTotal((t) => t + 1)
       if (parentId) {
         setReplyingToId(null)
         setReplyBody('')
       } else {
         setTopLevelBody('')
       }
-      toast.success(parentId ? 'Reply posted' : 'Comment posted')
+      toast.success(
+        parentId
+          ? 'Reply submitted — it will appear after admin approval.'
+          : 'Comment submitted — it will appear after admin approval.'
+      )
     })
   }
 
@@ -171,14 +174,16 @@ export function BlogPostInteractive({
             }}
           />
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-xs text-lp-on-surface-variant">Ctrl+Enter to post · You can add multiple comments</p>
+            <p className="text-xs text-lp-on-surface-variant">
+              Ctrl+Enter to submit · Comments are reviewed before they appear publicly
+            </p>
             <Button
               type="button"
               className="rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand"
               disabled={isPending || !topLevelBody.trim()}
               onClick={() => submitComment(topLevelBody)}
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post comment'}
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit comment'}
             </Button>
           </div>
         </div>
@@ -274,10 +279,19 @@ function CommentThread({
   onDelete,
 }: CommentThreadProps) {
   const isReplying = replyingToId === comment.id
+  const isPendingComment = comment.status === 'pending'
+  const canReply = engagementUser && comment.status === 'approved'
 
   return (
     <div className={cn(depth > 0 && 'ml-4 border-l-2 border-lp-brand/15 pl-4 sm:ml-8')}>
-      <article className="flex gap-3 rounded-2xl border border-lp-outline-variant/25 bg-lp-surface-container-lowest p-4">
+      <article
+        className={cn(
+          'flex gap-3 rounded-2xl border p-4',
+          isPendingComment
+            ? 'border-amber-200/60 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20'
+            : 'border-lp-outline-variant/25 bg-lp-surface-container-lowest'
+        )}
+      >
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={comment.user?.image ?? undefined} />
           <AvatarFallback>{(comment.user?.name ?? 'U').slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -290,12 +304,21 @@ function CommentThread({
               {roleLabel(comment.user?.role ?? 'client')}
             </Badge>
             <span className="text-xs text-lp-on-surface-variant">{formatCommentDate(comment.created_at)}</span>
+            {isPendingComment && (
+              <Badge
+                variant="secondary"
+                className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+              >
+                <Clock className="h-3 w-3" />
+                Pending review
+              </Badge>
+            )}
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-lp-on-surface-variant">
             {comment.body}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1">
-            {engagementUser && (
+            {canReply && (
               <Button
                 type="button"
                 variant="ghost"
@@ -351,7 +374,7 @@ function CommentThread({
                   disabled={isPending || !replyBody.trim()}
                   onClick={() => onSubmitReply(comment.id, replyBody)}
                 >
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Post reply'}
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit reply'}
                 </Button>
               </div>
             </div>
