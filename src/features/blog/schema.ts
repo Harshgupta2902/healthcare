@@ -59,6 +59,8 @@ export const blogPostAuthorSchema = blogPostFieldsSchema
     }
   })
 
+export const blogCommentStatusSchema = z.enum(['pending', 'approved', 'rejected'])
+
 export const blogCommentSchema = z.object({
   postId: z.string().uuid(),
   body: z.string().min(1, 'Comment cannot be empty').max(2000),
@@ -121,9 +123,13 @@ export type BlogCommentRow = {
   user_id: string
   parent_id: string | null
   body: string
+  status: 'pending' | 'approved' | 'rejected'
+  reviewed_at: string | null
+  reviewed_by: string | null
   created_at: string
   updated_at: string
   user?: { id: string; name: string; image: string | null; role: string } | null
+  post?: { id: string; title: string; slug: string } | null
 }
 
 export type BlogCommentNode = BlogCommentRow & { replies: BlogCommentNode[] }

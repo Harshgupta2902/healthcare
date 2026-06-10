@@ -165,27 +165,36 @@ export async function getRecommendedBlogPosts(postId: string, limit = 5) {
 
 export async function getBlogComments(postId: string, page = 1, limit = 20) {
   try {
-    const supabase = createSupabasePublic()
+    const supabase = await createClient()
     const from = (page - 1) * limit
     const to = from + limit - 1
 
-    const { data, error, count } = await supabase
+    const commentSelect = `id, post_id, user_id, parent_id, body, status, reviewed_at, reviewed_by, created_at, updated_at,
+         user:users!blog_comments_user_id_fkey(id, name, image, role)`
+
+    const { data, error } = await supabase
       .from('blog_comments')
-      .select(
-        `id, post_id, user_id, parent_id, body, created_at, updated_at,
-         user:users!blog_comments_user_id_fkey(id, name, image, role)`,
-        { count: 'exact' }
-      )
+      .select(commentSelect)
       .eq('post_id', postId)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
       .range(from, to)
 
     if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+    const { count: approvedCount, error: countError } = await supabase
+      .from('blog_comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('post_id', postId)
+      .eq('status', 'approved')
+      .is('deleted_at', null)
+
+    if (countError) return { success: false as const, error: countError.message, data: [], count: 0 }
+
     return {
       success: true as const,
       data: (data || []).map((row) => mapCommentRow(row as Record<string, unknown>)),
-      count: count ?? 0,
+      count: approvedCount ?? 0,
     }
   } catch (e: unknown) {
     return { success: false as const, error: e instanceof Error ? e.message : 'Failed to load comments.', data: [], count: 0 }
@@ -265,12 +274,17 @@ export async function createBlogComment(input: unknown) {
   if (parsed.data.parentId) {
     const { data: parent } = await supabase
       .from('blog_comments')
-      .select('id, post_id, deleted_at')
+      .select('id, post_id, deleted_at, status')
       .eq('id', parsed.data.parentId)
       .single()
 
-    if (!parent || parent.deleted_at || parent.post_id !== parsed.data.postId) {
-      return { success: false as const, error: 'Invalid reply target.' }
+    if (
+      !parent ||
+      parent.deleted_at ||
+      parent.post_id !== parsed.data.postId ||
+      parent.status !== 'approved'
+    ) {
+      return { success: false as const, error: 'You can only reply to approved comments.' }
     }
   }
 
@@ -281,9 +295,10 @@ export async function createBlogComment(input: unknown) {
       user_id: auth.user.id,
       parent_id: parsed.data.parentId ?? null,
       body: parsed.data.body.trim(),
+      status: 'pending',
     })
     .select(
-      `id, post_id, user_id, parent_id, body, created_at, updated_at,
+      `id, post_id, user_id, parent_id, body, status, reviewed_at, reviewed_by, created_at, updated_at,
        user:users!blog_comments_user_id_fkey(id, name, image, role)`
     )
     .single()

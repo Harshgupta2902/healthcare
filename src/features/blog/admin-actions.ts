@@ -9,8 +9,10 @@ import { saveBlogCoverImage, deleteBlogCoverImage } from '@/lib/blog/upload-cove
 import { slugify } from '@/lib/blog/slugify'
 import {
   blogCategorySchema,
+  blogCommentStatusSchema,
   blogPostSchema,
   type BlogCategoryRow,
+  type BlogCommentRow,
   type BlogPostRow,
 } from './schema'
 
@@ -394,6 +396,144 @@ export async function suggestBlogSlug(title: string) {
     n += 1
   }
   return { success: true as const, slug: `${base}-${Date.now()}` }
+}
+
+const COMMENT_ADMIN_SELECT = `
+  id, post_id, user_id, parent_id, body, status, reviewed_at, reviewed_by, created_at, updated_at,
+  user:users!blog_comments_user_id_fkey(id, name, image, role),
+  post:blog_posts!blog_comments_post_id_fkey(id, title, slug)
+`
+
+function mapCommentRow(row: Record<string, unknown>): BlogCommentRow {
+  const user = row.user
+  const post = row.post
+  const normalizedUser = Array.isArray(user) ? user[0] : user
+  const normalizedPost = Array.isArray(post) ? post[0] : post
+  return {
+    ...(row as Omit<BlogCommentRow, 'user' | 'post' | 'parent_id'>),
+    parent_id: (row.parent_id as string | null) ?? null,
+    user: normalizedUser as BlogCommentRow['user'],
+    post: normalizedPost as BlogCommentRow['post'],
+  }
+}
+
+export async function getBlogCommentsAdmin(
+  page = 1,
+  limit = 15,
+  status: string = 'pending',
+  search?: string
+) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+
+  const parsedStatus = blogCommentStatusSchema.safeParse(status)
+  const filterStatus = parsedStatus.success ? parsedStatus.data : 'pending'
+
+  const supabase = await createClient()
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  let query = supabase
+    .from('blog_comments')
+    .select(COMMENT_ADMIN_SELECT, { count: 'exact' })
+    .eq('status', filterStatus)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (search?.trim()) {
+    const term = search.trim()
+    query = query.ilike('body', `%${term}%`)
+  }
+
+  const { data, error, count } = await query
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+  return {
+    success: true as const,
+    data: (data || []).map((row) => mapCommentRow(row as Record<string, unknown>)),
+    count: count ?? 0,
+  }
+}
+
+export async function approveBlogComment(commentId: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: existing } = await supabase
+    .from('blog_comments')
+    .select('id, status, post_id')
+    .eq('id', commentId)
+    .is('deleted_at', null)
+    .single()
+
+  if (!existing) return { success: false as const, error: 'Comment not found.' }
+  if (existing.status !== 'pending') {
+    return { success: false as const, error: 'Only pending comments can be approved.' }
+  }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('blog_comments')
+    .update({
+      status: 'approved',
+      reviewed_at: now,
+      reviewed_by: user?.id ?? null,
+      updated_at: now,
+    })
+    .eq('id', commentId)
+
+  if (error) return { success: false as const, error: error.message }
+
+  const { data: post } = await supabase.from('blog_posts').select('slug').eq('id', existing.post_id).single()
+  if (post?.slug) revalidatePath(`/blog/${post.slug}`)
+  revalidatePath('/application/enter/blog/comments')
+  return { success: true as const }
+}
+
+export async function rejectBlogComment(commentId: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: existing } = await supabase
+    .from('blog_comments')
+    .select('id, status, post_id')
+    .eq('id', commentId)
+    .is('deleted_at', null)
+    .single()
+
+  if (!existing) return { success: false as const, error: 'Comment not found.' }
+  if (existing.status !== 'pending') {
+    return { success: false as const, error: 'Only pending comments can be rejected.' }
+  }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from('blog_comments')
+    .update({
+      status: 'rejected',
+      reviewed_at: now,
+      reviewed_by: user?.id ?? null,
+      updated_at: now,
+    })
+    .eq('id', commentId)
+
+  if (error) return { success: false as const, error: error.message }
+
+  const { data: post } = await supabase.from('blog_posts').select('slug').eq('id', existing.post_id).single()
+  if (post?.slug) revalidatePath(`/blog/${post.slug}`)
+  revalidatePath('/application/enter/blog/comments')
+  return { success: true as const }
 }
 
 export async function adminSoftDeleteComment(commentId: string) {
