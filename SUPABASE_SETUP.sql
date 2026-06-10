@@ -1051,6 +1051,36 @@ CREATE POLICY "Professionals can upload own qualification documents" ON storage.
 CREATE POLICY "Professionals can update own qualification documents" ON storage.objects FOR UPDATE USING (bucket_id = 'qualifications' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Professionals can delete own qualification documents" ON storage.objects FOR DELETE USING (bucket_id = 'qualifications' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('blog-covers', 'blog-covers', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Blog cover images (admin + patient/consultant authors)
+CREATE POLICY "Public blog cover images are viewable by everyone" ON storage.objects FOR SELECT USING (bucket_id = 'blog-covers');
+CREATE POLICY "Blog authors upload own blog cover images" ON storage.objects FOR INSERT WITH CHECK (
+  bucket_id = 'blog-covers'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+  AND EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid() AND u.role IN ('admin', 'client', 'professional')
+  )
+);
+CREATE POLICY "Blog authors update own blog cover images" ON storage.objects FOR UPDATE USING (
+  bucket_id = 'blog-covers' AND auth.uid()::text = (storage.foldername(name))[1]
+);
+CREATE POLICY "Blog authors delete own blog cover images" ON storage.objects FOR DELETE USING (
+  bucket_id = 'blog-covers' AND auth.uid()::text = (storage.foldername(name))[1]
+);
+CREATE POLICY "Admins manage all blog cover images" ON storage.objects FOR ALL TO authenticated
+USING (
+  bucket_id = 'blog-covers'
+  AND (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+)
+WITH CHECK (
+  bucket_id = 'blog-covers'
+  AND (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin'
+);
+
 -- 📰 BLOG CMS (categories, posts, comments, likes, views)
 CREATE TABLE IF NOT EXISTS public.blog_categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
