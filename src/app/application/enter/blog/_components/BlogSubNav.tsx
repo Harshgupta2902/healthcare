@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 
 const tabs = [
   { href: '/application/enter/blog', label: 'Posts', exact: true },
+  { href: '/application/enter/blog/comments', label: 'Comments', exact: false },
   { href: '/application/enter/blog/categories', label: 'Categories', exact: false },
 ]
 
