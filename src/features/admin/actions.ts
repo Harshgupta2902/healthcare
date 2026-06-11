@@ -233,14 +233,16 @@ export async function updateUser(id: string, data: Partial<z.infer<typeof userSc
 export async function deleteUser(id: string) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error }
+
   const supabase = await createClient()
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  if (currentUser?.id === id) {
+    return { success: false as const, error: 'You cannot delete your own account.' }
+  }
 
-  const { error } = await supabase
-    .from('users')
-    .delete()
-    .eq('id', id)
-
+  const { error } = await supabase.rpc('delete_user_account', { p_user_id: id })
   if (error) return { success: false as const, error: error.message }
+
   revalidatePath('/application/enter/users')
   revalidatePath('/application/enter/professionals')
   revalidatePath('/consultants', 'layout')
@@ -380,20 +382,25 @@ export async function setProfessionalVerified(profileRowId: string, isVerified: 
   return { success: true as const }
 }
 
-export async function deleteProfessional(id: string) {
+export async function deleteProfessional(profileRowId: string) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error }
   const supabase = await createClient()
 
-  const { error } = await supabase
+  const { data: profile, error: fetchError } = await supabase
     .from('professional_profiles')
-    .delete()
-    .eq('id', id)
+    .select('user_id')
+    .eq('id', profileRowId)
+    .single()
 
-  if (error) return { success: false as const, error: error.message }
-  revalidatePath('/application/enter/professionals')
-  revalidatePath('/consultants', 'layout')
-  return { success: true as const }
+  if (fetchError || !profile?.user_id) {
+    return {
+      success: false as const,
+      error: fetchError?.message ?? 'Professional profile not found.',
+    }
+  }
+
+  return deleteUser(profile.user_id as string)
 }
 
 // ============================================
