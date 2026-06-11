@@ -625,6 +625,44 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
+-- Admin-only full account delete (auth.users → cascades public.users). No service_role key in app.
+CREATE OR REPLACE FUNCTION public.delete_user_account(p_user_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = auth, public
+AS $$
+DECLARE
+  v_caller_role TEXT;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'User id is required' USING ERRCODE = '22023';
+  END IF;
+
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF auth.uid() = p_user_id THEN
+    RAISE EXCEPTION 'You cannot delete your own account' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT role INTO v_caller_role FROM public.users WHERE id = auth.uid();
+  IF v_caller_role IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Admin access required' USING ERRCODE = '42501';
+  END IF;
+
+  DELETE FROM auth.users WHERE id = p_user_id;
+
+  IF NOT FOUND THEN
+    DELETE FROM public.users WHERE id = p_user_id;
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.delete_user_account(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.delete_user_account(UUID) TO authenticated;
+
 -- 🔐 Permission Grants
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO anon;
