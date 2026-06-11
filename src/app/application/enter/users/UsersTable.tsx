@@ -174,7 +174,7 @@ export function UsersTable({ initialData, initialPage, totalPages, count }: User
         onOpenChange={setIsDeleteOpen}
         onConfirm={handleDeleteConfirm}
         title="Delete User"
-        description={`Are you sure you want to delete ${selectedUser?.name || selectedUser?.email}? This action cannot be undone.`}
+        description={`Permanently delete ${selectedUser?.name || selectedUser?.email}? This removes their login account and all profile data. The email can be used to register again.`}
         isPending={isPending}
       />
     </>

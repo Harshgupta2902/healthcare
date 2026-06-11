@@ -115,21 +115,16 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
 
     startTransition(async () => {
       try {
-        if (hasProfileRow(selectedProfessional)) {
-          const result = await deleteProfessional(selectedProfessional.id)
-          if (!result.success) {
-            toast.error(result.error)
-            return
-          }
-          toast.success('Professional profile deleted')
-        } else {
-          const result = await deleteUser(selectedProfessional.user_id)
-          if (!result.success) {
-            toast.error(result.error)
-            return
-          }
-          toast.success('User removed')
+        const result = hasProfileRow(selectedProfessional)
+          ? await deleteProfessional(selectedProfessional.id)
+          : await deleteUser(selectedProfessional.user_id)
+
+        if (!result.success) {
+          toast.error(result.error)
+          return
         }
+
+        toast.success('Professional deleted')
         setIsDeleteOpen(false)
         router.refresh()
       } catch (error: unknown) {
@@ -311,16 +306,8 @@ export function ProfessionalsTable({ initialData, initialPage, totalPages, count
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
         onConfirm={handleDeleteConfirm}
-        title={
-          selectedProfessional && hasProfileRow(selectedProfessional)
-            ? 'Delete professional profile'
-            : 'Delete provider user'
-        }
-        description={
-          selectedProfessional && hasProfileRow(selectedProfessional)
-            ? 'Removes only the provider profile row. The account remains in Users until you delete it there.'
-            : 'Removes this row from public.users. If it fails (FK), delete the user from Supabase Authentication first.'
-        }
+        title="Delete professional"
+        description={`Permanently delete ${selectedProfessional?.name || selectedProfessional?.email}? This removes their login account, provider profile, and related data. The email can be used to register again.`}
         isPending={isPending}
       />
     </>
