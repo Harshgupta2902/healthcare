@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/models/models.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -49,8 +51,8 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
             child: SectionHeader(
               title: 'Health records',
               subtitle: user?.email ?? '',
-              actionLabel: 'Settings',
-              onAction: () => context.push('/settings'),
+              actionLabel: 'Edit',
+              onAction: () => context.push('/profile/edit'),
             ),
           ),
           TabBar(
@@ -69,29 +71,15 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
           ),
           Expanded(
             child: dashboard.when(
-              loading: () => const LoadingView(),
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
               error: (e, _) => Center(child: Text(e.toString())),
               data: (data) => TabBarView(
                 controller: _tabs,
                 children: [
-                  _HistoryTab(
-                    items: data.medicalHistory,
-                    onRefresh: () => ref.invalidate(clientDashboardProvider),
-                  ),
-                  _MedicationsTab(
-                    items: data.medications,
-                    onRefresh: () => ref.invalidate(clientDashboardProvider),
-                  ),
-                  const EmptyState(
-                    title: 'Documents',
-                    subtitle: 'Upload medical documents — Phase 2 (Storage SDK).',
-                    icon: Icons.folder_open_outlined,
-                  ),
-                  const EmptyState(
-                    title: 'Insurance',
-                    subtitle: 'Manage policies — Phase 2.',
-                    icon: Icons.shield_outlined,
-                  ),
+                  _HistoryTab(items: data.medicalHistory),
+                  _MedicationsTab(items: data.medications),
+                  _DocumentsTab(documents: data.documents),
+                  _InsuranceTab(items: data.insurance),
                 ],
               ),
             ),
@@ -102,10 +90,11 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
   }
 }
 
+void _refresh(WidgetRef ref) => ref.invalidate(clientDashboardProvider);
+
 class _HistoryTab extends ConsumerWidget {
-  const _HistoryTab({required this.items, required this.onRefresh});
-  final List<dynamic> items;
-  final VoidCallback onRefresh;
+  const _HistoryTab({required this.items});
+  final List<MedicalHistoryItem> items;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,34 +103,27 @@ class _HistoryTab extends ConsumerWidget {
       emptyIcon: Icons.history_edu_outlined,
       items: items,
       itemBuilder: (item) => ListTile(
-        title: Text(item.condition, style: AppTypography.bodyMedium),
-        subtitle: item.notes != null ? Text(item.notes!) : null,
+        title: Text(item.conditionName, style: AppTypography.bodyMedium),
+        subtitle: Text([item.diagnosisDate, item.status].whereType<String>().join(' • ')),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
           onPressed: () async {
             await ref.read(clientRepositoryProvider).deleteMedicalCondition(item.id);
-            onRefresh();
+            _refresh(ref);
           },
         ),
       ),
-      onAdd: () => _showAddConditionDialog(context, ref, onRefresh),
+      onAdd: () => _showAddConditionDialog(context, ref),
     );
   }
 
-  Future<void> _showAddConditionDialog(
-    BuildContext context,
-    WidgetRef ref,
-    VoidCallback onRefresh,
-  ) async {
+  Future<void> _showAddConditionDialog(BuildContext context, WidgetRef ref) async {
     final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add condition'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'e.g. Hypertension'),
-        ),
+        content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Condition name')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
@@ -149,17 +131,16 @@ class _HistoryTab extends ConsumerWidget {
       ),
     );
     if (ok == true && controller.text.trim().isNotEmpty) {
-      await ref.read(clientRepositoryProvider).addMedicalCondition(condition: controller.text.trim());
-      onRefresh();
+      await ref.read(clientRepositoryProvider).addMedicalCondition(conditionName: controller.text.trim());
+      _refresh(ref);
     }
     controller.dispose();
   }
 }
 
 class _MedicationsTab extends ConsumerWidget {
-  const _MedicationsTab({required this.items, required this.onRefresh});
-  final List<dynamic> items;
-  final VoidCallback onRefresh;
+  const _MedicationsTab({required this.items});
+  final List<MedicationItem> items;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -168,27 +149,24 @@ class _MedicationsTab extends ConsumerWidget {
       emptyIcon: Icons.medication_outlined,
       items: items,
       itemBuilder: (item) => ListTile(
-        title: Text(item.name, style: AppTypography.bodyMedium),
-        subtitle: Text([item.dosage, item.frequency].whereType<String>().join(' • ')),
+        title: Text(item.medicationName, style: AppTypography.bodyMedium),
+        subtitle: Text('${item.dosage} • ${item.frequency}'),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
           onPressed: () async {
             await ref.read(clientRepositoryProvider).deleteMedication(item.id);
-            onRefresh();
+            _refresh(ref);
           },
         ),
       ),
-      onAdd: () => _showAddMedDialog(context, ref, onRefresh),
+      onAdd: () => _showAddMedDialog(context, ref),
     );
   }
 
-  Future<void> _showAddMedDialog(
-    BuildContext context,
-    WidgetRef ref,
-    VoidCallback onRefresh,
-  ) async {
+  Future<void> _showAddMedDialog(BuildContext context, WidgetRef ref) async {
     final name = TextEditingController();
     final dosage = TextEditingController();
+    final frequency = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -196,8 +174,9 @@ class _MedicationsTab extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: name, decoration: const InputDecoration(hintText: 'Name')),
+            TextField(controller: name, decoration: const InputDecoration(hintText: 'Medication name')),
             TextField(controller: dosage, decoration: const InputDecoration(hintText: 'Dosage')),
+            TextField(controller: frequency, decoration: const InputDecoration(hintText: 'Frequency')),
           ],
         ),
         actions: [
@@ -208,13 +187,153 @@ class _MedicationsTab extends ConsumerWidget {
     );
     if (ok == true && name.text.trim().isNotEmpty) {
       await ref.read(clientRepositoryProvider).addMedication(
-            name: name.text.trim(),
-            dosage: dosage.text.trim().isEmpty ? null : dosage.text.trim(),
+            medicationName: name.text.trim(),
+            dosage: dosage.text.trim().isEmpty ? '—' : dosage.text.trim(),
+            frequency: frequency.text.trim().isEmpty ? '—' : frequency.text.trim(),
+            startDate: DateTime.now().toIso8601String().split('T').first,
           );
-      onRefresh();
+      _refresh(ref);
     }
     name.dispose();
     dosage.dispose();
+    frequency.dispose();
+  }
+}
+
+class _DocumentsTab extends ConsumerWidget {
+  const _DocumentsTab({required this.documents});
+  final List<MedicalDocumentItem> documents;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: PrimaryGradientButton(
+            label: 'Upload document',
+            icon: Icons.upload_file,
+            onPressed: () => _upload(context, ref),
+          ),
+        ),
+        Expanded(
+          child: documents.isEmpty
+              ? const Center(
+                  child: EmptyState(
+                    title: 'No documents',
+                    subtitle: 'Upload lab results, imaging, or referrals.',
+                    icon: Icons.folder_open_outlined,
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: documents.length,
+                  itemBuilder: (_, i) {
+                    final d = documents[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GlassCard(
+                        child: ListTile(
+                          title: Text(d.documentName, style: AppTypography.bodyMedium),
+                          subtitle: Text(d.documentType),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.open_in_new, size: 18),
+                                onPressed: () => launchUrl(Uri.parse(d.fileUrl)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                onPressed: () async {
+                                  await ref.read(clientRepositoryProvider).deleteDocument(d.id);
+                                  _refresh(ref);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _upload(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    await ref.read(clientRepositoryProvider).uploadDocument(
+          fileName: picked.name,
+          documentType: 'medical',
+          bytes: bytes,
+        );
+    _refresh(ref);
+  }
+}
+
+class _InsuranceTab extends ConsumerWidget {
+  const _InsuranceTab({required this.items});
+  final List<InsuranceItem> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _ListTab(
+      emptyTitle: 'No insurance policies',
+      emptyIcon: Icons.shield_outlined,
+      items: items,
+      itemBuilder: (item) => ListTile(
+        title: Text(item.providerName, style: AppTypography.bodyMedium),
+        subtitle: Text('Policy ${item.policyNumber}'),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+          onPressed: () async {
+            await ref.read(clientRepositoryProvider).deleteInsurance(item.id);
+            _refresh(ref);
+          },
+        ),
+      ),
+      onAdd: () => _showAddInsurance(context, ref),
+    );
+  }
+
+  Future<void> _showAddInsurance(BuildContext context, WidgetRef ref) async {
+    final provider = TextEditingController();
+    final policy = TextEditingController();
+    final holder = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add insurance'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: provider, decoration: const InputDecoration(hintText: 'Provider')),
+            TextField(controller: policy, decoration: const InputDecoration(hintText: 'Policy number')),
+            TextField(controller: holder, decoration: const InputDecoration(hintText: 'Policy holder')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+        ],
+      ),
+    );
+    if (ok == true && provider.text.trim().isNotEmpty) {
+      await ref.read(clientRepositoryProvider).addInsurance(
+            providerName: provider.text.trim(),
+            policyNumber: policy.text.trim(),
+            policyHolderName: holder.text.trim().isEmpty ? provider.text.trim() : holder.text.trim(),
+          );
+      _refresh(ref);
+    }
+    provider.dispose();
+    policy.dispose();
+    holder.dispose();
   }
 }
 

@@ -34,7 +34,7 @@ class ClientHomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               children: [
                 SectionHeader(
-                  title: 'Hello, ${user?.fullName?.split(' ').first ?? 'there'}',
+                  title: 'Hello, ${user?.name?.split(' ').first ?? 'there'}',
                   subtitle: 'Your health overview',
                 ),
                 Row(
@@ -104,7 +104,7 @@ class ClientHomeScreen extends ConsumerWidget {
                                     style: AppTypography.textTheme.titleMedium,
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(dateFmt.format(a.scheduledAt),
+                                  Text(dateFmt.format(a.startTime),
                                       style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
                                 ],
                               ),

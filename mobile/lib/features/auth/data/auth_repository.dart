@@ -2,25 +2,32 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
-import '../../core/supabase/supabase_client.dart';
-import '../../shared/models/models.dart';
+import '../../../core/network/api_endpoints.dart';
+import '../../../core/network/api_repository.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/supabase/supabase_client.dart';
+import '../../../shared/models/models.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     supabase: ref.watch(supabaseClientProvider),
     dio: ref.watch(dioProvider),
+    api: ref.watch(apiRepositoryProvider),
   );
 });
 
 class AuthRepository {
-  AuthRepository({required SupabaseClient supabase, required Dio dio})
-      : _supabase = supabase,
-        _dio = dio;
+  AuthRepository({
+    required SupabaseClient supabase,
+    required Dio dio,
+    required ApiRepository api,
+  })  : _supabase = supabase,
+        _dio = dio,
+        _api = api;
 
   final SupabaseClient _supabase;
   final Dio _dio;
+  final ApiRepository _api;
 
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
@@ -47,7 +54,7 @@ class AuthRepository {
   Future<AppUser> signUp({
     required String email,
     required String password,
-    required String fullName,
+    required String name,
     required UserRole role,
   }) async {
     if (role == UserRole.admin) {
@@ -59,22 +66,51 @@ class AuthRepository {
     final response = await _supabase.auth.signUp(
       email: email.trim(),
       password: password,
-      data: {'name': fullName.trim(), 'role': roleStr},
+      data: {'name': name.trim(), 'role': roleStr},
     );
 
     final user = response.user;
     if (user == null) throw const AuthException('Sign up failed');
 
-    // Ensure public.users row has correct role (trigger may create default).
     await _supabase.from('users').upsert({
       'id': user.id,
       'email': email.trim(),
-      'full_name': fullName.trim(),
+      'name': name.trim(),
       'role': roleStr,
     });
 
     await _syncSession();
     return _fetchAppUser(user);
+  }
+
+  Future<void> updateUserProfile({
+    String? name,
+    String? phone,
+    String? image,
+  }) async {
+    final uid = currentUser?.id;
+    if (uid == null) throw const AuthException('Not authenticated');
+
+    final payload = <String, dynamic>{'id': uid};
+    if (name != null) payload['name'] = name;
+    if (phone != null) payload['phone'] = phone;
+    if (image != null) payload['image'] = image;
+
+    await _supabase.from('users').upsert(payload);
+  }
+
+  Future<String> uploadProfileImage(String filePath, List<int> bytes) async {
+    final uid = currentUser?.id;
+    if (uid == null) throw const AuthException('Not authenticated');
+
+    final ext = filePath.split('.').last;
+    final path = '$uid/avatar.$ext';
+    await _supabase.storage.from('avatars').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
+    return _supabase.storage.from('avatars').getPublicUrl(path);
   }
 
   Future<void> resetPassword(String email) async {
@@ -87,16 +123,20 @@ class AuthRepository {
 
   Future<void> _syncSession() async {
     try {
-      await _dio.post(ApiEndpoints.syncSession);
+      await _api.syncSession();
     } on DioException {
-      // API route may not exist yet — role still readable from users table.
+      try {
+        await _dio.post(ApiEndpoints.syncSession);
+      } on DioException {
+        // API route may be unavailable — role still readable from users table.
+      }
     }
   }
 
   Future<AppUser> _fetchAppUser(User user) async {
     final row = await _supabase
         .from('users')
-        .select('id, email, full_name, avatar_url, role')
+        .select('id, email, name, image, role, phone')
         .eq('id', user.id)
         .maybeSingle();
 

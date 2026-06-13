@@ -46,7 +46,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await ref.read(authRepositoryProvider).signUp(
             email: _emailController.text,
             password: _passwordController.text,
-            fullName: _nameController.text,
+            name: _nameController.text,
             role: _role,
           );
       if (!mounted) return;
