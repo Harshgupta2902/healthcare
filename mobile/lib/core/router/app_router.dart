@@ -3,16 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/assistant/screens/assistant_screen.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/auth/screens/admin_web_only_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/blog/screens/blog_post_screen.dart';
+import '../../features/booking/screens/book_consultation_screen.dart';
+import '../../features/booking/screens/booking_success_screen.dart';
+import '../../features/client/screens/client_profile_edit_screen.dart';
 import '../../features/consultants/screens/consultant_detail_screen.dart';
 import '../../features/consultants/screens/consultants_list_screen.dart';
+import '../../features/contact/screens/contact_screen.dart';
 import '../../features/dashboard/screens/dashboard_shell.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/splash_screen.dart';
+import '../../features/professional/screens/prescription_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../shared/models/models.dart';
 
@@ -40,8 +47,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/forgot-password' ||
           location == '/onboarding';
 
+      final isPublicRoute = location.startsWith('/book/') ||
+          location.startsWith('/booking/success/') ||
+          location == '/contact';
+
       if (session == null) {
-        if (isAuthRoute || location == '/onboarding') return null;
+        if (isAuthRoute || location == '/onboarding' || isPublicRoute) return null;
         return '/login';
       }
 
@@ -63,10 +74,35 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: '/admin-web-only', builder: (_, __) => const AdminWebOnlyScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
+      GoRoute(path: '/assistant', builder: (_, __) => const AssistantScreen()),
+      GoRoute(path: '/profile/edit', builder: (_, __) => const ClientProfileEditScreen()),
       GoRoute(
-        path: '/consultants/:id',
+        path: '/book/:professionalUserId',
+        builder: (_, state) => BookConsultationScreen(
+          professionalUserId: state.pathParameters['professionalUserId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/booking/success/:id',
+        builder: (_, state) => BookingSuccessScreen(
+          bookingId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/prescription/:guestAppointmentId',
+        builder: (_, state) => PrescriptionScreen(
+          guestAppointmentId: state.pathParameters['guestAppointmentId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/blog/:slug',
+        builder: (_, state) => BlogPostScreen(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/consultants/:userId',
         builder: (_, state) => ConsultantDetailScreen(
-          profileId: state.pathParameters['id']!,
+          userId: state.pathParameters['userId']!,
         ),
       ),
       ShellRoute(
