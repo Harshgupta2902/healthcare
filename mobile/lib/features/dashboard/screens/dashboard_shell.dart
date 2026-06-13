@@ -34,7 +34,7 @@ class DashboardShell extends ConsumerWidget {
   ];
 
   int _indexFromLocation(String location) {
-    final tabs = _clientTabs;
+    const tabs = _clientTabs;
     for (var i = 0; i < tabs.length; i++) {
       if (location.startsWith(tabs[i].path)) return i;
     }

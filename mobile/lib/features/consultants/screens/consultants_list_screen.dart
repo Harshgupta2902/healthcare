@@ -35,8 +35,8 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: SectionHeader(
               title: 'Find a specialist',
               subtitle: 'Verified healthcare professionals',
