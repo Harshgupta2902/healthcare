@@ -9,5 +9,4 @@ abstract final class ApiEndpoints {
   static const newsletterUnsubscribe = '/api/v1/newsletter/unsubscribe';
   static const universitiesSearch = '/api/v1/universities/search';
   static const prescriptionsSend = '/api/v1/prescriptions/send';
-  static const assistantContext = '/api/v1/assistant/context';
 }

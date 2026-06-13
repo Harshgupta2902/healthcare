@@ -170,10 +170,6 @@ class ApiRepository {
     }
   }
 
-  Future<Map<String, dynamic>> getAssistantContext() async {
-    final response = await _dio.get(ApiEndpoints.assistantContext);
-    return _unwrap(response);
-  }
 
   Future<void> unsubscribeNewsletter({required String token}) async {
     final response = await _dio.post(

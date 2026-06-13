@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../features/assistant/screens/assistant_screen.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/auth/screens/admin_web_only_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
@@ -75,7 +74,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/admin-web-only', builder: (_, __) => const AdminWebOnlyScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
-      GoRoute(path: '/assistant', builder: (_, __) => const AssistantScreen()),
       GoRoute(path: '/profile/edit', builder: (_, __) => const ClientProfileEditScreen()),
       GoRoute(
         path: '/book/:professionalUserId',
