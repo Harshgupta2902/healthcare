@@ -2,6 +2,7 @@ abstract final class ApiEndpoints {
   static const syncSession = '/api/v1/auth/sync-session';
   static const placesSearch = '/api/v1/places/search';
   static const bookingGuest = '/api/v1/booking/guest';
+  static String bookingGuestConfirm(String id) => '/api/v1/booking/guest/$id/confirm';
   static const meetingsCreate = '/api/v1/meetings/create';
   static const meetingsGuestPipeline = '/api/v1/meetings/guest/pipeline';
   static const contact = '/api/v1/contact';
