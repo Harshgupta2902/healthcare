@@ -1,12 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:healthhere_mobile/core/network/api_endpoints.dart';
+import 'package:healthhere_mobile/core/network/api_repository.dart';
+import 'package:healthhere_mobile/core/network/dio_client.dart';
+import 'package:healthhere_mobile/core/supabase/supabase_client.dart';
+import 'package:healthhere_mobile/shared/models/models.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../../core/network/api_endpoints.dart';
-import '../../../core/network/api_repository.dart';
-import '../../../core/network/dio_client.dart';
-import '../../../core/supabase/supabase_client.dart';
-import '../../../shared/models/models.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
@@ -107,7 +108,7 @@ class AuthRepository {
     final path = '$uid/avatar.$ext';
     await _supabase.storage.from('avatars').uploadBinary(
           path,
-          bytes,
+          Uint8List.fromList(bytes),
           fileOptions: const FileOptions(upsert: true),
         );
     return _supabase.storage.from('avatars').getPublicUrl(path);

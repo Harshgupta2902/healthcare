@@ -17,14 +17,13 @@ class BlogRepository {
     var query = _supabase
         .from('blog_posts')
         .select('*, blog_categories(name), users(name)')
-        .eq('status', 'published')
-        .order('published_at', ascending: false);
+        .eq('status', 'published');
 
     if (categoryId != null && categoryId.isNotEmpty) {
       query = query.eq('category_id', categoryId);
     }
 
-    final rows = await query;
+    final rows = await query.order('published_at', ascending: false);
     return (rows as List)
         .map((e) => BlogPostItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
