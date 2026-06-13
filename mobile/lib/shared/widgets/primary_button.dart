@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_typography.dart';
 
 class PrimaryGradientButton extends StatelessWidget {
@@ -21,29 +22,21 @@ class PrimaryGradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 48,
+      height: 52,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: onPressed == null || isLoading ? null : AppColors.brandGradient,
           color: onPressed == null || isLoading
               ? AppColors.outline.withValues(alpha: 0.5)
               : null,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: onPressed == null || isLoading
-              ? null
-              : [
-                  BoxShadow(
-                    color: AppColors.brand.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+          boxShadow: onPressed == null || isLoading ? null : AppColors.brandGlow,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: isLoading ? null : onPressed,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.pill),
             child: Center(
               child: isLoading
                   ? const SizedBox(
@@ -92,7 +85,7 @@ class SecondaryButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.brand,
           side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.pill)),
           textStyle: AppTypography.button.copyWith(color: AppColors.brand),
         ),
         child: Text(label),

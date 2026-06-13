@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'gradient_text.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
@@ -10,15 +11,24 @@ class SectionHeader extends StatelessWidget {
     this.subtitle,
     this.actionLabel,
     this.onAction,
+    this.gradientTitle = true,
+    this.lightOnDark = false,
   });
 
   final String title;
   final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final bool gradientTitle;
+  final bool lightOnDark;
 
   @override
   Widget build(BuildContext context) {
+    final titleStyle = AppTypography.pageTitle.copyWith(fontSize: 22);
+    final subtitleStyle = lightOnDark
+        ? AppTypography.pageSubtitle.copyWith(color: Colors.white.withValues(alpha: 0.85))
+        : AppTypography.pageSubtitle;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -28,10 +38,16 @@ class SectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+                if (gradientTitle && !lightOnDark)
+                  GradientText(title, style: titleStyle)
+                else
+                  Text(
+                    title,
+                    style: lightOnDark ? titleStyle.copyWith(color: Colors.white) : titleStyle,
+                  ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(subtitle!, style: AppTypography.pageSubtitle),
+                  Text(subtitle!, style: subtitleStyle),
                 ],
               ],
             ),
@@ -41,7 +57,10 @@ class SectionHeader extends StatelessWidget {
               onPressed: onAction,
               child: Text(
                 actionLabel!,
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.brand),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: lightOnDark ? Colors.white : AppColors.brand,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],
@@ -67,9 +86,17 @@ class StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.surfaceContainerLowest.withValues(alpha: 0.9),
+            AppColors.surfaceContainerLow.withValues(alpha: 0.75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.55)),
+        boxShadow: AppColors.softElevation,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,12 +104,19 @@ class StatTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(10),
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brand.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: Icon(icon, color: AppColors.brand, size: 20),
+            child: Icon(icon, color: AppColors.onBrand, size: 20),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Text(label.toUpperCase(), style: AppTypography.fieldLabel),
           const SizedBox(height: 2),
           Text(value, style: AppTypography.statValue),
@@ -100,8 +134,14 @@ class VerifiedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.brand.withValues(alpha: 0.1),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.brand.withValues(alpha: 0.14),
+            AppColors.brandBright.withValues(alpha: 0.1),
+          ],
+        ),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

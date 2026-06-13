@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import 'glass_card.dart';
 import 'primary_button.dart';
 
 class EmptyState extends StatelessWidget {
@@ -22,22 +23,22 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.outline.withValues(alpha: 0.5),
-          style: BorderStyle.solid,
-        ),
-        color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
-      ),
+    return GlassCard(
+      elevated: false,
+      padding: const EdgeInsets.all(28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 40, color: AppColors.onSurfaceVariant),
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppColors.brandGlow,
+            ),
+            child: Icon(icon, size: 32, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
           Text(title, style: AppTypography.textTheme.titleMedium, textAlign: TextAlign.center),
           if (subtitle != null) ...[
             const SizedBox(height: 6),
@@ -48,7 +49,7 @@ class EmptyState extends StatelessWidget {
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             PrimaryGradientButton(label: actionLabel!, onPressed: onAction),
           ],
         ],
@@ -68,7 +69,15 @@ class LoadingView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: AppColors.brand),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: AppColors.softElevation,
+            ),
+            child: const CircularProgressIndicator(color: AppColors.brand),
+          ),
           if (message != null) ...[
             const SizedBox(height: 16),
             Text(message!, style: AppTypography.pageSubtitle),
