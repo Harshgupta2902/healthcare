@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -10,14 +11,14 @@ import '../../../shared/widgets/section_header.dart';
 import '../data/consultants_repository.dart';
 
 class ConsultantDetailScreen extends ConsumerWidget {
-  const ConsultantDetailScreen({super.key, required this.profileId});
+  const ConsultantDetailScreen({super.key, required this.userId});
 
-  final String profileId;
+  final String userId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(consultantDetailProvider(profileId));
-    final availability = ref.watch(_availabilityProvider(profileId));
+    final profile = ref.watch(consultantDetailProvider(userId));
+    final availability = ref.watch(consultantAvailabilityProvider(userId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Consultant')),
@@ -38,11 +39,11 @@ class ConsultantDetailScreen extends ConsumerWidget {
                     CircleAvatar(
                       radius: 36,
                       backgroundColor: AppColors.surfaceContainer,
-                      backgroundImage: p.avatarUrl != null
-                          ? CachedNetworkImageProvider(p.avatarUrl!)
+                      backgroundImage: p.image != null
+                          ? CachedNetworkImageProvider(p.image!)
                           : null,
-                      child: p.avatarUrl == null
-                          ? Text((p.fullName ?? 'D')[0], style: AppTypography.pageTitle)
+                      child: p.image == null
+                          ? Text(p.displayName[0], style: AppTypography.pageTitle)
                           : null,
                     ),
                     const SizedBox(width: 16),
@@ -50,7 +51,7 @@ class ConsultantDetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(p.fullName ?? 'Professional', style: AppTypography.pageTitle.copyWith(fontSize: 20)),
+                          Text(p.displayName, style: AppTypography.pageTitle.copyWith(fontSize: 20)),
                           if (p.specialization != null)
                             Text(p.specialization!, style: AppTypography.pageSubtitle),
                           if (p.isVerified) ...[
@@ -93,8 +94,8 @@ class ConsultantDetailScreen extends ConsumerWidget {
                               (s) => ListTile(
                                 contentPadding: EdgeInsets.zero,
                                 leading: const Icon(Icons.schedule, color: AppColors.brand),
-                                title: Text('Day ${s['day_of_week']}'),
-                                subtitle: Text('${s['start_time']} – ${s['end_time']}'),
+                                title: Text('Day ${s.dayOfWeek}'),
+                                subtitle: Text('${s.startTime} – ${s.endTime}'),
                               ),
                             )
                             .toList(),
@@ -106,11 +107,7 @@ class ConsultantDetailScreen extends ConsumerWidget {
               PrimaryGradientButton(
                 label: 'Book consultation',
                 icon: Icons.calendar_month,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Guest booking API — Phase 2')),
-                  );
-                },
+                onPressed: () => context.push('/book/${p.userId}'),
               ),
             ],
           );
@@ -119,11 +116,6 @@ class ConsultantDetailScreen extends ConsumerWidget {
     );
   }
 }
-
-final _availabilityProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, profileId) {
-  return ref.watch(consultantsRepositoryProvider).getAvailability(profileId);
-});
 
 class _InfoChip extends StatelessWidget {
   const _InfoChip({required this.icon, required this.label});

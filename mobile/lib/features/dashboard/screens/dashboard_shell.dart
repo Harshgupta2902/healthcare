@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/models.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../blog/screens/blog_list_screen.dart';
+import '../../client/screens/appointments_screen.dart';
 import '../../client/screens/client_home_screen.dart';
 import '../../client/screens/client_profile_screen.dart';
-import '../../client/screens/appointments_screen.dart';
 import '../../professional/screens/professional_home_screen.dart';
 import '../../professional/screens/professional_profile_screen.dart';
-import '../widgets/blog_placeholder_screen.dart';
 
 class DashboardShell extends ConsumerWidget {
   const DashboardShell({super.key, required this.child});
@@ -50,7 +50,7 @@ class DashboardShell extends ConsumerWidget {
     final selectedIndex = _indexFromLocation(location);
 
     Widget body;
-    if (location.startsWith('/consultants/')) {
+    if (location.startsWith('/consultants/') && !location.endsWith('/consultants')) {
       body = child;
     } else {
       switch (location) {
@@ -61,7 +61,7 @@ class DashboardShell extends ConsumerWidget {
         case '/consultants':
           body = child;
         case '/blog':
-          body = const BlogPlaceholderScreen();
+          body = const BlogListScreen();
         case '/profile':
           body = isPro ? const ProfessionalProfileScreen() : const ClientProfileScreen();
         default:
@@ -69,9 +69,16 @@ class DashboardShell extends ConsumerWidget {
       }
     }
 
-    final showBottomNav = !location.contains(RegExp(r'^/consultants/[^/]+$'));
+    final showBottomNav = !RegExp(r'^/consultants/[^/]+$').hasMatch(location);
 
     return Scaffold(
+      floatingActionButton: location == '/home'
+          ? FloatingActionButton.small(
+              onPressed: () => context.push('/assistant'),
+              backgroundColor: AppColors.brand,
+              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
+            )
+          : null,
       body: body,
       bottomNavigationBar: showBottomNav
           ? NavigationBar(

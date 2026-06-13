@@ -62,7 +62,7 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
               data: (list) {
                 final filtered = list.where((p) {
                   if (_query.isEmpty) return true;
-                  final hay = '${p.fullName} ${p.specialization} ${p.city}'.toLowerCase();
+                  final hay = '${p.displayName} ${p.specialization} ${p.city}'.toLowerCase();
                   return hay.contains(_query);
                 }).toList();
 
@@ -93,12 +93,12 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                               CircleAvatar(
                                 radius: 28,
                                 backgroundColor: AppColors.surfaceContainer,
-                                backgroundImage: p.avatarUrl != null
-                                    ? CachedNetworkImageProvider(p.avatarUrl!)
+                                backgroundImage: p.image != null
+                                    ? CachedNetworkImageProvider(p.image!)
                                     : null,
-                                child: p.avatarUrl == null
+                                child: p.image == null
                                     ? Text(
-                                        (p.fullName ?? 'D')[0].toUpperCase(),
+                                        p.displayName[0].toUpperCase(),
                                         style: AppTypography.bodyMedium,
                                       )
                                     : null,
@@ -109,7 +109,7 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      p.fullName ?? 'Professional',
+                                      p.displayName,
                                       style: AppTypography.textTheme.titleMedium,
                                     ),
                                     if (p.specialization != null)
