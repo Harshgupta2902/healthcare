@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/ambient_background.dart';
+import '../../../shared/widgets/glass_nav_bar.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../blog/screens/blog_list_screen.dart';
 import '../../client/screens/appointments_screen.dart';
 import '../../client/screens/client_home_screen.dart';
-import '../../client/screens/client_profile_screen.dart';
+import '../../client/screens/client_account_screen.dart';
 import '../../professional/screens/professional_home_screen.dart';
 import '../../professional/screens/professional_profile_screen.dart';
 
@@ -18,27 +20,56 @@ class DashboardShell extends ConsumerWidget {
   final Widget child;
 
   static const _clientTabs = [
-    _TabItem('/home', 'Home', Icons.home_outlined, Icons.home_rounded),
-    _TabItem('/appointments', 'Visits', Icons.event_outlined, Icons.event_rounded),
-    _TabItem('/consultants', 'Doctors', Icons.people_outline, Icons.people_rounded),
-    _TabItem('/blog', 'Blog', Icons.article_outlined, Icons.article_rounded),
-    _TabItem('/profile', 'Profile', Icons.person_outline, Icons.person_rounded),
+    GlassNavDestination(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home_rounded),
+    GlassNavDestination(label: 'Visits', icon: Icons.event_outlined, selectedIcon: Icons.event_rounded),
+    GlassNavDestination(
+      label: 'Doctors',
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people_rounded,
+    ),
+    GlassNavDestination(label: 'Blog', icon: Icons.article_outlined, selectedIcon: Icons.article_rounded),
+    GlassNavDestination(
+      label: 'Profile',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person_rounded,
+    ),
   ];
 
   static const _proTabs = [
-    _TabItem('/home', 'Consults', Icons.medical_services_outlined, Icons.medical_services_rounded),
-    _TabItem('/appointments', 'Calendar', Icons.calendar_month_outlined, Icons.calendar_month_rounded),
-    _TabItem('/consultants', 'Network', Icons.people_outline, Icons.people_rounded),
-    _TabItem('/blog', 'Blog', Icons.article_outlined, Icons.article_rounded),
-    _TabItem('/profile', 'Profile', Icons.person_outline, Icons.person_rounded),
+    GlassNavDestination(
+      label: 'Consults',
+      icon: Icons.medical_services_outlined,
+      selectedIcon: Icons.medical_services_rounded,
+    ),
+    GlassNavDestination(
+      label: 'Calendar',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month_rounded,
+    ),
+    GlassNavDestination(
+      label: 'Network',
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people_rounded,
+    ),
+    GlassNavDestination(label: 'Blog', icon: Icons.article_outlined, selectedIcon: Icons.article_rounded),
+    GlassNavDestination(
+      label: 'Profile',
+      icon: Icons.person_outline,
+      selectedIcon: Icons.person_rounded,
+    ),
   ];
 
   int _indexFromLocation(String location) {
-    const tabs = _clientTabs;
-    for (var i = 0; i < tabs.length; i++) {
-      if (location.startsWith(tabs[i].path)) return i;
+    const paths = ['/home', '/appointments', '/consultants', '/blog', '/profile'];
+    for (var i = 0; i < paths.length; i++) {
+      if (location.startsWith(paths[i])) return i;
     }
     return 0;
+  }
+
+  String _pathForTab(int index, List<GlassNavDestination> tabs) {
+    const paths = ['/home', '/appointments', '/consultants', '/blog', '/profile'];
+    return paths[index];
   }
 
   @override
@@ -63,7 +94,7 @@ class DashboardShell extends ConsumerWidget {
         case '/blog':
           body = const BlogListScreen();
         case '/profile':
-          body = isPro ? const ProfessionalProfileScreen() : const ClientProfileScreen();
+          body = isPro ? const ProfessionalProfileScreen() : const ClientAccountScreen();
         default:
           body = isPro ? const ProfessionalHomeScreen() : const ClientHomeScreen();
       }
@@ -72,36 +103,16 @@ class DashboardShell extends ConsumerWidget {
     final showBottomNav = !RegExp(r'^/consultants/[^/]+$').hasMatch(location);
 
     return Scaffold(
-      floatingActionButton: location == '/home'
-          ? FloatingActionButton.small(
-              onPressed: () => context.push('/assistant'),
-              backgroundColor: AppColors.brand,
-              child: const Icon(Icons.smart_toy_outlined, color: Colors.white),
-            )
-          : null,
-      body: body,
+      extendBody: true,
+      backgroundColor: AppColors.surface,
+      body: AmbientBackground(child: body),
       bottomNavigationBar: showBottomNav
-          ? NavigationBar(
+          ? GlassNavBar(
               selectedIndex: selectedIndex,
-              onDestinationSelected: (i) => context.go(tabs[i].path),
-              destinations: [
-                for (final tab in tabs)
-                  NavigationDestination(
-                    icon: Icon(tab.icon),
-                    selectedIcon: Icon(tab.selectedIcon, color: AppColors.brand),
-                    label: tab.label,
-                  ),
-              ],
+              onSelected: (i) => context.go(_pathForTab(i, tabs)),
+              destinations: tabs,
             )
           : null,
     );
   }
-}
-
-class _TabItem {
-  const _TabItem(this.path, this.label, this.icon, this.selectedIcon);
-  final String path;
-  final String label;
-  final IconData icon;
-  final IconData selectedIcon;
 }

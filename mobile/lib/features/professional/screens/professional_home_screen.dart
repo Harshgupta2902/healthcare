@@ -5,9 +5,10 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/ambient_background.dart';
+import '../../../shared/widgets/behance_ui.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/section_header.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/professional_repository.dart';
 
@@ -21,6 +22,7 @@ class ProfessionalHomeScreen extends ConsumerWidget {
     final dateFmt = DateFormat('MMM d • h:mm a');
 
     return SafeArea(
+      bottom: false,
       child: dashboard.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
         error: (e, _) => Padding(
@@ -39,27 +41,26 @@ class ProfessionalHomeScreen extends ConsumerWidget {
             onRefresh: () async => ref.invalidate(professionalDashboardProvider),
             color: AppColors.brand,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
               children: [
-                SectionHeader(
-                  title: user?.name ?? 'Professional',
-                  subtitle: data.profile.specialization ?? 'Consultations overview',
+                HomeGreetingHeader(
+                  name: user?.name?.split(' ').first ?? 'Doctor',
+                  imageUrl: user?.image,
                 ),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
-                      child: _Stat(
-                        label: 'Appointments',
+                      child: StatHighlightCard(
                         value: '${data.appointments.length}',
-                        icon: Icons.event_rounded,
+                        label: 'Appointments',
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _Stat(
-                        label: 'Guest requests',
+                      child: StatHighlightCard(
                         value: '${data.guestAppointments.length}',
-                        icon: Icons.person_add_alt_1_outlined,
+                        label: 'Guest\nrequests',
                       ),
                     ),
                   ],
@@ -80,9 +81,20 @@ class ProfessionalHomeScreen extends ConsumerWidget {
                       child: GlassCard(
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.brandGradient,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.person_outline, color: Colors.white, size: 20),
+                          ),
                           title: Text(a.clientName ?? 'Client', style: AppTypography.bodyMedium),
                           subtitle: Text(dateFmt.format(a.startTime)),
-                          trailing: Text(a.status.toUpperCase(), style: AppTypography.fieldLabel.copyWith(fontSize: 9)),
+                          trailing: Text(
+                            a.status.toUpperCase(),
+                            style: AppTypography.fieldLabel.copyWith(fontSize: 9, color: AppColors.brand),
+                          ),
                         ),
                       ),
                     ),
@@ -104,6 +116,14 @@ class ProfessionalHomeScreen extends ConsumerWidget {
                         onTap: () => context.push('/prescription/${g.id}'),
                         child: ListTile(
                           contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainer,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.inbox_outlined, color: AppColors.brand, size: 20),
+                          ),
                           title: Text(g.patientName, style: AppTypography.bodyMedium),
                           subtitle: Text('${g.appointmentDate} • ${g.appointmentTime}'),
                           trailing: g.prescriptionHtml != null
@@ -117,32 +137,6 @@ class ProfessionalHomeScreen extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, required this.icon});
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassCard(
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.brand),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label.toUpperCase(), style: AppTypography.fieldLabel.copyWith(fontSize: 9)),
-              Text(value, style: AppTypography.statValue.copyWith(fontSize: 20)),
-            ],
-          ),
-        ],
       ),
     );
   }

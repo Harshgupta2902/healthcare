@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/models.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
-import '../../../shared/widgets/section_header.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/client_repository.dart';
@@ -114,18 +115,24 @@ class _ClientProfileEditScreenState extends ConsumerState<ClientProfileEditScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const SectionHeader(
-                  title: 'Account & medical profile',
-                  subtitle: 'Updates sync to Supabase via RLS',
-                ),
-                GlassCard(
-                  child: Column(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text('Edit profile'),
+      ),
+      body: AmbientBackground(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
+            : ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Text('Account & medical profile', style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+                  const SizedBox(height: 4),
+                  Text('Updates sync securely to your account', style: AppTypography.pageSubtitle),
+                  const SizedBox(height: 16),
+                  GlassCard(
+                    gradientBorder: true,
+                    child: Column(
                     children: [
                       AppTextField(controller: _name, label: 'Full name'),
                       const SizedBox(height: 12),
@@ -163,6 +170,7 @@ class _ClientProfileEditScreenState extends ConsumerState<ClientProfileEditScree
                 ),
               ],
             ),
+      ),
     );
   }
 }

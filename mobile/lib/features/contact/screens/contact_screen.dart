@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_repository.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
-import '../../../shared/widgets/section_header.dart';
 
 const _contactSubjects = [
   'General Inquiry',
@@ -73,49 +74,57 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contact us')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const SectionHeader(
-            title: 'Get in touch',
-            subtitle: 'Questions about care, billing, or partnerships',
-          ),
-          GlassCard(
-            child: Column(
-              children: [
-                AppTextField(controller: _name, label: 'Name'),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _email,
-                  label: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('SUBJECT', style: AppTypography.fieldLabel),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  value: _subject,
-                  items: _contactSubjects
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _subject = v ?? _subject),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(controller: _message, label: 'Message', maxLines: 5),
-              ],
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text('Contact us'),
+      ),
+      body: AmbientBackground(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text('Get in touch', style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+            const SizedBox(height: 4),
+            Text('Questions about care, billing, or partnerships', style: AppTypography.pageSubtitle),
+            const SizedBox(height: 20),
+            GlassCard(
+              gradientBorder: true,
+              child: Column(
+                children: [
+                  AppTextField(controller: _name, label: 'Name'),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: _email,
+                    label: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('SUBJECT', style: AppTypography.fieldLabel),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: _subject,
+                    borderRadius: BorderRadius.circular(16),
+                    items: _contactSubjects
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _subject = v ?? _subject),
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(controller: _message, label: 'Message', maxLines: 5),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          PrimaryGradientButton(
-            label: _submitting ? 'Sending…' : 'Send message',
-            isLoading: _submitting,
-            onPressed: _submitting ? null : _submit,
-          ),
-        ],
+            const SizedBox(height: 20),
+            PrimaryGradientButton(
+              label: _submitting ? 'Sending…' : 'Send message',
+              isLoading: _submitting,
+              onPressed: _submitting ? null : _submit,
+            ),
+          ],
+        ),
       ),
     );
   }
