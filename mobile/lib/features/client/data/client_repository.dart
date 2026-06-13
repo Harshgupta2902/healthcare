@@ -23,6 +23,7 @@ class ClientDashboardData {
     required this.medicationsCount,
     required this.documentsCount,
     required this.upcomingAppointments,
+    required this.allAppointments,
     required this.medicalHistory,
     required this.medications,
     required this.documents,
@@ -36,6 +37,7 @@ class ClientDashboardData {
   final int medicationsCount;
   final int documentsCount;
   final List<AppointmentItem> upcomingAppointments;
+  final List<AppointmentItem> allAppointments;
   final List<MedicalHistoryItem> medicalHistory;
   final List<MedicationItem> medications;
   final List<MedicalDocumentItem> documents;
@@ -50,6 +52,7 @@ class ClientDashboardData {
         'documentsCount': documentsCount,
         'upcomingAppointments':
             upcomingAppointments.map(_appointmentToJson).toList(),
+        'allAppointments': allAppointments.map(_appointmentToJson).toList(),
         'medicalHistory': medicalHistory.map(_historyToJson).toList(),
         'medications': medications.map(_medicationToJson).toList(),
         'documents': documents.map(_documentToJson).toList(),
@@ -80,6 +83,9 @@ class ClientDashboardData {
       medicationsCount: json['medicationsCount'] as int? ?? 0,
       documentsCount: json['documentsCount'] as int? ?? 0,
       upcomingAppointments: (json['upcomingAppointments'] as List? ?? [])
+          .map((e) => _appointmentFromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      allAppointments: (json['allAppointments'] as List? ?? json['upcomingAppointments'] as List? ?? [])
           .map((e) => _appointmentFromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
       medicalHistory: (json['medicalHistory'] as List? ?? [])
@@ -257,6 +263,7 @@ class ClientRepository {
       medicationsCount: medications.length,
       documentsCount: documents.length,
       upcomingAppointments: upcoming,
+      allAppointments: appointmentList,
       medicalHistory: history,
       medications: medications,
       documents: documents,

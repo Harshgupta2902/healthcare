@@ -42,8 +42,10 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
     final user = ref.watch(currentAppUserProvider).valueOrNull;
     final dashboard = ref.watch(clientDashboardProvider);
 
-    return SafeArea(
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Health Records')),
+      body: SafeArea(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -85,6 +87,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }
