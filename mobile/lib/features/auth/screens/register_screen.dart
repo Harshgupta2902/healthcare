@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/models.dart';
+import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../data/auth_repository.dart';
 
@@ -62,75 +64,99 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Create account')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Join HealthHere', style: AppTypography.pageTitle),
-                const SizedBox(height: 8),
-                Text('Patient or professional — admin accounts are web only.',
-                    style: AppTypography.pageSubtitle),
-                const SizedBox(height: 24),
-                if (_error != null) ...[
-                  ErrorBanner(message: _error!),
-                  const SizedBox(height: 16),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text('Create account'),
+      ),
+      extendBodyBehindAppBar: true,
+      body: AmbientBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Create Your\nAccount',
+                    style: AppTypography.pageTitle.copyWith(fontSize: 28, height: 1.15),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Patient or professional — admin accounts are web only.',
+                    style: AppTypography.pageSubtitle,
+                  ),
+                  const SizedBox(height: 24),
+                  GlassCard(
+                    gradientBorder: true,
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_error != null) ...[
+                          ErrorBanner(message: _error!),
+                          const SizedBox(height: 16),
+                        ],
+                        Text('I AM A', style: AppTypography.sectionLabel),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _RoleChip(
+                                label: 'Patient',
+                                icon: Icons.person_outline,
+                                selected: _role == UserRole.client,
+                                onTap: () => setState(() => _role = UserRole.client),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _RoleChip(
+                                label: 'Professional',
+                                icon: Icons.medical_services_outlined,
+                                selected: _role == UserRole.professional,
+                                onTap: () => setState(() => _role = UserRole.professional),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        AppTextField(
+                          controller: _nameController,
+                          label: 'Full name',
+                          hint: 'Jane Doe',
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _emailController,
+                          label: 'Email',
+                          hint: 'you@example.com',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) {
+                            if (v == null || !v.contains('@')) return 'Valid email required';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        AppTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          obscureText: true,
+                          validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
+                        ),
+                        const SizedBox(height: 24),
+                        PrimaryGradientButton(
+                          label: 'Create account',
+                          isLoading: _isLoading,
+                          onPressed: _submit,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-                Text('I AM A', style: AppTypography.sectionLabel),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(child: _RoleChip(
-                      label: 'Patient',
-                      icon: Icons.person_outline,
-                      selected: _role == UserRole.client,
-                      onTap: () => setState(() => _role = UserRole.client),
-                    )),
-                    const SizedBox(width: 12),
-                    Expanded(child: _RoleChip(
-                      label: 'Professional',
-                      icon: Icons.medical_services_outlined,
-                      selected: _role == UserRole.professional,
-                      onTap: () => setState(() => _role = UserRole.professional),
-                    )),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                AppTextField(
-                  controller: _nameController,
-                  label: 'Full name',
-                  hint: 'Jane Doe',
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'you@example.com',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || !v.contains('@')) return 'Valid email required';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _passwordController,
-                  label: 'Password',
-                  obscureText: true,
-                  validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
-                ),
-                const SizedBox(height: 24),
-                PrimaryGradientButton(
-                  label: 'Create account',
-                  isLoading: _isLoading,
-                  onPressed: _submit,
-                ),
-              ],
+              ),
             ),
           ),
         ),

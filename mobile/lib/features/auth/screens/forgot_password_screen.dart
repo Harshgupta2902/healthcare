@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../data/auth_repository.dart';
 
@@ -53,51 +55,72 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset password')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _sent
-              ? Column(
-                  children: [
-                    const Icon(Icons.mark_email_read_outlined, size: 56, color: AppColors.brand),
-                    const SizedBox(height: 16),
-                    Text('Check your email', style: AppTypography.pageTitle),
-                    const SizedBox(height: 8),
-                    Text(
-                      'We sent a reset link to ${_emailController.text.trim()}',
-                      style: AppTypography.pageSubtitle,
-                      textAlign: TextAlign.center,
-                    ),
-                    const Spacer(),
-                    SecondaryButton(label: 'Back to sign in', onPressed: () => context.go('/login')),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Forgot password?', style: AppTypography.pageTitle),
-                    const SizedBox(height: 8),
-                    Text('Enter your email and we will send a reset link.',
-                        style: AppTypography.pageSubtitle),
-                    const SizedBox(height: 24),
-                    if (_error != null) ...[
-                      ErrorBanner(message: _error!),
-                      const SizedBox(height: 16),
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text('Reset password'),
+      ),
+      body: AmbientBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _sent
+                ? Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.mark_email_read_outlined, size: 56, color: AppColors.brand),
+                      ),
+                      const SizedBox(height: 20),
+                      Text('Check your email', style: AppTypography.pageTitle),
+                      const SizedBox(height: 8),
+                      Text(
+                        'We sent a reset link to ${_emailController.text.trim()}',
+                        style: AppTypography.pageSubtitle,
+                        textAlign: TextAlign.center,
+                      ),
+                      const Spacer(),
+                      SecondaryButton(label: 'Back to sign in', onPressed: () => context.go('/login')),
                     ],
-                    AppTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const Spacer(),
-                    PrimaryGradientButton(
-                      label: 'Send reset link',
-                      isLoading: _loading,
-                      onPressed: _submit,
-                    ),
-                  ],
-                ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Forgot password?', style: AppTypography.pageTitle.copyWith(fontSize: 26)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Enter your email and we will send a reset link.',
+                        style: AppTypography.pageSubtitle,
+                      ),
+                      const SizedBox(height: 24),
+                      GlassCard(
+                        child: Column(
+                          children: [
+                            if (_error != null) ...[
+                              ErrorBanner(message: _error!),
+                              const SizedBox(height: 16),
+                            ],
+                            AppTextField(
+                              controller: _emailController,
+                              label: 'Email',
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      PrimaryGradientButton(
+                        label: 'Send reset link',
+                        isLoading: _loading,
+                        onPressed: _submit,
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
