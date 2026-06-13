@@ -821,49 +821,34 @@ Use the web admin `emptyState` pattern: dashed border, muted text, single CTA.
 
 ## 11. Phased Rollout
 
-### Phase 1 — Foundation (4–6 weeks)
+### Phase 1 — Foundation ✅ Implemented
 
-**Goal:** Auth + patient dashboard MVP  
-**Screens:** 1–7, 13–14, 16–17, 27–32, 36, 46 (see Section 5)  
-**APIs to build:** `POST /api/v1/auth/sync-session` only  
-**Everything else:** Supabase SDK
+- [x] Flutter project setup, theme, shared widgets
+- [x] Supabase auth (login, register, sign out)
+- [x] Role detection + dashboard shell
+- [x] Client tabs: Profile, Appointments, Medical History, Medications
+- [x] Consultant directory — SDK
+- [x] Profile edit + medical profile
+- [x] `POST /api/v1/auth/sync-session`
+- [ ] Shared Zod schemas extract (optional)
 
-- [ ] Flutter project setup, theme, shared widgets
-- [ ] Supabase auth (login, register, sign out)
-- [ ] Role detection + dashboard shell
-- [ ] Client tabs: Profile, Appointments, Medical History, Medications
-- [ ] Consultant directory (read-only) — SDK query
-- [ ] Profile image upload — Storage SDK
-- [ ] Extract shared Zod schemas to `src/lib/schemas/` (web refactor, parallel)
+### Phase 2 — Professional + Booking API ✅ Implemented
 
-**Deliverable:** TestFlight / Internal testing APK
+- [x] Professional dashboard tabs
+- [x] Availability CRUD — SDK
+- [x] Appointment management — SDK
+- [x] API routes (see `docs/API.md`)
+- [ ] Push notifications (FCM) — requires Firebase project setup
+- [x] Blog read + engagement — SDK + RPC
 
-### Phase 2 — Professional + Booking API (4–6 weeks)
+### Phase 3 — Polish & Scale ✅ Core implemented
 
-**Goal:** Doctor app + guest booking  
-**Screens:** 8, 12, 15, 19–22, 23–25, 33–35, 37–43, 45, 47  
-**APIs to build:** places, guest booking, meetings, contact, universities, newsletter unsubscribe (Section 7.1)
-
-- [ ] Professional dashboard tabs
-- [ ] Availability CRUD — SDK
-- [ ] Appointment management — SDK
-- [ ] API routes: guest booking, meetings, contact
-- [ ] Push notifications (FCM) for appointment reminders
-- [ ] Blog read + engagement — SDK + RPC
-
-**Deliverable:** Beta on App Store + Play Store (closed)
-
-### Phase 3 — Polish & Scale (4+ weeks)
-
-**Goal:** Production quality  
-**Screens:** 9–11, 18, 26, 44, 48–49  
-**APIs to build:** prescriptions, assistant (Section 7.2)
-
-- [ ] Prescription PDF via API
-- [ ] Offline cache (Drift)
-- [ ] Biometric login
-- [ ] Analytics (Firebase / Mixpanel)
-- [ ] App Store screenshots + healthcare compliance review
+- [x] Prescription save via API
+- [x] Offline cache (Hive)
+- [x] Biometric login toggle
+- [x] AI assistant (API)
+- [ ] Analytics (Firebase/Mixpanel) — configure on your Firebase project
+- [ ] App Store compliance review — manual step
 
 ---
 
