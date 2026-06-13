@@ -13,10 +13,16 @@ class BlogRepository {
 
   final SupabaseClient _supabase;
 
+  static const _postSelect =
+      '*, blog_categories(name), author:users!blog_posts_author_id_fkey(name)';
+
+  static const _commentSelect =
+      '*, author:users!blog_comments_user_id_fkey(name)';
+
   Future<List<BlogPostItem>> getPublishedPosts({String? categoryId}) async {
     var query = _supabase
         .from('blog_posts')
-        .select('*, blog_categories(name), users(name)')
+        .select(_postSelect)
         .eq('status', 'published');
 
     if (categoryId != null && categoryId.isNotEmpty) {
@@ -34,7 +40,7 @@ class BlogRepository {
 
     final row = await _supabase
         .from('blog_posts')
-        .select('*, blog_categories(name), users(name)')
+        .select(_postSelect)
         .eq('slug', slug)
         .eq('status', 'published')
         .maybeSingle();
@@ -66,7 +72,7 @@ class BlogRepository {
   Future<List<BlogCommentItem>> getComments(String postId) async {
     final rows = await _supabase
         .from('blog_comments')
-        .select('*, users(name)')
+        .select(_commentSelect)
         .eq('post_id', postId)
         .eq('status', 'approved')
         .isFilter('deleted_at', null)
@@ -93,7 +99,7 @@ class BlogRepository {
           'body': body,
           if (parentId != null) 'parent_id': parentId,
         })
-        .select('*, users(name)')
+        .select(_commentSelect)
         .single();
 
     return BlogCommentItem.fromJson(Map<String, dynamic>.from(row));

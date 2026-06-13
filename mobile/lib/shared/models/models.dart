@@ -579,7 +579,7 @@ class BlogPostItem extends Equatable {
 
   factory BlogPostItem.fromJson(Map<String, dynamic> json) {
     final category = json['blog_categories'] as Map<String, dynamic>?;
-    final author = json['users'] as Map<String, dynamic>?;
+    final author = (json['author'] ?? json['users']) as Map<String, dynamic>?;
     return BlogPostItem(
       id: json['id'] as String,
       slug: json['slug'] as String,
@@ -657,7 +657,7 @@ class BlogCommentItem extends Equatable {
   final String status;
 
   factory BlogCommentItem.fromJson(Map<String, dynamic> json) {
-    final author = json['users'] as Map<String, dynamic>?;
+    final author = (json['author'] ?? json['users']) as Map<String, dynamic>?;
     return BlogCommentItem(
       id: json['id'] as String,
       body: json['body'] as String,
