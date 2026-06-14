@@ -14,11 +14,66 @@ import '../data/professional_repository.dart';
 
 const _dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/// Credentials list for the professional profile tab.
+class ProfessionalCredentialsPanel extends ConsumerWidget {
+  const ProfessionalCredentialsPanel({super.key, required this.qualifications});
+
+  final List<ProfessionalQualification> qualifications;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _CredentialsTab(qualifications: qualifications, embedded: true);
+}
+
 class ProfessionalProfileScreen extends ConsumerStatefulWidget {
   const ProfessionalProfileScreen({super.key});
 
   @override
   ConsumerState<ProfessionalProfileScreen> createState() => _ProfessionalProfileScreenState();
+}
+
+/// Single professional dashboard section for web-aligned bottom tabs.
+enum ProfessionalSection { credentials, calendar, clients }
+
+class ProfessionalSectionScreen extends ConsumerWidget {
+  const ProfessionalSectionScreen({super.key, required this.section});
+
+  final ProfessionalSection section;
+
+  String get _title => switch (section) {
+        ProfessionalSection.credentials => 'Credentials',
+        ProfessionalSection.calendar => 'Calendar & availability',
+        ProfessionalSection.clients => 'Clients',
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboard = ref.watch(professionalDashboardProvider);
+
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(_title, style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+          ),
+          Expanded(
+            child: dashboard.when(
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
+              error: (e, _) => Center(child: Text(e.toString())),
+              data: (data) => switch (section) {
+                ProfessionalSection.credentials => _CredentialsTab(qualifications: data.qualifications),
+                ProfessionalSection.calendar => _AvailabilityTab(slots: data.availability),
+                ProfessionalSection.clients => _ClientsTab(clients: data.clients),
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProfessionalProfileScreenState extends ConsumerState<ProfessionalProfileScreen>
@@ -89,11 +144,46 @@ class _ProfessionalProfileScreenState extends ConsumerState<ProfessionalProfileS
 }
 
 class _CredentialsTab extends ConsumerWidget {
-  const _CredentialsTab({required this.qualifications});
+  const _CredentialsTab({required this.qualifications, this.embedded = false});
+
   final List<ProfessionalQualification> qualifications;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final list = qualifications.isEmpty
+        ? Center(
+            child: Padding(
+              padding: EdgeInsets.all(embedded ? 16 : 24),
+              child: const EmptyState(
+                title: 'No qualifications',
+                subtitle: 'Upload degrees for admin verification.',
+                icon: Icons.school_outlined,
+              ),
+            ),
+          )
+        : ListView.builder(
+            shrinkWrap: embedded,
+            physics: embedded ? const NeverScrollableScrollPhysics() : null,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: qualifications.length,
+            itemBuilder: (_, i) {
+              final q = qualifications[i];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: GlassCard(
+                  child: ListTile(
+                    title: Text(q.degree, style: AppTypography.bodyMedium),
+                    subtitle: Text('${q.institution}${q.year != null ? ' • ${q.year}' : ''}'),
+                    trailing: q.documentApproved == true
+                        ? const Icon(Icons.verified, color: AppColors.brand)
+                        : const Icon(Icons.hourglass_empty, size: 18),
+                  ),
+                ),
+              );
+            },
+          );
+
     return Column(
       children: [
         Padding(
@@ -104,35 +194,7 @@ class _CredentialsTab extends ConsumerWidget {
             onPressed: () => _showAddDialog(context, ref),
           ),
         ),
-        Expanded(
-          child: qualifications.isEmpty
-              ? const Center(
-                  child: EmptyState(
-                    title: 'No qualifications',
-                    subtitle: 'Upload degrees for admin verification.',
-                    icon: Icons.school_outlined,
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: qualifications.length,
-                  itemBuilder: (_, i) {
-                    final q = qualifications[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: GlassCard(
-                        child: ListTile(
-                          title: Text(q.degree, style: AppTypography.bodyMedium),
-                          subtitle: Text('${q.institution}${q.year != null ? ' • ${q.year}' : ''}'),
-                          trailing: q.documentApproved == true
-                              ? const Icon(Icons.verified, color: AppColors.brand)
-                              : const Icon(Icons.hourglass_empty, size: 18),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
+        if (embedded) list else Expanded(child: list),
       ],
     );
   }
