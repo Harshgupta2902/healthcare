@@ -87,7 +87,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 PillSearchBar(
                   hint: 'Search doctor, specialty…',
                   readOnly: true,
-                  onTap: () => context.go('/consultants'),
+                  onTap: () => context.go('/book'),
                 ),
                 const SizedBox(height: 20),
                 if (upcoming != null)
@@ -96,7 +96,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     specialty: upcoming.appointmentType ?? 'Video consultation',
                     dateLabel: dateFmt.format(upcoming.startTime),
                     timeLabel: timeFmt.format(upcoming.startTime),
-                    onTap: () => context.go('/appointments'),
+                    onTap: () => context.go('/my-doctor'),
                   )
                 else
                   UpcomingVisitHeroCard(
@@ -104,7 +104,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     specialty: 'Find a verified specialist',
                     dateLabel: '—',
                     timeLabel: '—',
-                    onTap: () => context.go('/consultants'),
+                    onTap: () => context.go('/book'),
                   ),
                 if (categories.isNotEmpty) ...[
                   const SizedBox(height: 24),
@@ -113,7 +113,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     children: [
                       Text('Categories', style: AppTypography.textTheme.titleMedium),
                       TextButton(
-                        onPressed: () => context.go('/consultants'),
+                        onPressed: () => context.go('/book'),
                         child: Text('See all', style: AppTypography.bodyMedium.copyWith(color: AppColors.brand)),
                       ),
                     ],
@@ -131,7 +131,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   children: [
                     Text('Popular Doctors', style: AppTypography.textTheme.titleMedium),
                     TextButton(
-                      onPressed: () => context.go('/consultants'),
+                      onPressed: () => context.go('/book'),
                       child: Text('See all', style: AppTypography.bodyMedium.copyWith(color: AppColors.brand)),
                     ),
                   ],

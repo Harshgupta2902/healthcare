@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/services/saved_doctors_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/ambient_background.dart';
@@ -11,6 +12,7 @@ import '../../../shared/widgets/behance_ui.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/section_header.dart';
+import '../../client/screens/my_doctor_screen.dart';
 import '../data/consultants_repository.dart';
 
 class ConsultantDetailScreen extends ConsumerWidget {
@@ -29,6 +31,30 @@ class ConsultantDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: const Text('Doctor Details'),
+        actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final savedAsync = ref.watch(savedDoctorIdsProvider);
+              return savedAsync.when(
+                data: (ids) {
+                  final isSaved = ids.contains(userId);
+                  return IconButton(
+                    onPressed: () async {
+                      await ref.read(savedDoctorsServiceProvider).toggle(userId);
+                      ref.invalidate(savedDoctorIdsProvider);
+                    },
+                    icon: Icon(
+                      isSaved ? Icons.favorite : Icons.favorite_border,
+                      color: isSaved ? Colors.red : AppColors.onSurfaceVariant,
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              );
+            },
+          ),
+        ],
       ),
       body: AmbientBackground(
         child: profile.when(
@@ -152,7 +178,7 @@ class ConsultantDetailScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                   child: PrimaryGradientButton(
-                    label: 'Book Appointment',
+                    label: 'Book now',
                     icon: Icons.calendar_month,
                     onPressed: () => context.push('/book/${p.userId}'),
                   ),
