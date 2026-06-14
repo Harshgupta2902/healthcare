@@ -80,6 +80,15 @@ class AuthRepository {
       'role': roleStr,
     });
 
+    if (role == UserRole.professional) {
+      await _supabase.from('professional_profiles').upsert({
+        'user_id': user.id,
+        'specialization': 'General practice',
+        'license_number': 'Pending',
+        'is_verified': false,
+      }, onConflict: 'user_id');
+    }
+
     await _syncSession();
     return _fetchAppUser(user);
   }

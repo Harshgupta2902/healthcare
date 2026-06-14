@@ -94,11 +94,9 @@ class ProfessionalRepository {
     ]);
 
     final profileRow = results[0] as Map<String, dynamic>?;
-    if (profileRow == null) {
-      throw Exception('Professional profile not found');
-    }
-
-    final profile = ProfessionalProfile.fromJson(profileRow);
+    final profile = profileRow != null
+        ? ProfessionalProfile.fromJson(profileRow)
+        : await ensureProfessionalProfile(uid);
 
     final qualifications = (results[1] as List)
         .map((e) => ProfessionalQualification.fromJson(Map<String, dynamic>.from(e as Map)))
@@ -148,7 +146,40 @@ class ProfessionalRepository {
         .select('*, users(name, image)')
         .eq('user_id', uid)
         .maybeSingle();
-    if (row == null) return null;
+    if (row == null) {
+      try {
+        return await ensureProfessionalProfile(uid);
+      } catch (_) {
+        return null;
+      }
+    }
+    return ProfessionalProfile.fromJson(Map<String, dynamic>.from(row));
+  }
+
+  /// Creates a stub profile when a professional user has no `professional_profiles` row yet.
+  Future<ProfessionalProfile> ensureProfessionalProfile(String uid) async {
+    final existing = await _supabase
+        .from('professional_profiles')
+        .select('*, users(name, image)')
+        .eq('user_id', uid)
+        .maybeSingle();
+    if (existing != null) {
+      return ProfessionalProfile.fromJson(Map<String, dynamic>.from(existing));
+    }
+
+    await _supabase.from('professional_profiles').upsert({
+      'user_id': uid,
+      'specialization': 'General practice',
+      'license_number': 'Pending',
+      'is_verified': false,
+    }, onConflict: 'user_id');
+
+    final row = await _supabase
+        .from('professional_profiles')
+        .select('*, users(name, image)')
+        .eq('user_id', uid)
+        .single();
+
     return ProfessionalProfile.fromJson(Map<String, dynamic>.from(row));
   }
 
