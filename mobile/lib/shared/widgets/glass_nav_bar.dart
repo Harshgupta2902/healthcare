@@ -1,11 +1,9 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radii.dart';
+import '../../core/theme/app_typography.dart';
 
-/// Floating glass bottom bar — Behance reference (active icon in blue pill).
+/// Bottom tab bar matching reference: Home · Book · My doctor · Chat · Profile.
 class GlassNavBar extends StatelessWidget {
   const GlassNavBar({
     super.key,
@@ -22,34 +20,24 @@ class GlassNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(AppRadii.xxl),
-              border: Border.all(color: AppColors.glassBorder),
-              boxShadow: AppColors.cardShadow,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.outline.withValues(alpha: 0.25))),
+      ),
+      padding: EdgeInsets.fromLTRB(4, 6, 4, bottom + 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < destinations.length; i++)
+            Expanded(
+              child: _NavItem(
+                destination: destinations[i],
+                selected: i == selectedIndex,
+                onTap: () => onSelected(i),
+              ),
             ),
-            child: Row(
-              children: [
-                for (var i = 0; i < destinations.length; i++)
-                  Expanded(
-                    child: _NavItem(
-                      destination: destinations[i],
-                      selected: i == selectedIndex,
-                      onTap: () => onSelected(i),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -60,11 +48,14 @@ class GlassNavDestination {
     required this.label,
     required this.icon,
     required this.selectedIcon,
+    this.centerFab = false,
   });
 
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+  /// Center tab (My doctor) — blue circle that rises above the bar when active.
+  final bool centerFab;
 }
 
 class _NavItem extends StatelessWidget {
@@ -80,24 +71,65 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = AppColors.brand;
+    final inactiveColor = AppColors.onSurfaceVariant.withValues(alpha: 0.75);
+    final color = selected ? activeColor : inactiveColor;
+
+    Widget iconChild;
+    if (destination.centerFab && selected) {
+      iconChild = Transform.translate(
+        offset: const Offset(0, -10),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: activeColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: activeColor.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(destination.selectedIcon, size: 26, color: Colors.white),
+        ),
+      );
+    } else {
+      iconChild = Icon(
+        selected ? destination.selectedIcon : destination.icon,
+        size: 24,
+        color: color,
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            gradient: selected ? AppColors.brandGradient : null,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            boxShadow: selected ? AppColors.brandGlow : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: destination.centerFab && selected ? 0 : 4,
+            bottom: 4,
           ),
-          child: Icon(
-            selected ? destination.selectedIcon : destination.icon,
-            size: 24,
-            color: selected ? AppColors.onBrand : AppColors.onSurfaceVariant,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconChild,
+              SizedBox(height: destination.centerFab && selected ? 2 : 4),
+              Text(
+                destination.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.fieldLabel.copyWith(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ),

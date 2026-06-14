@@ -7,100 +7,101 @@ import '../../../shared/models/models.dart';
 import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/glass_nav_bar.dart';
 import '../../auth/providers/auth_providers.dart';
-import '../../blog/screens/blog_list_screen.dart';
 import '../../client/screens/appointments_screen.dart';
-import '../../client/screens/client_home_screen.dart';
+import '../../client/screens/book_screen.dart';
+import '../../client/screens/chat_screen.dart';
 import '../../client/screens/client_account_screen.dart';
+import '../../client/screens/client_home_screen.dart';
+import '../../client/screens/my_doctor_screen.dart';
+import '../../professional/screens/professional_account_screen.dart';
+import '../../professional/screens/professional_book_screen.dart';
 import '../../professional/screens/professional_home_screen.dart';
-import '../../professional/screens/professional_profile_screen.dart';
+import '../../professional/screens/professional_my_doctor_screen.dart';
 
 class DashboardShell extends ConsumerWidget {
   const DashboardShell({super.key, required this.child});
 
   final Widget child;
 
-  static const _clientTabs = [
+  /// Shared bottom nav for client and professional roles.
+  static const shellTabs = [
     GlassNavDestination(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home_rounded),
-    GlassNavDestination(label: 'Visits', icon: Icons.event_outlined, selectedIcon: Icons.event_rounded),
     GlassNavDestination(
-      label: 'Doctors',
-      icon: Icons.people_outline,
-      selectedIcon: Icons.people_rounded,
+      label: 'Book',
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today_rounded,
     ),
-    GlassNavDestination(label: 'Blog', icon: Icons.article_outlined, selectedIcon: Icons.article_rounded),
     GlassNavDestination(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person_rounded,
+      label: 'My doctor',
+      icon: Icons.medical_information_outlined,
+      selectedIcon: Icons.medical_information_rounded,
+      centerFab: true,
     ),
+    GlassNavDestination(
+      label: 'Chat',
+      icon: Icons.chat_bubble_outline,
+      selectedIcon: Icons.chat_bubble_rounded,
+    ),
+    GlassNavDestination(label: 'Profile', icon: Icons.person_outline, selectedIcon: Icons.person_rounded),
   ];
 
-  static const _proTabs = [
-    GlassNavDestination(
-      label: 'Consults',
-      icon: Icons.medical_services_outlined,
-      selectedIcon: Icons.medical_services_rounded,
-    ),
-    GlassNavDestination(
-      label: 'Calendar',
-      icon: Icons.calendar_month_outlined,
-      selectedIcon: Icons.calendar_month_rounded,
-    ),
-    GlassNavDestination(
-      label: 'Network',
-      icon: Icons.people_outline,
-      selectedIcon: Icons.people_rounded,
-    ),
-    GlassNavDestination(label: 'Blog', icon: Icons.article_outlined, selectedIcon: Icons.article_rounded),
-    GlassNavDestination(
-      label: 'Profile',
-      icon: Icons.person_outline,
-      selectedIcon: Icons.person_rounded,
-    ),
-  ];
+  static const shellPaths = ['/home', '/book', '/my-doctor', '/chat', '/profile'];
 
   int _indexFromLocation(String location) {
-    const paths = ['/home', '/appointments', '/consultants', '/blog', '/profile'];
-    for (var i = 0; i < paths.length; i++) {
-      if (location.startsWith(paths[i])) return i;
+    for (var i = 0; i < shellPaths.length; i++) {
+      if (location.startsWith(shellPaths[i])) return i;
     }
     return 0;
-  }
-
-  String _pathForTab(int index, List<GlassNavDestination> tabs) {
-    const paths = ['/home', '/appointments', '/consultants', '/blog', '/profile'];
-    return paths[index];
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.watch(userRoleProvider);
     final isPro = role == UserRole.professional;
-    final tabs = isPro ? _proTabs : _clientTabs;
     final location = GoRouterState.of(context).uri.path;
     final selectedIndex = _indexFromLocation(location);
 
     Widget body;
     if (location.startsWith('/consultants/') && !location.endsWith('/consultants')) {
       body = child;
+    } else if (isPro) {
+      switch (location) {
+        case '/home':
+          body = const ProfessionalHomeScreen();
+        case '/book':
+          body = const ProfessionalBookScreen();
+        case '/my-doctor':
+          body = const ProfessionalMyDoctorScreen();
+        case '/chat':
+          body = const ChatScreen();
+        case '/profile':
+          body = const ProfessionalAccountScreen();
+        case '/appointments':
+          body = const AppointmentsScreen();
+        default:
+          body = const ProfessionalHomeScreen();
+      }
     } else {
       switch (location) {
         case '/home':
-          body = isPro ? const ProfessionalHomeScreen() : const ClientHomeScreen();
+          body = const ClientHomeScreen();
+        case '/book':
+          body = const BookScreen();
+        case '/my-doctor':
+          body = const MyDoctorScreen();
+        case '/chat':
+          body = const ChatScreen();
+        case '/profile':
+          body = const ClientAccountScreen();
         case '/appointments':
           body = const AppointmentsScreen();
-        case '/consultants':
-          body = child;
-        case '/blog':
-          body = const BlogListScreen();
-        case '/profile':
-          body = isPro ? const ProfessionalProfileScreen() : const ClientAccountScreen();
         default:
-          body = isPro ? const ProfessionalHomeScreen() : const ClientHomeScreen();
+          body = const ClientHomeScreen();
       }
     }
 
-    final showBottomNav = !RegExp(r'^/consultants/[^/]+$').hasMatch(location);
+    final showBottomNav = !RegExp(r'^/consultants/[^/]+$').hasMatch(location) &&
+        location != '/appointments';
 
     return Scaffold(
       extendBody: true,
@@ -109,8 +110,8 @@ class DashboardShell extends ConsumerWidget {
       bottomNavigationBar: showBottomNav
           ? GlassNavBar(
               selectedIndex: selectedIndex,
-              onSelected: (i) => context.go(_pathForTab(i, tabs)),
-              destinations: tabs,
+              onSelected: (i) => context.go(shellPaths[i]),
+              destinations: shellTabs,
             )
           : null,
     );
