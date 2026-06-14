@@ -12,7 +12,6 @@ import '../../features/booking/screens/book_consultation_screen.dart';
 import '../../features/booking/screens/booking_success_screen.dart';
 import '../../features/client/screens/client_profile_edit_screen.dart';
 import '../../features/consultants/screens/consultant_detail_screen.dart';
-import '../../features/consultants/screens/consultants_list_screen.dart';
 import '../../features/contact/screens/contact_screen.dart';
 import '../../features/dashboard/screens/dashboard_shell.dart';
 import '../../features/auth/screens/welcome_screen.dart';
@@ -108,12 +107,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) => DashboardShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const SizedBox.shrink()),
-          GoRoute(path: '/book', builder: (_, __) => const SizedBox.shrink()),
-          GoRoute(path: '/my-doctor', builder: (_, __) => const SizedBox.shrink()),
-          GoRoute(path: '/chat', builder: (_, __) => const SizedBox.shrink()),
-          GoRoute(path: '/appointments', builder: (_, __) => const SizedBox.shrink()),
-          GoRoute(path: '/consultants', builder: (_, __) => const ConsultantsListScreen()),
+          GoRoute(path: '/search', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/history', builder: (_, __) => const SizedBox.shrink()),
           GoRoute(path: '/profile', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/requests', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/calendar', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/clients', builder: (_, __) => const SizedBox.shrink()),
         ],
       ),
     ],
