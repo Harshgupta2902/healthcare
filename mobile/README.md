@@ -41,7 +41,6 @@ flutter run --dart-define-from-file=.env.mobile
 ### Phase 2
 - Professional dashboard (consultations, calendar, clients, credentials)
 - Guest booking flow + booking success
-- Blog feed, post detail, comments, likes
 - Medical documents + insurance (Storage SDK)
 - Contact form (API)
 - All `/api/v1` routes on Next.js — see [docs/API.md](../docs/API.md)

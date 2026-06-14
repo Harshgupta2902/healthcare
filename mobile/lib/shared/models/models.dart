@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 enum UserRole { client, professional, admin, unknown }
 
@@ -144,7 +145,8 @@ class ProfessionalProfile extends Equatable {
 
   String get displayFee {
     if (consultationFee == null) return '—';
-    return '\$${(consultationFee! / 100).toStringAsFixed(0)}';
+    final rupees = consultationFee! / 100;
+    return '₹${NumberFormat('#,##,###', 'en_IN').format(rupees)}';
   }
 
   @override
@@ -548,127 +550,6 @@ class GuestAppointmentItem extends Equatable {
 
   @override
   List<Object?> get props => [id, appointmentDate, appointmentTime];
-}
-
-class BlogPostItem extends Equatable {
-  const BlogPostItem({
-    required this.id,
-    required this.slug,
-    required this.title,
-    this.excerpt,
-    this.coverImageUrl,
-    this.publishedAt,
-    this.viewCount = 0,
-    this.likeCount = 0,
-    this.commentCount = 0,
-    this.categoryName,
-    this.authorName,
-  });
-
-  final String id;
-  final String slug;
-  final String title;
-  final String? excerpt;
-  final String? coverImageUrl;
-  final DateTime? publishedAt;
-  final int viewCount;
-  final int likeCount;
-  final int commentCount;
-  final String? categoryName;
-  final String? authorName;
-
-  factory BlogPostItem.fromJson(Map<String, dynamic> json) {
-    final category = json['blog_categories'] as Map<String, dynamic>?;
-    final author = (json['author'] ?? json['users']) as Map<String, dynamic>?;
-    return BlogPostItem(
-      id: json['id'] as String,
-      slug: json['slug'] as String,
-      title: json['title'] as String,
-      excerpt: json['excerpt'] as String?,
-      coverImageUrl: json['cover_image_url'] as String?,
-      publishedAt: json['published_at'] != null
-          ? DateTime.tryParse(json['published_at'] as String)
-          : null,
-      viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
-      likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
-      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
-      categoryName: category?['name'] as String?,
-      authorName: author?['name'] as String?,
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, slug, title];
-}
-
-class BlogPostDetail extends BlogPostItem {
-  const BlogPostDetail({
-    required super.id,
-    required super.slug,
-    required super.title,
-    super.excerpt,
-    required this.contentHtml,
-    super.coverImageUrl,
-    super.publishedAt,
-    super.viewCount,
-    super.likeCount,
-    super.commentCount,
-    super.categoryName,
-    super.authorName,
-    this.likedByMe = false,
-  });
-
-  final String contentHtml;
-  final bool likedByMe;
-
-  factory BlogPostDetail.fromJson(Map<String, dynamic> json, {bool likedByMe = false}) {
-    final base = BlogPostItem.fromJson(json);
-    return BlogPostDetail(
-      id: base.id,
-      slug: base.slug,
-      title: base.title,
-      excerpt: base.excerpt,
-      contentHtml: json['content_html'] as String? ?? '',
-      coverImageUrl: base.coverImageUrl,
-      publishedAt: base.publishedAt,
-      viewCount: base.viewCount,
-      likeCount: base.likeCount,
-      commentCount: base.commentCount,
-      categoryName: base.categoryName,
-      authorName: base.authorName,
-      likedByMe: likedByMe,
-    );
-  }
-}
-
-class BlogCommentItem extends Equatable {
-  const BlogCommentItem({
-    required this.id,
-    required this.body,
-    required this.createdAt,
-    this.authorName,
-    this.status = 'approved',
-  });
-
-  final String id;
-  final String body;
-  final DateTime createdAt;
-  final String? authorName;
-  final String status;
-
-  factory BlogCommentItem.fromJson(Map<String, dynamic> json) {
-    final author = (json['author'] ?? json['users']) as Map<String, dynamic>?;
-    return BlogCommentItem(
-      id: json['id'] as String,
-      body: json['body'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      authorName: author?['name'] as String?,
-      status: json['status'] as String? ?? 'approved',
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, body];
 }
 
 class PlacePrediction extends Equatable {
