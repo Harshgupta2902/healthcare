@@ -41,7 +41,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         data: (data) {
           final dateFmt = DateFormat('MMM d, y');
           final timeFmt = DateFormat('h:mm a');
-          final upcoming = data.upcomingAppointments.isNotEmpty ? data.upcomingAppointments.first : null;
+          final upcoming = data.upcomingAppointments.isNotEmpty
+              ? data.upcomingAppointments.first
+              : null;
 
           final categories = consultants.maybeWhen(
             data: (list) {
@@ -54,7 +56,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   .toList();
               return specs;
             },
-            orElse: () => <ProfessionalProfile>[],
+            orElse: () => <String>[],
           );
 
           final doctors = consultants.maybeWhen(
@@ -87,7 +89,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 PillSearchBar(
                   hint: 'Search doctor, specialty…',
                   readOnly: true,
-                  onTap: () => context.go('/book'),
+                  onTap: () => context.go('/consultants'),
                 ),
                 const SizedBox(height: 20),
                 if (upcoming != null)
@@ -96,7 +98,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     specialty: upcoming.appointmentType ?? 'Video consultation',
                     dateLabel: dateFmt.format(upcoming.startTime),
                     timeLabel: timeFmt.format(upcoming.startTime),
-                    onTap: () => context.go('/my-doctor'),
+                    onTap: () => context.go('/appointments'),
                   )
                 else
                   UpcomingVisitHeroCard(
@@ -104,7 +106,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     specialty: 'Find a verified specialist',
                     dateLabel: '—',
                     timeLabel: '—',
-                    onTap: () => context.go('/book'),
+                    onTap: () => context.go('/consultants'),
                   ),
                 if (categories.isNotEmpty) ...[
                   const SizedBox(height: 24),
@@ -113,7 +115,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     children: [
                       Text('Categories', style: AppTypography.textTheme.titleMedium),
                       TextButton(
-                        onPressed: () => context.go('/book'),
+                        onPressed: () => context.go('/consultants'),
                         child: Text('See all', style: AppTypography.bodyMedium.copyWith(color: AppColors.brand)),
                       ),
                     ],
@@ -131,7 +133,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   children: [
                     Text('Popular Doctors', style: AppTypography.textTheme.titleMedium),
                     TextButton(
-                      onPressed: () => context.go('/book'),
+                      onPressed: () => context.go('/consultants'),
                       child: Text('See all', style: AppTypography.bodyMedium.copyWith(color: AppColors.brand)),
                     ),
                   ],

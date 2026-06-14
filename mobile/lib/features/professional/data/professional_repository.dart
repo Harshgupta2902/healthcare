@@ -48,7 +48,8 @@ class ProfessionalRepository {
 
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  Future<ProfessionalDashboardData> getDashboardData({bool allowCache = true}) async {
+  Future<ProfessionalDashboardData> getDashboardData(
+      {bool allowCache = true}) async {
     final uid = _userId;
     if (uid == null) throw const AuthException('Not authenticated');
 
@@ -68,7 +69,11 @@ class ProfessionalRepository {
 
   Future<ProfessionalDashboardData> _fetchDashboard(String uid) async {
     final results = await Future.wait([
-      _supabase.from('professional_profiles').select('*, users(name, image)').eq('user_id', uid).maybeSingle(),
+      _supabase
+          .from('professional_profiles')
+          .select('*, users(name, image)')
+          .eq('user_id', uid)
+          .maybeSingle(),
       _supabase
           .from('professional_qualifications')
           .select()
@@ -99,22 +104,30 @@ class ProfessionalRepository {
         : await ensureProfessionalProfile(uid);
 
     final qualifications = (results[1] as List)
-        .map((e) => ProfessionalQualification.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) => ProfessionalQualification.fromJson(
+            Map<String, dynamic>.from(e as Map)))
         .toList();
 
     final availability = (results[2] as List)
-        .map((e) => AvailabilitySlot.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            AvailabilitySlot.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
     final appointments = (results[3] as List)
-        .map((e) => AppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            AppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
     final guestAppointments = (results[4] as List)
-        .map((e) => GuestAppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            GuestAppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
-    final clientIds = appointments.map((a) => a.clientId).whereType<String>().toSet().toList();
+    final clientIds = appointments
+        .map((a) => a.clientId)
+        .whereType<String>()
+        .toSet()
+        .toList();
     final clients = await _fetchClients(clientIds);
 
     return ProfessionalDashboardData(
@@ -186,7 +199,10 @@ class ProfessionalRepository {
   Future<void> updateProfile(Map<String, dynamic> data) async {
     final uid = _userId;
     if (uid == null) throw const AuthException('Not authenticated');
-    await _supabase.from('professional_profiles').update(data).eq('user_id', uid);
+    await _supabase
+        .from('professional_profiles')
+        .update(data)
+        .eq('user_id', uid);
   }
 
   Future<ProfessionalQualification> addQualification({
@@ -243,7 +259,8 @@ class ProfessionalRepository {
     return AvailabilitySlot.fromJson(Map<String, dynamic>.from(row));
   }
 
-  Future<void> updateAvailabilitySlot(String id, Map<String, dynamic> data) async {
+  Future<void> updateAvailabilitySlot(
+      String id, Map<String, dynamic> data) async {
     await _supabase.from('professional_availability').update(data).eq('id', id);
   }
 
@@ -252,7 +269,9 @@ class ProfessionalRepository {
   }
 
   Future<void> updateAppointmentStatus(String id, String status) async {
-    await _supabase.from('appointments').update({'status': status}).eq('id', id);
+    await _supabase
+        .from('appointments')
+        .update({'status': status}).eq('id', id);
   }
 
   Future<List<GuestAppointmentItem>> getGuestAppointments() async {
@@ -266,7 +285,8 @@ class ProfessionalRepository {
         .order('created_at', ascending: false);
 
     return (rows as List)
-        .map((e) => GuestAppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            GuestAppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 }
