@@ -8,7 +8,6 @@ import '../../features/auth/screens/admin_web_only_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
-import '../../features/blog/screens/blog_post_screen.dart';
 import '../../features/booking/screens/book_consultation_screen.dart';
 import '../../features/booking/screens/booking_success_screen.dart';
 import '../../features/client/screens/client_profile_edit_screen.dart';
@@ -16,9 +15,11 @@ import '../../features/consultants/screens/consultant_detail_screen.dart';
 import '../../features/consultants/screens/consultants_list_screen.dart';
 import '../../features/contact/screens/contact_screen.dart';
 import '../../features/dashboard/screens/dashboard_shell.dart';
+import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/splash_screen.dart';
 import '../../features/professional/screens/prescription_screen.dart';
+import '../../features/profile/screens/notifications_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
 import '../../shared/models/models.dart';
 
@@ -44,14 +45,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = location == '/login' ||
           location == '/register' ||
           location == '/forgot-password' ||
-          location == '/onboarding';
+          location == '/onboarding' ||
+          location == '/welcome';
 
       final isPublicRoute = location.startsWith('/book/') ||
           location.startsWith('/booking/success/') ||
           location == '/contact';
 
       if (session == null) {
-        if (isAuthRoute || location == '/onboarding' || isPublicRoute) return null;
+        if (isAuthRoute || location == '/onboarding' || location == '/welcome' || isPublicRoute) return null;
         return '/login';
       }
 
@@ -68,11 +70,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
+      GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
       GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: '/admin-web-only', builder: (_, __) => const AdminWebOnlyScreen()),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/settings/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
       GoRoute(path: '/profile/edit', builder: (_, __) => const ClientProfileEditScreen()),
       GoRoute(
@@ -94,10 +98,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/blog/:slug',
-        builder: (_, state) => BlogPostScreen(slug: state.pathParameters['slug']!),
-      ),
-      GoRoute(
         path: '/consultants/:userId',
         builder: (_, state) => ConsultantDetailScreen(
           userId: state.pathParameters['userId']!,
@@ -108,9 +108,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) => DashboardShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/book', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/my-doctor', builder: (_, __) => const SizedBox.shrink()),
+          GoRoute(path: '/chat', builder: (_, __) => const SizedBox.shrink()),
           GoRoute(path: '/appointments', builder: (_, __) => const SizedBox.shrink()),
           GoRoute(path: '/consultants', builder: (_, __) => const ConsultantsListScreen()),
-          GoRoute(path: '/blog', builder: (_, __) => const SizedBox.shrink()),
           GoRoute(path: '/profile', builder: (_, __) => const SizedBox.shrink()),
         ],
       ),
