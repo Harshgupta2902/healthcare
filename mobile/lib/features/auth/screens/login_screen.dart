@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/ambient_background.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -23,6 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _rememberMe = false;
+  bool _showPassword = false;
   String? _error;
 
   @override
@@ -63,113 +63,136 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: AmbientBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  IconButton(
-                    onPressed: () => context.canPop() ? context.pop() : context.go('/onboarding'),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.surfaceContainerLowest,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Login to Your\nAccount', style: AppTypography.pageTitle.copyWith(fontSize: 28, height: 1.15)),
-                  const SizedBox(height: 32),
-                  if (_error != null) ...[
-                    ErrorBanner(message: _error!),
-                    const SizedBox(height: 16),
-                  ],
-                  Text('Email', style: AppTypography.fieldLabel.copyWith(fontSize: 12, color: AppColors.onSurface)),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    controller: _emailController,
-                    hint: 'you@example.com',
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: Icons.email_outlined,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Email is required';
-                      if (!v.contains('@')) return 'Enter a valid email';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Password', style: AppTypography.fieldLabel.copyWith(fontSize: 12, color: AppColors.onSurface)),
-                  const SizedBox(height: 8),
-                  AppTextField(
-                    controller: _passwordController,
-                    hint: '••••••••',
-                    obscureText: true,
-                    prefixIcon: Icons.lock_outline,
-                    validator: (v) {
-                      if (v == null || v.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: AppColors.surfaceContainerLow),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: double.infinity,
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, 28, 24, MediaQuery.paddingOf(context).bottom + 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                          activeColor: AppColors.brand,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.outline,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text('Remember me', style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => context.push('/forgot-password'),
-                        child: Text(
-                          'Forgot Password?',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w600,
+                      const SizedBox(height: 24),
+                      Text('Login', style: AppTypography.pageTitle.copyWith(fontSize: 24)),
+                      const SizedBox(height: 24),
+                      if (_error != null) ...[
+                        ErrorBanner(message: _error!),
+                        const SizedBox(height: 16),
+                      ],
+                      AppTextField(
+                        controller: _emailController,
+                        hint: 'Enter email',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email_outlined,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'Email is required';
+                          if (!v.contains('@')) return 'Enter a valid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: _passwordController,
+                        hint: 'Enter password',
+                        obscureText: !_showPassword,
+                        prefixIcon: Icons.lock_outline,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.length < 6) return 'Password must be at least 6 characters';
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _submit(),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: Checkbox(
+                              value: _rememberMe,
+                              onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                              activeColor: AppColors.brand,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('Remember me', style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => context.push('/forgot-password'),
+                            child: Text(
+                              'Forgot password?',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.brand,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      PrimaryGradientButton(
+                        label: 'Go to Home',
+                        isLoading: _isLoading,
+                        onPressed: _submit,
+                      ),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => context.push('/register'),
+                          child: RichText(
+                            text: TextSpan(
+                              style: AppTypography.pageSubtitle,
+                              children: [
+                                const TextSpan(text: "Didn't have an account? "),
+                                TextSpan(
+                                  text: 'Register',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppColors.brand,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  PrimaryGradientButton(
-                    label: 'Login',
-                    isLoading: _isLoading,
-                    onPressed: _submit,
-                  ),
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Don't have an account? ", style: AppTypography.pageSubtitle),
-                      GestureDetector(
-                        onTap: () => context.push('/register'),
-                        child: Text(
-                          'Register',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

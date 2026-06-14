@@ -15,6 +15,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.maxLines = 1,
     this.prefixIcon,
+    this.suffixIcon,
     this.onFieldSubmitted,
     this.onChanged,
   });
@@ -28,6 +29,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final int maxLines;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final void Function(String)? onFieldSubmitted;
   final void Function(String)? onChanged;
 
@@ -55,6 +57,7 @@ class AppTextField extends StatelessWidget {
             prefixIcon: prefixIcon != null
                 ? Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 20)
                 : null,
+            suffixIcon: suffixIcon,
           ),
         ),
       ],
