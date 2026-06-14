@@ -5,14 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/behance_ui.dart';
-import '../../../shared/widgets/primary_button.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_providers.dart';
 import 'client_profile_screen.dart';
 
-/// Behance-style account hub (profile tab).
+/// Profile account hub — General + Others sections.
 class ClientAccountScreen extends ConsumerWidget {
   const ClientAccountScreen({super.key});
 
@@ -23,67 +22,54 @@ class ClientAccountScreen extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
         children: [
-          Column(
-            children: [
-              CircleAvatar(
-                radius: 48,
-                backgroundColor: AppColors.surfaceContainer,
-                backgroundImage: user?.image != null ? CachedNetworkImageProvider(user!.image!) : null,
-                child: user?.image == null
-                    ? Text(
-                        (user?.name ?? user?.email ?? '?')[0].toUpperCase(),
-                        style: AppTypography.pageTitle.copyWith(fontSize: 28, color: AppColors.brand),
-                      )
-                    : null,
-              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-              const SizedBox(height: 14),
-              Text(user?.name ?? 'Your profile', style: AppTypography.pageTitle.copyWith(fontSize: 22)),
-              const SizedBox(height: 4),
-              Text(user?.email ?? '', style: AppTypography.pageSubtitle),
-            ],
+          Text('Profile account', style: AppTypography.pageTitle.copyWith(fontSize: 24)),
+          const SizedBox(height: 20),
+          _ProfileHeroCard(
+            name: user?.name ?? 'Your profile',
+            email: user?.email ?? '',
+            imageUrl: user?.image,
           ),
           const SizedBox(height: 28),
-          ProfileMenuTile(
-            icon: Icons.folder_shared_outlined,
-            label: 'Health Records',
-            animationIndex: 0,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ClientProfileScreen()),
-            ),
+          _SectionHeader(title: 'General'),
+          _ProfileListCard(
+            items: [
+              _ProfileListItem(
+                icon: Icons.person_outline,
+                label: 'Personal information',
+                onTap: () => context.push('/profile/edit'),
+              ),
+              _ProfileListItem(
+                icon: Icons.shield_outlined,
+                label: 'Insurances',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const ClientProfileScreen()),
+                ),
+              ),
+              _ProfileListItem(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                onTap: () => context.push('/settings'),
+              ),
+            ],
           ),
-          ProfileMenuTile(
-            icon: Icons.edit_outlined,
-            label: 'Edit Profile',
-            animationIndex: 1,
-            onTap: () => context.push('/profile/edit'),
-          ),
-          ProfileMenuTile(
-            icon: Icons.event_outlined,
-            label: 'My Appointments',
-            animationIndex: 2,
-            onTap: () => context.go('/appointments'),
-          ),
-          ProfileMenuTile(
-            icon: Icons.settings_outlined,
-            label: 'Settings & Security',
-            animationIndex: 3,
-            onTap: () => context.push('/settings'),
-          ),
-          ProfileMenuTile(
-            icon: Icons.support_agent_outlined,
-            label: 'Contact Support',
-            animationIndex: 4,
-            onTap: () => context.push('/contact'),
-          ),
-          const SizedBox(height: 8),
-          ProfileMenuTile(
-            icon: Icons.logout_rounded,
-            label: 'Logout',
-            animationIndex: 5,
-            onTap: () => _confirmLogout(context, ref),
-            trailing: const SizedBox.shrink(),
+          const SizedBox(height: 24),
+          _SectionHeader(title: 'Others'),
+          _ProfileListCard(
+            items: [
+              _ProfileListItem(icon: Icons.help_outline, label: 'Help center', onTap: () => context.push('/contact')),
+              _ProfileListItem(icon: Icons.info_outline, label: 'About us', onTap: () {}),
+              _ProfileListItem(icon: Icons.description_outlined, label: 'Terms of use', onTap: () {}),
+              _ProfileListItem(icon: Icons.privacy_tip_outlined, label: 'Privacy policy', onTap: () {}),
+              _ProfileListItem(icon: Icons.feedback_outlined, label: 'Give a feedback', onTap: () => context.push('/contact')),
+              _ProfileListItem(
+                icon: Icons.logout_rounded,
+                label: 'Logout',
+                isDestructive: true,
+                onTap: () => _confirmLogout(context, ref),
+              ),
+            ],
           ),
         ],
       ),
@@ -93,50 +79,17 @@ class ClientAccountScreen extends ConsumerWidget {
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final leave = await showDialog<bool>(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.logout_rounded, color: AppColors.brand, size: 32),
-              ),
-              const SizedBox(height: 16),
-              Text('Sure you want to leave?', style: AppTypography.pageTitle.copyWith(fontSize: 18)),
-              const SizedBox(height: 8),
-              Text('You will need to sign in again.', style: AppTypography.pageSubtitle, textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: PrimaryGradientButton(
-                      label: 'Logout',
-                      onPressed: () => Navigator.pop(ctx, true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
-        ),
+        ],
       ),
     );
 
@@ -144,5 +97,128 @@ class ClientAccountScreen extends ConsumerWidget {
       await ref.read(authRepositoryProvider).signOut();
       if (context.mounted) context.go('/login');
     }
+  }
+}
+
+class _ProfileHeroCard extends StatelessWidget {
+  const _ProfileHeroCard({
+    required this.name,
+    required this.email,
+    this.imageUrl,
+  });
+
+  final String name;
+  final String email;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.brand.withValues(alpha: 0.15),
+            AppColors.brandBright.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 52,
+            backgroundColor: Colors.white,
+            backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+            child: imageUrl == null
+                ? Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: AppTypography.pageTitle.copyWith(fontSize: 32, color: AppColors.brand),
+                  )
+                : null,
+          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+          const SizedBox(height: 14),
+          Text(name, style: AppTypography.textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(email, style: AppTypography.pageSubtitle),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, left: 4),
+      child: Text(title, style: AppTypography.textTheme.titleSmall),
+    );
+  }
+}
+
+class _ProfileListCard extends StatelessWidget {
+  const _ProfileListCard({required this.items});
+
+  final List<_ProfileListItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(color: AppColors.outline.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            items[i],
+            if (i < items.length - 1)
+              Divider(height: 1, indent: 56, color: AppColors.outline.withValues(alpha: 0.35)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileListItem extends StatelessWidget {
+  const _ProfileListItem({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive ? Colors.red : AppColors.onSurface;
+
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: isDestructive ? Colors.red : AppColors.brand, size: 22),
+      title: Text(
+        label,
+        style: AppTypography.bodyMedium.copyWith(color: color, fontWeight: FontWeight.w500),
+      ),
+      trailing: isDestructive
+          ? null
+          : const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant, size: 22),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    );
   }
 }

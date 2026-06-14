@@ -2,169 +2,131 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/services/biometric_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/models/models.dart';
-import '../../../shared/widgets/ambient_background.dart';
-import '../../../shared/widgets/behance_ui.dart';
-import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/primary_button.dart';
-import '../../auth/data/auth_repository.dart';
-import '../../auth/providers/auth_providers.dart';
+import 'notifications_screen.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool? _biometricEnabled;
-  bool _biometricAvailable = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBiometric();
-  }
-
-  Future<void> _loadBiometric() async {
-    final bio = ref.read(biometricServiceProvider);
-    final enabled = await bio.isEnabled();
-    final available = await bio.canCheckBiometrics();
-    if (mounted) {
-      setState(() {
-        _biometricEnabled = enabled;
-        _biometricAvailable = available;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final user = ref.watch(currentAppUserProvider).valueOrNull;
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceAlt,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Settings'),
-      ),
-      body: AmbientBackground(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            GlassCard(
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: AppColors.surfaceContainer,
-                    child: Text(
-                      (user?.name ?? user?.email ?? '?')[0].toUpperCase(),
-                      style: AppTypography.bodyMedium.copyWith(color: AppColors.brand),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(user?.name ?? 'User', style: AppTypography.textTheme.titleMedium),
-                        Text(user?.email ?? '', style: AppTypography.pageSubtitle),
-                        Text(
-                          _roleLabel(user?.role),
-                          style: AppTypography.sectionLabel.copyWith(fontSize: 10),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.outline.withValues(alpha: 0.4)),
             ),
-            const SizedBox(height: 16),
-            if (user?.isClient == true)
-              ProfileMenuTile(
-                icon: Icons.edit_outlined,
-                label: 'Edit health profile',
-                animationIndex: 0,
-                onTap: () => context.push('/profile/edit'),
-              ),
-            if (_biometricAvailable)
-              GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                elevated: false,
-                child: SwitchListTile(
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.fingerprint, color: AppColors.brand),
-                  ),
-                  title: const Text('Biometric unlock'),
-                  subtitle: const Text('Require Face ID / fingerprint on app open'),
-                  value: _biometricEnabled ?? false,
-                  activeThumbColor: AppColors.brand,
-                  onChanged: (v) async {
-                    if (v) {
-                      final ok = await ref.read(biometricServiceProvider).authenticate();
-                      if (!ok) return;
-                    }
-                    await ref.read(biometricServiceProvider).setEnabled(v);
-                    setState(() => _biometricEnabled = v);
-                  },
-                ),
-              ),
-            ProfileMenuTile(
-              icon: Icons.mail_outline,
-              label: 'Contact support',
-              animationIndex: 1,
-              onTap: () => context.push('/contact'),
-            ),
-            ProfileMenuTile(
-              icon: Icons.lock_outline,
-              label: 'Change password',
-              animationIndex: 2,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Use forgot password flow or web settings')),
-                );
-              },
-            ),
-            ProfileMenuTile(
-              icon: Icons.privacy_tip_outlined,
-              label: 'Privacy policy',
-              animationIndex: 3,
-              onTap: () {},
-            ),
-            const SizedBox(height: 16),
-            SecondaryButton(
-              label: 'Sign out',
-              onPressed: () async {
-                await ref.read(authRepositoryProvider).signOut();
-                if (context.mounted) context.go('/login');
-              },
-            ),
-          ],
+            child: const Icon(Icons.arrow_back_rounded, size: 20),
+          ),
         ),
+        title: Text('Settings', style: AppTypography.pageTitle.copyWith(fontSize: 20)),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _SettingsCard(
+            items: [
+              _SettingsItem(
+                icon: Icons.notifications_outlined,
+                label: 'Notifications',
+                onTap: () => context.push('/settings/notifications'),
+              ),
+              _SettingsItem(icon: Icons.language_outlined, label: 'Language', trailing: 'English'),
+              _SettingsItem(
+                icon: Icons.lock_outline,
+                label: 'Forgot password',
+                onTap: () => context.push('/forgot-password'),
+              ),
+              _SettingsItem(icon: Icons.security_outlined, label: '2FA authentication'),
+              _SettingsItem(icon: Icons.brightness_6_outlined, label: 'Theme', trailing: 'Light mode'),
+              _SettingsItem(icon: Icons.sync_outlined, label: 'Sync with calendar'),
+            ],
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+            label: const Text('Delete account', style: TextStyle(color: Colors.red)),
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.lg)),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  String _roleLabel(UserRole? role) {
-    switch (role) {
-      case UserRole.client:
-        return 'PATIENT';
-      case UserRole.professional:
-        return 'PROFESSIONAL';
-      case UserRole.admin:
-        return 'ADMIN (WEB ONLY)';
-      default:
-        return 'USER';
-    }
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.items});
+
+  final List<_SettingsItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        border: Border.all(color: AppColors.outline.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            items[i],
+            if (i < items.length - 1)
+              Divider(height: 1, indent: 56, color: AppColors.outline.withValues(alpha: 0.35)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsItem extends StatelessWidget {
+  const _SettingsItem({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: AppColors.brand, size: 22),
+      title: Text(label, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500)),
+      trailing: trailing != null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(trailing!, style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant, size: 22),
+              ],
+            )
+          : const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant, size: 22),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    );
   }
 }
