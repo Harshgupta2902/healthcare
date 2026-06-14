@@ -21,6 +21,52 @@ class ClientProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ClientProfileScreen> createState() => _ClientProfileScreenState();
 }
 
+/// Single health-record section for web-aligned dashboard tabs.
+enum ClientHealthSection { history, medications, documents, insurance }
+
+class ClientHealthSectionScreen extends ConsumerWidget {
+  const ClientHealthSectionScreen({super.key, required this.section});
+
+  final ClientHealthSection section;
+
+  String get _title => switch (section) {
+        ClientHealthSection.history => 'Medical history',
+        ClientHealthSection.medications => 'Medications',
+        ClientHealthSection.documents => 'Documents',
+        ClientHealthSection.insurance => 'Insurance',
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboard = ref.watch(clientDashboardProvider);
+
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text(_title, style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+          ),
+          Expanded(
+            child: dashboard.when(
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
+              error: (e, _) => Center(child: Text(e.toString())),
+              data: (data) => switch (section) {
+                ClientHealthSection.history => _HistoryTab(items: data.medicalHistory),
+                ClientHealthSection.medications => _MedicationsTab(items: data.medications),
+                ClientHealthSection.documents => _DocumentsTab(documents: data.documents),
+                ClientHealthSection.insurance => _InsuranceTab(items: data.insurance),
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
@@ -93,7 +139,33 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen>
   }
 }
 
-void _refresh(WidgetRef ref) => ref.invalidate(clientDashboardProvider);
+void refreshClientDashboard(WidgetRef ref) => ref.invalidate(clientDashboardProvider);
+
+class ClientMedicationsPanel extends ConsumerWidget {
+  const ClientMedicationsPanel({super.key, required this.items});
+  final List<MedicationItem> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _MedicationsTab(items: items);
+}
+
+class ClientDocumentsPanel extends ConsumerWidget {
+  const ClientDocumentsPanel({super.key, required this.documents});
+  final List<MedicalDocumentItem> documents;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _DocumentsTab(documents: documents);
+}
+
+class ClientInsurancePanel extends ConsumerWidget {
+  const ClientInsurancePanel({super.key, required this.items});
+  final List<InsuranceItem> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => _InsuranceTab(items: items);
+}
+
+void _refresh(WidgetRef ref) => refreshClientDashboard(ref);
 
 class _HistoryTab extends ConsumerWidget {
   const _HistoryTab({required this.items});
