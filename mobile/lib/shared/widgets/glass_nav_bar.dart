@@ -3,42 +3,59 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
-/// Bottom tab bar matching reference: Home · Book · My doctor · Chat · Profile.
+/// Bottom tab bar — scrollable when many tabs (matches web dashboard mobile nav).
 class GlassNavBar extends StatelessWidget {
   const GlassNavBar({
     super.key,
     required this.selectedIndex,
     required this.onSelected,
     required this.destinations,
+    this.scrollable = false,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final List<GlassNavDestination> destinations;
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
 
+    final items = [
+      for (var i = 0; i < destinations.length; i++)
+        _NavItem(
+          destination: destinations[i],
+          selected: i == selectedIndex,
+          onTap: () => onSelected(i),
+          compact: scrollable,
+        ),
+    ];
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: AppColors.outline.withValues(alpha: 0.25))),
-      ),
-      padding: EdgeInsets.fromLTRB(4, 6, 4, bottom + 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < destinations.length; i++)
-            Expanded(
-              child: _NavItem(
-                destination: destinations[i],
-                selected: i == selectedIndex,
-                onTap: () => onSelected(i),
-              ),
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.onSurface.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
+      padding: EdgeInsets.fromLTRB(8, 8, 8, bottom + 8),
+      child: scrollable
+          ? SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: items),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < items.length; i++) Expanded(child: items[i]),
+              ],
+            ),
     );
   }
 }
@@ -48,14 +65,11 @@ class GlassNavDestination {
     required this.label,
     required this.icon,
     required this.selectedIcon,
-    this.centerFab = false,
   });
 
   final String label;
   final IconData icon;
   final IconData selectedIcon;
-  /// Center tab (My doctor) — blue circle that rises above the bar when active.
-  final bool centerFab;
 }
 
 class _NavItem extends StatelessWidget {
@@ -63,70 +77,49 @@ class _NavItem extends StatelessWidget {
     required this.destination,
     required this.selected,
     required this.onTap,
+    this.compact = false,
   });
 
   final GlassNavDestination destination;
   final bool selected;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final activeColor = AppColors.brand;
-    final inactiveColor = AppColors.onSurfaceVariant.withValues(alpha: 0.75);
+    final inactiveColor = AppColors.onSurfaceVariant.withValues(alpha: 0.8);
     final color = selected ? activeColor : inactiveColor;
-
-    Widget iconChild;
-    if (destination.centerFab && selected) {
-      iconChild = Transform.translate(
-        offset: const Offset(0, -10),
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: activeColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: activeColor.withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(destination.selectedIcon, size: 26, color: Colors.white),
-        ),
-      );
-    } else {
-      iconChild = Icon(
-        selected ? destination.selectedIcon : destination.icon,
-        size: 24,
-        color: color,
-      );
-    }
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: destination.centerFab && selected ? 0 : 4,
-            bottom: 4,
+        child: Container(
+          constraints: BoxConstraints(minWidth: compact ? 72 : 0),
+          padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 4, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.brand.withValues(alpha: 0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              iconChild,
-              SizedBox(height: destination.centerFab && selected ? 2 : 4),
+              Icon(
+                selected ? destination.selectedIcon : destination.icon,
+                size: 22,
+                color: color,
+              ),
+              const SizedBox(height: 4),
               Text(
                 destination.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.fieldLabel.copyWith(
-                  fontSize: 11,
+                  fontSize: 10,
                   color: color,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ],
