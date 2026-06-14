@@ -58,7 +58,7 @@ class HomeGreetingHeader extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadii.md),
           elevation: 0,
           child: InkWell(
-            onTap: onNotificationTap ?? () => context.push('/appointments'),
+            onTap: onNotificationTap ?? () => context.push('/history'),
             borderRadius: BorderRadius.circular(AppRadii.md),
             child: Container(
               padding: const EdgeInsets.all(10),

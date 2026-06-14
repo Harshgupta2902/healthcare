@@ -7,10 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/models.dart';
-import '../../../shared/widgets/behance_ui.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../auth/providers/auth_providers.dart';
-import '../../professional/data/professional_repository.dart';
 import '../data/client_repository.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
@@ -32,13 +29,11 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final role = ref.watch(userRoleProvider);
-
-    if (role == UserRole.professional) {
-      return _ProfessionalCalendar();
-    }
-
-    return _ClientAppointments(query: _query, searchController: _searchController, onQueryChanged: (q) => setState(() => _query = q));
+    return _ClientAppointments(
+      query: _query,
+      searchController: _searchController,
+      onQueryChanged: (q) => setState(() => _query = q),
+    );
   }
 }
 
@@ -66,7 +61,7 @@ class _ClientAppointments extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: Text('Appointments', style: AppTypography.pageTitle.copyWith(fontSize: 24)),
+            child: Text('History', style: AppTypography.pageTitle.copyWith(fontSize: 24)),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -117,10 +112,10 @@ class _ClientAppointments extends ConsumerWidget {
                       padding: const EdgeInsets.all(24),
                       child: EmptyState(
                         title: 'No appointments found',
-                        subtitle: 'Book a consultation from the Book tab.',
+                        subtitle: 'Book a consultation with a healthcare professional.',
                         icon: Icons.event_busy_outlined,
                         actionLabel: 'Find a doctor',
-                        onAction: () => context.go('/book'),
+                        onAction: () => context.go('/search'),
                       ),
                     ),
                   );
@@ -146,9 +141,9 @@ class _ClientAppointments extends ConsumerWidget {
                           timeLabel: timeFmt.format(a.startTime),
                           status: status,
                           animationIndex: i,
-                          onMessage: () => context.go('/chat'),
+                          onMessage: () => context.push('/contact'),
                           onCall: () {},
-                          onRebook: isUpcoming ? null : () => context.go('/book'),
+                          onRebook: isUpcoming ? null : () => context.go('/search'),
                         ),
                       );
                     },
@@ -290,64 +285,3 @@ class _AppointmentStatusCard extends StatelessWidget {
   }
 }
 
-class _ProfessionalCalendar extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dashboard = ref.watch(professionalDashboardProvider);
-    final dateFmt = DateFormat('MMM d, y');
-    final timeFmt = DateFormat('h:mm a');
-
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text('Calendar', style: AppTypography.pageTitle.copyWith(fontSize: 22)),
-          ),
-          Expanded(
-            child: dashboard.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
-              error: (e, _) => Center(child: Text(e.toString())),
-              data: (data) {
-                final items = data.appointments;
-                if (items.isEmpty) {
-                  return const Center(
-                    child: EmptyState(
-                      title: 'No appointments scheduled',
-                      subtitle: 'Confirmed visits appear on your calendar.',
-                      icon: Icons.calendar_month_outlined,
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(professionalDashboardProvider),
-                  color: AppColors.brand,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
-                    itemCount: items.length,
-                    itemBuilder: (_, i) {
-                      final a = items[i];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: AppointmentListCard(
-                          doctorName: a.clientName ?? 'Client',
-                          specialty: a.status,
-                          dateLabel: dateFmt.format(a.startTime),
-                          timeLabel: timeFmt.format(a.startTime),
-                          animationIndex: i,
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
