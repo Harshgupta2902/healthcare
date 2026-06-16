@@ -12,7 +12,6 @@ import {
   Circle,
   Eye,
   EyeOff,
-  Smartphone,
   Lock,
   ArrowRight,
   ArrowLeft,
@@ -26,12 +25,9 @@ import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 interface FormData {
   firstName: string;
   lastName: string;
-  mobileNumber: string;
   email: string;
   password: string;
-  confirmPassword: string;
   role: "client" | "professional";
-  termsAccepted: boolean;
 }
 
 interface FormErrors {
@@ -39,8 +35,6 @@ interface FormErrors {
   lastName?: string;
   email?: string;
   password?: string;
-  confirmPassword?: string;
-  terms?: string;
   otp?: string;
 }
 
@@ -87,19 +81,15 @@ export function AuthRegisterForm({
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
-    mobileNumber: "",
     email: "",
     password: "",
-    confirmPassword: "",
     role: defaultRole ?? "client",
-    termsAccepted: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [registerPhase, setRegisterPhase] = useState<RegisterPhase>("idle");
   const isBusy = registerPhase !== "idle";
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -142,31 +132,19 @@ export function AuthRegisterForm({
       newErrors.password = "Weak password";
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (!formData.termsAccepted) {
-      newErrors.terms = "You must accept the terms to continue";
-    }
-
     setErrors(newErrors);
     return newErrors;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    const next =
-      type === "checkbox" ? checked : name === "mobileNumber" ? value.replace(/\D/g, "").slice(0, 10) : value;
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: next,
+      [name]: value,
     }));
 
-    if (name === "termsAccepted") {
-      setErrors((prev) => ({ ...prev, terms: undefined }));
-    } else if (errors[name as keyof FormErrors]) {
+    if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
@@ -309,7 +287,7 @@ export function AuthRegisterForm({
     <div className="relative w-full">
           {isBusy && (
             <div
-              className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-3 rounded-xl bg-white/80 px-6 text-center backdrop-blur-sm"
+              className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 px-6 text-center"
               aria-live="polite"
               aria-busy="true"
             >
@@ -384,20 +362,6 @@ export function AuthRegisterForm({
                 </div>
 
                 <LpTextField
-                  id="mobileNumber"
-                  name="mobileNumber"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  label="Mobile Number"
-                  placeholder="+1 (555) 000-0000"
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                  disabled={isBusy}
-                  startIcon={<Smartphone className="size-5" aria-hidden />}
-                />
-
-                <LpTextField
                   id="email"
                   name="email"
                   type="email"
@@ -438,20 +402,7 @@ export function AuthRegisterForm({
                   }
                 />
 
-                <LpTextField
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  label="Confirm Password"
-                  placeholder="••••••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isBusy}
-                  error={errors.confirmPassword}
-                  startIcon={<Lock className="size-5" aria-hidden />}
-                />
-
+                {formData.password.length > 0 ? (
                 <div className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container p-4">
                   <p className="mb-3 font-heading text-xs font-semibold uppercase tracking-wide text-lp-cta-bg">
                     Security Requirements
@@ -469,30 +420,7 @@ export function AuthRegisterForm({
                     ))}
                   </ul>
                 </div>
-
-                <div className="flex items-start gap-3 py-2">
-                  <input
-                    id="termsAccepted"
-                    name="termsAccepted"
-                    type="checkbox"
-                    checked={formData.termsAccepted}
-                    onChange={handleChange}
-                    disabled={isBusy}
-                    className="mt-1 size-4 rounded border-lp-outline-variant text-lp-brand focus:ring-lp-brand"
-                  />
-                  <label htmlFor="termsAccepted" className="font-sans text-sm leading-relaxed text-lp-on-surface-variant">
-                    By creating an account, you agree to our{" "}
-                    <Link href="/terms" className="font-medium text-lp-brand hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link href="/privacy" className="font-medium text-lp-brand hover:underline">
-                      Privacy Policy
-                    </Link>{" "}
-                    including HIPAA compliance.
-                  </label>
-                </div>
-                {errors.terms && <p className="text-xs text-red-600">{errors.terms}</p>}
+                ) : null}
 
                 <LpButton type="submit" variant="primary" fullWidth disabled={isBusy}>
                   {isBusy ? (
@@ -508,6 +436,18 @@ export function AuthRegisterForm({
                   )}
                 </LpButton>
               </form>
+
+              <p className="mt-5 rounded-xl border border-lp-outline-variant/25 bg-lp-surface-container-low px-4 py-3 text-center font-sans text-xs leading-relaxed text-lp-on-surface-variant">
+                By creating an account, you agree to our{" "}
+                <Link href="/terms" className="font-semibold text-lp-brand hover:underline">
+                  Terms of Service
+                </Link>
+                ,{" "}
+                <Link href="/privacy" className="font-semibold text-lp-brand hover:underline">
+                  Privacy Policy
+                </Link>
+                , and HIPAA compliance guidelines.
+              </p>
             </>
           ) : (
             <form onSubmit={handleOtpSubmit} className="space-y-8">
