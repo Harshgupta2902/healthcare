@@ -122,7 +122,7 @@ export function AuthLoginForm({
     <div className="relative">
       {isBusy && (
         <div
-          className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 rounded-xl bg-white/85 px-6 text-center backdrop-blur-sm"
+          className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 rounded-xl bg-white/95 px-6 text-center"
           aria-live="polite"
           aria-busy="true"
         >
@@ -150,60 +150,42 @@ export function AuthLoginForm({
           rounding="lg"
         />
 
-        <LpTextField
-          id="auth-login-password"
-          name="password"
-          type={showPassword ? "text" : "password"}
-          autoComplete="current-password"
-          label="Password"
-          labelEndSlot={
+        <div className="space-y-2">
+          <LpTextField
+            id="auth-login-password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            label="Password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={handleInputChange}
+            disabled={isBusy}
+            error={errors.password}
+            startIcon={<KeyRound className="size-5 shrink-0" aria-hidden />}
+            endSlot={
+              <LpButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isBusy}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              </LpButton>
+            }
+            surface="muted"
+            rounding="lg"
+          />
+          <div className="flex justify-end">
             <Link
               href="/forgot-password"
               className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-brand transition-all hover:underline"
             >
               Forgot Password?
             </Link>
-          }
-          placeholder="••••••••"
-          value={formData.password}
-          onChange={handleInputChange}
-          disabled={isBusy}
-          error={errors.password}
-          startIcon={<KeyRound className="size-5 shrink-0" aria-hidden />}
-          endSlot={
-            <LpButton
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-1/2 -translate-y-1/2"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={isBusy}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-            </LpButton>
-          }
-          surface="muted"
-          rounding="lg"
-        />
-
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center">
-            <input
-              id="auth-login-rememberMe"
-              name="rememberMe"
-              type="checkbox"
-              checked={formData.rememberMe}
-              onChange={handleInputChange}
-              disabled={isBusy}
-              className="size-4 rounded border-lp-outline-variant text-lp-brand focus:ring-lp-brand"
-            />
-            <label
-              htmlFor="auth-login-rememberMe"
-              className="ml-2 cursor-pointer font-sans text-sm leading-5 text-lp-on-surface-variant"
-            >
-              Remember Me
-            </label>
           </div>
         </div>
 
