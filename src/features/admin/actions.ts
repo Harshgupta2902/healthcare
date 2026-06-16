@@ -5,6 +5,12 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { zodFirstError } from '@/lib/server-action-result'
+import {
+  parseRegistrationSettings,
+  REGISTRATION_SETTINGS_KEY,
+  registrationSettingsSchema,
+  type RegistrationSettings,
+} from '@/lib/registration-settings'
 
 // ============================================
 // SCHEMAS
@@ -1807,4 +1813,75 @@ export async function markAllAdminNotificationsRead() {
   revalidatePath('/application/enter')
   revalidatePath('/application/enter/notifications')
   return { success: true as const }
+}
+
+// ============================================
+// APP SETTINGS
+// ============================================
+
+const updateRegistrationSettingsSchema = registrationSettingsSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: 'At least one setting must be provided.' },
+)
+
+export async function getAdminRegistrationSettings(): Promise<
+  | { success: true; data: RegistrationSettings; updatedAt: string | null }
+  | { success: false; error: string }
+> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('value, updated_at')
+    .eq('key', REGISTRATION_SETTINGS_KEY)
+    .maybeSingle()
+
+  if (error) return { success: false, error: error.message }
+
+  return {
+    success: true,
+    data: parseRegistrationSettings(data?.value),
+    updatedAt: data?.updated_at ?? null,
+  }
+}
+
+export async function updateRegistrationSettings(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = updateRegistrationSettingsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false as const, error: zodFirstError(parsed.error) }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const currentRes = await getAdminRegistrationSettings()
+  if (!currentRes.success) {
+    return { success: false as const, error: currentRes.error }
+  }
+
+  const nextValue: RegistrationSettings = {
+    ...currentRes.data,
+    ...parsed.data,
+  }
+
+  const { error } = await supabase.from('app_settings').upsert(
+    {
+      key: REGISTRATION_SETTINGS_KEY,
+      value: nextValue,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id ?? null,
+    },
+    { onConflict: 'key' },
+  )
+
+  if (error) return { success: false as const, error: error.message }
+
+  revalidatePath('/application/enter/settings')
+  revalidatePath('/register')
+  return { success: true as const, data: nextValue }
 }
