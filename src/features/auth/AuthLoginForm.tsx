@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Loader2, Eye, EyeOff, KeyRound, Shield } from "lucide-react";
@@ -26,6 +26,7 @@ export type AuthLoginFormProps = {
   redirectPath?: string | null;
   onSuccess?: () => void;
   onSwitchToSignup?: () => void;
+  onProcessingChange?: (processing: boolean) => void;
   compact?: boolean;
 };
 
@@ -33,6 +34,7 @@ export function AuthLoginForm({
   redirectPath,
   onSuccess,
   onSwitchToSignup,
+  onProcessingChange,
   compact = false,
 }: AuthLoginFormProps) {
   const [formData, setFormData] = useState<FormData>({
@@ -45,6 +47,10 @@ export function AuthLoginForm({
   const [showPassword, setShowPassword] = useState(false);
   const isBusy = authPhase !== "idle";
   const router = useRouter();
+
+  useEffect(() => {
+    onProcessingChange?.(isBusy);
+  }, [isBusy, onProcessingChange]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -211,7 +217,8 @@ export function AuthLoginForm({
             <button
               type="button"
               onClick={onSwitchToSignup}
-              className="font-bold text-lp-brand transition-all hover:underline"
+              disabled={isBusy}
+              className="font-bold text-lp-brand transition-all hover:underline disabled:pointer-events-none disabled:opacity-50"
             >
               Sign Up
             </button>

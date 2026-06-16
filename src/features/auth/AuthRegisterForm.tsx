@@ -56,6 +56,7 @@ export type AuthRegisterFormProps = {
   defaultRole?: "client" | "professional";
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
+  onProcessingChange?: (processing: boolean) => void;
 };
 
 function maskEmail(email: string) {
@@ -74,6 +75,7 @@ export function AuthRegisterForm({
   defaultRole,
   onSuccess,
   onSwitchToLogin,
+  onProcessingChange,
 }: AuthRegisterFormProps) {
   const router = useRouter();
 
@@ -92,6 +94,10 @@ export function AuthRegisterForm({
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    onProcessingChange?.(isBusy);
+  }, [isBusy, onProcessingChange]);
 
   const passwordRules = {
     length: formData.password.length >= 8,
@@ -520,7 +526,8 @@ export function AuthRegisterForm({
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
-                  className="font-bold text-lp-brand transition-all hover:underline"
+                  disabled={isBusy}
+                  className="font-bold text-lp-brand transition-all hover:underline disabled:pointer-events-none disabled:opacity-50"
                 >
                   Sign In
                 </button>

@@ -2,13 +2,11 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +24,7 @@ import { AuthRegisterForm } from "./AuthRegisterForm";
 
 function AuthModalBody({
   registrationSettings,
+  onProcessingChange,
 }: {
   registrationSettings: {
     emailOtpEnabled: boolean;
@@ -33,6 +32,7 @@ function AuthModalBody({
     otpExpiryMinutes: number;
     resendCooldownSeconds: number;
   };
+  onProcessingChange: (processing: boolean) => void;
 }) {
   const { view, redirect, role, onSuccess } = useAuthModal();
   const redirectPath = safeInternalRedirect(redirect);
@@ -53,6 +53,7 @@ function AuthModalBody({
         defaultRole={role ?? undefined}
         onSuccess={handleAuthSuccess}
         onSwitchToLogin={() => switchAuthView("login")}
+        onProcessingChange={onProcessingChange}
       />
     );
   }
@@ -62,6 +63,7 @@ function AuthModalBody({
       redirectPath={redirectPath}
       onSuccess={handleAuthSuccess}
       onSwitchToSignup={() => switchAuthView("signup")}
+      onProcessingChange={onProcessingChange}
       compact
     />
   );
@@ -69,6 +71,7 @@ function AuthModalBody({
 
 export function AuthModal() {
   const { isOpen, view } = useAuthModal();
+  const [isProcessing, setIsProcessing] = useState(false);
   const [registrationSettings, setRegistrationSettings] = useState({
     emailOtpEnabled: DEFAULT_REGISTRATION_SETTINGS.email_otp_enabled,
     otpLength: REGISTRATION_OTP_LENGTH,
@@ -76,6 +79,10 @@ export function AuthModal() {
     resendCooldownSeconds: DEFAULT_REGISTRATION_SETTINGS.resend_cooldown_seconds,
     loaded: false,
   });
+
+  useEffect(() => {
+    if (!isOpen) setIsProcessing(false);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || registrationSettings.loaded) return;
@@ -96,14 +103,21 @@ export function AuthModal() {
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
+        if (!open && isProcessing) return;
         if (!open) closeAuthModal();
       }}
     >
       <DialogContent
         overlayClassName="auth-modal-overlay z-[100]"
-        closeButtonClassName="top-5 right-5 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand"
+        closeButtonClassName="top-5 right-5 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand disabled:pointer-events-none disabled:opacity-40"
         className={`z-[101] max-h-[min(92dvh,900px)] gap-0 overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none ${view === "signup" ? "sm:max-w-[560px]" : "sm:max-w-[480px]"}`}
-        showCloseButton
+        showCloseButton={!isProcessing}
+        onInteractOutside={(event) => {
+          if (isProcessing) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (isProcessing) event.preventDefault();
+        }}
       >
         <AnimatePresence mode="wait">
           {isOpen ? (
@@ -124,7 +138,10 @@ export function AuthModal() {
               </div>
 
               <div className="overflow-y-auto px-6 pb-7 pt-4">
-                <AuthModalBody registrationSettings={registrationSettings} />
+                <AuthModalBody
+                  registrationSettings={registrationSettings}
+                  onProcessingChange={setIsProcessing}
+                />
               </div>
             </motion.div>
           ) : null}
