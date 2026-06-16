@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict EWb1gO01vZbCzMv2rNjFcgjB5AiHWS3FcVjcwiAlUz8NHeOYLLGnsVpFfMy5brr
+\restrict h3fEmHwePOp5LbD0HqScvBPwttuduqt6kkcEGci0Jtpn55uPfGHl5F7UeEhnABW
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.10
@@ -34,11 +34,18 @@ DROP POLICY IF EXISTS "Users can update their own profile image" ON storage.obje
 DROP POLICY IF EXISTS "Users can delete their own profile image" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete own medical documents" ON storage.objects;
 DROP POLICY IF EXISTS "Public qualification files are viewable by everyone" ON storage.objects;
+DROP POLICY IF EXISTS "Public blog cover images are viewable by everyone" ON storage.objects;
 DROP POLICY IF EXISTS "Public Profiles are viewable by everyone" ON storage.objects;
 DROP POLICY IF EXISTS "Professionals can upload own qualification documents" ON storage.objects;
 DROP POLICY IF EXISTS "Professionals can update own qualification documents" ON storage.objects;
 DROP POLICY IF EXISTS "Professionals can delete own qualification documents" ON storage.objects;
+DROP POLICY IF EXISTS "Blog authors upload own blog cover images" ON storage.objects;
+DROP POLICY IF EXISTS "Blog authors update own blog cover images" ON storage.objects;
+DROP POLICY IF EXISTS "Blog authors delete own blog cover images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins manage all blog cover images" ON storage.objects;
 DROP POLICY IF EXISTS guest_appointments_insert_all ON public.guest_appointments;
+DROP POLICY IF EXISTS "Users update own comments" ON public.blog_comments;
+DROP POLICY IF EXISTS "Users read own pending comments" ON public.blog_comments;
 DROP POLICY IF EXISTS "Users insert own admin notification rows" ON public.admin_notifications;
 DROP POLICY IF EXISTS "Users can view own medications" ON public.medications;
 DROP POLICY IF EXISTS "Users can view own medical info" ON public.client_medical_profiles;
@@ -49,7 +56,11 @@ DROP POLICY IF EXISTS "Users can update own record" ON public.users;
 DROP POLICY IF EXISTS "Users can manage own insurance" ON public.insurance;
 DROP POLICY IF EXISTS "Select own" ON public.guest_appointments;
 DROP POLICY IF EXISTS "Select guest bookings matching patient email" ON public.guest_appointments;
+DROP POLICY IF EXISTS "Read likes on published posts" ON public.blog_post_likes;
+DROP POLICY IF EXISTS "Read approved comments on published posts" ON public.blog_comments;
 DROP POLICY IF EXISTS "Public users are viewable by everyone" ON public.users;
+DROP POLICY IF EXISTS "Public read published blog posts" ON public.blog_posts;
+DROP POLICY IF EXISTS "Public read active blog categories" ON public.blog_categories;
 DROP POLICY IF EXISTS "Public qualifications are viewable by everyone" ON public.professional_qualifications;
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.professional_profiles;
 DROP POLICY IF EXISTS "Public availability is viewable by everyone" ON public.professional_availability;
@@ -58,6 +69,11 @@ DROP POLICY IF EXISTS "Professionals read guest bookings assigned to them" ON pu
 DROP POLICY IF EXISTS "Professionals can manage own qualifications" ON public.professional_qualifications;
 DROP POLICY IF EXISTS "Professionals can manage own profile" ON public.professional_profiles;
 DROP POLICY IF EXISTS "Professionals can manage own availability" ON public.professional_availability;
+DROP POLICY IF EXISTS "Engagement users manage own likes" ON public.blog_post_likes;
+DROP POLICY IF EXISTS "Engagement users insert comments" ON public.blog_comments;
+DROP POLICY IF EXISTS "Authors update own blog posts" ON public.blog_posts;
+DROP POLICY IF EXISTS "Authors read own blog posts" ON public.blog_posts;
+DROP POLICY IF EXISTS "Authors insert own blog posts" ON public.blog_posts;
 DROP POLICY IF EXISTS "Anyone can insert contact messages" ON public.contact_messages;
 DROP POLICY IF EXISTS "Allow trigger insert" ON public.users;
 DROP POLICY IF EXISTS "Allow signup insert" ON public.users;
@@ -68,7 +84,10 @@ DROP POLICY IF EXISTS "Allow public insert" ON public.guest_appointments;
 DROP POLICY IF EXISTS "Allow public contact message insert" ON public.contact_messages;
 DROP POLICY IF EXISTS "Allow auth trigger insert" ON public.users;
 DROP POLICY IF EXISTS "Admins store own Google calendar tokens" ON public.google_calendar_connections;
+DROP POLICY IF EXISTS "Admins manage blog posts" ON public.blog_posts;
+DROP POLICY IF EXISTS "Admins manage blog categories" ON public.blog_categories;
 DROP POLICY IF EXISTS "Admins manage all newsletter campaigns" ON public.newsletter_campaigns;
+DROP POLICY IF EXISTS "Admins manage all blog comments" ON public.blog_comments;
 DROP POLICY IF EXISTS "Admins can update notifications" ON public.admin_notifications;
 DROP POLICY IF EXISTS "Admins can read notifications" ON public.admin_notifications;
 DROP POLICY IF EXISTS "Admins can manage all users" ON public.users;
@@ -103,6 +122,16 @@ ALTER TABLE IF EXISTS ONLY public.guest_appointments DROP CONSTRAINT IF EXISTS g
 ALTER TABLE IF EXISTS ONLY public.google_meet_events DROP CONSTRAINT IF EXISTS google_meet_events_created_by_fkey;
 ALTER TABLE IF EXISTS ONLY public.google_calendar_connections DROP CONSTRAINT IF EXISTS google_calendar_connections_user_id_fkey;
 ALTER TABLE IF EXISTS ONLY public.client_medical_profiles DROP CONSTRAINT IF EXISTS client_medical_profiles_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_reviewed_by_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_category_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_author_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_post_views DROP CONSTRAINT IF EXISTS blog_post_views_post_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_post_likes DROP CONSTRAINT IF EXISTS blog_post_likes_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_post_likes DROP CONSTRAINT IF EXISTS blog_post_likes_post_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_comments DROP CONSTRAINT IF EXISTS blog_comments_user_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_comments DROP CONSTRAINT IF EXISTS blog_comments_reviewed_by_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_comments DROP CONSTRAINT IF EXISTS blog_comments_post_id_fkey;
+ALTER TABLE IF EXISTS ONLY public.blog_comments DROP CONSTRAINT IF EXISTS blog_comments_parent_id_fkey;
 ALTER TABLE IF EXISTS ONLY public.appointments DROP CONSTRAINT IF EXISTS appointments_professional_id_fkey;
 ALTER TABLE IF EXISTS ONLY public.appointments DROP CONSTRAINT IF EXISTS appointments_client_id_fkey;
 ALTER TABLE IF EXISTS ONLY public.admin_notifications DROP CONSTRAINT IF EXISTS admin_notifications_actor_user_id_fkey;
@@ -129,6 +158,9 @@ DROP TRIGGER IF EXISTS protect_objects_delete ON storage.objects;
 DROP TRIGGER IF EXISTS protect_buckets_delete ON storage.buckets;
 DROP TRIGGER IF EXISTS enforce_bucket_name_length_trigger ON storage.buckets;
 DROP TRIGGER IF EXISTS tr_check_filters ON realtime.subscription;
+DROP TRIGGER IF EXISTS trg_refresh_blog_comment_count ON public.blog_comments;
+DROP TRIGGER IF EXISTS trg_blog_posts_enforce_publish_rules ON public.blog_posts;
+DROP TRIGGER IF EXISTS trg_blog_comments_enforce_status_rules ON public.blog_comments;
 DROP TRIGGER IF EXISTS trg_admin_notify_newsletter_change ON public.newsletter_subscribers;
 DROP TRIGGER IF EXISTS trg_admin_notify_new_user ON public.users;
 DROP TRIGGER IF EXISTS trg_admin_notify_guest_appointment ON public.guest_appointments;
@@ -149,6 +181,10 @@ DROP INDEX IF EXISTS public.newsletter_subscribers_email_lower_uidx;
 DROP INDEX IF EXISTS public.idx_newsletter_campaigns_created_at;
 DROP INDEX IF EXISTS public.idx_admin_notifications_unread;
 DROP INDEX IF EXISTS public.idx_admin_notifications_created_at;
+DROP INDEX IF EXISTS public.blog_posts_status_published_at_idx;
+DROP INDEX IF EXISTS public.blog_posts_category_id_idx;
+DROP INDEX IF EXISTS public.blog_comments_post_created_idx;
+DROP INDEX IF EXISTS public.blog_comments_parent_id_idx;
 DROP INDEX IF EXISTS auth.webauthn_credentials_user_id_idx;
 DROP INDEX IF EXISTS auth.webauthn_credentials_credential_id_key;
 DROP INDEX IF EXISTS auth.webauthn_challenges_user_id_idx;
@@ -236,6 +272,14 @@ ALTER TABLE IF EXISTS ONLY public.google_calendar_connections DROP CONSTRAINT IF
 ALTER TABLE IF EXISTS ONLY public.contact_messages DROP CONSTRAINT IF EXISTS contact_messages_pkey;
 ALTER TABLE IF EXISTS ONLY public.client_medical_profiles DROP CONSTRAINT IF EXISTS client_medical_profiles_user_id_key;
 ALTER TABLE IF EXISTS ONLY public.client_medical_profiles DROP CONSTRAINT IF EXISTS client_medical_profiles_pkey;
+ALTER TABLE IF EXISTS ONLY public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_slug_key;
+ALTER TABLE IF EXISTS ONLY public.blog_posts DROP CONSTRAINT IF EXISTS blog_posts_pkey;
+ALTER TABLE IF EXISTS ONLY public.blog_post_views DROP CONSTRAINT IF EXISTS blog_post_views_post_id_viewer_key_key;
+ALTER TABLE IF EXISTS ONLY public.blog_post_views DROP CONSTRAINT IF EXISTS blog_post_views_pkey;
+ALTER TABLE IF EXISTS ONLY public.blog_post_likes DROP CONSTRAINT IF EXISTS blog_post_likes_pkey;
+ALTER TABLE IF EXISTS ONLY public.blog_comments DROP CONSTRAINT IF EXISTS blog_comments_pkey;
+ALTER TABLE IF EXISTS ONLY public.blog_categories DROP CONSTRAINT IF EXISTS blog_categories_slug_key;
+ALTER TABLE IF EXISTS ONLY public.blog_categories DROP CONSTRAINT IF EXISTS blog_categories_pkey;
 ALTER TABLE IF EXISTS ONLY public.appointments DROP CONSTRAINT IF EXISTS appointments_pkey;
 ALTER TABLE IF EXISTS ONLY public.admin_notifications DROP CONSTRAINT IF EXISTS admin_notifications_pkey;
 ALTER TABLE IF EXISTS ONLY auth.webauthn_credentials DROP CONSTRAINT IF EXISTS webauthn_credentials_pkey;
@@ -271,6 +315,7 @@ ALTER TABLE IF EXISTS ONLY auth.custom_oauth_providers DROP CONSTRAINT IF EXISTS
 ALTER TABLE IF EXISTS ONLY auth.custom_oauth_providers DROP CONSTRAINT IF EXISTS custom_oauth_providers_identifier_key;
 ALTER TABLE IF EXISTS ONLY auth.audit_log_entries DROP CONSTRAINT IF EXISTS audit_log_entries_pkey;
 ALTER TABLE IF EXISTS ONLY auth.mfa_amr_claims DROP CONSTRAINT IF EXISTS amr_id_pk;
+ALTER TABLE IF EXISTS public.blog_post_views ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS auth.refresh_tokens ALTER COLUMN id DROP DEFAULT;
 DROP TABLE IF EXISTS storage.vector_indexes;
 DROP TABLE IF EXISTS storage.s3_multipart_uploads_parts;
@@ -299,6 +344,12 @@ DROP TABLE IF EXISTS public.google_meet_events;
 DROP TABLE IF EXISTS public.google_calendar_connections;
 DROP TABLE IF EXISTS public.contact_messages;
 DROP TABLE IF EXISTS public.client_medical_profiles;
+DROP TABLE IF EXISTS public.blog_posts;
+DROP SEQUENCE IF EXISTS public.blog_post_views_id_seq;
+DROP TABLE IF EXISTS public.blog_post_views;
+DROP TABLE IF EXISTS public.blog_post_likes;
+DROP TABLE IF EXISTS public.blog_comments;
+DROP TABLE IF EXISTS public.blog_categories;
 DROP TABLE IF EXISTS public.appointments;
 DROP TABLE IF EXISTS public.admin_notifications;
 DROP TABLE IF EXISTS auth.webauthn_credentials;
@@ -357,12 +408,18 @@ DROP FUNCTION IF EXISTS realtime.build_prepared_statement_sql(prepared_statement
 DROP FUNCTION IF EXISTS realtime.broadcast_changes(topic_name text, event_name text, operation text, table_name text, table_schema text, new record, old record, level text);
 DROP FUNCTION IF EXISTS realtime.apply_rls(wal jsonb, max_record_bytes integer);
 DROP FUNCTION IF EXISTS public.try_newsletter_rate_limit(p_bucket_key text, p_max_attempts integer, p_window_seconds integer);
+DROP FUNCTION IF EXISTS public.toggle_blog_post_like(p_post_id uuid, p_user_id uuid);
 DROP FUNCTION IF EXISTS public.subscribe_newsletter(p_email text);
 DROP FUNCTION IF EXISTS public.set_newsletter_status(p_email text, p_status text);
 DROP FUNCTION IF EXISTS public.rls_auto_enable();
+DROP FUNCTION IF EXISTS public.refresh_blog_comment_count();
+DROP FUNCTION IF EXISTS public.increment_blog_post_view(p_post_id uuid, p_viewer_key text);
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.get_newsletter_status(p_email text);
 DROP FUNCTION IF EXISTS public.get_guest_appointment_confirmation(p_id uuid);
+DROP FUNCTION IF EXISTS public.delete_user_account(p_user_id uuid);
+DROP FUNCTION IF EXISTS public.blog_posts_enforce_publish_rules();
+DROP FUNCTION IF EXISTS public.blog_comments_enforce_status_rules();
 DROP FUNCTION IF EXISTS public.admin_notify_on_user_insert();
 DROP FUNCTION IF EXISTS public.admin_notify_on_newsletter_change();
 DROP FUNCTION IF EXISTS public.admin_notify_on_guest_appointment_insert();
@@ -1243,6 +1300,123 @@ $$;
 
 
 --
+-- Name: blog_comments_enforce_status_rules(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.blog_comments_enforce_status_rules() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status IS DISTINCT FROM 'pending' THEN
+      SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+      IF v_role IS DISTINCT FROM 'admin' THEN
+        NEW.status := 'pending';
+      END IF;
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status THEN
+    SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+    IF v_role IS DISTINCT FROM 'admin' THEN
+      RAISE EXCEPTION 'Only admins can approve or reject comments.';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: blog_posts_enforce_publish_rules(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.blog_posts_enforce_publish_rules() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_role TEXT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status = 'published' OR NEW.published_at IS NOT NULL THEN
+      SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+      IF v_role IS DISTINCT FROM 'admin' THEN
+        RAISE EXCEPTION 'Only admins can publish blog posts.';
+      END IF;
+    END IF;
+    IF NEW.status = 'published' AND NEW.published_at IS NULL THEN
+      NEW.published_at := NOW();
+    END IF;
+    IF NEW.status IN ('draft', 'pending_review') THEN
+      NEW.published_at := NULL;
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.status IS DISTINCT FROM OLD.status OR NEW.published_at IS DISTINCT FROM OLD.published_at THEN
+    IF NEW.status = 'published' OR NEW.published_at IS NOT NULL THEN
+      SELECT role INTO v_role FROM public.users WHERE id = auth.uid();
+      IF v_role IS DISTINCT FROM 'admin' THEN
+        RAISE EXCEPTION 'Only admins can publish blog posts.';
+      END IF;
+    END IF;
+    IF NEW.status = 'published' AND NEW.published_at IS NULL THEN
+      NEW.published_at := NOW();
+    END IF;
+    IF NEW.status IN ('draft', 'pending_review') THEN
+      NEW.published_at := NULL;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: delete_user_account(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.delete_user_account(p_user_id uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'auth', 'public'
+    AS $$
+DECLARE
+  v_caller_role TEXT;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'User id is required' USING ERRCODE = '22023';
+  END IF;
+
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF auth.uid() = p_user_id THEN
+    RAISE EXCEPTION 'You cannot delete your own account' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT role INTO v_caller_role FROM public.users WHERE id = auth.uid();
+  IF v_caller_role IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Admin access required' USING ERRCODE = '42501';
+  END IF;
+
+  DELETE FROM auth.users WHERE id = p_user_id;
+
+  IF NOT FOUND THEN
+    DELETE FROM public.users WHERE id = p_user_id;
+  END IF;
+END;
+$$;
+
+
+--
 -- Name: get_guest_appointment_confirmation(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1316,6 +1490,63 @@ begin
 
   return new;
 end;
+$$;
+
+
+--
+-- Name: increment_blog_post_view(uuid, text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.increment_blog_post_view(p_post_id uuid, p_viewer_key text) RETURNS bigint
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_inserted BOOLEAN := FALSE;
+  v_count BIGINT;
+BEGIN
+  IF p_viewer_key IS NULL OR length(trim(p_viewer_key)) < 8 THEN
+    SELECT view_count INTO v_count FROM public.blog_posts WHERE id = p_post_id AND status = 'published';
+    RETURN COALESCE(v_count, 0);
+  END IF;
+
+  INSERT INTO public.blog_post_views (post_id, viewer_key)
+  VALUES (p_post_id, p_viewer_key)
+  ON CONFLICT (post_id, viewer_key) DO NOTHING;
+
+  GET DIAGNOSTICS v_inserted = ROW_COUNT;
+  IF v_inserted THEN
+    UPDATE public.blog_posts
+       SET view_count = view_count + 1
+     WHERE id = p_post_id AND status = 'published';
+  END IF;
+
+  SELECT view_count INTO v_count FROM public.blog_posts WHERE id = p_post_id AND status = 'published';
+  RETURN COALESCE(v_count, 0);
+END;
+$$;
+
+
+--
+-- Name: refresh_blog_comment_count(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.refresh_blog_comment_count() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_post_id UUID;
+BEGIN
+  v_post_id := COALESCE(NEW.post_id, OLD.post_id);
+  UPDATE public.blog_posts
+     SET comment_count = (
+       SELECT COUNT(*)::BIGINT FROM public.blog_comments
+       WHERE post_id = v_post_id AND deleted_at IS NULL AND status = 'approved'
+     )
+   WHERE id = v_post_id;
+  RETURN COALESCE(NEW, OLD);
+END;
 $$;
 
 
@@ -1422,6 +1653,45 @@ BEGIN
   END IF;
 END;
 $_$;
+
+
+--
+-- Name: toggle_blog_post_like(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.toggle_blog_post_like(p_post_id uuid, p_user_id uuid) RETURNS json
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_liked BOOLEAN := FALSE;
+  v_count BIGINT;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = p_user_id AND u.role IN ('client', 'professional')
+  ) THEN
+    RAISE EXCEPTION 'Only patients and consultants can like posts.';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.blog_posts WHERE id = p_post_id AND status = 'published') THEN
+    RAISE EXCEPTION 'Post not found or not published.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.blog_post_likes WHERE post_id = p_post_id AND user_id = p_user_id) THEN
+    DELETE FROM public.blog_post_likes WHERE post_id = p_post_id AND user_id = p_user_id;
+    UPDATE public.blog_posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = p_post_id;
+    v_liked := FALSE;
+  ELSE
+    INSERT INTO public.blog_post_likes (post_id, user_id) VALUES (p_post_id, p_user_id);
+    UPDATE public.blog_posts SET like_count = like_count + 1 WHERE id = p_post_id;
+    v_liked := TRUE;
+  END IF;
+
+  SELECT like_count INTO v_count FROM public.blog_posts WHERE id = p_post_id;
+  RETURN json_build_object('liked', v_liked, 'likeCount', COALESCE(v_count, 0));
+END;
+$$;
 
 
 --
@@ -3862,6 +4132,116 @@ CREATE TABLE public.appointments (
 
 
 --
+-- Name: blog_categories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_categories (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    slug text NOT NULL,
+    description text,
+    sort_order integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: blog_comments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_comments (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    post_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone,
+    parent_id uuid,
+    status text DEFAULT 'pending'::text NOT NULL,
+    reviewed_at timestamp with time zone,
+    reviewed_by uuid,
+    CONSTRAINT blog_comments_body_check CHECK (((char_length(body) >= 1) AND (char_length(body) <= 2000))),
+    CONSTRAINT blog_comments_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])))
+);
+
+
+--
+-- Name: blog_post_likes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_likes (
+    post_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: blog_post_views; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_views (
+    id bigint NOT NULL,
+    post_id uuid NOT NULL,
+    viewer_key text NOT NULL,
+    viewed_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: blog_post_views_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_post_views_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_post_views_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_post_views_id_seq OWNED BY public.blog_post_views.id;
+
+
+--
+-- Name: blog_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_posts (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    slug text NOT NULL,
+    title text NOT NULL,
+    excerpt text,
+    content_html text NOT NULL,
+    cover_image_url text,
+    category_id uuid,
+    author_id uuid,
+    status text DEFAULT 'draft'::text NOT NULL,
+    published_at timestamp with time zone,
+    meta_title text,
+    meta_description text,
+    tags text[] DEFAULT '{}'::text[] NOT NULL,
+    view_count bigint DEFAULT 0 NOT NULL,
+    like_count bigint DEFAULT 0 NOT NULL,
+    comment_count bigint DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    submitted_at timestamp with time zone,
+    reviewed_at timestamp with time zone,
+    reviewed_by uuid,
+    CONSTRAINT blog_posts_published_requires_category CHECK (((status <> ALL (ARRAY['published'::text, 'pending_review'::text])) OR (category_id IS NOT NULL))),
+    CONSTRAINT blog_posts_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'archived'::text])))
+);
+
+
+--
 -- Name: client_medical_profiles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4422,6 +4802,13 @@ ALTER TABLE ONLY auth.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('auth.r
 
 
 --
+-- Name: blog_post_views id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_views ALTER COLUMN id SET DEFAULT nextval('public.blog_post_views_id_seq'::regclass);
+
+
+--
 -- Data for Name: audit_log_entries; Type: TABLE DATA; Schema: auth; Owner: -
 --
 
@@ -4464,8 +4851,6 @@ b9d2077d-69b6-44ba-8c5b-34f960c795e3	b9d2077d-69b6-44ba-8c5b-34f960c795e3	{"sub"
 06db9b38-80e1-4933-b020-17d9c9dff899	06db9b38-80e1-4933-b020-17d9c9dff899	{"sub": "06db9b38-80e1-4933-b020-17d9c9dff899", "name": "Lisha Khatri", "role": "professional", "email": "mindfulhealiing@gmail.com", "email_verified": true, "phone_verified": false}	email	2026-04-07 10:55:23.357639+00	2026-04-07 10:55:23.357686+00	2026-04-07 10:55:23.357686+00	f046eebb-a557-432c-adab-90393c86460b
 21ffa85f-d84e-49b0-be7f-062710fedf4f	21ffa85f-d84e-49b0-be7f-062710fedf4f	{"sub": "21ffa85f-d84e-49b0-be7f-062710fedf4f", "name": "Aditya Jain", "role": "professional", "email": "aditya.jain00712@gmail.com", "email_verified": true, "phone_verified": false}	email	2026-05-01 10:28:13.292422+00	2026-05-01 10:28:13.292881+00	2026-05-01 10:28:13.292881+00	c33ccf03-6570-458c-ad33-7474a563493f
 cef0b74f-ea58-429f-b67a-7e3758d333e9	cef0b74f-ea58-429f-b67a-7e3758d333e9	{"sub": "cef0b74f-ea58-429f-b67a-7e3758d333e9", "name": "sdsdsdsdsddsd sdsddsd", "role": "professional", "email": "xagela3703@gixpos.com", "email_verified": true, "phone_verified": false}	email	2026-05-01 10:50:16.23477+00	2026-05-01 10:50:16.234823+00	2026-05-01 10:50:16.234823+00	be177d0e-4f12-44b1-aba3-4581700e84fe
-8a5ec858-3b61-453a-aa19-008680673ebc	8a5ec858-3b61-453a-aa19-008680673ebc	{"sub": "8a5ec858-3b61-453a-aa19-008680673ebc", "name": "Mansi M", "role": "client", "email": "mansimeena2326@gmail.com", "email_verified": false, "phone_verified": false}	email	2026-05-07 18:56:25.751334+00	2026-05-07 18:56:25.751382+00	2026-05-07 18:56:25.751382+00	a48acc37-c791-4935-b46b-0b5c8ac3ce16
-522a7a77-91fe-4419-bdbf-8341d9bddfeb	522a7a77-91fe-4419-bdbf-8341d9bddfeb	{"sub": "522a7a77-91fe-4419-bdbf-8341d9bddfeb", "name": "teset testes", "role": "client", "email": "harsh.ixora@gmail.comg", "email_verified": false, "phone_verified": false}	email	2026-05-14 11:16:53.994291+00	2026-05-14 11:16:53.994341+00	2026-05-14 11:16:53.994341+00	5eb2332e-3607-4c24-83c1-82d2b4474102
 6ee89e3c-d5cd-4788-a281-9459b6d4502d	6ee89e3c-d5cd-4788-a281-9459b6d4502d	{"sub": "6ee89e3c-d5cd-4788-a281-9459b6d4502d", "name": "Rishabh  Jain", "role": "professional", "email": "ujjaineye@gmail.com", "email_verified": false, "phone_verified": false}	email	2026-05-20 07:18:12.090166+00	2026-05-20 07:18:12.090794+00	2026-05-20 07:18:12.090794+00	e280467a-9eb1-4ac2-a8f1-a54082a2eeba
 278dd7ce-5591-458b-bde4-396e619ecc9f	278dd7ce-5591-458b-bde4-396e619ecc9f	{"sub": "278dd7ce-5591-458b-bde4-396e619ecc9f", "name": "Siddhant Mukherjee", "role": "professional", "email": "siddhant.sid1005@gmail.com", "email_verified": false, "phone_verified": false}	email	2026-05-21 17:36:56.25143+00	2026-05-21 17:36:56.25148+00	2026-05-21 17:36:56.25148+00	b59cfdb0-69cb-4360-b239-3705d7d0dccb
 \.
@@ -4484,15 +4869,15 @@ COPY auth.instances (id, uuid, raw_base_config, created_at, updated_at) FROM std
 --
 
 COPY auth.mfa_amr_claims (session_id, created_at, updated_at, authentication_method, id) FROM stdin;
-6681a323-fdaf-4516-a4bd-8b325b0b84f5	2026-05-15 13:44:44.545139+00	2026-05-15 13:44:44.545139+00	password	8178389b-d58f-46c5-9969-acb766ebf26a
+213f9bf3-6247-4428-b120-838945f5b83f	2026-06-14 07:40:02.629849+00	2026-06-14 07:40:02.629849+00	password	8c138736-1843-443f-aba9-d5781f881cb4
 aecc0ca5-d93a-456f-bf58-b6bf753dfff5	2026-04-04 13:53:39.337673+00	2026-04-04 13:53:39.337673+00	password	b8b6a73e-1cb7-44e3-87f9-12f930325d7a
 502144ba-fa08-4844-856e-c96922bf4e41	2026-04-07 10:56:50.224896+00	2026-04-07 10:56:50.224896+00	password	250586df-0c75-4954-8918-db3123678ab0
 ee349dc8-e0f4-4567-8e83-fbf74079ac95	2026-05-18 08:33:47.668563+00	2026-05-18 08:33:47.668563+00	password	3ea517d6-d360-47a8-a403-23519467693d
 ca1ce062-c27c-4cf0-9305-ce721b2fcf86	2026-05-20 07:18:12.153069+00	2026-05-20 07:18:12.153069+00	password	bc4f3f7d-7a3d-464e-a9db-259412e7d103
 09f15c81-856f-4560-b644-fdb001b51169	2026-05-20 17:19:04.654378+00	2026-05-20 17:19:04.654378+00	password	bad0faef-36f6-4925-a5df-873e615190b1
 803e25b7-4d90-43ec-b762-f46f440ebf60	2026-05-21 17:36:56.308318+00	2026-05-21 17:36:56.308318+00	password	cd57bc69-9ca7-419a-954f-d2da80ac27e0
-5f7fc417-c823-4e15-a185-4c7dc4f86ef0	2026-05-21 18:36:52.716194+00	2026-05-21 18:36:52.716194+00	password	99f56d53-b083-4d2c-ac05-c738e8038c9d
-61b70ed0-2788-4d0d-9694-a5577e644833	2026-06-04 06:45:09.863781+00	2026-06-04 06:45:09.863781+00	password	7f1019c4-7bfa-45aa-9f15-bc358e5d260b
+217d7da3-0d99-45c4-9dd9-a64575bc2923	2026-06-11 15:03:08.024864+00	2026-06-11 15:03:08.024864+00	password	ff29efd6-0341-4c05-a395-ebb3687a186d
+86c2da9b-7b7b-4e7a-aaf5-497b2cbb0935	2026-06-13 15:07:27.736876+00	2026-06-13 15:07:27.736876+00	password	0ff89296-a64f-404c-b77a-d86d263fe9e9
 \.
 
 
@@ -4560,28 +4945,22 @@ COPY auth.refresh_tokens (instance_id, id, token, user_id, revoked, created_at, 
 00000000-0000-0000-0000-000000000000	177	glfnvfk3pcg4	9510a2a3-8186-46b0-ac25-d3760612aabc	f	2026-05-18 08:33:47.609861+00	2026-05-18 08:33:47.609861+00	\N	ee349dc8-e0f4-4567-8e83-fbf74079ac95
 00000000-0000-0000-0000-000000000000	51	rbry4gt7tgqx	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-13 08:01:20.195047+00	2026-04-13 09:07:18.536136+00	xerj5ozaglki	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	179	lom5cynhsp3q	6ee89e3c-d5cd-4788-a281-9459b6d4502d	t	2026-05-20 07:18:12.14076+00	2026-05-20 09:14:52.984457+00	\N	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
+00000000-0000-0000-0000-000000000000	218	nggfc7j6nlgy	cf2e5e84-fcde-4e13-936b-6ab146b8c638	f	2026-06-11 15:03:08.003522+00	2026-06-11 15:03:08.003522+00	\N	217d7da3-0d99-45c4-9dd9-a64575bc2923
+00000000-0000-0000-0000-000000000000	219	3xy7kn7psfyo	3bd77851-510e-469a-ab79-87d591d90cad	f	2026-06-13 15:07:27.710946+00	2026-06-13 15:07:27.710946+00	\N	86c2da9b-7b7b-4e7a-aaf5-497b2cbb0935
 00000000-0000-0000-0000-000000000000	183	hozvofvwbsz6	9510a2a3-8186-46b0-ac25-d3760612aabc	f	2026-05-20 17:19:04.632889+00	2026-05-20 17:19:04.632889+00	\N	09f15c81-856f-4560-b644-fdb001b51169
 00000000-0000-0000-0000-000000000000	53	uahgucixxfs6	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-13 09:07:18.551274+00	2026-04-13 11:49:38.504121+00	rbry4gt7tgqx	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	180	pccsto7kj2y7	6ee89e3c-d5cd-4788-a281-9459b6d4502d	t	2026-05-20 09:14:53.003998+00	2026-05-21 04:35:31.178963+00	lom5cynhsp3q	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
+00000000-0000-0000-0000-000000000000	224	6wja3gzqyozd	3bd77851-510e-469a-ab79-87d591d90cad	f	2026-06-14 07:40:02.611699+00	2026-06-14 07:40:02.611699+00	\N	213f9bf3-6247-4428-b120-838945f5b83f
 00000000-0000-0000-0000-000000000000	190	k6fhzizcsvhg	278dd7ce-5591-458b-bde4-396e619ecc9f	f	2026-05-21 17:36:56.29579+00	2026-05-21 17:36:56.29579+00	\N	803e25b7-4d90-43ec-b762-f46f440ebf60
 00000000-0000-0000-0000-000000000000	184	cg6dy3nazpmf	6ee89e3c-d5cd-4788-a281-9459b6d4502d	t	2026-05-21 04:35:31.194691+00	2026-05-21 18:12:02.406864+00	pccsto7kj2y7	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
-00000000-0000-0000-0000-000000000000	170	oqxy7zfa7gxl	8a5ec858-3b61-453a-aa19-008680673ebc	t	2026-05-15 18:23:39.019196+00	2026-05-21 18:30:19.626451+00	u6qupmz4wvdb	6681a323-fdaf-4516-a4bd-8b325b0b84f5
-00000000-0000-0000-0000-000000000000	192	7tsjcsicz4ml	8a5ec858-3b61-453a-aa19-008680673ebc	f	2026-05-21 18:30:19.650311+00	2026-05-21 18:30:19.650311+00	oqxy7zfa7gxl	6681a323-fdaf-4516-a4bd-8b325b0b84f5
 00000000-0000-0000-0000-000000000000	191	3outznunt3sb	6ee89e3c-d5cd-4788-a281-9459b6d4502d	t	2026-05-21 18:12:02.440133+00	2026-05-21 19:36:46.908803+00	cg6dy3nazpmf	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
 00000000-0000-0000-0000-000000000000	60	at5k3gu5fgey	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-13 11:49:38.516571+00	2026-04-19 08:50:04.361618+00	uahgucixxfs6	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	72	z4vo6ncuhlea	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-19 08:50:04.384141+00	2026-04-19 08:54:36.26992+00	at5k3gu5fgey	502144ba-fa08-4844-856e-c96922bf4e41
-00000000-0000-0000-0000-000000000000	193	wootvigjbiso	8a5ec858-3b61-453a-aa19-008680673ebc	t	2026-05-21 18:36:52.656909+00	2026-05-22 02:51:43.582227+00	\N	5f7fc417-c823-4e15-a185-4c7dc4f86ef0
 00000000-0000-0000-0000-000000000000	73	pzyanft7idd4	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-19 08:54:36.355511+00	2026-04-19 15:02:39.066297+00	z4vo6ncuhlea	502144ba-fa08-4844-856e-c96922bf4e41
-00000000-0000-0000-0000-000000000000	196	tbmxsk3alzkc	8a5ec858-3b61-453a-aa19-008680673ebc	f	2026-05-22 02:51:43.600215+00	2026-05-22 02:51:43.600215+00	wootvigjbiso	5f7fc417-c823-4e15-a185-4c7dc4f86ef0
 00000000-0000-0000-0000-000000000000	74	syzzoyxoazx6	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-19 15:02:39.083753+00	2026-04-20 05:52:57.105779+00	pzyanft7idd4	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	75	rof4wbhthytp	06db9b38-80e1-4933-b020-17d9c9dff899	f	2026-04-20 05:52:57.127278+00	2026-04-20 05:52:57.127278+00	syzzoyxoazx6	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	195	l4p7tjh4sqme	6ee89e3c-d5cd-4788-a281-9459b6d4502d	t	2026-05-21 19:36:46.939649+00	2026-05-27 15:14:06.037885+00	3outznunt3sb	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
 00000000-0000-0000-0000-000000000000	197	rm6ovpwnnfoq	6ee89e3c-d5cd-4788-a281-9459b6d4502d	f	2026-05-27 15:14:06.06011+00	2026-05-27 15:14:06.06011+00	l4p7tjh4sqme	ca1ce062-c27c-4cf0-9305-ce721b2fcf86
-00000000-0000-0000-0000-000000000000	201	ov23bpqem7nd	cf2e5e84-fcde-4e13-936b-6ab146b8c638	t	2026-06-04 06:45:09.84434+00	2026-06-04 08:52:42.301283+00	\N	61b70ed0-2788-4d0d-9694-a5577e644833
-00000000-0000-0000-0000-000000000000	168	gpbf7gsmxooi	8a5ec858-3b61-453a-aa19-008680673ebc	t	2026-05-15 13:44:44.512883+00	2026-05-15 14:48:15.581816+00	\N	6681a323-fdaf-4516-a4bd-8b325b0b84f5
-00000000-0000-0000-0000-000000000000	202	tbeembmo7igo	cf2e5e84-fcde-4e13-936b-6ab146b8c638	t	2026-06-04 08:52:42.321576+00	2026-06-04 09:59:29.345328+00	ov23bpqem7nd	61b70ed0-2788-4d0d-9694-a5577e644833
-00000000-0000-0000-0000-000000000000	169	u6qupmz4wvdb	8a5ec858-3b61-453a-aa19-008680673ebc	t	2026-05-15 14:48:15.60365+00	2026-05-15 18:23:38.997811+00	gpbf7gsmxooi	6681a323-fdaf-4516-a4bd-8b325b0b84f5
-00000000-0000-0000-0000-000000000000	203	we3ig5dftjvg	cf2e5e84-fcde-4e13-936b-6ab146b8c638	f	2026-06-04 09:59:29.358286+00	2026-06-04 09:59:29.358286+00	tbeembmo7igo	61b70ed0-2788-4d0d-9694-a5577e644833
 00000000-0000-0000-0000-000000000000	40	wpxtkx4s2rle	05cbe7bb-2908-4619-8fc8-0e2c82c8d792	f	2026-04-04 13:53:39.33632+00	2026-04-04 13:53:39.33632+00	\N	aecc0ca5-d93a-456f-bf58-b6bf753dfff5
 00000000-0000-0000-0000-000000000000	42	gtjykquphwin	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-07 10:56:50.198595+00	2026-04-08 12:44:10.272334+00	\N	502144ba-fa08-4844-856e-c96922bf4e41
 00000000-0000-0000-0000-000000000000	43	ozuopva5njhu	06db9b38-80e1-4933-b020-17d9c9dff899	t	2026-04-08 12:44:10.294443+00	2026-04-10 04:51:31.869472+00	gtjykquphwin	502144ba-fa08-4844-856e-c96922bf4e41
@@ -4697,11 +5076,11 @@ COPY auth.schema_migrations (version) FROM stdin;
 
 COPY auth.sessions (id, user_id, created_at, updated_at, factor_id, aal, not_after, refreshed_at, user_agent, ip, tag, oauth_client_id, refresh_token_hmac_key, refresh_token_counter, scopes) FROM stdin;
 803e25b7-4d90-43ec-b762-f46f440ebf60	278dd7ce-5591-458b-bde4-396e619ecc9f	2026-05-21 17:36:56.283972+00	2026-05-21 17:36:56.283972+00	\N	aal1	\N	\N	node	32.198.88.220	\N	\N	\N	\N	\N
-6681a323-fdaf-4516-a4bd-8b325b0b84f5	8a5ec858-3b61-453a-aa19-008680673ebc	2026-05-15 13:44:44.488779+00	2026-05-21 18:30:21.61164+00	\N	aal1	\N	2026-05-21 18:30:21.611541	node	44.220.181.48	\N	\N	\N	\N	\N
-5f7fc417-c823-4e15-a185-4c7dc4f86ef0	8a5ec858-3b61-453a-aa19-008680673ebc	2026-05-21 18:36:52.544047+00	2026-05-22 02:51:46.668332+00	\N	aal1	\N	2026-05-22 02:51:46.666879	Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1	38.183.11.96	\N	\N	\N	\N	\N
 502144ba-fa08-4844-856e-c96922bf4e41	06db9b38-80e1-4933-b020-17d9c9dff899	2026-04-07 10:56:50.175099+00	2026-04-20 05:53:02.931612+00	\N	aal1	\N	2026-04-20 05:53:02.931501	Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36	49.36.177.39	\N	\N	\N	\N	\N
 ca1ce062-c27c-4cf0-9305-ce721b2fcf86	6ee89e3c-d5cd-4788-a281-9459b6d4502d	2026-05-20 07:18:12.130086+00	2026-05-27 15:14:11.872886+00	\N	aal1	\N	2026-05-27 15:14:11.872224	node	3.215.73.149	\N	\N	\N	\N	\N
-61b70ed0-2788-4d0d-9694-a5577e644833	cf2e5e84-fcde-4e13-936b-6ab146b8c638	2026-06-04 06:45:09.817838+00	2026-06-04 09:59:33.882169+00	\N	aal1	\N	2026-06-04 09:59:33.88207	node	125.20.69.26	\N	\N	\N	\N	\N
+217d7da3-0d99-45c4-9dd9-a64575bc2923	cf2e5e84-fcde-4e13-936b-6ab146b8c638	2026-06-11 15:03:07.961511+00	2026-06-11 15:03:07.961511+00	\N	aal1	\N	\N	node	223.184.242.47	\N	\N	\N	\N	\N
+86c2da9b-7b7b-4e7a-aaf5-497b2cbb0935	3bd77851-510e-469a-ab79-87d591d90cad	2026-06-13 15:07:27.67562+00	2026-06-13 15:07:27.67562+00	\N	aal1	\N	\N	Dart/3.10 (dart:io)	117.99.95.113	\N	\N	\N	\N	\N
+213f9bf3-6247-4428-b120-838945f5b83f	3bd77851-510e-469a-ab79-87d591d90cad	2026-06-14 07:40:02.593878+00	2026-06-14 07:40:02.593878+00	\N	aal1	\N	\N	Dart/3.10 (dart:io)	223.184.255.203	\N	\N	\N	\N	\N
 ee349dc8-e0f4-4567-8e83-fbf74079ac95	9510a2a3-8186-46b0-ac25-d3760612aabc	2026-05-18 08:33:47.545112+00	2026-05-18 08:33:47.545112+00	\N	aal1	\N	\N	node	3.95.151.144	\N	\N	\N	\N	\N
 aecc0ca5-d93a-456f-bf58-b6bf753dfff5	05cbe7bb-2908-4619-8fc8-0e2c82c8d792	2026-04-04 13:53:39.331304+00	2026-04-04 13:53:39.331304+00	\N	aal1	\N	\N	node	122.168.84.84	\N	\N	\N	\N	\N
 09f15c81-856f-4560-b644-fdb001b51169	9510a2a3-8186-46b0-ac25-d3760612aabc	2026-05-20 17:19:04.610754+00	2026-05-20 17:19:04.610754+00	\N	aal1	\N	\N	node	122.168.86.237	\N	\N	\N	\N	\N
@@ -4730,15 +5109,13 @@ COPY auth.sso_providers (id, resource_id, created_at, updated_at, disabled) FROM
 
 COPY auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, invited_at, confirmation_token, confirmation_sent_at, recovery_token, recovery_sent_at, email_change_token_new, email_change, email_change_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, is_super_admin, created_at, updated_at, phone, phone_confirmed_at, phone_change, phone_change_token, phone_change_sent_at, email_change_token_current, email_change_confirm_status, banned_until, reauthentication_token, reauthentication_sent_at, is_sso_user, deleted_at, is_anonymous) FROM stdin;
 00000000-0000-0000-0000-000000000000	05cbe7bb-2908-4619-8fc8-0e2c82c8d792	authenticated	authenticated	harsh2901.websenor@gmail.com	$2a$10$uNjmy/DS4gjZgRhAbwmALuafjtcaadyNxK7UgqALKvwgltXBQtEzu	2026-04-04 13:53:16.240309+00	\N		2026-04-04 13:52:20.583033+00		\N			\N	2026-04-04 13:53:39.331215+00	{"provider": "email", "providers": ["email"]}	{"sub": "05cbe7bb-2908-4619-8fc8-0e2c82c8d792", "name": "Testing  news ", "role": "client", "email": "harsh2901.websenor@gmail.com", "email_verified": true, "phone_verified": false}	\N	2026-04-04 13:52:20.486304+00	2026-04-04 13:53:39.33732+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	522a7a77-91fe-4419-bdbf-8341d9bddfeb	authenticated	authenticated	harsh.ixora@gmail.comg	$2a$10$/NKPPq76Z.En8AW.fp.gbOzmB/kSMWREy3vdN8HMKyDU1rGWvTXEm	2026-05-14 11:16:54.003431+00	\N		\N		\N			\N	2026-05-14 11:16:54.016686+00	{"provider": "email", "providers": ["email"]}	{"sub": "522a7a77-91fe-4419-bdbf-8341d9bddfeb", "name": "teset testes", "role": "client", "email": "harsh.ixora@gmail.comg", "email_verified": true, "phone_verified": false}	\N	2026-05-14 11:16:53.925448+00	2026-05-14 11:16:54.038464+00	\N	\N			\N		0	\N		\N	f	\N	f
+00000000-0000-0000-0000-000000000000	3bd77851-510e-469a-ab79-87d591d90cad	authenticated	authenticated	harsh.ixora@gmail.com	$2a$10$eiu0wYqnQ164dx2zZKwOC.9y0oYlieH3RTrpp5NsOhx7Cyzs5FUd6	2026-03-01 17:27:48.849508+00	\N		2026-03-01 17:23:13.230507+00		\N			\N	2026-06-14 07:40:02.593769+00	{"provider": "email", "providers": ["email"]}	{"sub": "3bd77851-510e-469a-ab79-87d591d90cad", "name": "sgsgdsvybr", "role": "client", "email": "harsh.ixora@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/3bd77851-510e-469a-ab79-87d591d90cad/1776086543948.webp", "email_verified": true, "phone_verified": false}	\N	2026-03-01 17:23:13.154971+00	2026-06-14 07:40:02.627083+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	06db9b38-80e1-4933-b020-17d9c9dff899	authenticated	authenticated	mindfulhealiing@gmail.com	$2a$10$2wtuB9N6dAufdfdW86hG9OzRD17s9HHVn.aW3v8oMK63THEaujywC	2026-04-07 10:55:53.639503+00	\N		2026-04-07 10:55:23.377783+00		\N			\N	2026-04-07 10:56:50.175004+00	{"provider": "email", "providers": ["email"]}	{"sub": "06db9b38-80e1-4933-b020-17d9c9dff899", "name": "Lisha Khatri", "role": "professional", "email": "mindfulhealiing@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/06db9b38-80e1-4933-b020-17d9c9dff899/1775652368109.webp", "name_title": "Ms.", "email_verified": true, "phone_verified": false}	\N	2026-04-07 10:55:23.316713+00	2026-04-20 05:52:57.137124+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	8a5ec858-3b61-453a-aa19-008680673ebc	authenticated	authenticated	mansimeena2326@gmail.com	$2a$10$AxUi/eQO4PNwZyXIZkineubzUkqXd8RzEuNRPqewQQGLPlekt8Rji	2026-05-07 18:56:25.761691+00	\N		\N		\N			\N	2026-05-21 18:36:52.543627+00	{"provider": "email", "providers": ["email"]}	{"sub": "8a5ec858-3b61-453a-aa19-008680673ebc", "name": "Mansi M", "role": "client", "email": "mansimeena2326@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/8a5ec858-3b61-453a-aa19-008680673ebc/1778439297725.webp", "email_verified": true, "phone_verified": false}	\N	2026-05-07 18:56:25.61029+00	2026-05-22 02:51:43.608484+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	cf2e5e84-fcde-4e13-936b-6ab146b8c638	authenticated	authenticated	admin@healthcare.com	$2a$10$SKsI5nauSDzMqNTSwCnTZ.UeKvgUq0M5HpMvLC0N18oILqJve5a3.	2026-03-09 06:32:16.012695+00	\N		\N		\N			\N	2026-06-04 06:45:09.817739+00	{"provider": "email", "providers": ["email"]}	{"email_verified": true}	\N	2026-03-09 06:32:15.998703+00	2026-06-04 09:59:29.364019+00	\N	\N			\N		0	\N		\N	f	\N	f
+00000000-0000-0000-0000-000000000000	cf2e5e84-fcde-4e13-936b-6ab146b8c638	authenticated	authenticated	admin@healthcare.com	$2a$10$SKsI5nauSDzMqNTSwCnTZ.UeKvgUq0M5HpMvLC0N18oILqJve5a3.	2026-03-09 06:32:16.012695+00	\N		\N		\N			\N	2026-06-11 15:03:07.961399+00	{"provider": "email", "providers": ["email"]}	{"email_verified": true}	\N	2026-03-09 06:32:15.998703+00	2026-06-11 15:03:08.019574+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	b9d2077d-69b6-44ba-8c5b-34f960c795e3	authenticated	authenticated	vishalcric.dav@gmail.com	$2a$10$t/w4.UC1Ci.6ZpWexufgMO1LxYWsCszCXhRD0ByacFAaD.lIhOnFK	2026-04-04 10:54:09.312503+00	\N		2026-04-04 10:53:15.188963+00		\N			\N	2026-05-16 09:25:37.454074+00	{"provider": "email", "providers": ["email"]}	{"sub": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "name": "Vishal Gupta", "role": "professional", "email": "vishalcric.dav@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/b9d2077d-69b6-44ba-8c5b-34f960c795e3/1777630856177.webp", "name_title": "Mr.", "email_verified": true, "phone_verified": false}	\N	2026-04-04 10:53:15.030113+00	2026-05-16 09:25:37.513967+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	3bd77851-510e-469a-ab79-87d591d90cad	authenticated	authenticated	harsh.ixora@gmail.com	$2a$10$eiu0wYqnQ164dx2zZKwOC.9y0oYlieH3RTrpp5NsOhx7Cyzs5FUd6	2026-03-01 17:27:48.849508+00	\N		2026-03-01 17:23:13.230507+00		\N			\N	2026-05-21 15:54:05.115353+00	{"provider": "email", "providers": ["email"]}	{"sub": "3bd77851-510e-469a-ab79-87d591d90cad", "name": "sgsgdsvybr", "role": "client", "email": "harsh.ixora@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/3bd77851-510e-469a-ab79-87d591d90cad/1776086543948.webp", "email_verified": true, "phone_verified": false}	\N	2026-03-01 17:23:13.154971+00	2026-05-30 05:26:44.520083+00	\N	\N			\N		0	\N		\N	f	\N	f
+00000000-0000-0000-0000-000000000000	9510a2a3-8186-46b0-ac25-d3760612aabc	authenticated	authenticated	harsh1248gupta@gmail.com	$2a$10$KXcnnJjmYDoG/roL4wbkJOErFuMD66NhEMZFaN9ZdN.lWSqZFV9q6	2026-03-02 07:41:11.393403+00	\N		2026-03-02 07:41:00.399569+00		\N			\N	2026-06-14 07:12:37.654729+00	{"provider": "email", "providers": ["email"]}	{"sub": "9510a2a3-8186-46b0-ac25-d3760612aabc", "name": "Harsh", "role": "professional", "email": "harsh1248gupta@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/9510a2a3-8186-46b0-ac25-d3760612aabc/1776084934982.webp", "name_title": "Prof.", "email_verified": true, "phone_verified": false}	\N	2026-03-02 07:41:00.35222+00	2026-06-14 07:12:37.716462+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	21ffa85f-d84e-49b0-be7f-062710fedf4f	authenticated	authenticated	aditya.jain00712@gmail.com	$2a$10$eoMP5D5AX8fhiOYlTrm9S.VzetutvCBf3/R2Eq7E2u34SSQ79KgYa	2026-05-01 10:36:18.645718+00	\N		2026-05-01 10:28:13.317568+00		\N			\N	2026-05-20 07:14:52.567994+00	{"provider": "email", "providers": ["email"]}	{"sub": "21ffa85f-d84e-49b0-be7f-062710fedf4f", "name": "Aditya Jain", "role": "professional", "email": "aditya.jain00712@gmail.com", "name_title": "Dr.", "email_verified": true, "phone_verified": false}	\N	2026-05-01 10:28:13.254445+00	2026-05-20 07:14:52.614558+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	cef0b74f-ea58-429f-b67a-7e3758d333e9	authenticated	authenticated	xagela3703@gixpos.com	$2a$10$ccedI0fz1Z.NIgaCvC6esupafshZCeSeF.FWhwfWlq9/AMqATiM3C	2026-05-01 10:50:35.415384+00	\N		2026-05-01 10:50:16.265803+00		\N			\N	2026-05-18 08:00:04.48104+00	{"provider": "email", "providers": ["email"]}	{"sub": "cef0b74f-ea58-429f-b67a-7e3758d333e9", "name": "sdsdsdsdsddsd sdsddsd", "role": "professional", "email": "xagela3703@gixpos.com", "email_verified": true, "phone_verified": false}	\N	2026-05-01 10:50:16.128713+00	2026-05-18 08:00:04.536539+00	\N	\N			\N		0	\N		\N	f	\N	f
-00000000-0000-0000-0000-000000000000	9510a2a3-8186-46b0-ac25-d3760612aabc	authenticated	authenticated	harsh1248gupta@gmail.com	$2a$10$KXcnnJjmYDoG/roL4wbkJOErFuMD66NhEMZFaN9ZdN.lWSqZFV9q6	2026-03-02 07:41:11.393403+00	\N		2026-03-02 07:41:00.399569+00		\N			\N	2026-05-20 17:19:04.609361+00	{"provider": "email", "providers": ["email"]}	{"sub": "9510a2a3-8186-46b0-ac25-d3760612aabc", "name": "Harsh", "role": "professional", "email": "harsh1248gupta@gmail.com", "image": "https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/9510a2a3-8186-46b0-ac25-d3760612aabc/1776084934982.webp", "name_title": "Prof.", "email_verified": true, "phone_verified": false}	\N	2026-03-02 07:41:00.35222+00	2026-05-20 17:19:04.650082+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	278dd7ce-5591-458b-bde4-396e619ecc9f	authenticated	authenticated	siddhant.sid1005@gmail.com	$2a$10$b2tEtzUOkkWSkpifYNxkJu0uQ9cmFkidBPo.KuxJPkyXj1kUiAyHK	2026-05-21 17:36:56.267801+00	\N		\N		\N			\N	2026-05-21 17:36:56.283879+00	{"provider": "email", "providers": ["email"]}	{"sub": "278dd7ce-5591-458b-bde4-396e619ecc9f", "name": "Siddhant Mukherjee", "role": "professional", "email": "siddhant.sid1005@gmail.com", "email_verified": true, "phone_verified": false}	\N	2026-05-21 17:36:56.18781+00	2026-05-21 17:36:56.307723+00	\N	\N			\N		0	\N		\N	f	\N	f
 00000000-0000-0000-0000-000000000000	6ee89e3c-d5cd-4788-a281-9459b6d4502d	authenticated	authenticated	ujjaineye@gmail.com	$2a$10$XADD717BD5dhOhtfnLA68uONlq/9tRdSvSY.0LQeh4WIVTvmxRAeq	2026-05-20 07:18:12.107835+00	\N		\N		\N			\N	2026-05-20 07:18:12.129311+00	{"provider": "email", "providers": ["email"]}	{"sub": "6ee89e3c-d5cd-4788-a281-9459b6d4502d", "name": "Rishabh  Jain", "role": "professional", "email": "ujjaineye@gmail.com", "email_verified": true, "phone_verified": false}	\N	2026-05-20 07:18:11.995381+00	2026-05-27 15:14:06.076622+00	\N	\N			\N		0	\N		\N	f	\N	f
 \.
@@ -4766,21 +5143,21 @@ COPY auth.webauthn_credentials (id, user_id, credential_id, public_key, attestat
 
 COPY public.admin_notifications (id, type, title, body, actor_user_id, metadata, read_at, created_at) FROM stdin;
 829986f3-7f3c-47eb-ba5f-773684754c72	professional.profile_updated	Professional: profile updated	Harsh has updated specialization from Neurologist to Psychiatrist.\nHarsh has updated name title (salutation) from Dr. to Prof..	9510a2a3-8186-46b0-ac25-d3760612aabc	{"changes": [{"to": "Psychiatrist", "from": "Neurologist", "label": "specialization"}, {"to": "Prof.", "from": "Dr.", "label": "name title (salutation)"}], "section": "profile", "actor_name": "Harsh", "actor_role": "professional"}	2026-05-01 13:55:48.065+00	2026-05-01 13:53:16.859502+00
-4a42b750-853d-4102-99f3-be674b2ed507	user.registered	New user registered	Mansi M (client)	8a5ec858-3b61-453a-aa19-008680673ebc	{"role": "client", "email": "mansimeena2326@gmail.com", "user_id": "8a5ec858-3b61-453a-aa19-008680673ebc"}	2026-05-07 19:01:26.363+00	2026-05-07 18:56:25.607723+00
-a34f886f-4344-4bc7-8c75-c3954d2b2666	guest.appointment_request	Guest consultation request	Mansi Meena — 2026-05-08 11:00	8a5ec858-3b61-453a-aa19-008680673ebc	{"city": "Chandigarh", "email": "mansimeena2326@gmail.com", "state": "Chandigarh", "category": "Mental Health", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "8c8b430b-06d9-4e22-8122-5ea7514feed6"}	2026-05-07 19:01:29.178+00	2026-05-07 18:59:45.259668+00
-61bcb9e9-93a3-44d3-8b30-c52697791bfb	guest.appointment_request	Guest consultation request	Mansi Meena — 2026-05-08 11:00	8a5ec858-3b61-453a-aa19-008680673ebc	{"city": "Chandigarh", "email": "mansimeena2326@gmail.com", "state": "Chandigarh", "category": "Mental Health", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "cd4ce140-0be5-40d3-87f7-0f556e5924bd"}	2026-05-07 19:01:31.503+00	2026-05-07 19:00:16.803107+00
 63f20531-7c04-42f7-b7cb-4d60c8d2a7f8	newsletter.unsubscribed	Newsletter unsubscribe	harsh2902@gmail.com unsubscribed from the newsletter.	cf2e5e84-fcde-4e13-936b-6ab146b8c638	{"email": "harsh2902@gmail.com", "status": "unsubscribed", "subscriber_id": 8, "previous_status": "active"}	2026-05-11 08:27:33.513+00	2026-05-10 15:26:04.184369+00
 e1e308f3-3242-4016-8c99-a7b67ea24b52	newsletter.unsubscribed	Newsletter unsubscribe	harsh.wooden@mail.com unsubscribed from the newsletter.	cf2e5e84-fcde-4e13-936b-6ab146b8c638	{"email": "harsh.wooden@mail.com", "status": "unsubscribed", "subscriber_id": 7, "previous_status": "resubscribed"}	2026-05-11 08:27:33.513+00	2026-05-10 15:26:09.015117+00
-bf368553-0b3a-4e9d-b8ff-fa96cdfe88fa	user.profile_image_updated	Profile photo updated	A user uploaded or changed their profile image.	8a5ec858-3b61-453a-aa19-008680673ebc	{}	2026-05-11 08:27:33.513+00	2026-05-10 18:55:01.766086+00
 675882bd-847c-40e9-b2c7-2a366d29003b	newsletter.subscribed	New newsletter subscription	ipotech24@gmail.com subscribed to the newsletter.	\N	{"email": "ipotech24@gmail.com", "status": "active", "subscriber_id": 9, "previous_status": null}	2026-05-11 08:27:33.513+00	2026-05-11 05:33:00.552619+00
 6e3f3cb4-e8b8-4ba4-8888-327d392ebae5	newsletter.unsubscribed	Newsletter unsubscribe	ipotech24@gmail.com unsubscribed from the newsletter.	cf2e5e84-fcde-4e13-936b-6ab146b8c638	{"email": "ipotech24@gmail.com", "status": "unsubscribed", "subscriber_id": 9, "previous_status": "active"}	2026-05-11 08:27:33.513+00	2026-05-11 05:37:24.110667+00
 2797e290-142b-4c88-9d16-9536d9498287	newsletter.subscribed	New newsletter subscription	ipotech24@gmail.com subscribed to the newsletter.	\N	{"email": "ipotech24@gmail.com", "status": "active", "subscriber_id": 10, "previous_status": null}	2026-05-11 08:27:33.513+00	2026-05-11 05:37:43.435667+00
 8c40eecb-ddb0-430e-955d-aff322473bbc	newsletter.resubscribed	Newsletter resubscribe	harsh.ixora@gmail.com resubscribed to the newsletter.	\N	{"email": "harsh.ixora@gmail.com", "status": "resubscribed", "subscriber_id": 3, "previous_status": "unsubscribed"}	2026-05-11 08:27:33.513+00	2026-05-11 05:43:20.788652+00
 fe51c5a8-0274-4234-a9b7-dea2ee409ea7	newsletter.subscribed	New newsletter subscription	harsh.wooden@gmail.com subscribed to the newsletter.	\N	{"email": "harsh.wooden@gmail.com", "status": "active", "subscriber_id": 11, "previous_status": null}	2026-05-11 08:27:33.513+00	2026-05-11 05:45:00.588557+00
-1d63f375-de73-4ea4-84ab-cd3bbc24811d	user.registered	New user registered	teset testes (client)	522a7a77-91fe-4419-bdbf-8341d9bddfeb	{"role": "client", "email": "harsh.ixora@gmail.comg", "user_id": "522a7a77-91fe-4419-bdbf-8341d9bddfeb"}	2026-05-16 09:06:01.028+00	2026-05-14 11:16:53.925047+00
 84d1f829-2d22-445a-9688-159de1ccfdd4	guest.appointment_request	Guest consultation request	Charchita Gupta — 2026-05-23 15:30	\N	{"city": "Indore", "email": "charchita1597@gmail.com", "state": "Madhya Pradesh", "category": "Women's Health", "professional_id": null, "guest_appointment_id": "95791710-98a1-4458-b211-c636d992833e"}	2026-05-16 09:06:01.028+00	2026-05-15 05:21:42.490288+00
 e74c9c90-df1c-4978-8cf7-c9643db71460	guest.appointment_request	Guest consultation request	Charchita Gupta — 2026-05-23 15:30	\N	{"city": "Indore", "email": "charchita1597@gmail.com", "state": "Madhya Pradesh", "category": "Women's Health", "professional_id": null, "guest_appointment_id": "6fb3a098-a9d3-42f6-984c-6b9ffadc2997"}	2026-05-16 09:06:01.028+00	2026-05-15 05:21:43.691149+00
-ea242ea5-1ecb-44b2-b9c8-dbe6a5ca54d1	newsletter.subscribed	New newsletter subscription	mansimeena2326@gmail.com subscribed to the newsletter.	8a5ec858-3b61-453a-aa19-008680673ebc	{"email": "mansimeena2326@gmail.com", "status": "active", "subscriber_id": 12, "previous_status": null}	2026-05-16 09:06:01.028+00	2026-05-15 14:56:40.594928+00
+4a42b750-853d-4102-99f3-be674b2ed507	user.registered	New user registered	Mansi M (client)	\N	{"role": "client", "email": "mansimeena2326@gmail.com", "user_id": "8a5ec858-3b61-453a-aa19-008680673ebc"}	2026-05-07 19:01:26.363+00	2026-05-07 18:56:25.607723+00
+a34f886f-4344-4bc7-8c75-c3954d2b2666	guest.appointment_request	Guest consultation request	Mansi Meena — 2026-05-08 11:00	\N	{"city": "Chandigarh", "email": "mansimeena2326@gmail.com", "state": "Chandigarh", "category": "Mental Health", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "8c8b430b-06d9-4e22-8122-5ea7514feed6"}	2026-05-07 19:01:29.178+00	2026-05-07 18:59:45.259668+00
+61bcb9e9-93a3-44d3-8b30-c52697791bfb	guest.appointment_request	Guest consultation request	Mansi Meena — 2026-05-08 11:00	\N	{"city": "Chandigarh", "email": "mansimeena2326@gmail.com", "state": "Chandigarh", "category": "Mental Health", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "cd4ce140-0be5-40d3-87f7-0f556e5924bd"}	2026-05-07 19:01:31.503+00	2026-05-07 19:00:16.803107+00
+bf368553-0b3a-4e9d-b8ff-fa96cdfe88fa	user.profile_image_updated	Profile photo updated	A user uploaded or changed their profile image.	\N	{}	2026-05-11 08:27:33.513+00	2026-05-10 18:55:01.766086+00
+ea242ea5-1ecb-44b2-b9c8-dbe6a5ca54d1	newsletter.subscribed	New newsletter subscription	mansimeena2326@gmail.com subscribed to the newsletter.	\N	{"email": "mansimeena2326@gmail.com", "status": "active", "subscriber_id": 12, "previous_status": null}	2026-05-16 09:06:01.028+00	2026-05-15 14:56:40.594928+00
+1d63f375-de73-4ea4-84ab-cd3bbc24811d	user.registered	New user registered	teset testes (client)	\N	{"role": "client", "email": "harsh.ixora@gmail.comg", "user_id": "522a7a77-91fe-4419-bdbf-8341d9bddfeb"}	2026-05-16 09:06:01.028+00	2026-05-14 11:16:53.925047+00
 eb2452f2-605d-402a-b05f-79e1423ce762	user.registered	New user registered	sdsdsdsdsddsd sdsddsd (professional)	cef0b74f-ea58-429f-b67a-7e3758d333e9	{"role": "professional", "email": "xagela3703@gixpos.com", "user_id": "cef0b74f-ea58-429f-b67a-7e3758d333e9"}	2026-05-21 08:38:24.933+00	2026-05-16 11:00:23.553147+00
 48785dce-9ce1-437e-99a7-3be88bd7a650	guest.appointment_request	Guest consultation request	sdsdsdsdsddsd sdsddsd — 2026-05-22 14:00	cef0b74f-ea58-429f-b67a-7e3758d333e9	{"city": "Ujjain", "email": "xagela3703@gixpos.com", "state": "Ujjain", "category": "Rehabilitation counsellor", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "eac11ef4-88e4-422f-a52b-7ecd0e4d9f9b"}	2026-05-21 08:38:24.933+00	2026-05-16 11:37:44.248022+00
 609df667-e5d6-4f38-b9c7-af4ff7674067	guest.appointment_request	Guest consultation request	sdsdsdsdsddsd sdsddsd — 2026-05-29 14:00	cef0b74f-ea58-429f-b67a-7e3758d333e9	{"city": "Ujjain", "email": "xagela3703@gixpos.com", "state": "Ujjain", "category": "Rehabilitation counsellor", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "ef5bb75f-d628-4b2c-8c57-177f7f143296"}	2026-05-21 08:38:24.933+00	2026-05-16 11:42:35.051972+00
@@ -4793,6 +5170,8 @@ a09a2988-433c-4b5d-835b-67fa99cbab22	newsletter.subscribed	New newsletter subscr
 4c500a2d-058b-45c4-9de1-ee39c32a28d8	professional.calendar_slot_removed	Calendar: weekly slot removed	Harsh removed Monday 09:00–17:00.	9510a2a3-8186-46b0-ac25-d3760612aabc	{"section": "calendar", "actor_name": "Harsh", "actor_role": "professional", "day_of_week": 1}	2026-05-21 08:38:24.933+00	2026-05-20 17:25:32.038758+00
 34d6e777-c335-4ac3-97d6-a8c1e3082797	professional.calendar_slot_removed	Calendar: weekly slot removed	Harsh removed Monday 09:00–17:00.	9510a2a3-8186-46b0-ac25-d3760612aabc	{"section": "calendar", "actor_name": "Harsh", "actor_role": "professional", "day_of_week": 1}	2026-05-21 08:38:24.933+00	2026-05-20 17:25:34.791126+00
 be53acef-c826-4ab9-bb3e-6cfd7c8eee25	user.registered	New user registered	Siddhant Mukherjee (professional)	278dd7ce-5591-458b-bde4-396e619ecc9f	{"role": "professional", "email": "siddhant.sid1005@gmail.com", "user_id": "278dd7ce-5591-458b-bde4-396e619ecc9f"}	2026-05-21 18:47:22.656+00	2026-05-21 17:36:56.186569+00
+30528011-5854-4923-b025-ebdf3d805e67	guest.appointment_request	Guest consultation request	sgsgdsvybr sgsgdsvybr — 2026-06-06 10:00	3bd77851-510e-469a-ab79-87d591d90cad	{"city": "Ujjain", "email": "harsh.ixora@gmail.com", "state": "Ujjain", "category": "Rehabilitation counsellor", "professional_id": "b9d2077d-69b6-44ba-8c5b-34f960c795e3", "guest_appointment_id": "7df0864a-75d9-468a-ae06-db699483b0b5"}	2026-06-11 15:20:02.215+00	2026-06-05 15:24:14.75575+00
+a7b32a81-8128-4fbe-80fc-6010eb4ecedf	guest.appointment_request	Guest consultation request	sgsgdsvybr sgsgdsvybr — 2026-06-09 10:00	3bd77851-510e-469a-ab79-87d591d90cad	{"city": "Delhi", "email": "harsh.ixora@gmail.com", "state": "Delhi", "category": "Rehabilitation counsellor", "professional_id": "06db9b38-80e1-4933-b020-17d9c9dff899", "guest_appointment_id": "9f751df1-09b2-4bb3-9fc6-51ae75307659"}	2026-06-11 15:20:03.675+00	2026-06-05 15:07:23.179747+00
 \.
 
 
@@ -4805,11 +5184,61 @@ COPY public.appointments (id, client_id, professional_id, appointment_type, stat
 
 
 --
+-- Data for Name: blog_categories; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.blog_categories (id, name, slug, description, sort_order, is_active, created_at, updated_at) FROM stdin;
+e42d024e-52da-4acd-bea7-d15c2756ca13	Clinical Psychiatry & Diagnosis	clinical-psychiatry-diagnosis	Clinical Psychiatry & Diagnosis	1	t	2026-06-08 06:42:08.494531+00	2026-06-08 06:42:08.494531+00
+28ea92ec-4e93-4a95-a325-a7ee8468c777	Mood & Anxiety Disorders	mood-anxiety-disorders	Mood & Anxiety Disorders	2	t	2026-06-08 06:42:21.439094+00	2026-06-08 06:42:21.439094+00
+75ec0ae1-9811-4069-8e4f-96892a572a83	Psychotic & Severe Mental Illness	psychotic-severe-mental-illness	Psychotic & Severe Mental Illness	3	t	2026-06-08 06:42:31.999303+00	2026-06-08 06:42:31.999303+00
+b5196d9a-228b-4917-bd24-2c822c3d3a5e	Child & Adolescent Mental Health	child-adolescent-mental-health	Child & Adolescent Mental Health	4	t	2026-06-08 06:42:43.609234+00	2026-06-08 06:42:43.609234+00
+57442d56-e91e-412e-bdbf-9d17ed8c269c	Addiction Psychiatry & Dual Diagnosis	addiction-psychiatry-dual-diagnosis	Addiction Psychiatry & Dual Diagnosis	5	t	2026-06-08 06:42:56.322743+00	2026-06-08 06:42:56.322743+00
+\.
+
+
+--
+-- Data for Name: blog_comments; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.blog_comments (id, post_id, user_id, body, created_at, updated_at, deleted_at, parent_id, status, reviewed_at, reviewed_by) FROM stdin;
+c854517f-971d-4ca5-a0f2-9394f4c7003f	bef19f46-935e-4499-a362-ed132e879c9f	3bd77851-510e-469a-ab79-87d591d90cad	nice blog looking gret	2026-06-08 06:47:59.708404+00	2026-06-08 06:47:59.708404+00	\N	\N	approved	\N	\N
+\.
+
+
+--
+-- Data for Name: blog_post_likes; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.blog_post_likes (post_id, user_id, created_at) FROM stdin;
+bef19f46-935e-4499-a362-ed132e879c9f	3bd77851-510e-469a-ab79-87d591d90cad	2026-06-08 06:47:41.956102+00
+\.
+
+
+--
+-- Data for Name: blog_post_views; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.blog_post_views (id, post_id, viewer_key, viewed_at) FROM stdin;
+1	bef19f46-935e-4499-a362-ed132e879c9f	e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	2026-06-08 06:46:27.056777+00
+23	06d4aa27-b24a-4dc6-96d0-2944695603d5	6f248d1e6b72893dddf9b0c2b2be1477f2f8c5d08a2ebf6cec57d475a5fe4ae6	2026-06-11 08:22:52.559248+00
+\.
+
+
+--
+-- Data for Name: blog_posts; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.blog_posts (id, slug, title, excerpt, content_html, cover_image_url, category_id, author_id, status, published_at, meta_title, meta_description, tags, view_count, like_count, comment_count, created_at, updated_at, submitted_at, reviewed_at, reviewed_by) FROM stdin;
+bef19f46-935e-4499-a362-ed132e879c9f	clinical-psychiatry-diagnosis-understanding-mental-health-through-a-clinical-lens	Clinical Psychiatry & Diagnosis: Understanding Mental Health Through a Clinical Lens	\N	<p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Mental health is just as important as physical health — yet it is often misunderstood, overlooked, or stigmatized. Clinical psychiatry plays a crucial role in identifying, diagnosing, and treating mental health conditions using evidence-based medical approaches. This article explores what clinical psychiatry is, how psychiatric diagnoses are made, and why accurate diagnosis matters.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## What Is Clinical Psychiatry?</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Clinical psychiatry is a medical specialty focused on the assessment, diagnosis, treatment, and prevention of mental, emotional, and behavioral disorders. Unlike general counseling or therapy alone, psychiatry integrates:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Medical evaluation  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Psychological assessment  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Biological understanding of brain function  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Medication management  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Psychotherapy techniques  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Psychiatrists are licensed medical doctors (MD or DO) who can prescribe medications, interpret lab results, and evaluate how physical health conditions may affect mental health.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## The Importance of Accurate Diagnosis</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Accurate psychiatric diagnosis is essential because many mental health conditions share overlapping symptoms. For example:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Fatigue may be linked to depression, anxiety, or thyroid dysfunction  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Mood swings could indicate bipolar disorder or borderline personality disorder  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Concentration problems may stem from ADHD, anxiety, or trauma  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">A correct diagnosis ensures:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Proper treatment planning  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Reduced trial-and-error medication use  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Better long-term outcomes  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Improved quality of life  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## How Psychiatric Diagnosis Works</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Psychiatric diagnosis is a structured and comprehensive process. It typically includes:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 1. Clinical Interview</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">The psychiatrist gathers detailed information about:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Current symptoms  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Duration and severity  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Personal and family history  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Medical conditions  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Substance use  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Social and occupational functioning  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 2. Mental Status Examination (MSE)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">The MSE evaluates:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Appearance and behavior  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Speech patterns  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Mood and affect  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Thought process and content  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Memory and cognition  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Insight and judgment  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 3. Diagnostic Criteria</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Psychiatrists use standardized diagnostic guidelines such as the DSM-5-TR (Diagnostic and Statistical Manual of Mental Disorders) to ensure consistent and evidence-based classification of disorders.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 4. Medical Evaluation</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Sometimes lab tests or imaging may be ordered to rule out:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Hormonal imbalances  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Neurological conditions  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Vitamin deficiencies  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Medication side effects  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Common Psychiatric Disorders</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Clinical psychiatry addresses a wide range of conditions, including:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Major Depressive Disorder  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Generalized Anxiety Disorder  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Bipolar Disorder  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Schizophrenia and Psychotic Disorders  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Attention-Deficit/Hyperactivity Disorder (ADHD)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Post-Traumatic Stress Disorder (PTSD)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Obsessive-Compulsive Disorder (OCD)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Personality Disorders  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Each condition requires a tailored treatment plan based on individual needs.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Treatment Approaches in Clinical Psychiatry</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Treatment often combines multiple strategies:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Medication Management</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Psychiatrists may prescribe:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Antidepressants  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Mood stabilizers  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Antipsychotics  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Anti-anxiety medications  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Stimulants  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Psychotherapy</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Evidence-based therapies include:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Cognitive Behavioral Therapy (CBT)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Dialectical Behavior Therapy (DBT)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Psychodynamic Therapy  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Trauma-focused therapy  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Lifestyle &amp; Holistic Interventions</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Sleep regulation  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Stress management  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Nutrition and exercise  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Social support systems  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Challenges in Psychiatric Diagnosis</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Mental health diagnosis is complex because:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Symptoms are subjective  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Cultural factors influence expression of distress  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Stigma may prevent honest disclosure  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Co-occurring disorders are common  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">This makes clinical expertise and careful evaluation essential.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## The Future of Clinical Psychiatry</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Advancements in neuroscience, genetics, and digital health are transforming psychiatric care. Emerging tools include:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Brain imaging research  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Pharmacogenetic testing  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Telepsychiatry services  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- AI-assisted symptom monitoring  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">These innovations aim to improve diagnostic precision and personalize treatment strategies.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Breaking the Stigma</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Seeking psychiatric help is a sign of strength — not weakness. Mental health conditions are medical conditions, and effective treatments are available. Early intervention often leads to better recovery outcomes.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Final Thoughts</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Clinical psychiatry bridges medicine and mental health to provide comprehensive care for individuals experiencing psychological distress. Through accurate diagnosis, evidence-based treatment, and compassionate care, psychiatry helps individuals regain stability, clarity, and improved quality of life.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">If you or someone you know is struggling with mental health symptoms, consider consulting a qualified mental health professional. Timely diagnosis and support can make all the difference.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">*Author Note: This article is for educational purposes></p>	/uploads/blogs/0ed9d914-a802-4ff2-bf4b-b93e2a4d1727.png	e42d024e-52da-4acd-bea7-d15c2756ca13	cf2e5e84-fcde-4e13-936b-6ab146b8c638	published	2026-06-08 06:45:52.09+00	\N	Clinical Psychiatry & Diagnosis: Understanding Mental Health Through a Clinical Lens	{}	1	1	1	2026-06-08 06:45:52.312503+00	2026-06-08 06:45:52.09+00	\N	\N	\N
+06d4aa27-b24a-4dc6-96d0-2944695603d5	understanding-mood-and-anxiety-disorders	Understanding Mood and Anxiety Disorders	\N	<p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;"># Understanding Mood and Anxiety Disorders  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">*Finding clarity, support, and hope in the midst of emotional challenges*</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Mood and anxiety disorders are among the most common mental health conditions worldwide. Yet despite how prevalent they are, many people struggle in silence—unsure whether what they’re feeling is “normal stress” or something that deserves professional attention.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">If you’ve ever felt persistently overwhelmed, deeply sad, restless, or constantly on edge, you’re not alone. This guide will help you understand what mood and anxiety disorders are, how they show up, and what steps you can take toward healing.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## What Are Mood Disorders?</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Mood disorders primarily affect a person’s emotional state. While everyone experiences ups and downs, mood disorders involve intense or prolonged emotional changes that interfere with daily life.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Common Mood Disorders</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Major Depressive Disorder (Depression)**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Persistent sadness, loss of interest in activities, fatigue, changes in appetite or sleep, and feelings of hopelessness.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Bipolar Disorder**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Alternating episodes of depression and elevated mood (mania or hypomania), which may include impulsivity, high energy, and reduced need for sleep.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Persistent Depressive Disorder (Dysthymia)**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Long-term, chronic low mood lasting two years or more.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Signs You Shouldn’t Ignore</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Loss of interest in things you></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Feeling hopeless or worthless  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Changes in sleep or appetite  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Difficulty concentrating  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Thoughts of self-harm or suicide  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">If you are experiencing thoughts of self-harm or suicide, seek immediate help from a trusted professional or emergency service in your area.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## What Are Anxiety Disorders?</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Anxiety is a normal stress response. However, anxiety disorders involve excessive fear or worry that is difficult to control and affects daily functioning.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Common Anxiety Disorders</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Generalized Anxiety Disorder (GAD)**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Chronic, excessive worry about everyday issues.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Panic Disorder**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Recurrent panic attacks accompanied by fear of future attacks.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Social Anxiety Disorder**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Intense fear of social situations and being judged by others.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Specific Phobias**  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">  Strong fear of particular objects or situations (e.g., flying, heights, animals).</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### Physical Symptoms of Anxiety</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Anxiety doesn’t just affect the mind—it shows up in the body:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Rapid heartbeat  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Shortness of breath  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Sweating  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Trembling  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Stomach discomfort  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Muscle tension  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Why Do Mood and Anxiety Disorders Develop?</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">There is no single cause. Instead, they often result from a combination of:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Biological factors** (genetics, brain chemistry)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Life experiences** (trauma, loss, chronic stress)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Personality traits** (perfectionism, high sensitivity)  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- **Environmental stressors** (work pressure, financial strain, social isolation)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Understanding that these conditions are not personal failures is crucial. They are medical and psychological conditions—not weaknesses.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Treatment Options</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">The good news? Mood and anxiety disorders are highly treatable.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 1. Therapy</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Cognitive Behavioral Therapy (CBT)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Acceptance and Commitment Therapy (ACT)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Interpersonal Therapy (IPT)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Trauma-focused therapies (when relevant)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 2. Medication</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Antidepressants, mood stabilizers, and anti-anxiety medications may be prescribed by qualified healthcare providers.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">### 3. Lifestyle Support</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Regular exercise  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Balanced nutrition  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Consistent sleep schedule  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Mindfulness and relaxation techniques  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Social connection  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Often, a combination of therapy, medication, and lifestyle adjustments leads to the best outcomes.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## When to Seek Help</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Consider reaching out to a professional if:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Symptoms persist for more than two weeks  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Daily responsibilities become difficult to manage  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- You avoid situations due to fear or sadness  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- You feel emotionally numb or constantly overwhelmed  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Early intervention often leads to faster recovery.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Reducing Stigma Around Mental Health</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">One of the biggest barriers to treatment is stigma. Many people fear being labeled as “weak” or “dramatic.” In reality, seeking help is an act of strength.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Talking openly about mood and anxiety disorders:</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Encourages others to seek support  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Reduces shame  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Promotes community understanding  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">- Saves lives  </span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">## Final Thoughts</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Mood and anxiety disorders can feel isolating, but they are treatable—and recovery is possible. Whether through therapy, medication, lifestyle changes, or a combination of approaches, many people go on to live full, meaningful lives.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">If this article resonates with you, consider taking></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">---</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">*If you are in immediate crisis or experiencing suicidal thoughts, please contact your local emergency number or a mental health crisis hotline in your country.*</span></p>	/uploads/blogs/a672b457-ac98-47f8-994a-220f37d62888.png	28ea92ec-4e93-4a95-a325-a7ee8468c777	3bd77851-510e-469a-ab79-87d591d90cad	published	2026-06-08 10:12:30.146+00	\N	\N	{}	1	0	0	2026-06-08 10:09:48.128045+00	2026-06-08 10:12:30.146+00	2026-06-08 10:09:47.824+00	2026-06-08 10:12:30.146+00	cf2e5e84-fcde-4e13-936b-6ab146b8c638
+\.
+
+
+--
 -- Data for Name: client_medical_profiles; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.client_medical_profiles (id, user_id, date_of_birth, gender, blood_type, height, weight, address, city, state, postal_code, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, created_at, updated_at) FROM stdin;
-9b449b38-0967-4f39-bf66-e33a44c8bc23	8a5ec858-3b61-453a-aa19-008680673ebc	1998-12-09	female	A+	152	47	552, Greater Kailash Colony, Jandli	Ambala City	Haryana	134003	Vishal Gupta	9981322736	Partner	2026-05-10 18:52:08.171577+00	2026-05-10 18:52:07.732+00
 40e2d981-7755-46cc-93a8-6439b5b0291f	3bd77851-510e-469a-ab79-87d591d90cad	2026-05-01	male	A-	567	78	tes	ttr	tttftft	5436545	ggcfgh	675767556556776566	sterytuwru	2026-05-12 09:50:03.791546+00	2026-05-12 09:50:03.553+00
 \.
 
@@ -4857,6 +5286,8 @@ eac11ef4-88e4-422f-a52b-7ecd0e4d9f9b	sdsdsdsdsddsd	sdsddsd	34	3434343434	xagela3
 ef5bb75f-d628-4b2c-8c57-177f7f143296	sdsdsdsdsddsd	sdsddsd	23	2324342325	xagela3703@gixpos.com	Rehabilitation counsellor	Ujjain	Ujjain	2026-05-29	14:00	ererer wer et ert er	2026-05-16 11:42:35.051972+00	cef0b74f-ea58-429f-b67a-7e3758d333e9	b9d2077d-69b6-44ba-8c5b-34f960c795e3	https://meet.jit.si/HealthHere-ef5bb75fd628	\N	\N
 8e929f26-402f-4fd2-845f-da7c2fd32bda	Harsh	Gupta	34	2354234523	harsh.ixora@gmail.com	Mental Health	Madhya Pradesh	Indore	2026-05-26	18:00	this is the without login testing 	2026-05-16 12:04:35.702595+00	\N	9510a2a3-8186-46b0-ac25-d3760612aabc	https://meet.jit.si/HealthHere-8e929f26402f	\N	\N
 19ed1951-c426-4ebd-bbf0-3d459cb03089	Harsh	Gupta	34	4344343444	harsh.ixora@gmail.com	Psychiatric Care	Rajasthan	Udaipur	2026-03-26	03:24	sdsdsd	2026-03-22 09:59:12.359493+00	3bd77851-510e-469a-ab79-87d591d90cad	9510a2a3-8186-46b0-ac25-d3760612aabc	https://meet.jit.si/HealthHere-19ed1951c426	<p class="mb-1 text-[14px] leading-relaxed text-slate-800" style="text-align: center;"><b><strong class="font-bold" style="white-space: pre-wrap;">Harsh Gupta</strong></b></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800" style="text-align: center;"><span style="white-space: pre-wrap;">33/515, Kotri, Kota, 324007 (Raj.)</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800" style="text-align: center;"><span style="white-space: pre-wrap;"> +91 8764485661  </span><a href="mailto:harsh1248gupta@gmail.com" class="text-indigo-600 underline underline-offset-2"><span style="white-space: pre-wrap;">harsh1248gupta@gmail.com  harsh29.vercel.app</span></a></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><h1 class="text-2xl font-bold mb-2 text-slate-900"><b><strong class="font-bold" style="white-space: pre-wrap;">SUMMARY</strong></b></h1><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Experienced Flutter Developer with 3 years of developing and deploying high- performance mobile applications for Android and iOS using Flutter, Dart, Java, Kotlin, and Swift. Skilled in MVVM, MVC, and multithreading for responsive and scalable apps.</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800" style="text-align: justify;"><span style="white-space: pre-wrap;">Proficient in Flutter, Firebase, Android SDK, iOS SDK, and back-end technologies. Strong background in fintech, educational, and e-commerce applications, with a focus on clean, maintainable, and user-friendly solutions</span></p><h1 class="text-2xl font-bold mb-2 text-slate-900"><b><strong class="font-bold" style="white-space: pre-wrap;">EDUCATION</strong></b></h1><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">CAREER POINT UNIVERSITY</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">2019 - 2023</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">B. Tech. in Computer Science</em></i></h2><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Secured 8.2 CGPA</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">SHREE RAM SR. SEC. SCHOOL, UDAIPUR (RAJ.)</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">2018 - 2019</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">Higher Secondary Certificate in Science</em></i></h2><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">secured 61.40%</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><h1 class="text-2xl font-bold mb-2 text-slate-900"><b><strong class="font-bold" style="white-space: pre-wrap;">WORK EXPERIENCE</strong></b></h1><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">GyaniTalk OPC PVT LTD</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">Nov 2024 - Present</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">Senior Flutter Developer</em></i></h2><ul class="list-disc ml-6 mb-2"><li value="1" class="mb-0.5"><span style="white-space: pre-wrap;">Developing and maintaining high-performance Astrology Apps and handling Client Side Projects.</span></li><li value="2" class="mb-0.5"><span style="white-space: pre-wrap;">Enhancing and Optimising user experience and integrating new features for better engagement.</span></li></ul><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">Cognus Technology (Gradding), WoodenStreet</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">Sep 2023 - Oct 2024</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">Executive Flutter Developer</em></i></h2><ul class="list-disc ml-6 mb-2"><li value="1" class="mb-0.5"><span style="white-space: pre-wrap;">Developed and launched an educational app for international student consultations.</span></li><li value="2" class="mb-0.5"><span style="white-space: pre-wrap;">Improved app usability, boosting engagement and user satisfaction.</span></li></ul><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">IXORA INFOTECH PVT. LTD., INDORE</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">June 2023 - Sep 2023</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">Flutter Developer</em></i></h2><ul class="list-disc ml-6 mb-2"><li value="1" class="mb-0.5"><span style="white-space: pre-wrap;">Led development of App, managing the deployment of six Play Store apps.</span></li><li value="2" class="mb-0.5"><span style="white-space: pre-wrap;">Enhanced user engagement and app accessibility.</span></li></ul><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><b><strong class="font-bold" style="white-space: pre-wrap;">IXORA INFOTECH PVT. LTD., INDORE</strong></b><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">July 2022 - Sep 2022</span></p><h2 class="text-xl font-bold mb-2 text-slate-900"><i><em class="italic" style="white-space: pre-wrap;">InternShip</em></i></h2><ul class="list-disc ml-6 mb-2"><li value="1" class="mb-0.5"><span style="white-space: pre-wrap;">Contributed to Android and web project development and testing.</span></li><li value="2" class="mb-0.5"><span style="white-space: pre-wrap;">Gained hands-on experience in application lifecycle management.</span></li></ul><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><h1 class="text-2xl font-bold mb-2 text-slate-900"><b><strong class="font-bold" style="white-space: pre-wrap;">SKILLS</strong></b></h1><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Application Development</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">Flutter, Dart, Firebase, Java, Kotlin, Swift Frontend</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">Bootstrap, Tailwind, NextJs</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Backend</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">CodeIgniter3, MySQL, NodeJs, Prisma</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><span style="white-space: pre-wrap;">Development Tools</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">Android Studio, Xcode, Swagger APIs, VS Code Networking</span><span style="white-space: pre-wrap;">\t</span><span style="white-space: pre-wrap;">WebSockets, TCP/IP, Wi-Fi APIs</span></p><p class="mb-1 text-[14px] leading-relaxed text-slate-800"><br><br></p><h1 class="text-2xl font-bold mb-2 text-slate-900"><b><strong class="font-bold" style="white-space: pre-wrap;">PROJECTS</strong></b></h1><ol class="list-decimal ml-6 mb-2"><li value="1" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">GyaniTalk</strong></b><span style="white-space: pre-wrap;">: Optimized the Astrology app by integrating Firebase for a smoother and more streamlined user experience. Added new features to improve real-time presence and keep users online within the app.</span></li><li value="2" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">WoodenStreet</strong></b><span style="white-space: pre-wrap;">: Maintained and optimised an e-commerce app, enhancing user experience and integrating new features to improve performance and engagement.</span></li><li value="3" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">IPO LIVE GMP</strong></b><span style="white-space: pre-wrap;">: Developed an app providing live IPO insights, GMP updates, and notifications to aid informed investments in Mainboard and SME IPOs.</span></li><li value="4" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">Gradding</strong></b><span style="white-space: pre-wrap;">: Developed an educational app for international consultations, increasing client success rates.</span></li><li value="5" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">Global Assignment Help</strong></b><span style="white-space: pre-wrap;">: Redesigned the assignment assistance platform and managed Play Store deployment.</span></li><li value="6" class="mb-0.5"><b><strong class="font-bold" style="white-space: pre-wrap;">MySIP Online</strong></b><span style="white-space: pre-wrap;">: Built a fintech platform to manage SIP and Lump Sum investments in mutual funds, improving investment tracking and user control.</span></li></ol>	2026-05-09 04:52:05.365+00
+9f751df1-09b2-4bb3-9fc6-51ae75307659	sgsgdsvybr	sgsgdsvybr	0	7673648736	harsh.ixora@gmail.com	Rehabilitation counsellor	Delhi	Delhi	2026-06-09	10:00	hjvhggvyulcuyvuy	2026-06-05 15:07:23.179747+00	3bd77851-510e-469a-ab79-87d591d90cad	06db9b38-80e1-4933-b020-17d9c9dff899	\N	\N	\N
+7df0864a-75d9-468a-ae06-db699483b0b5	sgsgdsvybr	sgsgdsvybr	0	7673648736	harsh.ixora@gmail.com	Rehabilitation counsellor	Ujjain	Ujjain	2026-06-06	10:00	testing 	2026-06-05 15:24:14.75575+00	3bd77851-510e-469a-ab79-87d591d90cad	b9d2077d-69b6-44ba-8c5b-34f960c795e3	https://meet.jit.si/HealthHere-7df0864a75d9	\N	\N
 \.
 
 
@@ -4914,29 +5345,47 @@ COPY public.newsletter_rate_limits (bucket_key, attempt_count, window_start) FRO
 email:harsh.ixora@gmail.comaa	1	2026-05-20 15:22:49.690245+00
 login_hour:49.43.1.193|51ed1ffe5f53a76a4bd5ed51c69c841ef86a31813fe6bbf5a4b936f2bd6077ec	1	2026-05-21 18:46:35.580921+00
 email:harsh.ixora@gmail.comhh	1	2026-05-20 15:23:17.438565+00
-login_minute:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	1	2026-06-04 06:45:08.810711+00
-login_hour:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	1	2026-06-04 06:45:09.176683+00
 email:harsh.ixora@gmail.comas	1	2026-05-20 15:23:27.455565+00
-login_email_hour:admin@healthcare.com	1	2026-06-04 06:45:09.38732+00
+register_minute:38.183.11.105|7585b130b9654fa906da83c1ed0320f26a4e0bbe43fc2df90548a46c430dcd48	1	2026-06-11 08:33:14.471955+00
 ip:::1	5	2026-05-20 15:22:49.291555+00
 email:harsh.ixora@gmail.comaai	1	2026-05-20 15:23:36.494965+00
 device:aee5b8e3944cece720fa12827797a00059cf3b8d3c322c3ad7df13bb4e7bbeab	4	2026-05-20 15:22:49.944979+00
 login_minute:::1|5e31fe8390d633bb263d8dba65bb76f0497d12d5c83ffe064b76dcc8aba88df4	1	2026-05-20 17:19:03.427519+00
 login_hour:::1|5e31fe8390d633bb263d8dba65bb76f0497d12d5c83ffe064b76dcc8aba88df4	1	2026-05-20 17:19:03.988844+00
 login_email_hour:harsh1248gupta@gmail.com	1	2026-05-20 17:19:04.220139+00
+register_hour:38.183.11.105|7585b130b9654fa906da83c1ed0320f26a4e0bbe43fc2df90548a46c430dcd48	2	2026-06-11 08:22:14.176718+00
+register_email_day:mansimeena2326@gmail.com	3	2026-06-11 08:19:36.081937+00
+login_minute:223.178.208.5|b950cfbf0cf9306ec26fce3f2065aa564f106d41e469afe4b346b958ae0c1608	2	2026-06-11 14:01:52.708474+00
+guest_booking_minute:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	1	2026-06-05 15:24:13.663512+00
 login_minute:122.168.86.237|f681d24fdf22c259b1a394d89064931e119371c4402130a7be60bac7e624db3e	5	2026-05-20 17:45:30.207529+00
 login_hour:122.168.86.237|f681d24fdf22c259b1a394d89064931e119371c4402130a7be60bac7e624db3e	5	2026-05-20 17:45:31.268552+00
+guest_booking_hour:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	2	2026-06-05 15:07:22.488817+00
+login_hour:223.178.208.5|b950cfbf0cf9306ec26fce3f2065aa564f106d41e469afe4b346b958ae0c1608	2	2026-06-11 14:01:53.540419+00
+login_email_hour:mansimeena2326@gmail.com	2	2026-06-11 14:01:53.773284+00
+login_minute:::1|d258c9c053af8617d048b50b664ee81b59b3c690dfb56fceada2cb9a96794374	1	2026-06-11 15:03:06.75448+00
+guest_booking_email_hour:harsh.ixora@gmail.com	2	2026-06-05 15:07:22.705257+00
+login_hour:::1|d258c9c053af8617d048b50b664ee81b59b3c690dfb56fceada2cb9a96794374	1	2026-06-11 15:03:07.225065+00
 login_email_hour:harsah.ixora@gmail.com	1	2026-05-21 15:53:54.755988+00
 login_minute:122.168.84.145|e9b78cc8b72fdf3d452c30baf533569418de2c0de0b18af9b98b5a16ae128776	3	2026-05-21 15:53:08.444526+00
 login_hour:122.168.84.145|e9b78cc8b72fdf3d452c30baf533569418de2c0de0b18af9b98b5a16ae128776	3	2026-05-21 15:53:09.448077+00
-login_email_hour:harsh.ixora@gmail.com	1	2026-05-21 15:54:04.234833+00
+login_email_hour:admin@healthcare.com	1	2026-06-11 15:03:07.535714+00
 register_minute:171.61.162.239|639308ab6186cee351692a97244c4c672448e659b669f0a9f20c1d84037a4283	1	2026-05-21 17:36:53.833828+00
 register_hour:171.61.162.239|639308ab6186cee351692a97244c4c672448e659b669f0a9f20c1d84037a4283	1	2026-05-21 17:36:54.808261+00
 register_email_day:siddhant.sid1005@gmail.com	1	2026-05-21 17:36:55.111034+00
+login_minute:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	1	2026-06-08 10:06:48.451037+00
+login_hour:::1|e026af0a283806f54880b614bfb2b91452a69b23ee2338cc40239239d2059ccf	2	2026-06-08 10:01:50.281032+00
+login_email_hour:harsh.ixora@gmail.com	2	2026-06-08 10:01:50.527345+00
+login_minute:::1|9db94d0db0b1694f624dee4e5532b925f6b08229c9b83f3ad9391c59d847a794	1	2026-06-08 10:10:44.965444+00
 login_minute:38.183.11.109|824db57f78d2f325dc64e95c79eb2f8f88e760c2b0ef4d3dc1c76ce201d55f64	2	2026-05-21 18:36:43.89577+00
 login_hour:38.183.11.109|824db57f78d2f325dc64e95c79eb2f8f88e760c2b0ef4d3dc1c76ce201d55f64	6	2026-05-21 18:35:17.636045+00
-login_email_hour:mansimeena2326@gmail.com	6	2026-05-21 18:35:18.48719+00
 login_minute:49.43.1.193|51ed1ffe5f53a76a4bd5ed51c69c841ef86a31813fe6bbf5a4b936f2bd6077ec	1	2026-05-21 18:46:35.018866+00
+login_hour:::1|9db94d0db0b1694f624dee4e5532b925f6b08229c9b83f3ad9391c59d847a794	1	2026-06-08 10:10:45.387552+00
+login_minute:117.99.94.144|957592e6f29eb975c6d9074dc2098c1350e7cdbf3570c2e560e34634e6d24a45	1	2026-06-10 16:03:18.322372+00
+login_hour:117.99.94.144|957592e6f29eb975c6d9074dc2098c1350e7cdbf3570c2e560e34634e6d24a45	1	2026-06-10 16:03:19.270133+00
+login_minute:49.43.7.87|6f248d1e6b72893dddf9b0c2b2be1477f2f8c5d08a2ebf6cec57d475a5fe4ae6	1	2026-06-11 08:17:33.26866+00
+login_hour:49.43.7.87|6f248d1e6b72893dddf9b0c2b2be1477f2f8c5d08a2ebf6cec57d475a5fe4ae6	1	2026-06-11 08:17:34.041273+00
+register_minute:38.183.11.105|c3d2bc5d33d0f95797e336c5560c2e73c7d7be3f0bbad4d4a6006ecfff104065	1	2026-06-11 08:19:35.054546+00
+register_hour:38.183.11.105|c3d2bc5d33d0f95797e336c5560c2e73c7d7be3f0bbad4d4a6006ecfff104065	1	2026-06-11 08:19:35.799675+00
 \.
 
 
@@ -4993,6 +5442,7 @@ COPY public.professional_profiles (id, user_id, specialization, license_number, 
 32d1a2f4-4b30-4b87-bd12-ab2c33295866	06db9b38-80e1-4933-b020-17d9c9dff899	Rehabilitation counsellor	A118723	Counseling Psychologist and RCI-registered Rehabilitation Professional offering evidence-based therapy for individuals and couples. Practice integrates multiple approaches including CBT, Psychodynamic Therapy, ACT, EFT, SFT, Behavior Therapy, and Gottman-based Relationship Counseling. Also trained in Art Therapy for emotional expression and regulation. Focus areas include anxiety, stress, relationship concerns, emotional regulation, and personal growth. Sessions are structured, goal-oriented, and tailored to individual needs, with an emphasis on creating a safe, non-judgmental space. Known for a balanced approach combining clinical depth with practical, actionable strategies.	2	150000	t	2026-04-07 11:04:06.083073+00	2026-05-01 10:30:51.263+00	Delhi	Ms.
 7e274d92-e69d-4c24-88e2-71d6f33426b5	b9d2077d-69b6-44ba-8c5b-34f960c795e3	Rehabilitation counsellor	A120938	Psychologist	5	200000	t	2026-04-04 11:00:09.971262+00	2026-05-01 10:31:00.045+00	Ujjain	Mr.
 78aa8be1-8d3e-44a5-838e-be207620d032	21ffa85f-d84e-49b0-be7f-062710fedf4f	General Physician	122132024	Dr. ADITYA JAIN is a compassionate and experienced General Physician dedicated to providing comprehensive primary healthcare for patients of all ages. With a strong focus on preventive medicine, early diagnosis, and holistic treatment\n Dr. JAIN is committed to improving overall health and well-being through personalized care.\nAfter earning a medical degree from RDGMC , Their approach emphasizes accurate diagnosis, evidence-based treatment, and patient education to promote long-term health.\nDr. JAIN is known for attentive listening, clear communication, and a patient-first philosophy. They believe in building lasting relationships with patients, ensuring comfort, trust, and continuity of care.\nCommitted to staying updated with the latest medical advancements, Dr. JAIN regularly participates in medical education programs and professional development activities.\nSpecialties: General Medicine, Preventive Care, Chronic Disease Management\nQualifications: MBBS\nExperience: 2 years in clinical practice\n	2	50000	t	2026-05-01 11:13:05.205333+00	2026-05-01 11:45:40.985+00	Ujjain	Dr.
+a89e0647-ab6f-4aef-ab17-1ad32a6e0171	9510a2a3-8186-46b0-ac25-d3760612aabc	General practice	Pending	\N	\N	\N	f	2026-06-14 07:18:29.440946+00	2026-06-14 07:18:29.440946+00	\N	\N
 \.
 
 
@@ -5023,18 +5473,16 @@ c044294e-2c36-4de4-9ddf-85d6a54ff872	b9d2077d-69b6-44ba-8c5b-34f960c795e3	Bachel
 --
 
 COPY public.users (id, name, email, image, role, phone, created_at, updated_at, phone_country_code) FROM stdin;
-522a7a77-91fe-4419-bdbf-8341d9bddfeb	teset testes	harsh.ixora@gmail.comg	\N	client	\N	2026-05-14 11:16:53.925047+00	2026-05-14 11:16:55.161+00	\N
 b9d2077d-69b6-44ba-8c5b-34f960c795e3	Vishal Gupta	vishalcric.dav@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/b9d2077d-69b6-44ba-8c5b-34f960c795e3/1777630856177.webp	professional	09981322736	2026-04-04 10:53:15.029296+00	2026-05-16 09:25:39.531+00	\N
+cf2e5e84-fcde-4e13-936b-6ab146b8c638	Super Admin	admin@healthcare.com	\N	admin	\N	2026-03-09 06:32:15.995802+00	2026-06-11 15:03:10.931+00	\N
 cef0b74f-ea58-429f-b67a-7e3758d333e9	sdsdsdsdsddsd sdsddsd	xagela3703@gixpos.com	\N	professional	\N	2026-05-16 11:00:23.553147+00	2026-05-18 08:00:06.079+00	\N
 21ffa85f-d84e-49b0-be7f-062710fedf4f	Aditya Jain	aditya.jain00712@gmail.com	\N	professional	6265888313	2026-05-01 10:28:13.253649+00	2026-05-20 07:14:54.137+00	\N
+9510a2a3-8186-46b0-ac25-d3760612aabc	Harsh	harsh1248gupta@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/9510a2a3-8186-46b0-ac25-d3760612aabc/1776084934982.webp	professional	434343434	2026-03-02 07:41:00.351869+00	2026-06-14 07:12:41.047+00	+244
 6ee89e3c-d5cd-4788-a281-9459b6d4502d	Rishabh  Jain	ujjaineye@gmail.com	\N	professional	\N	2026-05-20 07:18:11.991717+00	2026-05-20 07:18:13.275+00	\N
+3bd77851-510e-469a-ab79-87d591d90cad	sgsgdsvybr	harsh.ixora@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/3bd77851-510e-469a-ab79-87d591d90cad/1776086543948.webp	client	7673648736	2026-04-13 13:14:14.652237+00	2026-06-14 07:40:05.71+00	+91
 05cbe7bb-2908-4619-8fc8-0e2c82c8d792	Testing  news 	harsh2901.websenor@gmail.com	\N	client	\N	2026-04-04 13:52:20.485269+00	2026-04-04 13:53:41.101+00	\N
-9510a2a3-8186-46b0-ac25-d3760612aabc	Harsh	harsh1248gupta@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/9510a2a3-8186-46b0-ac25-d3760612aabc/1776084934982.webp	professional	434343434	2026-03-02 07:41:00.351869+00	2026-05-20 17:19:09.027+00	+244
-3bd77851-510e-469a-ab79-87d591d90cad	sgsgdsvybr	harsh.ixora@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/3bd77851-510e-469a-ab79-87d591d90cad/1776086543948.webp	client	7673648736	2026-04-13 13:14:14.652237+00	2026-05-21 15:54:06.103+00	+91
 278dd7ce-5591-458b-bde4-396e619ecc9f	Siddhant Mukherjee	siddhant.sid1005@gmail.com	\N	professional	\N	2026-05-21 17:36:56.186569+00	2026-05-21 17:36:58.504+00	\N
-8a5ec858-3b61-453a-aa19-008680673ebc	Mansi M	mansimeena2326@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/8a5ec858-3b61-453a-aa19-008680673ebc/1778439297725.webp	client	7988425220	2026-05-07 18:56:25.607723+00	2026-05-21 18:36:53.736+00	+91
 06db9b38-80e1-4933-b020-17d9c9dff899	Lisha Khatri	mindfulhealiing@gmail.com	https://ywgclhmgavvipuupziwe.supabase.co/storage/v1/object/public/profiles/06db9b38-80e1-4933-b020-17d9c9dff899/1775652368109.webp	professional	9625804552	2026-04-07 10:55:23.315805+00	2026-04-19 08:54:31.076+00	\N
-cf2e5e84-fcde-4e13-936b-6ab146b8c638	admin@healthcare.com	admin@healthcare.com	\N	admin	\N	2026-03-09 06:32:15.995802+00	2026-06-04 06:45:10.739+00	\N
 \.
 
 
@@ -5135,6 +5583,7 @@ COPY storage.buckets (id, name, owner, created_at, updated_at, public, avif_auto
 profiles	profiles	\N	2026-03-13 16:56:03.062848+00	2026-03-13 16:56:03.062848+00	t	f	\N	\N	\N	STANDARD
 medical-documents	medical-documents	\N	2026-03-13 16:56:03.062848+00	2026-03-13 16:56:03.062848+00	t	f	\N	\N	\N	STANDARD
 qualifications	qualifications	\N	2026-04-13 06:12:08.091458+00	2026-04-13 06:12:08.091458+00	t	f	\N	\N	\N	STANDARD
+blog-covers	blog-covers	\N	2026-06-10 16:11:13.089124+00	2026-06-10 16:11:13.089124+00	t	f	\N	\N	\N	STANDARD
 \.
 
 
@@ -5288,7 +5737,14 @@ COPY vault.secrets (id, name, description, secret, key_id, nonce, created_at, up
 -- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: auth; Owner: -
 --
 
-SELECT pg_catalog.setval('auth.refresh_tokens_id_seq', 203, true);
+SELECT pg_catalog.setval('auth.refresh_tokens_id_seq', 224, true);
+
+
+--
+-- Name: blog_post_views_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.blog_post_views_id_seq', 23, true);
 
 
 --
@@ -5583,6 +6039,70 @@ ALTER TABLE ONLY public.admin_notifications
 
 ALTER TABLE ONLY public.appointments
     ADD CONSTRAINT appointments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_categories blog_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_categories
+    ADD CONSTRAINT blog_categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_categories blog_categories_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_categories
+    ADD CONSTRAINT blog_categories_slug_key UNIQUE (slug);
+
+
+--
+-- Name: blog_comments blog_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_post_likes blog_post_likes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_likes
+    ADD CONSTRAINT blog_post_likes_pkey PRIMARY KEY (post_id, user_id);
+
+
+--
+-- Name: blog_post_views blog_post_views_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_views
+    ADD CONSTRAINT blog_post_views_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_post_views blog_post_views_post_id_viewer_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_views
+    ADD CONSTRAINT blog_post_views_post_id_viewer_key_key UNIQUE (post_id, viewer_key);
+
+
+--
+-- Name: blog_posts blog_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_posts blog_posts_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_slug_key UNIQUE (slug);
 
 
 --
@@ -6242,6 +6762,34 @@ CREATE INDEX webauthn_credentials_user_id_idx ON auth.webauthn_credentials USING
 
 
 --
+-- Name: blog_comments_parent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blog_comments_parent_id_idx ON public.blog_comments USING btree (parent_id) WHERE ((parent_id IS NOT NULL) AND (deleted_at IS NULL));
+
+
+--
+-- Name: blog_comments_post_created_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blog_comments_post_created_idx ON public.blog_comments USING btree (post_id, created_at DESC) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: blog_posts_category_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blog_posts_category_id_idx ON public.blog_posts USING btree (category_id);
+
+
+--
+-- Name: blog_posts_status_published_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blog_posts_status_published_at_idx ON public.blog_posts USING btree (status, published_at DESC NULLS LAST);
+
+
+--
 -- Name: idx_admin_notifications_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6379,6 +6927,27 @@ CREATE TRIGGER trg_admin_notify_new_user AFTER INSERT ON public.users FOR EACH R
 --
 
 CREATE TRIGGER trg_admin_notify_newsletter_change AFTER INSERT OR UPDATE OF status ON public.newsletter_subscribers FOR EACH ROW EXECUTE FUNCTION public.admin_notify_on_newsletter_change();
+
+
+--
+-- Name: blog_comments trg_blog_comments_enforce_status_rules; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_blog_comments_enforce_status_rules BEFORE INSERT OR UPDATE ON public.blog_comments FOR EACH ROW EXECUTE FUNCTION public.blog_comments_enforce_status_rules();
+
+
+--
+-- Name: blog_posts trg_blog_posts_enforce_publish_rules; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_blog_posts_enforce_publish_rules BEFORE INSERT OR UPDATE ON public.blog_posts FOR EACH ROW EXECUTE FUNCTION public.blog_posts_enforce_publish_rules();
+
+
+--
+-- Name: blog_comments trg_refresh_blog_comment_count; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_refresh_blog_comment_count AFTER INSERT OR DELETE OR UPDATE ON public.blog_comments FOR EACH ROW EXECUTE FUNCTION public.refresh_blog_comment_count();
 
 
 --
@@ -6582,6 +7151,86 @@ ALTER TABLE ONLY public.appointments
 
 ALTER TABLE ONLY public.appointments
     ADD CONSTRAINT appointments_professional_id_fkey FOREIGN KEY (professional_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_comments blog_comments_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.blog_comments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_comments blog_comments_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.blog_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_comments blog_comments_reviewed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: blog_comments blog_comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_comments
+    ADD CONSTRAINT blog_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_post_likes blog_post_likes_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_likes
+    ADD CONSTRAINT blog_post_likes_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.blog_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_post_likes blog_post_likes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_likes
+    ADD CONSTRAINT blog_post_likes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_post_views blog_post_views_post_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_views
+    ADD CONSTRAINT blog_post_views_post_id_fkey FOREIGN KEY (post_id) REFERENCES public.blog_posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: blog_posts blog_posts_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: blog_posts blog_posts_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.blog_categories(id) ON DELETE SET NULL;
+
+
+--
+-- Name: blog_posts blog_posts_reviewed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -6973,10 +7622,43 @@ CREATE POLICY "Admins can update notifications" ON public.admin_notifications FO
 
 
 --
+-- Name: blog_comments Admins manage all blog comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Admins manage all blog comments" ON public.blog_comments TO authenticated USING ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text)) WITH CHECK ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text));
+
+
+--
 -- Name: newsletter_campaigns Admins manage all newsletter campaigns; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Admins manage all newsletter campaigns" ON public.newsletter_campaigns TO authenticated USING ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text)) WITH CHECK ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text));
+
+
+--
+-- Name: blog_categories Admins manage blog categories; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Admins manage blog categories" ON public.blog_categories TO authenticated USING ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text)) WITH CHECK ((( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text));
+
+
+--
+-- Name: blog_posts Admins manage blog posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Admins manage blog posts" ON public.blog_posts TO authenticated USING ((( SELECT users.role
    FROM public.users
   WHERE (users.id = auth.uid())) = 'admin'::text)) WITH CHECK ((( SELECT users.role
    FROM public.users
@@ -7058,6 +7740,59 @@ CREATE POLICY "Anyone can insert contact messages" ON public.contact_messages FO
 
 
 --
+-- Name: blog_posts Authors insert own blog posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Authors insert own blog posts" ON public.blog_posts FOR INSERT TO authenticated WITH CHECK (((author_id = auth.uid()) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = ANY (ARRAY['client'::text, 'professional'::text])) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])) AND (published_at IS NULL)));
+
+
+--
+-- Name: blog_posts Authors read own blog posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Authors read own blog posts" ON public.blog_posts FOR SELECT TO authenticated USING (((author_id = auth.uid()) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = ANY (ARRAY['client'::text, 'professional'::text]))));
+
+
+--
+-- Name: blog_posts Authors update own blog posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Authors update own blog posts" ON public.blog_posts FOR UPDATE TO authenticated USING (((author_id = auth.uid()) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = ANY (ARRAY['client'::text, 'professional'::text])) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])))) WITH CHECK (((author_id = auth.uid()) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = ANY (ARRAY['client'::text, 'professional'::text])) AND (status = ANY (ARRAY['draft'::text, 'pending_review'::text])) AND (published_at IS NULL)));
+
+
+--
+-- Name: blog_comments Engagement users insert comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Engagement users insert comments" ON public.blog_comments FOR INSERT TO authenticated WITH CHECK (((user_id = auth.uid()) AND (status = 'pending'::text) AND (EXISTS ( SELECT 1
+   FROM public.users u
+  WHERE ((u.id = auth.uid()) AND (u.role = ANY (ARRAY['client'::text, 'professional'::text]))))) AND (EXISTS ( SELECT 1
+   FROM public.blog_posts p
+  WHERE ((p.id = blog_comments.post_id) AND (p.status = 'published'::text))))));
+
+
+--
+-- Name: blog_post_likes Engagement users manage own likes; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Engagement users manage own likes" ON public.blog_post_likes TO authenticated USING (((user_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.users u
+  WHERE ((u.id = auth.uid()) AND (u.role = ANY (ARRAY['client'::text, 'professional'::text]))))))) WITH CHECK (((user_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.users u
+  WHERE ((u.id = auth.uid()) AND (u.role = ANY (ARRAY['client'::text, 'professional'::text]))))) AND (EXISTS ( SELECT 1
+   FROM public.blog_posts p
+  WHERE ((p.id = blog_post_likes.post_id) AND (p.status = 'published'::text))))));
+
+
+--
 -- Name: professional_availability Professionals can manage own availability; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -7114,10 +7849,42 @@ CREATE POLICY "Public qualifications are viewable by everyone" ON public.profess
 
 
 --
+-- Name: blog_categories Public read active blog categories; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public read active blog categories" ON public.blog_categories FOR SELECT TO authenticated, anon USING ((is_active = true));
+
+
+--
+-- Name: blog_posts Public read published blog posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public read published blog posts" ON public.blog_posts FOR SELECT TO authenticated, anon USING ((status = 'published'::text));
+
+
+--
 -- Name: users Public users are viewable by everyone; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Public users are viewable by everyone" ON public.users FOR SELECT USING (true);
+
+
+--
+-- Name: blog_comments Read approved comments on published posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Read approved comments on published posts" ON public.blog_comments FOR SELECT TO authenticated, anon USING (((deleted_at IS NULL) AND (status = 'approved'::text) AND (EXISTS ( SELECT 1
+   FROM public.blog_posts p
+  WHERE ((p.id = blog_comments.post_id) AND (p.status = 'published'::text))))));
+
+
+--
+-- Name: blog_post_likes Read likes on published posts; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Read likes on published posts" ON public.blog_post_likes FOR SELECT TO authenticated, anon USING ((EXISTS ( SELECT 1
+   FROM public.blog_posts p
+  WHERE ((p.id = blog_post_likes.post_id) AND (p.status = 'published'::text)))));
 
 
 --
@@ -7195,6 +7962,22 @@ CREATE POLICY "Users insert own admin notification rows" ON public.admin_notific
 
 
 --
+-- Name: blog_comments Users read own pending comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users read own pending comments" ON public.blog_comments FOR SELECT TO authenticated USING (((user_id = auth.uid()) AND (status = 'pending'::text) AND (deleted_at IS NULL) AND (EXISTS ( SELECT 1
+   FROM public.blog_posts p
+  WHERE ((p.id = blog_comments.post_id) AND (p.status = 'published'::text))))));
+
+
+--
+-- Name: blog_comments Users update own comments; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users update own comments" ON public.blog_comments FOR UPDATE TO authenticated USING (((user_id = auth.uid()) AND (deleted_at IS NULL))) WITH CHECK ((user_id = auth.uid()));
+
+
+--
 -- Name: admin_notifications; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -7205,6 +7988,36 @@ ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: blog_categories; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: blog_comments; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blog_comments ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: blog_post_likes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blog_post_likes ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: blog_post_views; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blog_post_views ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: blog_posts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: client_medical_profiles; Type: ROW SECURITY; Schema: public; Owner: -
@@ -7304,6 +8117,40 @@ ALTER TABLE public.professional_qualifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: objects Admins manage all blog cover images; Type: POLICY; Schema: storage; Owner: -
+--
+
+CREATE POLICY "Admins manage all blog cover images" ON storage.objects TO authenticated USING (((bucket_id = 'blog-covers'::text) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text))) WITH CHECK (((bucket_id = 'blog-covers'::text) AND (( SELECT users.role
+   FROM public.users
+  WHERE (users.id = auth.uid())) = 'admin'::text)));
+
+
+--
+-- Name: objects Blog authors delete own blog cover images; Type: POLICY; Schema: storage; Owner: -
+--
+
+CREATE POLICY "Blog authors delete own blog cover images" ON storage.objects FOR DELETE USING (((bucket_id = 'blog-covers'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+
+
+--
+-- Name: objects Blog authors update own blog cover images; Type: POLICY; Schema: storage; Owner: -
+--
+
+CREATE POLICY "Blog authors update own blog cover images" ON storage.objects FOR UPDATE USING (((bucket_id = 'blog-covers'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
+
+
+--
+-- Name: objects Blog authors upload own blog cover images; Type: POLICY; Schema: storage; Owner: -
+--
+
+CREATE POLICY "Blog authors upload own blog cover images" ON storage.objects FOR INSERT WITH CHECK (((bucket_id = 'blog-covers'::text) AND ((auth.uid())::text = (storage.foldername(name))[1]) AND (EXISTS ( SELECT 1
+   FROM public.users u
+  WHERE ((u.id = auth.uid()) AND (u.role = ANY (ARRAY['admin'::text, 'client'::text, 'professional'::text])))))));
+
+
+--
 -- Name: objects Professionals can delete own qualification documents; Type: POLICY; Schema: storage; Owner: -
 --
 
@@ -7329,6 +8176,13 @@ CREATE POLICY "Professionals can upload own qualification documents" ON storage.
 --
 
 CREATE POLICY "Public Profiles are viewable by everyone" ON storage.objects FOR SELECT USING ((bucket_id = 'profiles'::text));
+
+
+--
+-- Name: objects Public blog cover images are viewable by everyone; Type: POLICY; Schema: storage; Owner: -
+--
+
+CREATE POLICY "Public blog cover images are viewable by everyone" ON storage.objects FOR SELECT USING ((bucket_id = 'blog-covers'::text));
 
 
 --
@@ -7500,5 +8354,5 @@ CREATE EVENT TRIGGER pgrst_drop_watch ON sql_drop
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EWb1gO01vZbCzMv2rNjFcgjB5AiHWS3FcVjcwiAlUz8NHeOYLLGnsVpFfMy5brr
+\unrestrict h3fEmHwePOp5LbD0HqScvBPwttuduqt6kkcEGci0Jtpn55uPfGHl5F7UeEhnABW
 
