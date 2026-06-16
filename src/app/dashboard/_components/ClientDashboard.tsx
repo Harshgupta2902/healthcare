@@ -72,8 +72,11 @@ import {
     Activity,
     Stethoscope,
     ExternalLink,
-    ShieldCheck
+    ShieldCheck,
+    IndianRupee,
 } from "lucide-react";
+import { OrderHistoryList } from "@/features/booking-orders/components/OrderHistoryList";
+import type { ClientOrderHistoryItem } from "@/features/booking-orders/types";
 import {
     dashboardGlassCardLg,
     dashboardMobileNav,
@@ -209,6 +212,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [documents, setDocuments] = useState<MedicalDocument[]>(initialData?.documents || []);
     const [insuranceData, setInsuranceData] = useState<Insurance[]>(initialData?.insurance || []);
     const [appointments, setAppointments] = useState<Appointment[]>(initialData?.appointments || []);
+    const [orders] = useState<ClientOrderHistoryItem[]>(initialData?.orders || []);
 
     const [isLoadingProfile, setIsLoadingProfile] = useState(!initialData?.profile);
     const [isLoadingHistory, setIsLoadingHistory] = useState(!initialData?.medicalHistory);
@@ -216,6 +220,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     const [isLoadingDocs, setIsLoadingDocs] = useState(!initialData?.documents);
     const [isLoadingInsurance, setIsLoadingInsurance] = useState(!initialData?.insurance);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(!initialData?.appointments);
+    const [isLoadingOrders] = useState(!initialData?.orders);
     const [isSaving, setIsSaving] = useState(false);
     const [prescriptionPdfLoadingAppointmentId, setPrescriptionPdfLoadingAppointmentId] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -890,6 +895,9 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                     </TabsTrigger>
                     <TabsTrigger value="appointments" className={dashboardTabsTrigger}>
                         <Calendar className="h-4 w-4" /> Appointments
+                    </TabsTrigger>
+                    <TabsTrigger value="orders" className={dashboardTabsTrigger}>
+                        <IndianRupee className="h-4 w-4" /> Orders
                     </TabsTrigger>
                 </TabsList>
 
@@ -1830,6 +1838,26 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                         </CardContent>
                     </Card>
                 </TabsContent>
+
+                <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                        <CardHeader className="pt-4 bg-emerald-50/30">
+                            <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
+                                Order History
+                            </CardTitle>
+                            <CardDescription>Successful and failed consultation orders</CardDescription>
+                        </CardHeader>
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
+                            {isLoadingOrders ? (
+                                <div className="flex justify-center py-20">
+                                    <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
+                                </div>
+                            ) : (
+                                <OrderHistoryList orders={orders} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
 
             <nav className={dashboardMobileNav}>
@@ -1841,6 +1869,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                         { value: "documents", label: "Docs", icon: FileText },
                         { value: "insurance", label: "Insurance", icon: Shield },
                         { value: "appointments", label: "Requests", icon: Calendar },
+                        { value: "orders", label: "Orders", icon: IndianRupee },
                     ].map((item) => {
                         const Icon = item.icon;
                         const isActive = activeTab === item.value;
