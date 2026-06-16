@@ -350,7 +350,7 @@ function escapeRegExp(value: string) {
 }
 
 function renderAssistantTextWithLinks(text: string, ctx: AssistantContext | null) {
-  const dashboardHref = ctx?.isAuthenticated ? "/dashboard" : "/login?redirect=/dashboard";
+  const dashboardHref = ctx?.isAuthenticated ? "/dashboard" : "/?auth=login&redirect=/dashboard";
   const links = [
     { phrase: "manage appointments and profile details", href: dashboardHref },
     { phrase: "appointment or prescription details", href: dashboardHref },

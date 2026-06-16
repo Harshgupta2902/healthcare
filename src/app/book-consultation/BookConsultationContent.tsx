@@ -38,6 +38,7 @@ import { getBookingFormPrefill, searchPlaces, type PlacePrediction } from "./act
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
 import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
+import { ensureAuthenticated } from "@/features/auth/open-auth-modal";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BOOKING_TIME_SLOTS } from "./constants";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
@@ -344,17 +345,8 @@ export function BookConsultationContent() {
   const handleSelectConsultant = (consultantId: string) => {
     void (async () => {
       const href = buildBookConsultationHref(consultantId);
-      const supabase = createClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        router.push(`/login?redirect=${encodeURIComponent(href)}`);
-        return;
-      }
-
+      const isAuthenticated = await ensureAuthenticated({ view: "login", redirect: href });
+      if (!isAuthenticated) return;
       router.push(href);
     })();
   };

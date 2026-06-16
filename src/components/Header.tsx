@@ -26,6 +26,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { signOut } from "@/features/profile/actions";
+import { openAuthModal } from "@/features/auth/open-auth-modal";
 
 interface HeaderProps {
   className?: string;
@@ -181,11 +182,11 @@ export default function Header({ className }: HeaderProps) {
           type="button"
           variant="headerGuest"
           className="hidden sm:block"
-          onClick={() => router.push("/login")}
+          onClick={() => openAuthModal({ view: "login" })}
         >
           Login
         </LpButton>
-        <LpButton type="button" variant="headerGuestCta" onClick={() => router.push("/register")}>
+        <LpButton type="button" variant="headerGuestCta" onClick={() => openAuthModal({ view: "signup" })}>
           Sign up
         </LpButton>
       </div>
@@ -338,7 +339,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      router.push("/login");
+                      openAuthModal({ view: "login" });
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -350,7 +351,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      router.push("/register");
+                      openAuthModal({ view: "signup" });
                       setIsMobileMenuOpen(false);
                     }}
                   >

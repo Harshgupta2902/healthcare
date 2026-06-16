@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LpButton } from "@/components/ui/lp-button";
-import { createClient } from "@/lib/supabase/client";
 import { buildBookConsultationHref } from "@/lib/consultant-booking-ref";
+import { ensureAuthenticated } from "@/features/auth/open-auth-modal";
 
 const DAY_ABBREV = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
 
@@ -37,17 +37,11 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
 
   const handleBookAppointment = () => {
     void (async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        router.push(`/login?redirect=${encodeURIComponent(bookConsultationPath)}`);
-        return;
-      }
-
+      const isAuthenticated = await ensureAuthenticated({
+        view: "login",
+        redirect: bookConsultationPath,
+      });
+      if (!isAuthenticated) return;
       router.push(bookConsultationPath);
     })();
   };
