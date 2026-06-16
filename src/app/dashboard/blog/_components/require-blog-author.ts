@@ -8,7 +8,7 @@ export async function requireDashboardBlogAuthor() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login?redirect=/dashboard/blog')
+    redirect('/?auth=login&redirect=/dashboard/blog')
   }
 
   const { data: profile } = await supabase

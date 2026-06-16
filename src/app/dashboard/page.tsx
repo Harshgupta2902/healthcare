@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?redirect=/dashboard");
+    redirect("/?auth=login&redirect=/dashboard");
   }
 
   // Fetch user role from database

@@ -39,7 +39,10 @@ export async function updateSession(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/application/enter')) {
         if (!user) {
             const url = request.nextUrl.clone()
-            url.pathname = '/login'
+            url.pathname = '/'
+            url.search = ''
+            url.searchParams.set('auth', 'login')
+            url.searchParams.set('redirect', '/application/enter')
             return NextResponse.redirect(url)
         }
 
@@ -68,22 +71,48 @@ export async function updateSession(request: NextRequest) {
     }
 
     const pathname = request.nextUrl.pathname
+
+    // Legacy /login and /register URLs → open auth modal on home
+    if (pathname === '/login' || pathname.startsWith('/login/')) {
+        const url = request.nextUrl.clone()
+        const redirect = url.searchParams.get('redirect')
+        const registered = url.searchParams.get('registered')
+        url.pathname = '/'
+        url.search = ''
+        url.searchParams.set('auth', 'login')
+        if (redirect) url.searchParams.set('redirect', redirect)
+        if (registered === 'true') url.searchParams.set('registered', 'true')
+        return NextResponse.redirect(url)
+    }
+
+    if (pathname === '/register' || pathname.startsWith('/register/')) {
+        const url = request.nextUrl.clone()
+        const redirect = url.searchParams.get('redirect')
+        const role = url.searchParams.get('role')
+        url.pathname = '/'
+        url.search = ''
+        url.searchParams.set('auth', 'signup')
+        if (redirect) url.searchParams.set('redirect', redirect)
+        if (role === 'client' || role === 'professional') url.searchParams.set('role', role)
+        return NextResponse.redirect(url)
+    }
+
     const isBookConsultationSuccessRoute = pathname.startsWith('/book-consultation/success')
 
     if (
         !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
         !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/register') &&
         !request.nextUrl.pathname.startsWith('/consultants') &&
+        !request.nextUrl.pathname.startsWith('/book-consultation') &&
         !request.nextUrl.pathname.startsWith('/application/enter') &&
         request.nextUrl.pathname !== '/' &&
         !isBookConsultationSuccessRoute
     ) {
         const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        url.search = ''
         const returnTo = request.nextUrl.pathname + request.nextUrl.search
+        url.pathname = '/'
+        url.search = ''
+        url.searchParams.set('auth', 'login')
         url.searchParams.set('redirect', returnTo)
         return NextResponse.redirect(url)
     }

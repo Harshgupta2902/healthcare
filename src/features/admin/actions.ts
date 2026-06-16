@@ -1882,6 +1882,6 @@ export async function updateRegistrationSettings(input: unknown) {
   if (error) return { success: false as const, error: error.message }
 
   revalidatePath('/application/enter/settings')
-  revalidatePath('/register')
+  revalidatePath('/')
   return { success: true as const, data: nextValue }
 }
