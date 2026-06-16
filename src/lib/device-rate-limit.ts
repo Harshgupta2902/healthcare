@@ -13,6 +13,7 @@ export type DeviceRateLimitReason =
 
 export type DeviceRateLimitScope =
   | 'register'
+  | 'register_otp'
   | 'newsletter'
   | 'login'
   | 'contact'
@@ -54,6 +55,19 @@ const SCOPE_LIMITS: Record<DeviceRateLimitScope, ScopeLimitConfig> = {
         'You can register only one account per minute from this device. Please wait and try again.',
       device: 'Too many signups from this device. Please try again later.',
       email_day: 'Too many registration attempts for this email today. Please try again tomorrow.',
+    },
+  },
+  register_otp: {
+    perMinute: { max: 1, windowSeconds: 60 },
+    perHour: { max: 5, windowSeconds: 3600 },
+    perEmailHour: { max: 3, windowSeconds: 3600 },
+    minutePrefix: 'register_otp_minute',
+    hourPrefix: 'register_otp_hour',
+    emailHourPrefix: 'register_otp_email_hour',
+    messages: {
+      device_minute: 'Please wait a minute before requesting another verification code.',
+      device: 'Too many verification code requests from this device. Please try again later.',
+      email_hour: 'Too many verification codes sent to this email. Please try again later.',
     },
   },
   newsletter: {
@@ -259,6 +273,11 @@ async function assertScopeRateLimits(
 /** Account registration: 1/min, 5/hour per IP+device; 3/day per email. */
 export function assertSignupRateLimits(input: RateLimitInput) {
   return assertScopeRateLimits('register', input)
+}
+
+/** Registration OTP resend: 1/min, 5/hour per IP+device; 3/hour per email. */
+export function assertRegisterOtpRateLimits(input: RateLimitInput) {
+  return assertScopeRateLimits('register_otp', input)
 }
 
 /** Public newsletter subscribe: 1/min, 5/hour per IP+device; 3/hour per email. */

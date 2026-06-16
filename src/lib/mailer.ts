@@ -12,6 +12,7 @@ import {
   emailPrimaryButton,
   emailUnsubscribeFooter,
   escapeHtml,
+  EMAIL,
 } from '@/lib/email/brand-template'
 
 /**
@@ -255,6 +256,58 @@ export async function sendConsultationMeetingInviteToProfessional(params: {
     })
 
     console.log('[mailer] Consultation invite sent to consultant →', params.professionalEmail)
+}
+
+function registrationOtpTemplate(params: {
+  recipientName: string
+  otpCode: string
+  expiryMinutes: number
+}): string {
+  const appUrl = getAppUrl()
+  const safeName = escapeHtml(params.recipientName)
+  const safeCode = escapeHtml(params.otpCode)
+
+  const bodyHtml = `
+      ${emailHeading('Verify your email')}
+      ${emailParagraph(`Hi ${safeName},`)}
+      ${emailParagraph('Use this verification code to complete your HealthHere account registration:')}
+      <p style="margin:24px 0;font-family:${EMAIL.fontHeading};font-size:32px;font-weight:700;letter-spacing:0.28em;text-align:center;color:${EMAIL.brand};">
+        ${safeCode}
+      </p>
+      ${emailParagraph(`This code expires in ${params.expiryMinutes} minutes. If you did not request this, you can ignore this email.`)}
+      ${emailPrimaryButton(`${appUrl}/register`, 'Continue registration')}
+    `
+
+  return buildEmailShell({
+    appUrl,
+    bodyHtml,
+    footerHtml: `<p style="margin:0;font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#76849f;text-align:center;">
+          For your security, never share this code with anyone.
+        </p>`,
+  })
+}
+
+export async function sendRegistrationOtpEmail(params: {
+  email: string
+  recipientName: string
+  otpCode: string
+  expiryMinutes: number
+}): Promise<void> {
+  const t = getTransporter()
+  const safeName = params.recipientName.trim() || params.email.split('@')[0] || 'there'
+
+  const info = await t.sendMail({
+    from: getFromAddress(),
+    to: params.email,
+    subject: `${params.otpCode} is your HealthHere verification code`,
+    html: registrationOtpTemplate({
+      recipientName: safeName,
+      otpCode: params.otpCode,
+      expiryMinutes: params.expiryMinutes,
+    }),
+  })
+
+  console.log('[mailer] Registration OTP sent:', info.messageId, '→', params.email)
 }
 
 /** Sends both invites (used when not stepping through the admin progress dialog). */
