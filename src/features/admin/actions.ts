@@ -1885,3 +1885,169 @@ export async function updateRegistrationSettings(input: unknown) {
   revalidatePath('/')
   return { success: true as const, data: nextValue }
 }
+
+// ============================================
+// BOOKING ORDERS & PAYMENTS (admin)
+// ============================================
+
+export type BookingOrderAdminRow = {
+  id: string
+  order_number: string
+  status: string
+  failure_reason: string | null
+  amount_paise: number
+  currency: string
+  expires_at: string
+  paid_at: string | null
+  confirmed_at: string | null
+  created_at: string
+  guest_appointment_id: string | null
+  payment_provider: string
+  provider_payment_id: string | null
+  booking_snapshot: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    date?: string
+    time?: string
+    category?: string
+    city?: string
+    state?: string
+  }
+  client: { id: string; name: string; email: string } | null
+  professional: { id: string; name: string; email: string } | null
+}
+
+export type PaymentAdminRow = {
+  id: string
+  booking_order_id: string
+  amount: number
+  status: string
+  payment_method: string
+  transaction_id: string | null
+  created_at: string
+  guest_appointment_id: string | null
+  order_number: string | null
+  client: { id: string; name: string; email: string } | null
+  professional: { id: string; name: string; email: string } | null
+}
+
+export async function getAdminBookingOrders(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  status?: string,
+) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  await supabase.rpc('expire_stale_booking_orders')
+
+  let query = supabase
+    .from('booking_orders')
+    .select(
+      `
+      *,
+      client:users!booking_orders_user_id_fkey(id, name, email),
+      professional:users!booking_orders_professional_id_fkey(id, name, email)
+    `,
+      { count: 'exact' },
+    )
+    .order('created_at', { ascending: false })
+
+  const statusFilter = status?.trim()
+  if (statusFilter && statusFilter !== 'all') {
+    query = query.eq('status', statusFilter)
+  }
+
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      query = query.or(`order_number.ilike.${term},failure_reason.ilike.${term}`)
+    }
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  const { data: rows, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+  const data = (rows ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    order_number: row.order_number as string,
+    status: row.status as string,
+    failure_reason: (row.failure_reason as string | null) ?? null,
+    amount_paise: row.amount_paise as number,
+    currency: row.currency as string,
+    expires_at: row.expires_at as string,
+    paid_at: (row.paid_at as string | null) ?? null,
+    confirmed_at: (row.confirmed_at as string | null) ?? null,
+    created_at: row.created_at as string,
+    guest_appointment_id: (row.guest_appointment_id as string | null) ?? null,
+    payment_provider: row.payment_provider as string,
+    provider_payment_id: (row.provider_payment_id as string | null) ?? null,
+    booking_snapshot: (row.booking_snapshot as BookingOrderAdminRow['booking_snapshot']) ?? {},
+    client: (row.client as BookingOrderAdminRow['client']) ?? null,
+    professional: (row.professional as BookingOrderAdminRow['professional']) ?? null,
+  })) satisfies BookingOrderAdminRow[]
+
+  return { success: true as const, data, count: count || 0 }
+}
+
+export async function getAdminPayments(page: number = 1, limit: number = 10, search?: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('payments')
+    .select(
+      `
+      *,
+      client:users!payments_client_id_fkey(id, name, email),
+      professional:users!payments_professional_id_fkey(id, name, email),
+      booking_order:booking_orders!payments_booking_order_id_fkey(order_number)
+    `,
+      { count: 'exact' },
+    )
+    .order('created_at', { ascending: false })
+
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      query = query.or(`transaction_id.ilike.${term},payment_method.ilike.${term}`)
+    }
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  const { data: rows, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+  const data = (rows ?? []).map((row: Record<string, unknown>) => {
+    const bookingOrder = row.booking_order as { order_number?: string } | null
+    return {
+      id: row.id as string,
+      booking_order_id: row.booking_order_id as string,
+      amount: row.amount as number,
+      status: row.status as string,
+      payment_method: row.payment_method as string,
+      transaction_id: (row.transaction_id as string | null) ?? null,
+      created_at: row.created_at as string,
+      guest_appointment_id: (row.guest_appointment_id as string | null) ?? null,
+      order_number: bookingOrder?.order_number ?? null,
+      client: (row.client as PaymentAdminRow['client']) ?? null,
+      professional: (row.professional as PaymentAdminRow['professional']) ?? null,
+    }
+  }) satisfies PaymentAdminRow[]
+
+  return { success: true as const, data, count: count || 0 }
+}

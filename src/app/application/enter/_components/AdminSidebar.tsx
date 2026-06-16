@@ -20,6 +20,8 @@ import {
   LogOut,
   Newspaper,
   Settings,
+  ShoppingBag,
+  IndianRupee,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/features/profile/actions'
@@ -30,6 +32,8 @@ const navItems = [
   { href: '/application/enter/users', label: 'Users', icon: Users },
   { href: '/application/enter/professionals', label: 'Professionals', icon: UserCheck },
   { href: '/application/enter/appointments', label: 'Appointments', icon: Calendar },
+  { href: '/application/enter/booking-orders', label: 'Booking orders', icon: ShoppingBag },
+  { href: '/application/enter/payments', label: 'Payments', icon: IndianRupee },
   { href: '/application/enter/medical-history', label: 'Medical History', icon: FileText },
   { href: '/application/enter/medications', label: 'Medications', icon: Pill },
   { href: '/application/enter/documents', label: 'Documents', icon: FileCheck },
