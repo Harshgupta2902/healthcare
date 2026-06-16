@@ -36,18 +36,14 @@ import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 import { createClient } from "@/lib/supabase/client";
 import { getBookingFormPrefill, searchPlaces, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
-import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
 import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
 import { ensureAuthenticated } from "@/features/auth/open-auth-modal";
+import { createBookingOrder } from "@/features/booking-orders";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BOOKING_TIME_SLOTS } from "./constants";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
 import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
 import { BookingChooseSpecialistCard } from "./booking-choose-specialist-card";
-import {
-  BookConsultationProgressDialog,
-  type BookingPipelinePayload,
-} from "./BookConsultationProgressDialog";
 
 const healthCategories = [
   "General Medicine",
@@ -175,11 +171,6 @@ export function BookConsultationContent() {
   >(undefined);
   const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
-  const [bookingPipeline, setBookingPipeline] = useState<{
-    payload: BookingPipelinePayload;
-    patientLabel: string;
-    sessionKey: number;
-  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [city, setCity] = useState("");
@@ -318,25 +309,30 @@ export function BookConsultationContent() {
     setIsSubmitting(true);
     try {
       const deviceHash = await getDeviceFingerprintHash();
-      setBookingPipeline({
-        payload: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          age: data.age,
-          phone: data.phone,
-          email: data.email,
-          category: bookingConsultant?.specialization?.trim() || data.category,
-          state: data.state || bookingConsultant?.city?.trim() || "Online",
-          city: data.city || bookingConsultant?.city?.trim() || "Online",
-          date: data.date,
-          time: data.time,
-          message: data.message ?? "",
-          professionalId: decodedConsultantId,
-          deviceHash,
-        },
-        patientLabel: `${data.firstName} ${data.lastName}`.trim(),
-        sessionKey: Date.now(),
+      const result = await createBookingOrder({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        age: data.age,
+        phone: data.phone,
+        email: data.email,
+        category: bookingConsultant?.specialization?.trim() || data.category,
+        state: data.state || bookingConsultant?.city?.trim() || "Online",
+        city: data.city || bookingConsultant?.city?.trim() || "Online",
+        date: data.date,
+        time: data.time,
+        message: data.message ?? "",
+        professionalId: decodedConsultantId,
+        deviceHash,
       });
+
+      if ("error" in result && result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if ("success" in result && result.success) {
+        router.push(result.checkoutHref);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -590,7 +586,7 @@ export function BookConsultationContent() {
                 <LpButton
                   type="submit"
                   variant="primary"
-                  disabled={isSubmitting || Boolean(bookingPipeline)}
+                  disabled={isSubmitting}
                   className="h-12 w-full rounded-xl border-0 bg-lp-brand-bright px-10 py-0 font-heading text-base font-semibold leading-none normal-case tracking-normal shadow-xl hover:shadow-lp-brand-bright/25 sm:w-auto sm:min-w-[220px]"
                 >
                   {isSubmitting ? (
@@ -675,19 +671,6 @@ export function BookConsultationContent() {
           open={consultantPickerOpen}
           onOpenChange={setConsultantPickerOpen}
           onSelect={handleSelectConsultant}
-        />
-        <BookConsultationProgressDialog
-          open={Boolean(bookingPipeline)}
-          onOpenChange={(open) => {
-            if (!open) setBookingPipeline(null);
-          }}
-          payload={bookingPipeline?.payload ?? null}
-          patientLabel={bookingPipeline?.patientLabel ?? ""}
-          sessionKey={bookingPipeline?.sessionKey ?? 0}
-          onComplete={(appointmentId) => {
-            setBookingPipeline(null);
-            router.push(buildBookingSuccessHref(appointmentId));
-          }}
         />
       </div>
     </div>

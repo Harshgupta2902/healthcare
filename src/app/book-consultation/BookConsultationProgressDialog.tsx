@@ -72,18 +72,24 @@ export type BookConsultationProgressDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   payload: BookingPipelinePayload | null;
+  /** When set, skips "Save booking" (appointment already created after payment). */
+  guestAppointmentId?: string | null;
+  orderId?: string | null;
   patientLabel: string;
   sessionKey: number;
   onComplete: (appointmentId: string) => void;
+  onPipelineFailed?: () => void;
 };
 
 export function BookConsultationProgressDialog({
   open,
   onOpenChange,
   payload,
+  guestAppointmentId = null,
   patientLabel,
   sessionKey,
   onComplete,
+  onPipelineFailed,
 }: BookConsultationProgressDialogProps) {
   const [steps, setSteps] = useState<BookingStep[]>([]);
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
@@ -92,7 +98,12 @@ export function BookConsultationProgressDialog({
   const [pipelineDone, setPipelineDone] = useState(false);
   const runIdRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
+  const onPipelineFailedRef = useRef(onPipelineFailed);
   onCompleteRef.current = onComplete;
+  onPipelineFailedRef.current = onPipelineFailed;
+
+  const postPaymentMode = Boolean(guestAppointmentId);
+  const canStart = open && (postPaymentMode ? Boolean(guestAppointmentId) : Boolean(payload));
 
   const patchStep = useCallback((id: string, patch: Partial<BookingStep>) => {
     setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -127,20 +138,35 @@ export function BookConsultationProgressDialog({
     [patchStep],
   );
 
+  const failPipeline = useCallback(() => {
+    if (postPaymentMode) {
+      onPipelineFailedRef.current?.();
+      return;
+    }
+    setIsRunning(false);
+  }, [postPaymentMode]);
+
   useEffect(() => {
-    if (!open || !payload) return;
+    if (!canStart) return;
 
     const lockKey = `${sessionKey}`;
     if (startedPipelineLocks.has(lockKey)) return;
     startedPipelineLocks.add(lockKey);
 
     const runId = ++runIdRef.current;
-    setSteps([
-      { id: "save", label: "Save booking", status: "pending" },
-      { id: "validate", label: "Validate appointment", status: "pending" },
-      { id: "create-link", label: "Create meeting link", status: "pending" },
-    ]);
-    setAppointmentId(null);
+    const initialSteps: BookingStep[] = postPaymentMode
+      ? [
+          { id: "validate", label: "Validate appointment", status: "pending" },
+          { id: "create-link", label: "Create meeting link", status: "pending" },
+        ]
+      : [
+          { id: "save", label: "Save booking", status: "pending" },
+          { id: "validate", label: "Validate appointment", status: "pending" },
+          { id: "create-link", label: "Create meeting link", status: "pending" },
+        ];
+
+    setSteps(initialSteps);
+    setAppointmentId(postPaymentMode ? guestAppointmentId : null);
     setProviderLabel(null);
     setIsRunning(true);
     setPipelineDone(false);
@@ -148,28 +174,33 @@ export function BookConsultationProgressDialog({
     const isStale = () => runId !== runIdRef.current;
 
     ;(async () => {
-      const saveRes = await execStep("save", async () => {
-        const res = await submitGuestAppointment(payload);
-        if ("error" in res && res.error) {
-          return {
-            success: false as const,
-            error: typeof res.error === "string" ? res.error : "Could not save booking.",
-          };
-        }
-        return { success: true as const, id: (res as { success: true; id: string }).id };
-      });
-      if (isStale() || !saveRes) {
-        setIsRunning(false);
-        return;
-      }
+      let bookedId = guestAppointmentId ?? "";
 
-      const bookedId = saveRes.id;
-      setAppointmentId(bookedId);
+      if (!postPaymentMode && payload) {
+        const saveRes = await execStep("save", async () => {
+          const res = await submitGuestAppointment(payload);
+          if ("error" in res && res.error) {
+            return {
+              success: false as const,
+              error: typeof res.error === "string" ? res.error : "Could not save booking.",
+            };
+          }
+          return { success: true as const, id: (res as { success: true; id: string }).id };
+        });
+        if (isStale() || !saveRes) {
+          failPipeline();
+          setIsRunning(false);
+          return;
+        }
+        bookedId = saveRes.id;
+        setAppointmentId(bookedId);
+      }
 
       const validateRes = await execStep("validate", () =>
         bookConsultationMeetingValidateStep({ guestAppointmentId: bookedId }),
       );
       if (isStale() || !validateRes) {
+        failPipeline();
         setIsRunning(false);
         return;
       }
@@ -184,6 +215,7 @@ export function BookConsultationProgressDialog({
         (r) => r.providerLabel,
       );
       if (isStale() || !linkRes) {
+        failPipeline();
         setIsRunning(false);
         return;
       }
@@ -216,6 +248,7 @@ export function BookConsultationProgressDialog({
           bookConsultationMeetingSaveStep(persistPayload),
         );
         if (isStale() || !saveLinkRes) {
+          failPipeline();
           setIsRunning(false);
           return;
         }
@@ -233,6 +266,7 @@ export function BookConsultationProgressDialog({
           (r) => (r.skipped ? "Skipped (Google path)" : `Sent to ${r.sentTo}`),
         );
         if (isStale() || !patientRes) {
+          failPipeline();
           setIsRunning(false);
           return;
         }
@@ -243,6 +277,7 @@ export function BookConsultationProgressDialog({
           (r) => (r.skipped ? "Skipped (Google path)" : `Sent to ${r.sentTo}`),
         );
         if (isStale() || !consultantRes) {
+          failPipeline();
           setIsRunning(false);
           return;
         }
@@ -251,6 +286,7 @@ export function BookConsultationProgressDialog({
           bookConsultationMeetingSaveStep(persistPayload),
         );
         if (isStale() || !saveLinkRes) {
+          failPipeline();
           setIsRunning(false);
           return;
         }
@@ -267,7 +303,16 @@ export function BookConsultationProgressDialog({
       runIdRef.current += 1;
       startedPipelineLocks.delete(lockKey);
     };
-  }, [open, payload, sessionKey, patchStep, execStep]);
+  }, [
+    canStart,
+    payload,
+    guestAppointmentId,
+    postPaymentMode,
+    sessionKey,
+    patchStep,
+    execStep,
+    failPipeline,
+  ]);
 
   const hasError = steps.some((s) => s.status === "error");
   const canContinue = Boolean(appointmentId) && (pipelineDone || hasError) && !isRunning;
@@ -301,7 +346,11 @@ export function BookConsultationProgressDialog({
           <DialogTitle className="font-heading">Setting up your consultation</DialogTitle>
           <DialogDescription>
             {patientLabel}
-            {providerLabel ? ` · ${providerLabel}` : appointmentId ? " · Creating meeting & sending invites" : " · Please wait"}
+            {providerLabel
+              ? ` · ${providerLabel}`
+              : appointmentId
+                ? " · Creating meeting & sending invites"
+                : " · Please wait"}
           </DialogDescription>
         </DialogHeader>
 
@@ -345,7 +394,7 @@ export function BookConsultationProgressDialog({
               Creating meeting and sending invites…
             </p>
           ) : null}
-          {canDismiss && hasError ? (
+          {canDismiss && hasError && !postPaymentMode ? (
             <Button type="button" variant="outline" className="rounded-xl" onClick={handleContinue}>
               Continue to confirmation
             </Button>
