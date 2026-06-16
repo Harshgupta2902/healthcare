@@ -275,7 +275,6 @@ function registrationOtpTemplate(params: {
         ${safeCode}
       </p>
       ${emailParagraph(`This code expires in ${params.expiryMinutes} minutes. If you did not request this, you can ignore this email.`)}
-      ${emailPrimaryButton(`${appUrl}/?auth=signup`, 'Continue registration')}
     `
 
   return buildEmailShell({
