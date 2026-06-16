@@ -2,6 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Lock, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -98,31 +100,35 @@ export function AuthModal() {
       }}
     >
       <DialogContent
-        overlayClassName="liquid-glass-overlay"
-        className="max-h-[min(92dvh,900px)] gap-0 overflow-hidden rounded-2xl border-0 bg-transparent p-0 shadow-none sm:max-w-[480px]"
+        overlayClassName="auth-modal-overlay z-[100]"
+        closeButtonClassName="top-5 right-5 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand"
+        className={`z-[101] max-h-[min(92dvh,900px)] gap-0 overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none ${view === "signup" ? "sm:max-w-[560px]" : "sm:max-w-[480px]"}`}
         showCloseButton
       >
-        <div className="liquid-glass-strong flex max-h-[min(92dvh,900px)] flex-col overflow-hidden rounded-2xl border border-white/60 shadow-[0_24px_64px_rgba(11,28,48,0.18)] dark:border-white/10">
-        <div className="border-b border-white/40 px-6 pb-4 pt-8 text-center dark:border-white/10">
-          <p className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text font-heading text-2xl font-extrabold tracking-tight text-transparent">
-            HealthHere
-          </p>
-          <DialogHeader className="mt-4 text-left">
-            <DialogTitle className="font-heading text-xl font-bold uppercase tracking-wide text-lp-cta-bg">
-              {view === "signup" ? "Sign Up" : "Sign In"}
-            </DialogTitle>
-            <DialogDescription className="font-sans text-sm text-lp-on-surface-variant">
-              {view === "signup"
-                ? "Create your account to book consultations and manage care."
-                : "Sign in to continue booking and access your dashboard."}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+        <AnimatePresence mode="wait">
+          {isOpen ? (
+            <motion.div
+              key={view}
+              initial={{ opacity: 0, y: 14, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="flex max-h-[min(92dvh,900px)] flex-col overflow-hidden rounded-2xl border border-lp-outline-variant/30 bg-white shadow-[0_24px_64px_rgba(11,28,48,0.16)]"
+            >
+              <div className="relative border-b border-lp-outline-variant/20 px-6 pb-5 pt-7 text-center">
+                <DialogHeader className="mt-3 space-y-1.5 text-center sm:text-center">
+                  <DialogTitle className="font-heading text-lg font-bold uppercase tracking-[0.14em] text-lp-cta-bg">
+                    {view === "signup" ? "Sign Up" : "Sign In"}
+                  </DialogTitle>
+                </DialogHeader>
+              </div>
 
-        <div className="overflow-y-auto px-6 pb-8 pt-2">
-          <AuthModalBody registrationSettings={registrationSettings} />
-        </div>
-        </div>
+              <div className="overflow-y-auto px-6 pb-7 pt-4">
+                <AuthModalBody registrationSettings={registrationSettings} />
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
