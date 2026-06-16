@@ -19,6 +19,7 @@ import {
   MessageSquare,
   LogOut,
   Newspaper,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/features/profile/actions'
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/application/enter/newsletter/campaigns', label: 'Campaigns', icon: Send },
   { href: '/application/enter/enquiries', label: 'Enquiries', icon: MessageSquare },
   { href: '/application/enter/blog', label: 'Blog', icon: Newspaper },
+  { href: '/application/enter/settings', label: 'Settings', icon: Settings },
 ]
 
 export function AdminSidebar() {
