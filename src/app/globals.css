@@ -447,6 +447,27 @@ nextjs-portal {
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
+  /* Modal / dialog scrim — frosted glass over page content */
+  .liquid-glass-overlay {
+    background: linear-gradient(
+      165deg,
+      rgba(229, 238, 255, 0.72) 0%,
+      rgba(255, 255, 255, 0.55) 38%,
+      rgba(11, 28, 48, 0.42) 100%
+    );
+    backdrop-filter: blur(20px) saturate(1.55);
+    -webkit-backdrop-filter: blur(20px) saturate(1.55);
+  }
+
+  .dark .liquid-glass-overlay {
+    background: linear-gradient(
+      165deg,
+      rgba(11, 28, 48, 0.78) 0%,
+      rgba(13, 28, 50, 0.65) 50%,
+      rgba(0, 89, 187, 0.28) 100%
+    );
+  }
+
   /* Login stitch reference: glass panel + soft blobs */
   .login-surface-card {
     background: rgba(255, 255, 255, 0.8);

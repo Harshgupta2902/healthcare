@@ -3,6 +3,7 @@ import "./globals.css";
 import ErrorReporter from "@/components/ErrorReporter";
 import SiteChrome from "@/components/SiteChrome";
 import { HealthHereAssistant } from "@/components/HealthHereAssistant";
+import { AuthModalProvider } from "@/features/auth/AuthModal";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { rootMetadata } from "@/lib/seo/root-metadata";
@@ -21,7 +22,9 @@ export default function RootLayout({
         <RootJsonLd />
         <ErrorReporter />
         <Analytics />
-        <SiteChrome>{children}</SiteChrome>
+        <AuthModalProvider>
+          <SiteChrome>{children}</SiteChrome>
+        </AuthModalProvider>
         <HealthHereAssistant />
         <Toaster position="top-right" richColors />
       </body>
