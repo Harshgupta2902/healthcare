@@ -108,7 +108,7 @@ export function AuthModal() {
       }}
     >
       <DialogContent
-        overlayClassName="auth-modal-overlay z-[100]"
+        overlayClassName="auth-modal-overlay z-[100] !bg-black/55 dark:!bg-black/70"
         closeButtonClassName="top-5 right-5 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand disabled:pointer-events-none disabled:opacity-40"
         className={`z-[101] max-h-[min(92dvh,900px)] gap-0 overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none ${view === "signup" ? "sm:max-w-[560px]" : "sm:max-w-[480px]"}`}
         showCloseButton={!isProcessing}

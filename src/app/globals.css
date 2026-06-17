@@ -460,15 +460,15 @@ nextjs-portal {
     -webkit-backdrop-filter: blur(18px) saturate(1.2);
   }
 
-  /* Auth modal — premium liquid glass panel */
+  /* Auth modal — neutral dim backdrop behind login/signup */
   .auth-modal-overlay {
-    background: rgba(11, 28, 48, 0.42);
-    backdrop-filter: blur(20px) saturate(1.35);
-    -webkit-backdrop-filter: blur(20px) saturate(1.35);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px) saturate(1);
+    -webkit-backdrop-filter: blur(10px) saturate(1);
   }
 
   .dark .auth-modal-overlay {
-    background: rgba(4, 10, 22, 0.68);
+    background: rgba(0, 0, 0, 0.68);
   }
 
   /* Login stitch reference: glass panel + soft blobs */
