@@ -15,7 +15,7 @@ export function DashboardShell({
 }) {
   return (
     <DashboardSectionProvider role={role}>
-      <div className="relative flex h-[calc(100dvh-4rem)] min-h-0 overflow-hidden lg:h-[calc(100dvh-5rem)]">
+      <div className="relative flex h-[calc(100dvh-5rem)] min-h-0 overflow-hidden">
         <DashboardSidebar role={role} />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <main className="min-w-0 flex-1 overflow-y-auto overflow-x-clip px-4 pb-28 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-8">
