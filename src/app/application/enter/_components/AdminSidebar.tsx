@@ -230,7 +230,8 @@ function SidebarNavGroup({ group, pathname }: { group: NavGroup; pathname: strin
           '[&>svg]:text-lp-on-surface-variant',
         )}
       >
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-lp-on-surface-variant">
+
+        <span className="font-medium uppercase text-lp-on-surface-variant">
           {group.label}
         </span>
       </AccordionTrigger>
