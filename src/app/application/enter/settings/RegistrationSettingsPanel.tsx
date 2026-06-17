@@ -18,13 +18,13 @@ import {
   REGISTRATION_OTP_EXPIRY_MINUTES,
   REGISTRATION_OTP_LENGTH,
 } from '@/lib/registration-constants'
-import { registrationSettingsSchema, type RegistrationSettings } from '@/lib/registration-settings'
+import { type RegistrationSettings } from '@/lib/registration-settings'
 import { cn } from '@/lib/utils'
 import { adminTheme } from '../_components/admin-theme'
 
-const limitsFormSchema = registrationSettingsSchema.pick({
-  otp_max_attempts: true,
-  resend_cooldown_seconds: true,
+const limitsFormSchema = z.object({
+  otp_max_attempts: z.number().int().min(3).max(10),
+  resend_cooldown_seconds: z.number().int().min(15).max(300),
 })
 
 type LimitsFormValues = z.infer<typeof limitsFormSchema>
