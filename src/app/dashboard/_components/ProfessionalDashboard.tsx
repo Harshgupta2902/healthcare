@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
@@ -24,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDashboardSectionContext } from "./dashboard-section-context";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -69,18 +68,11 @@ import { cn } from "@/lib/utils";
 import { PhoneCountryFields } from "@/components/PhoneCountryFields";
 import {
     dashboardGlassCard,
-    dashboardMobileNav,
-    dashboardMobileNavActive,
-    dashboardMobileNavInactive,
-    dashboardPageSubtitle,
-    dashboardPageTitle,
     dashboardPrimaryButton,
     dashboardStatCard,
     dashboardStatIconWrap,
     dashboardStatLabel,
     dashboardStatValue,
-    dashboardTabsList,
-    dashboardTabsTrigger,
 } from "./dashboard-theme";
 
 const LexicalPrescriptionEditor = dynamic(
@@ -242,7 +234,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<ProfessionalProfile>>(initialData?.profile || {});
-    const [activeTab, setActiveTab] = useState("profile");
+    const { activeSection } = useDashboardSectionContext();
     const [mounted, setMounted] = useState(false);
     const [isSpecializationOpen, setIsSpecializationOpen] = useState(false);
 
@@ -764,21 +756,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
 
     return (
-        <div className="container overflow-x-hidden px-4 sm:px-6 py-6 pb-28 sm:pb-10 md:py-10">
-            <div className="mb-6 sm:mb-8">
-                <h2 className={dashboardPageTitle}>Professional Dashboard</h2>
-                <p className={dashboardPageSubtitle}>
-                    Manage your practice, appointments, and client consultations
-                </p>
-                <Link
-                    href="/dashboard/blog"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-lp-brand hover:underline"
-                >
-                    <FileText className="h-4 w-4" />
-                    Write a blog article
-                </Link>
-            </div>
-
+        <div className="min-w-0">
             <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
@@ -836,35 +814,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </Card>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className={dashboardTabsList}>
-                    <TabsTrigger value="profile" className={dashboardTabsTrigger}>
-                        <User className="h-4 w-4" />
-                        Profile
-                    </TabsTrigger>
-                    <TabsTrigger value="credentials" className={dashboardTabsTrigger}>
-                        <GraduationCap className="h-4 w-4" />
-                        Credentials
-                    </TabsTrigger>
-                    <TabsTrigger value="consultations" className={dashboardTabsTrigger}>
-                        <MessageSquare className="h-4 w-4" />
-                        Consultations
-                    </TabsTrigger>
-                    <TabsTrigger value="calendar" className={dashboardTabsTrigger}>
-                        <CalendarIcon className="h-4 w-4" />
-                        Calendar
-                    </TabsTrigger>
-                    <TabsTrigger value="payments" className={dashboardTabsTrigger}>
-                        <IndianRupee className="h-4 w-4" />
-                        Payments
-                    </TabsTrigger>
-                    <TabsTrigger value="clients" className={dashboardTabsTrigger}>
-                        <Users className="h-4 w-4" />
-                        Clients
-                    </TabsTrigger>
-                </TabsList>
+            <div className="space-y-6">
 
-                <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "profile" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className={dashboardGlassCard}>
                         <CardHeader className="border-b border-lp-outline-variant/20 bg-gradient-to-r from-lp-surface-container-low/80 to-lp-surface-container/50 pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1162,9 +1115,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                <TabsContent value="credentials" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "credentials" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1385,9 +1340,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                <TabsContent value="consultations" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "consultations" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Consultation Requests</CardTitle>
@@ -1604,9 +1561,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </div>
                         </DialogContent>
                     </Dialog>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                <TabsContent value="calendar" className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
+                {activeSection === "calendar" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
                     <div className="grid min-w-0 gap-6 lg:grid-cols-2">
                         <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                             <CardHeader className="pt-4 bg-indigo-50/50">
@@ -1799,9 +1758,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             </CardContent>
                         </Card>
                     </div>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                <TabsContent value="payments" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "payments" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <CardTitle>Financial Overview</CardTitle>
@@ -1851,9 +1812,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                <TabsContent value="clients" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "clients" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Client Records</CardTitle>
@@ -1959,38 +1922,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
-            </Tabs>
-
-            <nav className={dashboardMobileNav}>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                    {[
-                        { value: "profile", label: "Profile", icon: User },
-                        { value: "credentials", label: "Creds", icon: GraduationCap },
-                        { value: "consultations", label: "Requests", icon: MessageSquare },
-                        { value: "calendar", label: "Calendar", icon: CalendarIcon },
-                        { value: "payments", label: "Payments", icon: IndianRupee },
-                        { value: "clients", label: "Clients", icon: Users },
-                    ].map((item) => {
-                        const Icon = item.icon;
-                        const isActive = activeTab === item.value;
-
-                        return (
-                            <button
-                                key={item.value}
-                                type="button"
-                                onClick={() => setActiveTab(item.value)}
-                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive ? dashboardMobileNavActive : dashboardMobileNavInactive}`}
-                            >
-                                <Icon className="h-5 w-5" />
-                                <span className="max-w-[4.5rem] truncate">{item.label}</span>
-                            </button>
-                        );
-                    })}
                 </div>
-            </nav>
+                ) : null}
 
-            <div className="mt-16 space-y-8 pb-20">
+                {activeSection === "schedule" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-8">
                 <Separator className="bg-slate-200" />
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-[var(--color-primary)] text-white rounded-xl shadow-lg shadow-indigo-200">
@@ -2105,7 +2041,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         </div>
                     </CardContent>
                 </Card>
+                </div>
+                ) : null}
             </div>
-        </div >
+        </div>
     );
 }

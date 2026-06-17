@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
@@ -46,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDashboardSectionContext } from "./dashboard-section-context";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -75,23 +74,16 @@ import {
     ShieldCheck,
     IndianRupee,
 } from "lucide-react";
-import { OrderHistoryList } from "@/features/booking-orders/components/OrderHistoryList";
+import { ClientOrdersSection } from "./sections/client";
 import type { ClientOrderHistoryItem } from "@/features/booking-orders/types";
 import {
     dashboardGlassCardLg,
-    dashboardMobileNav,
-    dashboardMobileNavActive,
-    dashboardMobileNavInactive,
-    dashboardPageSubtitle,
-    dashboardPageTitle,
     dashboardPrimaryButton,
     dashboardProfileBanner,
     dashboardStatCard,
     dashboardStatIconWrap,
     dashboardStatLabel,
     dashboardStatValue,
-    dashboardTabsList,
-    dashboardTabsTrigger,
 } from "./dashboard-theme";
 
 interface UserProfile {
@@ -231,7 +223,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [profileForm, setProfileForm] = useState<Partial<UserProfile>>(initialData?.profile || {});
-    const [activeTab, setActiveTab] = useState("profile");
+    const { activeSection } = useDashboardSectionContext();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -814,21 +806,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     };
 
     return (
-        <div className="container overflow-x-hidden px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8">
-            <div className="mb-6 sm:mb-8">
-                <h2 className={dashboardPageTitle}>Patient Medical Dashboard</h2>
-                <p className={dashboardPageSubtitle}>
-                    Centralized hub for your health metrics, prescriptions, and medical history.
-                </p>
-                <Link
-                    href="/dashboard/blog"
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-lp-brand hover:underline"
-                >
-                    <FileText className="h-4 w-4" />
-                    Write a blog article
-                </Link>
-            </div>
-
+        <div className="min-w-0">
             <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 md:gap-6 lg:grid-cols-4">
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
@@ -876,33 +854,10 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 </Card>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
-                <TabsList className={dashboardTabsList}>
-                    <TabsTrigger value="profile" className={dashboardTabsTrigger}>
-                        <User className="h-4 w-4" /> Profile
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className={dashboardTabsTrigger}>
-                        <Heart className="h-4 w-4" /> History
-                    </TabsTrigger>
-                    <TabsTrigger value="medications" className={dashboardTabsTrigger}>
-                        <Pill className="h-4 w-4" /> Meds
-                    </TabsTrigger>
-                    <TabsTrigger value="documents" className={dashboardTabsTrigger}>
-                        <FileText className="h-4 w-4" /> Docs
-                    </TabsTrigger>
-                    <TabsTrigger value="insurance" className={dashboardTabsTrigger}>
-                        <Shield className="h-4 w-4" /> Insurance
-                    </TabsTrigger>
-                    <TabsTrigger value="appointments" className={dashboardTabsTrigger}>
-                        <Calendar className="h-4 w-4" /> Appointments
-                    </TabsTrigger>
-                    <TabsTrigger value="orders" className={dashboardTabsTrigger}>
-                        <IndianRupee className="h-4 w-4" /> Orders
-                    </TabsTrigger>
-                </TabsList>
+            <div className="space-y-6 sm:space-y-8">
 
-                {/* Profile Tab */}
-                <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "profile" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
                         <Card className={`lg:col-span-1 h-fit ${dashboardGlassCardLg}`}>
                             <div className={dashboardProfileBanner} />
@@ -1190,10 +1145,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             </CardContent>
                         </Card>
                     </div>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                {/* History Tab */}
-                <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "history" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-red-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1328,10 +1284,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                {/* Medications Tab - Premium Grid */}
-                <TabsContent value="medications" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "medications" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-blue-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1455,10 +1412,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                {/* Documents - Modern File Explorer style */}
-                <TabsContent value="documents" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "documents" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1616,10 +1574,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                {/* Insurance Tab */}
-                <TabsContent value="insurance" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "insurance" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-emerald-50/30">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1723,10 +1682,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
+                </div>
+                ) : null}
 
-                {/* Appointments Tab */}
-                <TabsContent value="appointments" className="animate-in fade-in slide-in-from-bottom-2">
+                {activeSection === "appointments" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
                         <CardHeader className="pt-4 bg-indigo-50/30">
                             <CardTitle className="text-xl font-black flex items-center gap-2 text-indigo-900">
@@ -1837,57 +1797,15 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             )}
                         </CardContent>
                     </Card>
-                </TabsContent>
-
-                <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                        <CardHeader className="pt-4 bg-emerald-50/30">
-                            <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
-                                Order History
-                            </CardTitle>
-                            <CardDescription>Successful and failed consultation orders</CardDescription>
-                        </CardHeader>
-                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingOrders ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
-                                </div>
-                            ) : (
-                                <OrderHistoryList orders={orders} />
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-
-            <nav className={dashboardMobileNav}>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                    {[
-                        { value: "profile", label: "Profile", icon: User },
-                        { value: "history", label: "History", icon: Heart },
-                        { value: "medications", label: "Meds", icon: Pill },
-                        { value: "documents", label: "Docs", icon: FileText },
-                        { value: "insurance", label: "Insurance", icon: Shield },
-                        { value: "appointments", label: "Requests", icon: Calendar },
-                        { value: "orders", label: "Orders", icon: IndianRupee },
-                    ].map((item) => {
-                        const Icon = item.icon;
-                        const isActive = activeTab === item.value;
-
-                        return (
-                            <button
-                                key={item.value}
-                                type="button"
-                                onClick={() => setActiveTab(item.value)}
-                                className={`flex min-w-[4.75rem] shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${isActive ? dashboardMobileNavActive : dashboardMobileNavInactive}`}
-                            >
-                                <Icon className="h-5 w-5" />
-                                <span className="max-w-[4.5rem] truncate">{item.label}</span>
-                            </button>
-                        );
-                    })}
                 </div>
-            </nav>
+                ) : null}
+
+                {activeSection === "orders" ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2">
+                    <ClientOrdersSection orders={orders} isLoading={isLoadingOrders} />
+                </div>
+                ) : null}
+            </div>
 
             {/* Support Float Button - Pure Aesthetics */}
             <div className="hidden sm:fixed sm:bottom-10 sm:right-10 sm:z-40">
