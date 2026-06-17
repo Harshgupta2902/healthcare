@@ -2,14 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import { cn } from '@/lib/utils'
 import {
   dashboardBlogLink,
@@ -25,37 +18,12 @@ function groupHasActiveSection(group: DashboardNavGroup, activeSection: Dashboar
   return group.items.some((item) => item.id === activeSection)
 }
 
-function buildInitialOpenGroups(role: DashboardRole, activeSection: DashboardSectionId) {
-  const open: Record<string, boolean> = {}
-  for (const group of getNavGroupsForRole(role)) {
-    if (groupHasActiveSection(group, activeSection)) {
-      open[group.id] = true
-    }
-  }
-  return open
-}
-
 export function DashboardSidebar({ role }: { role: DashboardRole }) {
   const pathname = usePathname()
   const { activeSection, setActiveSection } = useDashboardSectionContext()
   const navGroups = getNavGroupsForRole(role)
   const BlogIcon = dashboardBlogLink.icon
   const isBlogActive = pathname.startsWith('/dashboard/blog')
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    buildInitialOpenGroups(role, activeSection),
-  )
-
-  useEffect(() => {
-    setOpenGroups((prev) => {
-      const next = { ...prev }
-      for (const group of navGroups) {
-        if (groupHasActiveSection(group, activeSection)) {
-          next[group.id] = true
-        }
-      }
-      return next
-    })
-  }, [activeSection, navGroups])
 
   return (
     <aside className="liquid-glass-strong hidden h-full min-h-0 w-64 shrink-0 flex-col self-stretch border-r border-white/50 shadow-xl lg:flex dark:border-white/10">
@@ -85,18 +53,7 @@ export function DashboardSidebar({ role }: { role: DashboardRole }) {
           </motion.div>
         </Link>
 
-        <Accordion
-          type="multiple"
-          value={navGroups.filter((group) => openGroups[group.id]).map((group) => group.id)}
-          onValueChange={(values) => {
-            const next: Record<string, boolean> = {}
-            for (const group of navGroups) {
-              next[group.id] = values.includes(group.id)
-            }
-            setOpenGroups(next)
-          }}
-          className="space-y-1"
-        >
+        <div className="space-y-3">
           {navGroups.map((group) => (
             <DashboardNavGroup
               key={group.id}
@@ -105,7 +62,7 @@ export function DashboardSidebar({ role }: { role: DashboardRole }) {
               onSelect={setActiveSection}
             />
           ))}
-        </Accordion>
+        </div>
       </nav>
     </aside>
   )
@@ -123,33 +80,29 @@ function DashboardNavGroup({
   const isGroupActive = groupHasActiveSection(group, activeSection)
 
   return (
-    <AccordionItem value={group.id} className="border-0">
-      <AccordionTrigger
+    <div className="space-y-0.5">
+      <div
         className={cn(
-          'cursor-pointer rounded-lg px-2 py-1.5 font-sans hover:no-underline',
-          'hover:bg-white/45 dark:hover:bg-white/5',
+          'rounded-lg px-2 py-1.5',
           isGroupActive && 'text-lp-brand',
-          '[&>svg]:h-3.5 [&>svg]:w-3.5 [&>svg]:text-lp-on-surface-variant/60',
         )}
       >
         <span className="font-sans text-[11px] font-semibold uppercase tracking-wider text-lp-on-surface-variant/90">
           {group.label}
         </span>
-      </AccordionTrigger>
+      </div>
 
-      <AccordionContent className="pb-1 pt-0.5">
-        <div className="ml-2 space-y-0.5 border-l border-lp-outline-variant/25 pl-2.5">
-          {group.items.map((item) => (
-            <DashboardNavLink
-              key={item.id}
-              item={item}
-              isActive={activeSection === item.id}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+      <div className="ml-2 space-y-0.5 border-l border-lp-outline-variant/25 pl-2.5">
+        {group.items.map((item) => (
+          <DashboardNavLink
+            key={item.id}
+            item={item}
+            isActive={activeSection === item.id}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 
