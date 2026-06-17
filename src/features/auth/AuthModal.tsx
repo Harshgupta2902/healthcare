@@ -4,8 +4,10 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -109,9 +111,8 @@ export function AuthModal() {
     >
       <DialogContent
         overlayClassName="auth-modal-overlay z-[100] !bg-black/55 dark:!bg-black/70"
-        closeButtonClassName="top-5 right-5 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand disabled:pointer-events-none disabled:opacity-40"
-        className={`z-[101] max-h-[min(92dvh,900px)] gap-0 overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none ${view === "signup" ? "sm:max-w-[560px]" : "sm:max-w-[480px]"}`}
-        showCloseButton={!isProcessing}
+        className={`z-[101] max-h-[min(92dvh,900px)] gap-0 overflow-visible rounded-2xl border-0 bg-transparent p-0 shadow-none data-[state=closed]:animate-none data-[state=open]:animate-none ${view === "signup" ? "sm:max-w-[560px]" : "sm:max-w-[480px]"}`}
+        showCloseButton={false}
         onInteractOutside={(event) => {
           if (isProcessing) event.preventDefault();
         }}
@@ -127,9 +128,18 @@ export function AuthModal() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.98 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="flex max-h-[min(92dvh,900px)] flex-col overflow-hidden rounded-2xl border border-lp-outline-variant/30 bg-white shadow-[0_24px_64px_rgba(11,28,48,0.16)]"
+              className="relative flex max-h-[min(92dvh,900px)] flex-col overflow-hidden rounded-2xl border border-lp-outline-variant/30 bg-white shadow-[0_24px_64px_rgba(11,28,48,0.16)]"
             >
-              <div className="relative border-b border-lp-outline-variant/20 px-6 pb-5 pt-7 text-center">
+              {!isProcessing ? (
+                <DialogClose
+                  className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full border border-lp-outline-variant/40 bg-white text-lp-on-surface-variant opacity-100 shadow-sm transition-colors hover:border-lp-brand/30 hover:bg-lp-surface-container-low hover:text-lp-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-lp-brand/30"
+                  aria-label="Close"
+                >
+                  <X className="size-4" />
+                </DialogClose>
+              ) : null}
+
+              <div className="border-b border-lp-outline-variant/20 px-6 pb-5 pt-7 text-center">
                 <DialogHeader className="mt-3 space-y-1.5 text-center sm:text-center">
                   <DialogTitle className="font-heading text-lg font-bold uppercase tracking-[0.14em] text-lp-cta-bg">
                     {view === "signup" ? "Sign Up" : "Sign In"}
