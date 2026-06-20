@@ -2,12 +2,20 @@ import {
   formatIstSlotLabel,
   formatMinutesAsTime,
   istSlotStartToUtc,
+  normalizeAvailabilityTime,
   parseTimeToMinutes,
   utcToIstDateYmd,
   utcToIstTimeHm,
 } from "./timezone";
 
 export const BOOKING_SLOT_INTERVAL_MINUTES = 60;
+
+/** True when at least one full hourly slot fits between start and end (24h wall clock). */
+export function isValidHourlyAvailabilityWindow(startTime: string, endTime: string): boolean {
+  const start = parseTimeToMinutes(normalizeAvailabilityTime(startTime));
+  const end = parseTimeToMinutes(normalizeAvailabilityTime(endTime));
+  return start + BOOKING_SLOT_INTERVAL_MINUTES <= end;
+}
 
 export type AvailabilityWindow = {
   dayOfWeek: number;
@@ -30,6 +38,26 @@ export type BookableSlot = {
   state: "available" | "booked" | "held_by_other" | "past";
 };
 
+export type SlotGenerationDebug = {
+  dateYmd: string;
+  dayOfWeek: number;
+  nowIso: string;
+  availabilityRows: AvailabilityWindow[];
+  matchedWindow: AvailabilityWindow | null;
+  normalizedStart: string | null;
+  normalizedEnd: string | null;
+  startMinutes: number | null;
+  endMinutes: number | null;
+  rawSlotCount: number;
+  futureSlotCount: number;
+  emptyReason:
+    | null
+    | "no_availability_window"
+    | "invalid_time_window"
+    | "all_slots_past"
+    | "occupied_only";
+};
+
 function isActiveHold(row: OccupiedSlot, nowMs: number): boolean {
   if (row.status !== "held") return true;
   if (!row.expiresAt) return false;
@@ -42,6 +70,7 @@ export function generateHourlySlotsForWindow(
   windowEndTime: string,
   now: Date = new Date(),
   bufferMinutes = 0,
+  includePast = false,
 ): Omit<BookableSlot, "state">[] {
   const startMins = parseTimeToMinutes(windowStartTime);
   const endMins = parseTimeToMinutes(windowEndTime);
@@ -59,7 +88,7 @@ export function generateHourlySlotsForWindow(
     ).toISOString();
 
     const startMs = new Date(slotStartAt).getTime();
-    if (startMs < now.getTime() + bufferMinutes * 60 * 1000) continue;
+    if (!includePast && startMs < now.getTime() + bufferMinutes * 60 * 1000) continue;
 
     slots.push({
       slotStartAt,
@@ -72,6 +101,83 @@ export function generateHourlySlotsForWindow(
   return slots;
 }
 
+export function diagnoseSlotGeneration(params: {
+  dateYmd: string;
+  availability: AvailabilityWindow[];
+  now?: Date;
+}): SlotGenerationDebug {
+  const now = params.now ?? new Date();
+  const dayOfWeek = new Date(`${params.dateYmd}T12:00:00+05:30`).getUTCDay();
+  const normalizedAvailability = params.availability.map((row) => ({
+    ...row,
+    dayOfWeek: Number(row.dayOfWeek),
+    startTime: normalizeAvailabilityTime(row.startTime),
+    endTime: normalizeAvailabilityTime(row.endTime),
+    isAvailable: Boolean(row.isAvailable),
+  }));
+
+  const matchedWindow =
+    normalizedAvailability.find((a) => a.dayOfWeek === dayOfWeek && a.isAvailable) ?? null;
+
+  if (!matchedWindow) {
+    return {
+      dateYmd: params.dateYmd,
+      dayOfWeek,
+      nowIso: now.toISOString(),
+      availabilityRows: normalizedAvailability,
+      matchedWindow: null,
+      normalizedStart: null,
+      normalizedEnd: null,
+      startMinutes: null,
+      endMinutes: null,
+      rawSlotCount: 0,
+      futureSlotCount: 0,
+      emptyReason: "no_availability_window",
+    };
+  }
+
+  const startMinutes = parseTimeToMinutes(matchedWindow.startTime);
+  const endMinutes = parseTimeToMinutes(matchedWindow.endTime);
+  const rawSlots = generateHourlySlotsForWindow(
+    params.dateYmd,
+    matchedWindow.startTime,
+    matchedWindow.endTime,
+    now,
+    0,
+    true,
+  );
+  const futureSlots = generateHourlySlotsForWindow(
+    params.dateYmd,
+    matchedWindow.startTime,
+    matchedWindow.endTime,
+    now,
+  );
+
+  let emptyReason: SlotGenerationDebug["emptyReason"] = null;
+  if (startMinutes + BOOKING_SLOT_INTERVAL_MINUTES > endMinutes) {
+    emptyReason = "invalid_time_window";
+  } else if (rawSlots.length > 0 && futureSlots.length === 0) {
+    emptyReason = "all_slots_past";
+  } else if (rawSlots.length === 0) {
+    emptyReason = "invalid_time_window";
+  }
+
+  return {
+    dateYmd: params.dateYmd,
+    dayOfWeek,
+    nowIso: now.toISOString(),
+    availabilityRows: normalizedAvailability,
+    matchedWindow,
+    normalizedStart: matchedWindow.startTime,
+    normalizedEnd: matchedWindow.endTime,
+    startMinutes,
+    endMinutes,
+    rawSlotCount: rawSlots.length,
+    futureSlotCount: futureSlots.length,
+    emptyReason,
+  };
+}
+
 export function buildBookableSlots(params: {
   dateYmd: string;
   availability: AvailabilityWindow[];
@@ -82,7 +188,16 @@ export function buildBookableSlots(params: {
   const now = params.now ?? new Date();
   const nowMs = now.getTime();
   const dayOfWeek = new Date(`${params.dateYmd}T12:00:00+05:30`).getUTCDay();
-  const window = params.availability.find((a) => a.dayOfWeek === dayOfWeek && a.isAvailable);
+  const normalizedAvailability = params.availability.map((row) => ({
+    ...row,
+    dayOfWeek: Number(row.dayOfWeek),
+    startTime: normalizeAvailabilityTime(row.startTime),
+    endTime: normalizeAvailabilityTime(row.endTime),
+    isAvailable: Boolean(row.isAvailable),
+  }));
+  const window = normalizedAvailability.find(
+    (a) => a.dayOfWeek === dayOfWeek && a.isAvailable,
+  );
 
   if (!window) return [];
 

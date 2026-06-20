@@ -3,11 +3,22 @@
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 export function parseTimeToMinutes(time: string): number {
-  const raw = (time || "09:00").trim();
-  const [hRaw, mRaw = "00"] = raw.split(":");
+  const normalized = normalizeAvailabilityTime(time);
+  const [hRaw, mRaw = "00"] = normalized.split(":");
   const hours = Math.min(23, Math.max(0, parseInt(hRaw || "0", 10)));
   const minutes = Math.min(59, Math.max(0, parseInt(mRaw.slice(0, 2) || "0", 10)));
   return hours * 60 + minutes;
+}
+
+/** Normalize DB / HTML time values to HH:mm (24h). */
+export function normalizeAvailabilityTime(time: string): string {
+  const trimmed = String(time ?? "").trim();
+  if (!trimmed) return "00:00";
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return "00:00";
+  const hours = Math.min(23, Math.max(0, parseInt(match[1], 10)));
+  const minutes = Math.min(59, Math.max(0, parseInt(match[2], 10)));
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 export function formatMinutesAsTime(totalMinutes: number): string {
