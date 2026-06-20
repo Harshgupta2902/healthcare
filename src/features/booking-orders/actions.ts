@@ -9,7 +9,10 @@ import {
 import { zodFirstError } from "@/lib/server-action-result";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
 import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
-import { BOOKING_ORDER_EXPIRY_MINUTES, PAYMENT_PROVIDER } from "./lib/constants";
+import { fetchBookingSettings } from "@/features/booking-slots/actions";
+import { verifySlotHoldForBooking } from "@/features/booking-slots/actions";
+import { meetingEndTimeFromStart } from "@/lib/booking/slots";
+import { PAYMENT_PROVIDER } from "./lib/constants";
 import { generateOrderNumber } from "./lib/order-number";
 import { buildCheckoutHref } from "./lib/order-ref";
 import { getPaymentProvider } from "./lib/payment-providers";
@@ -111,6 +114,11 @@ async function insertGuestAppointmentFromSnapshot(
   userId: string,
   professionalId: string,
   snapshot: BookingSnapshot,
+  extras?: {
+    slotReservationId?: string | null;
+    meetingDurationMinutes?: number;
+    meetingEndTime?: string;
+  },
 ) {
   const payload = {
     first_name: snapshot.firstName,
@@ -123,6 +131,9 @@ async function insertGuestAppointmentFromSnapshot(
     city: snapshot.city,
     appointment_date: snapshot.date,
     appointment_time: snapshot.time,
+    meeting_duration_minutes: extras?.meetingDurationMinutes ?? null,
+    meeting_end_time: extras?.meetingEndTime ?? null,
+    slot_reservation_id: extras?.slotReservationId ?? null,
     message: snapshot.message?.trim() ? snapshot.message.trim() : null,
     created_by: userId,
     professional_id: professionalId,
@@ -189,7 +200,18 @@ export async function createBookingOrder(form: unknown) {
   }
 
   const amountPaise = Math.max(0, (feeRow?.consultation_fee as number | null) ?? 0);
-  const expiresAt = new Date(Date.now() + BOOKING_ORDER_EXPIRY_MINUTES * 60 * 1000).toISOString();
+
+  const holdCheck = await verifySlotHoldForBooking(
+    auth.supabase,
+    auth.user.id,
+    validated.data.holdId,
+    validated.data.professionalId,
+    validated.data.date,
+    validated.data.time,
+  );
+  if (!holdCheck.ok) return { error: holdCheck.error };
+
+  const expiresAt = holdCheck.hold.expiresAt;
 
   const snapshot: BookingSnapshot = {
     firstName: validated.data.firstName,
@@ -218,6 +240,7 @@ export async function createBookingOrder(form: unknown) {
       booking_snapshot: snapshot,
       payment_provider: PAYMENT_PROVIDER,
       expires_at: expiresAt,
+      slot_reservation_id: validated.data.holdId,
     })
     .select("id")
     .single();
@@ -226,6 +249,12 @@ export async function createBookingOrder(form: unknown) {
     console.error("[createBookingOrder]", error);
     return { error: error.message };
   }
+
+  await auth.supabase
+    .from("professional_slot_reservations")
+    .update({ booking_order_id: data.id as string, updated_at: new Date().toISOString() })
+    .eq("id", validated.data.holdId)
+    .eq("status", "held");
 
   return {
     success: true as const,
@@ -279,6 +308,14 @@ export async function cancelBookingOrder(input: unknown) {
   );
 
   if (!ok) return { error: "This order can no longer be cancelled." };
+
+  const row = await loadOrderForUser(auth.supabase, parsed.data.orderId, auth.user.id);
+  if (row?.slot_reservation_id) {
+    await auth.supabase.rpc("release_slot_reservation", {
+      p_hold_id: row.slot_reservation_id,
+    });
+  }
+
   return { success: true as const };
 }
 
@@ -346,12 +383,33 @@ export async function processMockPayment(input: unknown) {
   }
 
   try {
+    const bookingSettings = await fetchBookingSettings(auth.supabase);
+    const meetingEndTime = meetingEndTimeFromStart(
+      row.booking_snapshot.time,
+      bookingSettings.meeting_duration_minutes,
+    );
+
     const appointmentId = await insertGuestAppointmentFromSnapshot(
       auth.supabase,
       auth.user.id,
       row.professional_id,
       row.booking_snapshot,
+      {
+        slotReservationId: row.slot_reservation_id,
+        meetingDurationMinutes: bookingSettings.meeting_duration_minutes,
+        meetingEndTime,
+      },
     );
+
+    if (row.slot_reservation_id) {
+      const { data: confirmed } = await auth.supabase.rpc("confirm_slot_reservation", {
+        p_hold_id: row.slot_reservation_id,
+        p_guest_appointment_id: appointmentId,
+      });
+      if (!confirmed) {
+        throw new Error("Could not confirm your slot reservation.");
+      }
+    }
 
     const linked = await patchOrderStatus(auth.supabase, row.id, "processing", "processing", {
       guestAppointmentId: appointmentId,

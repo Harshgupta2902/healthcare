@@ -39,6 +39,7 @@ export type BookingOrderRow = {
   expires_at: string;
   paid_at: string | null;
   confirmed_at: string | null;
+  slot_reservation_id: string | null;
   created_at: string;
   updated_at: string;
 };

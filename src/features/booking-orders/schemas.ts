@@ -18,6 +18,7 @@ export const bookingSnapshotSchema = z.object({
 
 export const createBookingOrderSchema = bookingSnapshotSchema.extend({
   professionalId: z.string().uuid("Please select a consultant before booking."),
+  holdId: z.string().uuid("Please select and reserve a time slot before booking."),
 });
 
 export const orderIdSchema = z.object({
