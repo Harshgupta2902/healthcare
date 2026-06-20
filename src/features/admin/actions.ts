@@ -17,6 +17,8 @@ import {
   parseBookingSettings,
   type BookingSettings,
 } from '@/lib/booking-settings'
+import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
+import { normalizeAvailabilityTime } from '@/lib/booking/timezone'
 
 // ============================================
 // SCHEMAS
@@ -376,6 +378,109 @@ export async function updateProfessional(id: string, data: Partial<z.infer<typeo
   revalidatePath('/application/enter/professionals')
   revalidatePath('/consultants', 'layout')
   return { success: true as const, data: result }
+}
+
+const professionalUserIdSchema = z.string().uuid('Invalid professional user id.')
+
+const adminAvailabilityTimingSlotSchema = z.object({
+  id: z.string().uuid('Invalid availability slot.'),
+  startTime: z.string().min(1, 'Start time is required.'),
+  endTime: z.string().min(1, 'End time is required.'),
+})
+
+const adminUpdateAvailabilityTimingsSchema = z.object({
+  professionalUserId: professionalUserIdSchema,
+  slots: z.array(adminAvailabilityTimingSlotSchema),
+})
+
+export type AdminAvailabilitySlot = {
+  id: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isAvailable: boolean
+}
+
+export async function getProfessionalAvailabilityForAdmin(professionalUserId: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const idParsed = professionalUserIdSchema.safeParse(professionalUserId)
+  if (!idParsed.success) return { success: false as const, error: zodFirstError(idParsed.error) }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('professional_availability')
+    .select('id, day_of_week, start_time, end_time, is_available')
+    .eq('professional_id', idParsed.data)
+    .order('day_of_week', { ascending: true })
+
+  if (error) return { success: false as const, error: error.message }
+
+  return {
+    success: true as const,
+    slots: (data ?? []).map((row) => ({
+      id: row.id as string,
+      dayOfWeek: Number(row.day_of_week),
+      startTime: normalizeAvailabilityTime(String(row.start_time ?? '')),
+      endTime: normalizeAvailabilityTime(String(row.end_time ?? '')),
+      isAvailable: Boolean(row.is_available),
+    })) satisfies AdminAvailabilitySlot[],
+  }
+}
+
+export async function updateProfessionalAvailabilityTimings(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = adminUpdateAvailabilityTimingsSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  for (const slot of parsed.data.slots) {
+    const start = normalizeAvailabilityTime(slot.startTime)
+    const end = normalizeAvailabilityTime(slot.endTime)
+    if (!isValidHourlyAvailabilityWindow(start, end)) {
+      return {
+        success: false as const,
+        error: 'Each day needs end time at least 1 hour after start (24-hour format, e.g. 19:00 for 7 PM).',
+      }
+    }
+  }
+
+  const supabase = await createClient()
+  const slotIds = parsed.data.slots.map((s) => s.id)
+
+  if (slotIds.length > 0) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('professional_availability')
+      .select('id')
+      .eq('professional_id', parsed.data.professionalUserId)
+      .in('id', slotIds)
+
+    if (fetchError) return { success: false as const, error: fetchError.message }
+    if ((existing ?? []).length !== slotIds.length) {
+      return { success: false as const, error: 'One or more availability slots were not found.' }
+    }
+  }
+
+  for (const slot of parsed.data.slots) {
+    const { error } = await supabase
+      .from('professional_availability')
+      .update({
+        start_time: normalizeAvailabilityTime(slot.startTime),
+        end_time: normalizeAvailabilityTime(slot.endTime),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', slot.id)
+      .eq('professional_id', parsed.data.professionalUserId)
+
+    if (error) return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/application/enter/professionals')
+  revalidatePath('/book-consultation')
+  revalidatePath('/consultants', 'layout')
+  return { success: true as const }
 }
 
 export async function setProfessionalVerified(profileRowId: string, isVerified: boolean) {
