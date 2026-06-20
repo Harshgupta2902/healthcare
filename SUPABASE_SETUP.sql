@@ -14,6 +14,9 @@ create table if not exists public.guest_appointments (
   city text not null,
   appointment_date date not null,
   appointment_time text not null,
+  meeting_duration_minutes integer check (meeting_duration_minutes is null or (meeting_duration_minutes >= 30 and meeting_duration_minutes <= 60)),
+  meeting_end_time text,
+  slot_reservation_id uuid,
   message text,
   calendar_invite_url text,
   prescription_html text,
@@ -1871,6 +1874,15 @@ AS $$
 DECLARE
   v_count INTEGER;
 BEGIN
+  UPDATE public.professional_slot_reservations r
+     SET status = 'expired',
+         updated_at = NOW()
+   WHERE r.status = 'held'
+     AND r.booking_order_id IN (
+       SELECT id FROM public.booking_orders
+        WHERE status = 'pending' AND expires_at < NOW()
+     );
+
   UPDATE public.booking_orders
      SET status = 'failed',
          failure_reason = 'expired',
@@ -1963,3 +1975,206 @@ $$;
 
 REVOKE ALL ON FUNCTION public.finalize_booking_order(UUID, UUID, TEXT, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.finalize_booking_order(UUID, UUID, TEXT, TEXT) TO authenticated;
+
+-- Booking settings (admin-managed slot hold + meeting duration)
+INSERT INTO public.app_settings (key, value)
+VALUES (
+  'booking',
+  '{"slot_hold_minutes": 10, "meeting_duration_minutes": 60}'::jsonb
+)
+ON CONFLICT (key) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.get_booking_settings()
+RETURNS JSONB
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT COALESCE(
+    (SELECT value FROM public.app_settings WHERE key = 'booking'),
+    '{"slot_hold_minutes": 10, "meeting_duration_minutes": 60, "booking_advance_weeks": 2}'::jsonb
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.get_booking_settings() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_booking_settings() TO anon, authenticated;
+
+-- Hourly slot reservations (booking blocks 1 hour; meeting uses meeting_duration_minutes)
+CREATE TABLE IF NOT EXISTS public.professional_slot_reservations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  professional_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  slot_start_at TIMESTAMPTZ NOT NULL,
+  slot_end_at TIMESTAMPTZ NOT NULL,
+  meeting_duration_minutes INT
+    CHECK (meeting_duration_minutes IS NULL OR (meeting_duration_minutes >= 30 AND meeting_duration_minutes <= 60)),
+  meeting_end_at TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'held'
+    CHECK (status IN ('held', 'confirmed', 'expired', 'released', 'cancelled')),
+  held_by_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  booking_order_id UUID REFERENCES public.booking_orders(id) ON DELETE SET NULL,
+  guest_appointment_id UUID REFERENCES public.guest_appointments(id) ON DELETE SET NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT professional_slot_reservations_slot_window_check
+    CHECK (slot_end_at = slot_start_at + INTERVAL '1 hour')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS professional_slot_active_unique
+  ON public.professional_slot_reservations (professional_id, slot_start_at)
+  WHERE status IN ('held', 'confirmed');
+
+CREATE INDEX IF NOT EXISTS idx_slot_reservations_professional_start
+  ON public.professional_slot_reservations (professional_id, slot_start_at);
+
+ALTER TABLE public.booking_orders
+  ADD COLUMN IF NOT EXISTS slot_reservation_id UUID REFERENCES public.professional_slot_reservations(id) ON DELETE SET NULL;
+
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS slot_reservation_id UUID REFERENCES public.professional_slot_reservations(id) ON DELETE SET NULL;
+
+ALTER TABLE public.professional_slot_reservations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read active slot reservations" ON public.professional_slot_reservations
+  FOR SELECT TO anon, authenticated
+  USING (status IN ('held', 'confirmed'));
+
+CREATE POLICY "Users read own slot reservations" ON public.professional_slot_reservations
+  FOR SELECT TO authenticated
+  USING (held_by_user_id = auth.uid());
+
+CREATE POLICY "Professionals read own calendar reservations" ON public.professional_slot_reservations
+  FOR SELECT TO authenticated
+  USING (professional_id = auth.uid());
+
+CREATE POLICY "Admins manage all slot reservations" ON public.professional_slot_reservations
+  FOR ALL TO authenticated
+  USING ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin')
+  WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
+
+CREATE OR REPLACE FUNCTION public.expire_stale_slot_reservations()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE v_count INTEGER;
+BEGIN
+  UPDATE public.professional_slot_reservations
+     SET status = 'expired', updated_at = NOW()
+   WHERE status = 'held' AND expires_at < NOW();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.expire_stale_slot_reservations() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.expire_stale_slot_reservations() TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.reserve_professional_slot(p_professional_id UUID, p_slot_start_at TIMESTAMPTZ)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_hold_minutes INT;
+  v_slot_end TIMESTAMPTZ;
+  v_local_start TIME;
+  v_day_of_week INT;
+  v_avail RECORD;
+  v_hold_id UUID;
+  v_expires_at TIMESTAMPTZ;
+BEGIN
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'Not authenticated'); END IF;
+  PERFORM public.expire_stale_slot_reservations();
+  v_hold_minutes := GREATEST(5, LEAST(30, COALESCE((public.get_booking_settings()->>'slot_hold_minutes')::INT, 10)));
+  v_slot_end := p_slot_start_at + INTERVAL '1 hour';
+  v_expires_at := NOW() + (v_hold_minutes || ' minutes')::INTERVAL;
+  IF EXTRACT(MINUTE FROM p_slot_start_at AT TIME ZONE 'Asia/Kolkata')::INT <> 0
+     OR EXTRACT(SECOND FROM p_slot_start_at AT TIME ZONE 'Asia/Kolkata')::INT <> 0 THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Slots must start on the hour.');
+  END IF;
+  IF p_slot_start_at < NOW() THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'This slot is in the past.');
+  END IF;
+  v_day_of_week := EXTRACT(DOW FROM p_slot_start_at AT TIME ZONE 'Asia/Kolkata')::INT;
+  v_local_start := (p_slot_start_at AT TIME ZONE 'Asia/Kolkata')::TIME;
+  SELECT start_time, end_time, is_available INTO v_avail
+    FROM public.professional_availability
+   WHERE professional_id = p_professional_id AND day_of_week = v_day_of_week LIMIT 1;
+  IF v_avail IS NULL OR v_avail.is_available IS NOT TRUE THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Professional is not available on this day.');
+  END IF;
+  IF v_local_start < v_avail.start_time::TIME
+     OR (v_local_start + INTERVAL '1 hour')::TIME > v_avail.end_time::TIME THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'This slot is outside working hours.');
+  END IF;
+  UPDATE public.professional_slot_reservations SET status = 'released', updated_at = NOW()
+   WHERE held_by_user_id = v_uid AND professional_id = p_professional_id AND status = 'held';
+  BEGIN
+    INSERT INTO public.professional_slot_reservations (
+      professional_id, slot_start_at, slot_end_at, status, held_by_user_id, expires_at
+    ) VALUES (p_professional_id, p_slot_start_at, v_slot_end, 'held', v_uid, v_expires_at)
+    RETURNING id INTO v_hold_id;
+  EXCEPTION WHEN unique_violation THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'This slot was just booked by someone else.');
+  END;
+  RETURN jsonb_build_object('ok', true, 'hold_id', v_hold_id, 'expires_at', v_expires_at,
+    'slot_start_at', p_slot_start_at, 'slot_end_at', v_slot_end);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.reserve_professional_slot(UUID, TIMESTAMPTZ) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reserve_professional_slot(UUID, TIMESTAMPTZ) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.release_slot_reservation(p_hold_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE v_uid UUID := auth.uid(); v_updated INTEGER;
+BEGIN
+  IF v_uid IS NULL THEN RETURN FALSE; END IF;
+  UPDATE public.professional_slot_reservations SET status = 'released', updated_at = NOW()
+   WHERE id = p_hold_id AND held_by_user_id = v_uid AND status = 'held';
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  RETURN v_updated > 0;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.release_slot_reservation(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.release_slot_reservation(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.confirm_slot_reservation(p_hold_id UUID, p_guest_appointment_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_meeting_minutes INT;
+  v_row RECORD;
+BEGIN
+  IF v_uid IS NULL THEN RETURN FALSE; END IF;
+  v_meeting_minutes := GREATEST(30, LEAST(60, COALESCE((public.get_booking_settings()->>'meeting_duration_minutes')::INT, 60)));
+  IF v_meeting_minutes NOT IN (30, 40, 50, 60) THEN v_meeting_minutes := 60; END IF;
+  SELECT * INTO v_row FROM public.professional_slot_reservations
+   WHERE id = p_hold_id AND held_by_user_id = v_uid AND status = 'held' AND expires_at >= NOW()
+   FOR UPDATE;
+  IF v_row.id IS NULL THEN RETURN FALSE; END IF;
+  UPDATE public.professional_slot_reservations
+     SET status = 'confirmed', meeting_duration_minutes = v_meeting_minutes,
+         meeting_end_at = slot_start_at + (v_meeting_minutes || ' minutes')::INTERVAL,
+         guest_appointment_id = p_guest_appointment_id, expires_at = slot_end_at, updated_at = NOW()
+   WHERE id = p_hold_id;
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.confirm_slot_reservation(UUID, UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.confirm_slot_reservation(UUID, UUID) TO authenticated;
