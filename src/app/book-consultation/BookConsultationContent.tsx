@@ -9,7 +9,7 @@ import {
   FileText,
   MapPin,
   Check,
-  ChevronsUpDown,
+  ChevronDown,
   Loader2,
   BadgeCheck,
   Zap,
@@ -40,7 +40,9 @@ import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consulta
 import { ensureAuthenticated } from "@/features/auth/open-auth-modal";
 import { createBookingOrder } from "@/features/booking-orders";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
-import { BOOKING_TIME_SLOTS } from "./constants";
+import { BookingSlotPicker } from "./booking-slot-picker";
+import { BookingDatePicker } from "./booking-date-picker";
+import { BookingPopoverSelect } from "./booking-popover-select";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
 import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
 import { BookingChooseSpecialistCard } from "./booking-choose-specialist-card";
@@ -172,6 +174,7 @@ export function BookConsultationContent() {
   const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [slotHoldId, setSlotHoldId] = useState<string | null>(null);
 
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
@@ -306,6 +309,11 @@ export function BookConsultationContent() {
       return;
     }
 
+    if (!slotHoldId) {
+      toast.error("Please select and reserve an hourly time slot before booking.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const deviceHash = await getDeviceFingerprintHash();
@@ -322,6 +330,7 @@ export function BookConsultationContent() {
         time: data.time,
         message: data.message ?? "",
         professionalId: decodedConsultantId,
+        holdId: slotHoldId,
         deviceHash,
       });
 
@@ -350,6 +359,8 @@ export function BookConsultationContent() {
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
   const locationError = errors.city?.message || errors.state?.message;
   const selectedCategory = watch("category");
+  const selectedDate = watch("date");
+  const formDisabled = !slotHoldId;
   const categoryOptions = useMemo(() => {
     const trimmed = selectedCategory?.trim();
     if (trimmed && !(healthCategories as readonly string[]).includes(trimmed)) {
@@ -461,7 +472,7 @@ export function BookConsultationContent() {
                             <MapPin className="size-5 shrink-0 text-lp-outline-variant" aria-hidden />
                             <span className="truncate">{locationLabel || "Enter city or clinic name"}</span>
                           </span>
-                          <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
+                          <ChevronDown className="size-4 shrink-0 opacity-50" aria-hidden />
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[var(--radix-popover-trigger-width)] rounded-xl border border-lp-outline-variant/30 p-0 shadow-lg" align="start">
@@ -513,48 +524,45 @@ export function BookConsultationContent() {
                     </Popover>
                   </BookingSelect>
 
-                  <BookingSelect id="category" label="Medical Category" error={errors.category?.message}>
-                    <select
-                      id="category"
-                      className={lpBookingFieldClass}
-                      value={watch("category")}
-                      onChange={(e) => setValue("category", e.target.value, { shouldValidate: true })}
-                    >
-                      <option value="">Select category</option>
-                      {categoryOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </BookingSelect>
-
-                  <LpTextField
-                    id="date"
-                    label="Preferred Date"
-                    type="date"
-                    rounding="lg"
-                    inputClassName="bg-lp-surface-container-low border-lp-outline-variant/50"
-                    error={errors.date?.message}
-                    min={new Date().toISOString().split("T")[0]}
-                    {...register("date")}
+                  <BookingPopoverSelect
+                    id="category"
+                    label="Medical Category"
+                    value={watch("category")}
+                    onChange={(category) => setValue("category", category, { shouldValidate: true })}
+                    options={[...categoryOptions]}
+                    placeholder="Select category"
+                    error={errors.category?.message}
                   />
 
-                  <BookingSelect id="time" label="Preferred Time" error={errors.time?.message}>
-                    <select
-                      id="time"
-                      className={lpBookingFieldClass}
-                      value={watch("time")}
-                      onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                    >
-                      <option value="">Select time slot</option>
-                      {BOOKING_TIME_SLOTS.map((slot) => (
-                        <option key={slot.value} value={slot.value}>
-                          {slot.label}
-                        </option>
-                      ))}
-                    </select>
-                  </BookingSelect>
+                  <div className="md:col-span-2">
+                    <BookingDatePicker
+                      professionalId={decodedConsultantId}
+                      value={selectedDate}
+                      onChange={(date) => {
+                        setSlotHoldId(null);
+                        setValue("time", "");
+                        setValue("date", date, { shouldValidate: true });
+                      }}
+                      error={errors.date?.message}
+                      disabled={!decodedConsultantId}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <p className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
+                      Hourly Time Slot
+                    </p>
+                    <BookingSlotPicker
+                      professionalId={decodedConsultantId}
+                      date={selectedDate}
+                      disabled={!decodedConsultantId || !selectedDate}
+                      onHoldChange={(hold) => setSlotHoldId(hold?.holdId ?? null)}
+                      onTimeChange={(time) => setValue("time", time, { shouldValidate: true })}
+                    />
+                    {errors.time?.message ? (
+                      <p className="text-xs font-medium text-red-600">{errors.time.message}</p>
+                    ) : null}
+                  </div>
                 </div>
               </BookingSection>
 
@@ -586,7 +594,7 @@ export function BookConsultationContent() {
                 <LpButton
                   type="submit"
                   variant="primary"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || formDisabled}
                   className="h-12 w-full rounded-xl border-0 bg-lp-brand-bright px-10 py-0 font-heading text-base font-semibold leading-none normal-case tracking-normal shadow-xl hover:shadow-lp-brand-bright/25 sm:w-auto sm:min-w-[220px]"
                 >
                   {isSubmitting ? (
