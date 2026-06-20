@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createGoogleCalendarMeetEvent } from '@/lib/calendar/googleCalendarApi'
 import { buildConsultationIcs } from '@/lib/calendar/ics'
 import { assertGuestSlotIsFuture } from '@/lib/calendar/guestAppointmentSlot'
-import { guestSlotToUtcDates } from '@/lib/calendar/generateGoogleCalendarLink'
+import { guestSlotToUtcDatesWithMeetingEnd } from '@/lib/calendar/generateGoogleCalendarLink'
 import {
   sendConsultationMeetingInviteToGuest,
   sendConsultationMeetingInviteToProfessional,
@@ -19,6 +19,8 @@ export type GuestMeetingContext = {
   professionalEmail: string
   appointmentDate: string
   appointmentTime: string
+  meetingDurationMinutes?: number | null
+  meetingEndTime?: string | null
 }
 
 export type MeetingProvider = 'google' | 'jitsi'
@@ -45,7 +47,7 @@ export async function loadGuestMeetingContext(
   const { data: row, error: readErr } = await supabase
     .from('guest_appointments')
     .select(
-      'id, first_name, last_name, email, appointment_date, appointment_time, calendar_invite_url, professional_id',
+      'id, first_name, last_name, email, appointment_date, appointment_time, meeting_duration_minutes, meeting_end_time, calendar_invite_url, professional_id',
     )
     .eq('id', guestAppointmentId)
     .maybeSingle()
@@ -76,6 +78,8 @@ export async function loadGuestMeetingContext(
 
   const appointmentDate = row.appointment_date as string
   const appointmentTime = row.appointment_time as string
+  const meetingDurationMinutes = (row.meeting_duration_minutes as number | null) ?? null
+  const meetingEndTime = (row.meeting_end_time as string | null) ?? null
   assertGuestSlotIsFuture(appointmentDate, appointmentTime)
 
   return {
@@ -86,6 +90,8 @@ export async function loadGuestMeetingContext(
     professionalEmail: profEmail,
     appointmentDate,
     appointmentTime,
+    meetingDurationMinutes,
+    meetingEndTime,
   }
 }
 
@@ -107,10 +113,20 @@ export function assertMeetUrlForAppointment(
   }
 }
 
+function getMeetingUtcRange(ctx: GuestMeetingContext): { start: Date; end: Date } {
+  const duration = ctx.meetingDurationMinutes ?? 60
+  return guestSlotToUtcDatesWithMeetingEnd(
+    ctx.appointmentDate,
+    ctx.appointmentTime,
+    ctx.meetingEndTime,
+    duration,
+  )
+}
+
 export async function generateGuestMeetingLink(
   ctx: GuestMeetingContext,
 ): Promise<{ meetUrl: string; provider: MeetingProvider }> {
-  const { start, end } = guestSlotToUtcDates(ctx.appointmentDate, ctx.appointmentTime)
+  const { start, end } = getMeetingUtcRange(ctx)
   const title = 'HealthHere Consultation'
   const attendeeEmails = [ctx.guestEmail, ctx.professionalEmail]
 
@@ -132,7 +148,7 @@ export async function generateGuestMeetingLink(
 }
 
 function buildIcsForMeeting(ctx: GuestMeetingContext, meetUrl: string): string {
-  const { start, end } = guestSlotToUtcDates(ctx.appointmentDate, ctx.appointmentTime)
+  const { start, end } = getMeetingUtcRange(ctx)
   const slotLabel = formatSlotLabel(ctx.appointmentDate, ctx.appointmentTime)
   const description = [
     `Video consultation for ${ctx.guestName.trim() || 'patient'}.`,

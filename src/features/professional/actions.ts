@@ -729,9 +729,11 @@ export type ProfessionalGuestBooking = {
     category: string
     state: string
     city: string
-    appointmentDate: string
-    appointmentTime: string
-    message: string | null
+  appointmentDate: string
+  appointmentTime: string
+  meetingDurationMinutes?: number | null
+  meetingEndTime?: string | null
+  message: string | null
     createdAt: string
     age: number
     prescriptionHtml: string | null
@@ -851,6 +853,8 @@ export async function getProfessionalDashboardData() {
                     city: string
                     appointment_date: string
                     appointment_time: string
+                    meeting_duration_minutes: number | null
+                    meeting_end_time: string | null
                     message: string | null
                     created_at: string
                     age: number
@@ -867,6 +871,8 @@ export async function getProfessionalDashboardData() {
                     city: g.city,
                     appointmentDate: g.appointment_date,
                     appointmentTime: g.appointment_time,
+                    meetingDurationMinutes: g.meeting_duration_minutes,
+                    meetingEndTime: g.meeting_end_time,
                     message: g.message,
                     createdAt: g.created_at,
                     age: g.age,

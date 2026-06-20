@@ -493,6 +493,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         city: g.city,
                         appointmentDate: g.appointment_date,
                         appointmentTime: g.appointment_time,
+                        meetingDurationMinutes: g.meeting_duration_minutes,
+                        meetingEndTime: g.meeting_end_time,
                         message: g.message,
                         createdAt: g.created_at,
                         age: g.age,
@@ -1398,6 +1400,12 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                                       minute: "2-digit",
                                                                   })
                                                                 : ""}
+                                                            {g.meetingDurationMinutes ? (
+                                                                <span className="text-xs font-semibold text-lp-on-surface-variant">
+                                                                    · {g.meetingDurationMinutes} min meeting
+                                                                    {g.meetingEndTime ? ` (ends ${g.meetingEndTime})` : ""}
+                                                                </span>
+                                                            ) : null}
                                                         </p>
                                                         {g.message && (
                                                             <div className="relative mt-3">
