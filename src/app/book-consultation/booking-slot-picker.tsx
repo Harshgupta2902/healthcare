@@ -13,6 +13,7 @@ import {
   type BookableSlot,
 } from "@/features/booking-slots";
 import type { BookingSettings } from "@/lib/booking-settings";
+import type { SlotGenerationDebug } from "@/lib/booking/slots";
 
 type SlotHold = {
   holdId: string;
@@ -37,6 +38,23 @@ function formatCountdown(expiresAt: string): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function emptySlotsMessage(
+  emptyReason: SlotGenerationDebug["emptyReason"] | "occupied_only" | null | undefined,
+): string {
+  switch (emptyReason) {
+    case "no_availability_window":
+      return "This consultant has no working hours set for this day of the week.";
+    case "invalid_time_window":
+      return "Working hours look invalid (end time must be at least 1 hour after start). Ask the consultant to update availability.";
+    case "all_slots_past":
+      return "All slots for today have already passed. Please pick a later date.";
+    case "occupied_only":
+      return "All hourly slots are booked or held for this date. Try another day.";
+    default:
+      return "No hourly slots available for this date. Try another day.";
+  }
 }
 
 function SlotSkeletonGrid() {
@@ -65,6 +83,9 @@ export function BookingSlotPicker({
   const [slots, setSlots] = useState<BookableSlot[]>([]);
   const [settings, setSettings] = useState<BookingSettings | null>(null);
   const [activeHold, setActiveHold] = useState<SlotHold | null>(null);
+  const [emptyReason, setEmptyReason] = useState<SlotGenerationDebug["emptyReason"] | "occupied_only" | null>(
+    null,
+  );
   const [fetching, setFetching] = useState(false);
   const [reserving, setReserving] = useState<string | null>(null);
   const [countdown, setCountdown] = useState("");
@@ -84,6 +105,7 @@ export function BookingSlotPicker({
     async (opts?: { silent?: boolean }) => {
       if (!professionalId || !date) {
         setSlots([]);
+        setEmptyReason(null);
         setFetching(false);
         return;
       }
@@ -95,14 +117,24 @@ export function BookingSlotPicker({
         const result = await getAvailableSlots({ professionalId, date });
         if (seq !== fetchSeq.current) return;
 
-        if ("error" in result && result.error) {
+        if ("error" in result) {
           toast.error(result.error);
           setSlots([]);
+          setEmptyReason(null);
           return;
         }
-        if ("success" in result && result.success) {
-          setSlots(result.slots);
-          setSettings(result.settings);
+
+        setSlots(result.slots);
+        setSettings(result.settings);
+        setEmptyReason(result.emptyReason ?? null);
+        if (result.slots.length === 0 || result.emptyReason) {
+          console.warn("[BookingSlotPicker] no slots", {
+            professionalId,
+            date,
+            emptyReason: result.emptyReason,
+            debug: result.debug,
+            slots: result.slots,
+          });
         }
       } finally {
         if (seq === fetchSeq.current && !opts?.silent) {
@@ -241,9 +273,9 @@ export function BookingSlotPicker({
 
       {fetching ? (
         <SlotSkeletonGrid />
-      ) : slots.length === 0 ? (
+      ) : slots.length === 0 || slots.every((s) => s.state !== "available") ? (
         <p className="rounded-lg border border-lp-outline-variant/30 bg-lp-surface-container-low px-4 py-6 text-center font-sans text-sm text-lp-on-surface-variant">
-          No hourly slots available for this date. Try another day.
+          {emptySlotsMessage(emptyReason)}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

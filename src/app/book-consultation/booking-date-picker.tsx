@@ -37,6 +37,7 @@ export function BookingDatePicker({
   const [availableDayLabels, setAvailableDayLabels] = useState("");
   const [advanceWeeks, setAdvanceWeeks] = useState(2);
   const [hasAvailability, setHasAvailability] = useState(true);
+  const [hasValidSlotWindows, setHasValidSlotWindows] = useState(true);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -44,16 +45,15 @@ export function BookingDatePicker({
     setInitialLoading(true);
     try {
       const result = await getBookableDates({ professionalId });
-      if ("error" in result && result.error) {
+      if ("error" in result) {
         setBookableDates([]);
         return;
       }
-      if ("success" in result && result.success) {
-        setBookableDates(result.dates);
-        setAvailableDayLabels(result.availableDayLabels);
-        setAdvanceWeeks(result.advanceWeeks);
-        setHasAvailability(result.hasAvailability);
-      }
+      setBookableDates(result.dates);
+      setAvailableDayLabels(result.availableDayLabels);
+      setAdvanceWeeks(result.advanceWeeks);
+      setHasAvailability(result.hasAvailability);
+      setHasValidSlotWindows(result.hasValidSlotWindows);
     } finally {
       setInitialLoading(false);
     }
@@ -64,6 +64,7 @@ export function BookingDatePicker({
       setBookableDates([]);
       setAvailableDayLabels("");
       setHasAvailability(true);
+      setHasValidSlotWindows(true);
       return;
     }
     void loadDates(professionalId);
@@ -80,6 +81,7 @@ export function BookingDatePicker({
     !professionalId ||
     initialLoading ||
     !hasAvailability ||
+    !hasValidSlotWindows ||
     bookableDates.length === 0;
 
   return (
@@ -169,6 +171,14 @@ export function BookingDatePicker({
           {!hasAvailability ? (
             <p className="font-sans text-xs text-amber-700">
               This consultant has not set weekly availability yet.
+            </p>
+          ) : null}
+
+          {hasAvailability && !hasValidSlotWindows ? (
+            <p className="font-sans text-xs text-amber-700">
+              This consultant&apos;s working hours are not configured correctly (end time must be at
+              least 1 hour after start, e.g. 12:00–19:00). They need to update availability in their
+              dashboard.
             </p>
           ) : null}
 
