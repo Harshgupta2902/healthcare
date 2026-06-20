@@ -7,7 +7,12 @@ import {
   parseBookingSettings,
   type BookingSettings,
 } from "@/lib/booking-settings";
-import { buildBookableSlots, slotStartToAppointmentFields } from "@/lib/booking/slots";
+import {
+  buildBookableSlots,
+  diagnoseSlotGeneration,
+  isValidHourlyAvailabilityWindow,
+  slotStartToAppointmentFields,
+} from "@/lib/booking/slots";
 import {
   formatBookableDayLabels,
   isYmdBookable,
@@ -20,6 +25,28 @@ import {
   professionalDateSchema,
   reserveSlotSchema,
 } from "./schemas";
+
+export type GetBookableDatesResult =
+  | { error: string }
+  | {
+      success: true;
+      dates: string[];
+      availableDayLabels: string;
+      advanceWeeks: number;
+      hasAvailability: boolean;
+      hasValidSlotWindows: boolean;
+    };
+
+export type GetAvailableSlotsResult =
+  | { error: string }
+  | {
+      success: true;
+      slots: ReturnType<typeof buildBookableSlots>;
+      settings: BookingSettings;
+      myHoldSlotStartAt: string | null;
+      debug: ReturnType<typeof diagnoseSlotGeneration>;
+      emptyReason: ReturnType<typeof diagnoseSlotGeneration>["emptyReason"] | "occupied_only" | null;
+    };
 
 async function requireAuthUser() {
   const supabase = await createClient();
@@ -53,17 +80,24 @@ async function loadProfessionalAvailabilityDays(
 ) {
   const { data, error } = await supabase
     .from("professional_availability")
-    .select("day_of_week, is_available")
+    .select("day_of_week, start_time, end_time, is_available")
     .eq("professional_id", professionalId);
 
   if (error) throw new Error(error.message);
 
   return (data ?? [])
-    .filter((row) => row.is_available)
-    .map((row) => row.day_of_week as number);
+    .filter(
+      (row) =>
+        row.is_available &&
+        isValidHourlyAvailabilityWindow(
+          String(row.start_time ?? ""),
+          String(row.end_time ?? ""),
+        ),
+    )
+    .map((row) => Number(row.day_of_week));
 }
 
-export async function getBookableDates(input: unknown) {
+export async function getBookableDates(input: unknown): Promise<GetBookableDatesResult> {
   const parsed = z
     .object({ professionalId: z.string().uuid("Invalid consultant.") })
     .safeParse(input);
@@ -73,10 +107,23 @@ export async function getBookableDates(input: unknown) {
   const settings = await fetchBookingSettings(supabase);
 
   try {
-    const availableDays = await loadProfessionalAvailabilityDays(
-      supabase,
-      parsed.data.professionalId,
-    );
+    const { data: rows, error: rowsError } = await supabase
+      .from("professional_availability")
+      .select("day_of_week, start_time, end_time, is_available")
+      .eq("professional_id", parsed.data.professionalId);
+
+    if (rowsError) throw new Error(rowsError.message);
+
+    const availableRows = (rows ?? []).filter((row) => row.is_available);
+    const availableDays = availableRows
+      .filter((row) =>
+        isValidHourlyAvailabilityWindow(
+          String(row.start_time ?? ""),
+          String(row.end_time ?? ""),
+        ),
+      )
+      .map((row) => Number(row.day_of_week));
+
     const dates = listBookableDates(availableDays, settings.booking_advance_weeks);
 
     return {
@@ -84,14 +131,15 @@ export async function getBookableDates(input: unknown) {
       dates,
       availableDayLabels: formatBookableDayLabels(availableDays),
       advanceWeeks: settings.booking_advance_weeks,
-      hasAvailability: availableDays.length > 0,
+      hasAvailability: availableRows.length > 0,
+      hasValidSlotWindows: availableDays.length > 0,
     };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not load bookable dates." };
   }
 }
 
-export async function getAvailableSlots(input: unknown) {
+export async function getAvailableSlots(input: unknown): Promise<GetAvailableSlotsResult> {
   const parsed = professionalDateSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
@@ -143,14 +191,21 @@ export async function getAvailableSlots(input: unknown) {
     myHoldSlotStartAt = (myHold?.slot_start_at as string | undefined) ?? null;
   }
 
+  const mappedAvailability = (availability ?? []).map((row) => ({
+    dayOfWeek: Number(row.day_of_week),
+    startTime: String(row.start_time ?? ""),
+    endTime: String(row.end_time ?? ""),
+    isAvailable: Boolean(row.is_available),
+  }));
+
+  const debug = diagnoseSlotGeneration({
+    dateYmd: parsed.data.date,
+    availability: mappedAvailability,
+  });
+
   const slots = buildBookableSlots({
     dateYmd: parsed.data.date,
-    availability: (availability ?? []).map((row) => ({
-      dayOfWeek: row.day_of_week as number,
-      startTime: row.start_time as string,
-      endTime: row.end_time as string,
-      isAvailable: Boolean(row.is_available),
-    })),
+    availability: mappedAvailability,
     occupied: (occupied ?? []).map((row) => ({
       slotStartAt: row.slot_start_at as string,
       status: row.status as "held" | "confirmed",
@@ -159,11 +214,39 @@ export async function getAvailableSlots(input: unknown) {
     myHoldSlotStartAt,
   });
 
+  const availableCount = slots.filter((s) => s.state === "available").length;
+
+  if (slots.length === 0 || availableCount === 0) {
+    console.warn("[getAvailableSlots] empty or fully blocked", {
+      professionalId: parsed.data.professionalId,
+      date: parsed.data.date,
+      availabilityRows: mappedAvailability,
+      occupiedCount: occupied?.length ?? 0,
+      slotCount: slots.length,
+      availableCount,
+      debug,
+    });
+  } else {
+    console.info("[getAvailableSlots] ok", {
+      professionalId: parsed.data.professionalId,
+      date: parsed.data.date,
+      slotCount: slots.length,
+      availableCount,
+    });
+  }
+
   return {
     success: true as const,
     slots,
     settings,
     myHoldSlotStartAt,
+    debug,
+    emptyReason:
+      slots.length === 0
+        ? debug.emptyReason
+        : availableCount === 0
+          ? ("occupied_only" as const)
+          : null,
   };
 }
 

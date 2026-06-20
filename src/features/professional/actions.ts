@@ -18,6 +18,7 @@ import {
 } from '@/lib/phone-country-options'
 import { getUniversitiesNames, searchUniversityNames } from '@/lib/universities-gist'
 import { recordProfessionalActivity, weekdayLong } from '@/lib/admin-notifications'
+import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
 import type { FieldChange } from '@/lib/admin-notifications'
 
 const profileSchema = z
@@ -510,8 +511,11 @@ export async function updateAvailability(data: any) {
         }
     }
 
-    if (validatedData.startTime >= validatedData.endTime) {
-        return { success: false as const, error: 'End time must be after start time.' }
+    if (!isValidHourlyAvailabilityWindow(validatedData.startTime, validatedData.endTime)) {
+        return {
+            success: false as const,
+            error: 'End time must be at least 1 hour after start time (use 24-hour format, e.g. 19:00 for 7 PM).',
+        }
     }
 
     const { error } = await supabase.from('professional_availability').insert({

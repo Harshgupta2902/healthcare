@@ -17,6 +17,7 @@ import {
     type ProfessionalGuestBooking,
 } from "@/features/professional/actions";
 import { uploadProfileImage } from "@/features/profile/actions";
+import { isValidHourlyAvailabilityWindow } from "@/lib/booking/slots";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -609,8 +610,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             toast.error(`${DAYS_OF_WEEK[availabilityForm.dayOfWeek]} is already on your schedule.`);
             return;
         }
-        if (availabilityForm.startTime >= availabilityForm.endTime) {
-            toast.error("End time must be after start time.");
+        if (!isValidHourlyAvailabilityWindow(availabilityForm.startTime, availabilityForm.endTime)) {
+            toast.error("End time must be at least 1 hour after start (use 24-hour format, e.g. 19:00 for 7 PM).");
             return;
         }
         setIsSaving(true);
