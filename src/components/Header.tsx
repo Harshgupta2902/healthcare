@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { signOut } from "@/features/profile/actions";
+import { logoutAndRedirectHome } from "@/features/auth/logout";
+import { getCurrentPathRedirect } from "@/features/auth/current-path-redirect";
 import { openAuthModal } from "@/features/auth/open-auth-modal";
 
 interface HeaderProps {
@@ -99,28 +100,22 @@ export default function Header({ className }: HeaderProps) {
     return null;
   }
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setIsMobileMenuOpen(false);
-    try {
-      const { error } = await supabase.auth.signOut({ scope: "global" });
-      if (error) console.error(error);
-    } catch (e) {
-      console.error(e);
-    }
-    setUser(null);
-    setIsPending(false);
-    try {
-      await signOut();
-    } catch {
-      /* server action may still complete */
-    }
-    router.refresh();
-    router.replace("/");
+    void logoutAndRedirectHome();
   };
 
   const handleDashboardClick = () => {
     router.push("/dashboard");
     setIsMobileMenuOpen(false);
+  };
+
+  const openLoginModal = () => {
+    openAuthModal({ view: "login", redirect: getCurrentPathRedirect(pathname ?? "/") });
+  };
+
+  const openSignupModal = () => {
+    openAuthModal({ view: "signup", redirect: getCurrentPathRedirect(pathname ?? "/") });
   };
 
   const renderAuthSection = () => {
@@ -182,11 +177,11 @@ export default function Header({ className }: HeaderProps) {
           type="button"
           variant="headerGuest"
           className="hidden sm:block"
-          onClick={() => openAuthModal({ view: "login" })}
+          onClick={openLoginModal}
         >
           Login
         </LpButton>
-        <LpButton type="button" variant="headerGuestCta" onClick={() => openAuthModal({ view: "signup" })}>
+        <LpButton type="button" variant="headerGuestCta" onClick={openSignupModal}>
           Sign up
         </LpButton>
       </div>
@@ -339,7 +334,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      openAuthModal({ view: "login" });
+                      openLoginModal();
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -351,7 +346,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      openAuthModal({ view: "signup" });
+                      openSignupModal();
                       setIsMobileMenuOpen(false);
                     }}
                   >

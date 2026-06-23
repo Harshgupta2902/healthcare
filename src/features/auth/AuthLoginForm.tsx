@@ -105,7 +105,8 @@ export function AuthLoginForm({
       toast.success("Welcome back! You've successfully logged in.");
 
       const userRole = result.role || "client";
-      let nextPath = safeInternalRedirect(redirectPath ?? null);
+      const explicitRedirect = safeInternalRedirect(redirectPath ?? null);
+      let nextPath = explicitRedirect;
       if (!nextPath) {
         nextPath = userRole === "admin" ? "/application/enter" : "/dashboard";
       }
@@ -114,6 +115,11 @@ export function AuthLoginForm({
 
       if (onSuccess) {
         onSuccess();
+      }
+
+      if (explicitRedirect) {
+        window.location.assign(explicitRedirect);
+        return;
       }
 
       router.push(nextPath);

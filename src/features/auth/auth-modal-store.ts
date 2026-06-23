@@ -6,6 +6,7 @@ const initialState: AuthModalState = {
   redirect: null,
   role: null,
   onSuccess: null,
+  onDismiss: null,
 };
 
 let state: AuthModalState = { ...initialState };
@@ -39,14 +40,18 @@ export function openAuthModal(options?: OpenAuthOptions) {
     redirect: options?.redirect ?? null,
     role: options?.role ?? null,
     onSuccess: options?.onSuccess ?? null,
+    onDismiss: options?.onDismiss ?? null,
   });
 }
 
-export function closeAuthModal() {
+export function closeAuthModal(options?: { invokeDismiss?: boolean }) {
+  const onDismiss = options?.invokeDismiss ? state.onDismiss : null;
   setAuthModalState({
     isOpen: false,
     onSuccess: null,
+    onDismiss: null,
   });
+  onDismiss?.();
 }
 
 export function switchAuthView(view: AuthModalState["view"]) {

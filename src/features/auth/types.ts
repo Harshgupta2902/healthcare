@@ -7,6 +7,8 @@ export interface OpenAuthOptions {
   redirect?: string;
   role?: AuthRole;
   onSuccess?: () => void;
+  /** Called when the user closes the modal without signing in. */
+  onDismiss?: () => void;
 }
 
 export interface AuthModalState {
@@ -15,4 +17,5 @@ export interface AuthModalState {
   redirect: string | null;
   role: AuthRole | null;
   onSuccess: (() => void) | null;
+  onDismiss: (() => void) | null;
 }

@@ -41,7 +41,7 @@ function AuthModalBody({
 
   const handleAuthSuccess = useCallback(() => {
     onSuccess?.();
-    closeAuthModal();
+    closeAuthModal({ invokeDismiss: false });
   }, [onSuccess]);
 
   if (view === "signup") {
@@ -106,7 +106,7 @@ export function AuthModal() {
       open={isOpen}
       onOpenChange={(open) => {
         if (!open && isProcessing) return;
-        if (!open) closeAuthModal();
+        if (!open) closeAuthModal({ invokeDismiss: true });
       }}
     >
       <DialogContent
