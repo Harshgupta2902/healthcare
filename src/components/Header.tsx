@@ -127,7 +127,7 @@ export default function Header({ className }: HeaderProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 rounded-lg border-lp-outline-variant px-3 text-sm font-semibold text-lp-on-surface hover:bg-lp-surface-container-low"
+            className="h-9 rounded-lg cursor-pointer border-lp-outline-variant px-3 text-sm font-semibold text-lp-on-surface hover:bg-lp-surface-container-low"
             onClick={handleDashboardClick}
           >
             <LayoutDashboard className="h-4 w-4 mr-2" />
