@@ -34,8 +34,24 @@ function ConsultantPickerRow({
 }) {
   const displayName = consultant.displayName ?? consultant.name;
 
+  const handleSelect = () => {
+    onSelect(consultant.id);
+  };
+
   return (
-    <article className="flex gap-4 rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-4 transition-colors hover:border-lp-brand/30">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={handleSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleSelect();
+        }
+      }}
+      aria-label={`Select ${displayName} for booking`}
+      className="flex cursor-pointer gap-4 rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-4 text-left transition-colors hover:border-lp-brand/40 hover:bg-lp-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-brand/30"
+    >
       <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-lp-surface-container">
         {consultant.profilePhotoUrl ? (
           <Image
@@ -81,7 +97,10 @@ function ConsultantPickerRow({
             type="button"
             size="sm"
             className="h-9 cursor-pointer rounded-lg bg-lp-brand-bright px-4 font-sans text-xs font-semibold text-lp-on-brand hover:bg-lp-brand-bright/90"
-            onClick={() => onSelect(consultant.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleSelect();
+            }}
           >
             Select
           </Button>
@@ -92,7 +111,12 @@ function ConsultantPickerRow({
             className="h-9 rounded-lg border-lp-outline-variant/40 font-sans text-xs font-semibold"
             asChild
           >
-            <Link href={`/consultants/${consultant.id}`}>View more</Link>
+            <Link
+              href={`/consultants/${consultant.id}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              View more
+            </Link>
           </Button>
         </div>
       </div>
