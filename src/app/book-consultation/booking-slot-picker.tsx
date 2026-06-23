@@ -14,6 +14,7 @@ import {
 } from "@/features/booking-slots";
 import type { BookingSettings } from "@/lib/booking-settings";
 import type { SlotGenerationDebug } from "@/lib/booking/slots";
+import { slotInstantsEqual, slotMatchesHold } from "@/lib/booking/slots";
 
 type SlotHold = {
   holdId: string;
@@ -88,18 +89,31 @@ export function BookingSlotPicker({
   );
   const [fetching, setFetching] = useState(false);
   const [reserving, setReserving] = useState<string | null>(null);
+  const [optimisticSlotStartAt, setOptimisticSlotStartAt] = useState<string | null>(null);
   const [countdown, setCountdown] = useState("");
   const [, startTransition] = useTransition();
   const fetchSeq = useRef(0);
+  const onHoldChangeRef = useRef(onHoldChange);
+  const onTimeChangeRef = useRef(onTimeChange);
+  const activeHoldRef = useRef<SlotHold | null>(null);
+  onHoldChangeRef.current = onHoldChange;
+  onTimeChangeRef.current = onTimeChange;
 
-  const syncHold = useCallback(
-    (hold: SlotHold | null) => {
-      setActiveHold(hold);
-      onHoldChange(hold);
-      onTimeChange(hold?.time ?? "");
-    },
-    [onHoldChange, onTimeChange],
-  );
+  const syncHold = useCallback((hold: SlotHold | null) => {
+    const prev = activeHoldRef.current;
+    if (
+      prev?.holdId === hold?.holdId &&
+      prev?.expiresAt === hold?.expiresAt &&
+      prev?.slotStartAt === hold?.slotStartAt
+    ) {
+      return;
+    }
+    activeHoldRef.current = hold;
+    setActiveHold(hold);
+    setOptimisticSlotStartAt(null);
+    onHoldChangeRef.current(hold);
+    onTimeChangeRef.current(hold?.time ?? "");
+  }, []);
 
   const loadSlots = useCallback(
     async (opts?: { silent?: boolean }) => {
@@ -184,10 +198,11 @@ export function BookingSlotPicker({
       setCountdown("");
       return;
     }
+    const expiresAt = activeHold.expiresAt;
     const tick = () => {
-      const label = formatCountdown(activeHold.expiresAt);
+      const label = formatCountdown(expiresAt);
       setCountdown(label);
-      if (new Date(activeHold.expiresAt).getTime() <= Date.now()) {
+      if (new Date(expiresAt).getTime() <= Date.now()) {
         toast.error("Your slot hold expired. Please select a slot again.");
         syncHold(null);
         void loadSlots({ silent: true });
@@ -200,10 +215,13 @@ export function BookingSlotPicker({
 
   const handleSelectSlot = (slot: BookableSlot) => {
     if (!professionalId || disabled || slot.state !== "available") return;
-    if (activeHold?.slotStartAt === slot.slotStartAt) return;
+    if (activeHold && slotMatchesHold(slot, activeHold, date)) return;
+
+    setOptimisticSlotStartAt(slot.slotStartAt);
+    setReserving(slot.slotStartAt);
+    onTimeChangeRef.current(slot.timeValue);
 
     startTransition(async () => {
-      setReserving(slot.slotStartAt);
       try {
         if (activeHold) {
           await releaseSlot({ holdId: activeHold.holdId });
@@ -213,8 +231,10 @@ export function BookingSlotPicker({
           slotStartAt: slot.slotStartAt,
         });
         if ("error" in result && result.error) {
+          setOptimisticSlotStartAt(null);
+          onTimeChangeRef.current(activeHold?.time ?? "");
           toast.error(result.error);
-          await loadSlots({ silent: true });
+          void loadSlots({ silent: true });
           return;
         }
         if ("success" in result && result.success) {
@@ -228,8 +248,12 @@ export function BookingSlotPicker({
           toast.success("Slot reserved", {
             description: "Complete your booking before the timer runs out.",
           });
-          await loadSlots({ silent: true });
+          void loadSlots({ silent: true });
         }
+      } catch {
+        setOptimisticSlotStartAt(null);
+        onTimeChangeRef.current(activeHold?.time ?? "");
+        toast.error("Could not reserve this slot. Please try again.");
       } finally {
         setReserving(null);
       }
@@ -252,6 +276,15 @@ export function BookingSlotPicker({
     );
   }
 
+  const reservedSlotLabel =
+    activeHold &&
+    (slots.find((s) => slotMatchesHold(s, activeHold, date))?.label ??
+      `${activeHold.time} (your slot)`);
+
+  const showSlotGrid =
+    slots.length > 0 &&
+    (slots.some((s) => s.state === "available") || activeHold || optimisticSlotStartAt);
+
   return (
     <div className="space-y-4">
       {settings ? (
@@ -262,26 +295,34 @@ export function BookingSlotPicker({
       ) : null}
 
       {activeHold ? (
-        <div className="flex items-center gap-2 rounded-lg border border-lp-brand/30 bg-lp-brand/5 px-4 py-3">
-          <Clock className="size-4 shrink-0 text-lp-brand" aria-hidden />
-          <span className="font-sans text-sm font-medium text-lp-on-surface">
-            Complete booking in{" "}
+        <div className="flex flex-col gap-1 rounded-lg border border-lp-brand/30 bg-lp-brand/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-sans text-sm font-medium text-lp-on-surface">
+            Reserved:{" "}
+            <span className="font-heading text-lp-brand">{reservedSlotLabel}</span>
+          </p>
+          <p className="flex items-center gap-2 font-sans text-sm font-medium text-lp-on-surface">
+            <Clock className="size-4 shrink-0 text-lp-brand" aria-hidden />
+            Complete in{" "}
             <span className="font-heading tabular-nums text-lp-brand">{countdown}</span>
-          </span>
+          </p>
         </div>
       ) : null}
 
       {fetching ? (
         <SlotSkeletonGrid />
-      ) : slots.length === 0 || slots.every((s) => s.state !== "available") ? (
+      ) : !showSlotGrid ? (
         <p className="rounded-lg border border-lp-outline-variant/30 bg-lp-surface-container-low px-4 py-6 text-center font-sans text-sm text-lp-on-surface-variant">
           {emptySlotsMessage(emptyReason)}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {slots.map((slot) => {
-            const isSelected = activeHold?.slotStartAt === slot.slotStartAt;
-            const isBusy = reserving === slot.slotStartAt;
+            const isSelected =
+              slotMatchesHold(slot, activeHold, date) ||
+              (optimisticSlotStartAt !== null &&
+                slotInstantsEqual(optimisticSlotStartAt, slot.slotStartAt));
+            const isBusy =
+              reserving !== null && slotInstantsEqual(reserving, slot.slotStartAt);
             const unavailable = slot.state !== "available" && !isSelected;
 
             return (

@@ -216,25 +216,6 @@ export async function getAvailableSlots(input: unknown): Promise<GetAvailableSlo
 
   const availableCount = slots.filter((s) => s.state === "available").length;
 
-  if (slots.length === 0 || availableCount === 0) {
-    console.warn("[getAvailableSlots] empty or fully blocked", {
-      professionalId: parsed.data.professionalId,
-      date: parsed.data.date,
-      availabilityRows: mappedAvailability,
-      occupiedCount: occupied?.length ?? 0,
-      slotCount: slots.length,
-      availableCount,
-      debug,
-    });
-  } else {
-    console.info("[getAvailableSlots] ok", {
-      professionalId: parsed.data.professionalId,
-      date: parsed.data.date,
-      slotCount: slots.length,
-      availableCount,
-    });
-  }
-
   return {
     success: true as const,
     slots,

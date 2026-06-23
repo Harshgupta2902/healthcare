@@ -10,6 +10,30 @@ import {
 
 export const BOOKING_SLOT_INTERVAL_MINUTES = 60;
 
+/** Compare slot instants regardless of ISO formatting (+00:00 vs Z, ms precision). */
+export function slotInstantMs(iso: string): number {
+  const ms = new Date(iso).getTime();
+  if (Number.isNaN(ms)) return NaN;
+  return ms;
+}
+
+export function slotInstantsEqual(a: string, b: string): boolean {
+  const aMs = slotInstantMs(a);
+  const bMs = slotInstantMs(b);
+  return !Number.isNaN(aMs) && aMs === bMs;
+}
+
+/** True when a slot row matches a hold using instant or IST date+time fields. */
+export function slotMatchesHold(
+  slot: Pick<BookableSlot, "slotStartAt" | "timeValue">,
+  hold: { slotStartAt: string; date: string; time: string } | null | undefined,
+  slotDate: string,
+): boolean {
+  if (!hold) return false;
+  if (hold.date === slotDate && hold.time === slot.timeValue) return true;
+  return slotInstantsEqual(slot.slotStartAt, hold.slotStartAt);
+}
+
 /** True when at least one full hourly slot fits between start and end (24h wall clock). */
 export function isValidHourlyAvailabilityWindow(startTime: string, endTime: string): boolean {
   const start = parseTimeToMinutes(normalizeAvailabilityTime(startTime));
@@ -208,19 +232,18 @@ export function buildBookableSlots(params: {
     now,
   );
 
-  const occupiedActive = new Set(
-    params.occupied
-      .filter((o) => isActiveHold(o, nowMs))
-      .map((o) => o.slotStartAt),
-  );
+  const occupiedActive = params.occupied.filter((o) => isActiveHold(o, nowMs));
 
   return baseSlots.map((slot) => {
-    if (params.myHoldSlotStartAt && slot.slotStartAt === params.myHoldSlotStartAt) {
+    if (
+      params.myHoldSlotStartAt &&
+      slotInstantsEqual(slot.slotStartAt, params.myHoldSlotStartAt)
+    ) {
       return { ...slot, state: "available" as const };
     }
-    if (occupiedActive.has(slot.slotStartAt)) {
-      const occ = params.occupied.find((o) => o.slotStartAt === slot.slotStartAt);
-      if (occ?.status === "held" && isActiveHold(occ, nowMs)) {
+    const occ = occupiedActive.find((o) => slotInstantsEqual(o.slotStartAt, slot.slotStartAt));
+    if (occ) {
+      if (occ.status === "held" && isActiveHold(occ, nowMs)) {
         return { ...slot, state: "held_by_other" as const };
       }
       return { ...slot, state: "booked" as const };
