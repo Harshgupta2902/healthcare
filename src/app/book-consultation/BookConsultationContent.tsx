@@ -33,11 +33,9 @@ import {
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
 import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
-import { createClient } from "@/lib/supabase/client";
 import { getBookingFormPrefill, searchPlaces, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
-import { ensureAuthenticated } from "@/features/auth/open-auth-modal";
 import { createBookingOrder } from "@/features/booking-orders";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BookingSlotPicker } from "./booking-slot-picker";
@@ -45,7 +43,6 @@ import { BookingDatePicker } from "./booking-date-picker";
 import { BookingPopoverSelect } from "./booking-popover-select";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
 import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
-import { BookingChooseSpecialistCard } from "./booking-choose-specialist-card";
 
 const healthCategories = [
   "General Medicine",
@@ -159,15 +156,12 @@ function BookingSelect({
   );
 }
 
-export function BookConsultationContent() {
+export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cref = searchParams.get("cref")?.trim() ?? "";
-  const isConsultantBooking = cref.length > 0;
-  const decodedConsultantId = useMemo(
-    () => (isConsultantBooking ? decodeConsultantIdRef(cref) : null),
-    [cref, isConsultantBooking],
-  );
+  const decodedConsultantId = useMemo(() => decodeConsultantIdRef(cref), [cref]);
+  const needsSpecialist = !decodedConsultantId;
   const [bookingConsultant, setBookingConsultant] = useState<
     Awaited<ReturnType<typeof getProfessionalById>> | undefined
   >(undefined);
@@ -175,6 +169,7 @@ export function BookConsultationContent() {
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slotHoldId, setSlotHoldId] = useState<string | null>(null);
+  const pickerAutoOpenedRef = useRef(false);
 
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
@@ -209,12 +204,12 @@ export function BookConsultationContent() {
         ...(prefill.email ? { email: prefill.email } : {}),
         ...(prefill.phone ? { phone: prefill.phone } : {}),
         ...(prefill.age != null ? { age: prefill.age } : {}),
-        ...(!isConsultantBooking && prefill.city
+        ...(!decodedConsultantId && prefill.city
           ? { city: prefill.city, state: prefill.state || prefill.city }
           : {}),
       }));
 
-      if (!isConsultantBooking && prefill.city) {
+      if (!decodedConsultantId && prefill.city) {
         setCity(prefill.city);
         setStateName(prefill.state || prefill.city);
       }
@@ -222,7 +217,29 @@ export function BookConsultationContent() {
     return () => {
       cancelled = true;
     };
-  }, [reset, isConsultantBooking]);
+  }, [reset, decodedConsultantId]);
+
+  useEffect(() => {
+    if (!needsSpecialist) {
+      pickerAutoOpenedRef.current = false;
+      return;
+    }
+    if (!authReady) return;
+    if (pickerAutoOpenedRef.current) return;
+    pickerAutoOpenedRef.current = true;
+    if (cref && !decodedConsultantId) {
+      toast.error("That specialist link is invalid or expired.", {
+        description: "Please choose a specialist to continue.",
+      });
+    }
+    setConsultantPickerOpen(true);
+  }, [authReady, needsSpecialist, cref, decodedConsultantId]);
+
+  useEffect(() => {
+    if (decodedConsultantId) {
+      setConsultantPickerOpen(false);
+    }
+  }, [decodedConsultantId]);
 
   useEffect(() => {
     if (!decodedConsultantId) {
@@ -302,9 +319,7 @@ export function BookConsultationContent() {
 
   const onSubmit = async (data: AppointmentForm) => {
     if (!decodedConsultantId) {
-      toast.error("Please select a consultant before booking.", {
-        description: 'Use "Browse & select" on the right to choose a specialist.',
-      });
+      toast.error("Please select a specialist before booking.");
       setConsultantPickerOpen(true);
       return;
     }
@@ -348,19 +363,19 @@ export function BookConsultationContent() {
   };
 
   const handleSelectConsultant = (consultantId: string) => {
-    void (async () => {
-      const href = buildBookConsultationHref(consultantId);
-      const isAuthenticated = await ensureAuthenticated({ view: "login", redirect: href });
-      if (!isAuthenticated) return;
-      router.push(href);
-    })();
+    const href = buildBookConsultationHref(consultantId);
+    if (!href.includes("cref=")) {
+      toast.error("Please select a valid specialist.");
+      return;
+    }
+    window.location.assign(href);
   };
 
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
   const locationError = errors.city?.message || errors.state?.message;
   const selectedCategory = watch("category");
   const selectedDate = watch("date");
-  const formDisabled = !slotHoldId;
+  const formDisabled = !decodedConsultantId || !slotHoldId;
   const categoryOptions = useMemo(() => {
     const trimmed = selectedCategory?.trim();
     if (trimmed && !(healthCategories as readonly string[]).includes(trimmed)) {
@@ -377,9 +392,9 @@ export function BookConsultationContent() {
             Schedule Your Consultation
           </h1>
           <p className="font-sans text-lg leading-relaxed text-lp-on-surface-variant">
-            {isConsultantBooking
+            {decodedConsultantId
               ? "Complete your details to book with your selected specialist."
-              : "Connect with world-class healthcare specialists in just a few steps."}
+              : "Choose a specialist to get started, then complete your booking details."}
           </p>
         </div>
 
@@ -609,12 +624,10 @@ export function BookConsultationContent() {
               </div>
             </div>
 
-            {isConsultantBooking ? (
+            {decodedConsultantId ? (
               <BookingConsultantSidebar consultant={bookingConsultant ?? undefined} loading={bookingConsultantLoading} />
             ) : (
             <aside className="space-y-6 lg:col-span-4">
-              <BookingChooseSpecialistCard onClick={() => setConsultantPickerOpen(true)} />
-
               <div className="relative overflow-hidden rounded-xl bg-lp-brand-bright p-6 text-lp-on-secondary-container sm:p-8">
                 <div className="relative z-10">
                   <h3 className="mb-2 font-heading text-2xl font-bold text-white">Expert Care Awaits</h3>
@@ -679,6 +692,7 @@ export function BookConsultationContent() {
           open={consultantPickerOpen}
           onOpenChange={setConsultantPickerOpen}
           onSelect={handleSelectConsultant}
+          required={needsSpecialist}
         />
       </div>
     </div>

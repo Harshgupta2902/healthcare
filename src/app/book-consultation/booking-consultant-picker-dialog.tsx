@@ -80,7 +80,7 @@ function ConsultantPickerRow({
           <Button
             type="button"
             size="sm"
-            className="h-9 rounded-lg bg-lp-brand-bright px-4 font-sans text-xs font-semibold text-lp-on-brand hover:bg-lp-brand-bright/90"
+            className="h-9 cursor-pointer rounded-lg bg-lp-brand-bright px-4 font-sans text-xs font-semibold text-lp-on-brand hover:bg-lp-brand-bright/90"
             onClick={() => onSelect(consultant.id)}
           >
             Select
@@ -121,10 +121,13 @@ export function BookingConsultantPickerDialog({
   open,
   onOpenChange,
   onSelect,
+  required = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (consultantId: string) => void;
+  /** When true, the dialog cannot be dismissed until a specialist is selected. */
+  required?: boolean;
 }) {
   const [consultants, setConsultants] = useState<ConsultantListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -164,18 +167,28 @@ export function BookingConsultantPickerDialog({
 
   const handleSelect = (consultantId: string) => {
     onSelect(consultantId);
-    onOpenChange(false);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (required && !nextOpen) return;
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        showCloseButton={!required}
+        onPointerDownOutside={required ? (event) => event.preventDefault() : undefined}
+        onInteractOutside={required ? (event) => event.preventDefault() : undefined}
+        onEscapeKeyDown={required ? (event) => event.preventDefault() : undefined}
+        className="flex max-h-[min(90vh,720px)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-2xl"
+      >
         <DialogHeader className="space-y-1 border-b border-lp-outline-variant/20 px-6 py-5 text-left">
           <DialogTitle className="font-heading text-2xl font-bold text-lp-on-surface">
             Choose a specialist
           </DialogTitle>
           <DialogDescription className="font-sans text-sm text-lp-on-surface-variant">
-            Select a consultant to pre-fill your booking details, or view their full profile first.
+            Select a consultant to continue with your booking, or view their full profile first.
           </DialogDescription>
         </DialogHeader>
 
