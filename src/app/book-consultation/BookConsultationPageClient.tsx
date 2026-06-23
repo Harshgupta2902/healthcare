@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { openAuthModal } from "@/features/auth/open-auth-modal";
 import { BookConsultationContent } from "./BookConsultationContent";
+import { BookConsultationPageSkeleton } from "./BookConsultationPageSkeleton";
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";
 
@@ -55,11 +55,7 @@ function BookConsultationAuthGate() {
   }, []);
 
   if (authStatus === "checking") {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-lp-surface">
-        <Loader2 className="size-12 animate-spin text-lp-brand" aria-label="Loading" />
-      </div>
-    );
+    return <BookConsultationPageSkeleton />;
   }
 
   return <BookConsultationContent authReady={authStatus === "authenticated"} />;
@@ -67,13 +63,7 @@ function BookConsultationAuthGate() {
 
 export function BookConsultationPageClient() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center bg-lp-surface">
-          <Loader2 className="size-12 animate-spin text-lp-brand" aria-label="Loading" />
-        </div>
-      }
-    >
+    <Suspense fallback={<BookConsultationPageSkeleton />}>
       <BookConsultationAuthGate />
     </Suspense>
   );
