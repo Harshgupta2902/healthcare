@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
   Users,
@@ -28,7 +27,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { signOut } from '@/features/profile/actions'
+import { logoutAndRedirectHome } from '@/features/auth/logout'
 import {
   Accordion,
   AccordionContent,
@@ -365,23 +364,8 @@ function SidebarSubPageLink({
 }
 
 function SidebarLogoutButton() {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.auth.signOut({ scope: 'global' })
-      if (error) console.error(error)
-    } catch (e) {
-      console.error(e)
-    }
-    try {
-      await signOut()
-    } catch {
-      /* noop */
-    }
-    router.refresh()
-    router.replace('/')
+  const handleLogout = () => {
+    void logoutAndRedirectHome()
   }
 
   return (

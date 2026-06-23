@@ -2,11 +2,9 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Search, Bell, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { signOut } from '@/features/profile/actions'
+import { logoutAndRedirectHome } from '@/features/auth/logout'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -23,24 +21,10 @@ interface AdminNavbarProps {
 }
 
 export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarProps) {
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
 
-  const handleLogout = async () => {
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.auth.signOut({ scope: 'global' })
-      if (error) console.error(error)
-    } catch (e) {
-      console.error(e)
-    }
-    try {
-      await signOut()
-    } catch {
-      /* noop */
-    }
-    router.refresh()
-    router.replace('/')
+  const handleLogout = () => {
+    void logoutAndRedirectHome()
   }
 
   const initials = user.name
