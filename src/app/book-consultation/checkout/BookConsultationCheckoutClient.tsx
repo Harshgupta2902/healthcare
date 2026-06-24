@@ -14,12 +14,16 @@ import {
 import {
   buildBookingSuccessHref,
   cancelBookingOrder,
+  createRazorpayCheckoutOrder,
   finalizeBookingOrder,
   getCheckoutOrder,
   markBookingOrderFulfillmentFailed,
   processMockPayment,
+  verifyRazorpayPayment,
   type CheckoutOrderView,
 } from "@/features/booking-orders";
+import { openRazorpayCheckout } from "@/features/booking-orders/lib/razorpay-checkout";
+import { RazorpayCheckoutPreload } from "./RazorpayCheckoutPreload";
 import { OrderCountdown } from "@/features/booking-orders/components/OrderCountdown";
 import { OrderStatusBadge } from "@/features/booking-orders/components/OrderStatusBadge";
 import { formatBookingDateLabel, formatBookingTimeLabel } from "@/lib/booking-display";
@@ -42,6 +46,7 @@ export function BookConsultationCheckoutClient({ orderRef }: { orderRef: string 
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, startPayTransition] = useTransition();
   const [fulfillment, setFulfillment] = useState<FulfillmentState | null>(null);
+  const [razorpayReady, setRazorpayReady] = useState(false);
 
   const reloadOrder = useCallback(async () => {
     const res = await getCheckoutOrder({ orderRef });
@@ -101,7 +106,21 @@ export function BookConsultationCheckoutClient({ orderRef }: { orderRef: string 
     void reloadOrder();
   }, [reloadOrder]);
 
-  const handlePay = (outcome: "success" | "declined") => {
+  const handlePaymentSuccess = (res: {
+    orderId: string;
+    guestAppointmentId: string;
+    transactionId: string | null;
+  }) => {
+    setFulfillment({
+      orderId: res.orderId,
+      guestAppointmentId: res.guestAppointmentId,
+      transactionId: res.transactionId,
+      sessionKey: Date.now(),
+      patientLabel: `${order!.snapshot.firstName} ${order!.snapshot.lastName}`.trim(),
+    });
+  };
+
+  const handleMockPay = (outcome: "success" | "declined") => {
     if (!order) return;
 
     startPayTransition(async () => {
@@ -120,14 +139,97 @@ export function BookConsultationCheckoutClient({ orderRef }: { orderRef: string 
 
       if (!("success" in res) || !res.success) return;
 
-      setFulfillment({
+      if (!("guestAppointmentId" in res)) return;
+
+      handlePaymentSuccess({
         orderId: res.orderId,
         guestAppointmentId: res.guestAppointmentId,
         transactionId: res.transactionId,
-        sessionKey: Date.now(),
-        patientLabel: `${order.snapshot.firstName} ${order.snapshot.lastName}`.trim(),
       });
     });
+  };
+
+  const handleRazorpayPay = () => {
+    if (!order) return;
+
+    const razorpayKeyId = order.razorpayKeyId;
+    if (!razorpayKeyId) {
+      toast.error("Razorpay is not configured. Please contact support.");
+      return;
+    }
+
+    startPayTransition(async () => {
+      const created = await createRazorpayCheckoutOrder({ orderId: order.id });
+      if ("error" in created && created.error) {
+        toast.error(created.error);
+        return;
+      }
+      if (!("success" in created) || !created.success) {
+        toast.error("Could not create payment order. Please try again.");
+        return;
+      }
+
+      const checkout = await openRazorpayCheckout({
+        key: razorpayKeyId,
+        amount: created.amount,
+        currency: created.currency,
+        orderId: created.orderId,
+        orderNumber: order.orderNumber,
+        customerName: `${order.snapshot.firstName} ${order.snapshot.lastName}`.trim(),
+        customerEmail: order.snapshot.email,
+        customerPhone: order.snapshot.phone,
+        onDismiss: () => {
+          toast.message("Payment cancelled.");
+        },
+        onFailure: (message) => {
+          toast.error(message);
+          void reloadOrder();
+        },
+        onSuccess: (response) => {
+          void (async () => {
+            const verified = await verifyRazorpayPayment({
+              orderId: order.id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            if ("error" in verified && verified.error) {
+              toast.error(verified.error);
+              await reloadOrder();
+              return;
+            }
+
+            if (!("success" in verified) || !verified.success) return;
+
+            handlePaymentSuccess({
+              orderId: verified.orderId,
+              guestAppointmentId: verified.guestAppointmentId,
+              transactionId: verified.transactionId,
+            });
+          })();
+        },
+      });
+
+      if (!checkout.ok) {
+        toast.error(
+          checkout.reason === "script"
+            ? "Could not load Razorpay checkout. Disable ad blockers and refresh the page."
+            : "Could not open Razorpay checkout. Please try again.",
+        );
+      }
+    });
+  };
+
+  const handlePay = () => {
+    if (!order) return;
+
+    if (order.amountPaise <= 0 || order.paymentProvider === "mock") {
+      handleMockPay("success");
+      return;
+    }
+
+    handleRazorpayPay();
   };
 
   const handleFulfillmentComplete = async (appointmentId: string) => {
@@ -253,11 +355,22 @@ export function BookConsultationCheckoutClient({ orderRef }: { orderRef: string 
 
             {isPending ? (
               <div className="space-y-3">
+                {order.paymentProvider === "razorpay" && order.amountPaise > 0 ? (
+                  <RazorpayCheckoutPreload
+                    enabled
+                    onReadyChange={setRazorpayReady}
+                  />
+                ) : null}
                 <LpButton
                   type="button"
                   className="w-full"
-                  disabled={isPaying}
-                  onClick={() => handlePay("success")}
+                  disabled={
+                    isPaying ||
+                    (order.paymentProvider === "razorpay" &&
+                      order.amountPaise > 0 &&
+                      !razorpayReady)
+                  }
+                  onClick={handlePay}
                 >
                   {isPaying ? (
                     <>
@@ -270,11 +383,11 @@ export function BookConsultationCheckoutClient({ orderRef }: { orderRef: string 
                     "Confirm booking"
                   )}
                 </LpButton>
-                {order.amountPaise > 0 ? (
+                {order.amountPaise > 0 && order.paymentProvider === "mock" ? (
                   <button
                     type="button"
                     disabled={isPaying}
-                    onClick={() => handlePay("declined")}
+                    onClick={() => handleMockPay("declined")}
                     className="w-full text-center text-sm font-medium text-lp-on-surface-variant underline-offset-2 hover:underline disabled:opacity-50"
                   >
                     Simulate payment failure (dev)
