@@ -24,10 +24,11 @@ export function RazorpayCheckoutPreload({
     let cancelled = false;
     setStatus("loading");
 
-    void ensureRazorpayCheckoutReady().then((loaded) => {
+    void ensureRazorpayCheckoutReady().then((result) => {
       if (cancelled) return;
-      setStatus(loaded ? "ready" : "error");
-      onReadyChange?.(loaded);
+      const ready = result.ok;
+      setStatus(ready ? "ready" : "error");
+      onReadyChange?.(ready);
     });
 
     return () => {
