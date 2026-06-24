@@ -58,7 +58,9 @@ function BookConsultationAuthGate() {
     return <BookConsultationPageSkeleton />;
   }
 
-  return <BookConsultationContent authReady={authStatus === "authenticated"} />;
+  return (
+    <BookConsultationContent authReady={authStatus === "authenticated"} />
+  );
 }
 
 export function BookConsultationPageClient() {

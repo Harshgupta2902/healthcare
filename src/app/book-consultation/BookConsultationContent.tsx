@@ -36,7 +36,16 @@ import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
 import { getBookingFormPrefill, searchPlaces, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
 import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
-import { createBookingOrder } from "@/features/booking-orders";
+import {
+  buildBookingSuccessHref,
+  createBookingOrder,
+  createRazorpayCheckoutOrder,
+  finalizeBookingOrder,
+  markBookingOrderFulfillmentFailed,
+  verifyRazorpayPayment,
+} from "@/features/booking-orders";
+import { openRazorpayCheckout, ensureRazorpayCheckoutReady } from "@/features/booking-orders/lib/razorpay-checkout";
+import { BookConsultationProgressDialog } from "./BookConsultationProgressDialog";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BookingSlotPicker } from "./booking-slot-picker";
 import { BookingDatePicker } from "./booking-date-picker";
@@ -169,6 +178,22 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slotHoldId, setSlotHoldId] = useState<string | null>(null);
+  const [fulfillment, setFulfillment] = useState<{
+    orderId: string;
+    guestAppointmentId: string;
+    transactionId: string | null;
+    sessionKey: number;
+    patientLabel: string;
+  } | null>(null);
+  const [pendingRazorpayOrder, setPendingRazorpayOrder] = useState<{
+    orderId: string;
+    orderNumber: string;
+    razorpayKeyId: string;
+    amountPaise: number;
+    patientLabel: string;
+    email: string;
+    phone: string;
+  } | null>(null);
   const pickerAutoOpenedRef = useRef(false);
 
   const [city, setCity] = useState("");
@@ -317,6 +342,85 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
     };
   }, [searchQuery]);
 
+  const runInlineRazorpayPayment = async (input: {
+    orderId: string;
+    orderNumber: string;
+    razorpayKeyId: string;
+    patientLabel: string;
+    email: string;
+    phone: string;
+  }) => {
+    const scriptReady = await ensureRazorpayCheckoutReady();
+    if (!scriptReady) {
+      toast.error("Could not load Razorpay checkout. Please wait a moment and try again.");
+      return false;
+    }
+
+    const created = await createRazorpayCheckoutOrder({ orderId: input.orderId });
+    if ("error" in created && created.error) {
+      toast.error(created.error);
+      return false;
+    }
+    if (!("success" in created) || !created.success) {
+      toast.error("Could not create payment order. Please try again.");
+      return false;
+    }
+
+    const checkout = await openRazorpayCheckout({
+      key: input.razorpayKeyId,
+      amount: created.amount,
+      currency: created.currency,
+      orderId: created.orderId,
+      orderNumber: input.orderNumber,
+      customerName: input.patientLabel,
+      customerEmail: input.email,
+      customerPhone: input.phone,
+      onDismiss: () => {
+        toast.message("Payment cancelled. Click Pay to try again.");
+      },
+      onFailure: (message) => {
+        toast.error(message);
+      },
+      onSuccess: (response) => {
+        void (async () => {
+          const verified = await verifyRazorpayPayment({
+            orderId: input.orderId,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+
+          if ("error" in verified && verified.error) {
+            toast.error(verified.error);
+            return;
+          }
+
+          if (!("success" in verified) || !verified.success) return;
+
+          setPendingRazorpayOrder(null);
+          setFulfillment({
+            orderId: verified.orderId,
+            guestAppointmentId: verified.guestAppointmentId,
+            transactionId: verified.transactionId,
+            sessionKey: Date.now(),
+            patientLabel: input.patientLabel,
+          });
+        })();
+      },
+    });
+
+    if (!checkout.ok) {
+      toast.error(
+        checkout.reason === "script"
+          ? "Could not load Razorpay checkout. Refresh and try again."
+          : "Could not open Razorpay checkout. Please try again.",
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const onSubmit = async (data: AppointmentForm) => {
     if (!decodedConsultantId) {
       toast.error("Please select a specialist before booking.");
@@ -324,14 +428,21 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
       return;
     }
 
-    if (!slotHoldId) {
+    if (!slotHoldId && !pendingRazorpayOrder) {
       toast.error("Please select and reserve an hourly time slot before booking.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      if (pendingRazorpayOrder) {
+        await runInlineRazorpayPayment(pendingRazorpayOrder);
+        return;
+      }
+
       const deviceHash = await getDeviceFingerprintHash();
+      const scriptWarmup = ensureRazorpayCheckoutReady();
+
       const result = await createBookingOrder({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -345,7 +456,7 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
         time: data.time,
         message: data.message ?? "",
         professionalId: decodedConsultantId,
-        holdId: slotHoldId,
+        holdId: slotHoldId!,
         deviceHash,
       });
 
@@ -354,12 +465,68 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
         return;
       }
 
-      if ("success" in result && result.success) {
+      if (!("success" in result) || !result.success) return;
+
+      const patientLabel = `${data.firstName} ${data.lastName}`.trim();
+      const useInlineRazorpay =
+        result.paymentProvider === "razorpay" && result.amountPaise > 0;
+
+      if (!useInlineRazorpay) {
         router.push(result.checkoutHref);
+        return;
       }
+
+      if (!result.razorpayKeyId) {
+        toast.error("Razorpay is not configured. Please contact support.");
+        return;
+      }
+
+      const scriptReady = await scriptWarmup;
+      if (!scriptReady) {
+        toast.error("Payment gateway is still loading. Please try again in a few seconds.");
+        return;
+      }
+
+      const paymentContext = {
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        razorpayKeyId: result.razorpayKeyId,
+        amountPaise: result.amountPaise,
+        patientLabel,
+        email: data.email,
+        phone: data.phone,
+      };
+
+      setPendingRazorpayOrder(paymentContext);
+      await runInlineRazorpayPayment(paymentContext);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFulfillmentComplete = async (appointmentId: string) => {
+    if (!fulfillment) return;
+
+    const fin = await finalizeBookingOrder({
+      orderId: fulfillment.orderId,
+      guestAppointmentId: appointmentId,
+      transactionId: fulfillment.transactionId,
+    });
+
+    if ("error" in fin && fin.error) {
+      toast.error(fin.error);
+      return;
+    }
+
+    setFulfillment(null);
+    router.push(buildBookingSuccessHref(appointmentId));
+  };
+
+  const handleFulfillmentFailed = async () => {
+    if (!fulfillment) return;
+    await markBookingOrderFulfillmentFailed({ orderId: fulfillment.orderId });
+    setFulfillment(null);
+    toast.error("We could not finish setting up your consultation. Your order was marked as failed.");
   };
 
   const handleSelectConsultant = (consultantId: string) => {
@@ -375,7 +542,10 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const locationError = errors.city?.message || errors.state?.message;
   const selectedCategory = watch("category");
   const selectedDate = watch("date");
-  const formDisabled = !decodedConsultantId || !slotHoldId;
+  const formDisabled = (!decodedConsultantId || !slotHoldId) && !pendingRazorpayOrder;
+  const submitLabel = pendingRazorpayOrder
+    ? `Pay ₹${(pendingRazorpayOrder.amountPaise / 100).toFixed(2)}`
+    : "Confirm Booking";
   const categoryOptions = useMemo(() => {
     const trimmed = selectedCategory?.trim();
     if (trimmed && !(healthCategories as readonly string[]).includes(trimmed)) {
@@ -615,10 +785,10 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-5 animate-spin" aria-hidden />
-                      Booking...
+                      {pendingRazorpayOrder ? "Opening payment…" : "Booking..."}
                     </>
                   ) : (
-                    "Confirm Booking"
+                    submitLabel
                   )}
                 </LpButton>
               </div>
@@ -695,6 +865,24 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
           required={needsSpecialist}
         />
       </div>
+
+      <BookConsultationProgressDialog
+        open={Boolean(fulfillment)}
+        onOpenChange={(open) => {
+          if (!open) setFulfillment(null);
+        }}
+        payload={null}
+        guestAppointmentId={fulfillment?.guestAppointmentId ?? null}
+        orderId={fulfillment?.orderId ?? null}
+        patientLabel={fulfillment?.patientLabel ?? ""}
+        sessionKey={fulfillment?.sessionKey ?? 0}
+        onComplete={(appointmentId) => {
+          void handleFulfillmentComplete(appointmentId);
+        }}
+        onPipelineFailed={() => {
+          void handleFulfillmentFailed();
+        }}
+      />
     </div>
   );
 }
