@@ -5,7 +5,7 @@ const html2canvasAlias = "html2canvas-pro";
 
 const nextConfig: NextConfig = {
   async headers() {
-    const baseHeaders: { key: string; value: string }[] = [
+    const securityHeaders: { key: string; value: string }[] = [
       { key: "X-Frame-Options", value: "SAMEORIGIN" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       {
@@ -16,61 +16,22 @@ const nextConfig: NextConfig = {
         key: "Permissions-Policy",
         value: "geolocation=(), camera=(self)",
       },
-      {
-        key: "Cross-Origin-Resource-Policy",
-        value: "same-origin",
-      },
-    ];
-
-    // COEP/COOP break third-party payment embeds (Razorpay checkout iframe + script).
-    const strictCrossOriginHeaders: { key: string; value: string }[] = [
-      {
-        key: "Cross-Origin-Embedder-Policy",
-        value: "require-corp",
-      },
-      {
-        key: "Cross-Origin-Opener-Policy",
-        value: "same-origin",
-      },
-    ];
-
-    const productionCsp: { key: string; value: string }[] =
-      process.env.NODE_ENV === "production"
+      ...(process.env.NODE_ENV === "production"
         ? [
             {
               key: "Content-Security-Policy",
               value: "upgrade-insecure-requests",
             },
           ]
-        : [];
-
-    const paymentHeaders: { key: string; value: string }[] = [
-      { key: "X-Frame-Options", value: "SAMEORIGIN" },
-      { key: "X-Content-Type-Options", value: "nosniff" },
-      {
-        key: "Referrer-Policy",
-        value: "strict-origin-when-cross-origin",
-      },
-      {
-        key: "Permissions-Policy",
-        value: "geolocation=(), camera=(self)",
-      },
-      ...productionCsp,
+        : []),
     ];
 
+    // Do not set COEP/COOP — they apply to the whole document on client-side
+    // navigation and block Razorpay checkout.js + payment iframe.
     return [
       {
-        source: "/book-consultation",
-        headers: paymentHeaders,
-      },
-      {
-        source: "/book-consultation/checkout",
-        headers: paymentHeaders,
-      },
-      {
-        // All routes except booking/payment pages — COEP/COOP break Razorpay embeds.
-        source: "/((?!book-consultation$|book-consultation/checkout).*)",
-        headers: [...baseHeaders, ...strictCrossOriginHeaders, ...productionCsp],
+        source: "/:path*",
+        headers: securityHeaders,
       },
     ];
   },
