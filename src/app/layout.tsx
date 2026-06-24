@@ -9,7 +9,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { rootMetadata } from "@/lib/seo/root-metadata";
 import { RootJsonLd } from "@/lib/seo/root-json-ld";
 import Script from "next/script";
-import { PAYMENT_PROVIDER } from "@/features/booking-orders/lib/constants";
 
 export const metadata: Metadata = rootMetadata;
 
@@ -20,14 +19,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://checkout.razorpay.com" />
+        <Script
+          id="razorpay-checkout-js"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="antialiased min-h-screen flex flex-col min-w-0" suppressHydrationWarning>
-        {PAYMENT_PROVIDER === "razorpay" ? (
-          <Script
-            id="razorpay-checkout-js"
-            src="https://checkout.razorpay.com/v1/checkout.js"
-            strategy="afterInteractive"
-          />
-        ) : null}
         <RootJsonLd />
         <ErrorReporter />
         <Analytics />
