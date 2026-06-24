@@ -56,6 +56,8 @@ export type CheckoutOrderView = {
   consultantName: string;
   consultantSpecialization: string | null;
   guestAppointmentId: string | null;
+  paymentProvider: "mock" | "razorpay";
+  razorpayKeyId: string | null;
 };
 
 export type ClientOrderHistoryItem = {

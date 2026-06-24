@@ -34,6 +34,13 @@ export const mockPaymentOutcomeSchema = z.object({
   outcome: z.enum(["success", "declined"]),
 });
 
+export const razorpayVerifyPaymentSchema = z.object({
+  orderId: z.string().uuid(),
+  razorpayOrderId: z.string().min(1),
+  razorpayPaymentId: z.string().min(1),
+  razorpaySignature: z.string().min(1),
+});
+
 export const finalizeOrderSchema = z.object({
   orderId: z.string().uuid(),
   guestAppointmentId: z.string().uuid(),
