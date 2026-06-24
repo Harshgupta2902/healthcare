@@ -44,7 +44,11 @@ import {
   markBookingOrderFulfillmentFailed,
   verifyRazorpayPayment,
 } from "@/features/booking-orders";
-import { openRazorpayCheckout, ensureRazorpayCheckoutReady } from "@/features/booking-orders/lib/razorpay-checkout";
+import {
+  openRazorpayCheckout,
+  ensureRazorpayCheckoutReady,
+  razorpayCheckoutLoadErrorMessage,
+} from "@/features/booking-orders/lib/razorpay-checkout";
 import { BookConsultationProgressDialog } from "./BookConsultationProgressDialog";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
 import { BookingSlotPicker } from "./booking-slot-picker";
@@ -177,6 +181,7 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpeningPayment, setIsOpeningPayment] = useState(false);
   const [slotHoldId, setSlotHoldId] = useState<string | null>(null);
   const [fulfillment, setFulfillment] = useState<{
     orderId: string;
@@ -287,6 +292,11 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   }, [decodedConsultantId]);
 
   useEffect(() => {
+    if (!authReady) return;
+    void ensureRazorpayCheckoutReady();
+  }, [authReady]);
+
+  useEffect(() => {
     if (!bookingConsultant) return;
     const location = bookingConsultant.city?.trim() || "Online";
     setCity(location);
@@ -346,79 +356,95 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
     orderId: string;
     orderNumber: string;
     razorpayKeyId: string;
+    amountPaise: number;
     patientLabel: string;
     email: string;
     phone: string;
   }) => {
-    const scriptReady = await ensureRazorpayCheckoutReady();
-    if (!scriptReady) {
-      toast.error("Could not load Razorpay checkout. Please wait a moment and try again.");
-      return false;
-    }
+    setIsOpeningPayment(true);
+    try {
+      const scriptReady = await ensureRazorpayCheckoutReady();
+      if (!scriptReady.ok) {
+        toast.error(razorpayCheckoutLoadErrorMessage(scriptReady.reason));
+        setPendingRazorpayOrder(input);
+        return false;
+      }
 
-    const created = await createRazorpayCheckoutOrder({ orderId: input.orderId });
-    if ("error" in created && created.error) {
-      toast.error(created.error);
-      return false;
-    }
-    if (!("success" in created) || !created.success) {
-      toast.error("Could not create payment order. Please try again.");
-      return false;
-    }
+      const created = await createRazorpayCheckoutOrder({ orderId: input.orderId });
+      if ("error" in created && created.error) {
+        toast.error(created.error);
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+      if (!("success" in created) || !created.success) {
+        toast.error("Could not create payment order. Please try again.");
+        setPendingRazorpayOrder(input);
+        return false;
+      }
 
-    const checkout = await openRazorpayCheckout({
-      key: input.razorpayKeyId,
-      amount: created.amount,
-      currency: created.currency,
-      orderId: created.orderId,
-      orderNumber: input.orderNumber,
-      customerName: input.patientLabel,
-      customerEmail: input.email,
-      customerPhone: input.phone,
-      onDismiss: () => {
-        toast.message("Payment cancelled. Click Pay to try again.");
-      },
-      onFailure: (message) => {
-        toast.error(message);
-      },
-      onSuccess: (response) => {
-        void (async () => {
-          const verified = await verifyRazorpayPayment({
-            orderId: input.orderId,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-          });
+      const checkout = await openRazorpayCheckout(
+        {
+          key: input.razorpayKeyId,
+          amount: created.amount,
+          currency: created.currency,
+          orderId: created.orderId,
+          orderNumber: input.orderNumber,
+          customerName: input.patientLabel,
+          customerEmail: input.email,
+          customerPhone: input.phone,
+          onDismiss: () => {
+            setPendingRazorpayOrder(input);
+            toast.message("Payment cancelled. Click Pay to try again.");
+          },
+          onFailure: (message) => {
+            setPendingRazorpayOrder(input);
+            toast.error(message);
+          },
+          onSuccess: (response) => {
+            void (async () => {
+              const verified = await verifyRazorpayPayment({
+                orderId: input.orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
 
-          if ("error" in verified && verified.error) {
-            toast.error(verified.error);
-            return;
-          }
+              if ("error" in verified && verified.error) {
+                toast.error(verified.error);
+                setPendingRazorpayOrder(input);
+                return;
+              }
 
-          if (!("success" in verified) || !verified.success) return;
+              if (!("success" in verified) || !verified.success) return;
 
-          setPendingRazorpayOrder(null);
-          setFulfillment({
-            orderId: verified.orderId,
-            guestAppointmentId: verified.guestAppointmentId,
-            transactionId: verified.transactionId,
-            sessionKey: Date.now(),
-            patientLabel: input.patientLabel,
-          });
-        })();
-      },
-    });
-
-    if (!checkout.ok) {
-      toast.error(
-        checkout.reason === "script"
-          ? "Could not load Razorpay checkout. Refresh and try again."
-          : "Could not open Razorpay checkout. Please try again.",
+              setPendingRazorpayOrder(null);
+              setFulfillment({
+                orderId: verified.orderId,
+                guestAppointmentId: verified.guestAppointmentId,
+                transactionId: verified.transactionId,
+                sessionKey: Date.now(),
+                patientLabel: input.patientLabel,
+              });
+            })();
+          },
+        },
+        { assumeScriptReady: true },
       );
-      return false;
-    }
 
-    return true;
+      if (!checkout.ok) {
+        toast.error(
+          checkout.reason === "script"
+            ? "Could not load Razorpay checkout. Refresh and try again."
+            : "Could not open Razorpay checkout. Please try again.",
+        );
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+
+      return true;
+    } finally {
+      setIsOpeningPayment(false);
+    }
   };
 
   const onSubmit = async (data: AppointmentForm) => {
@@ -433,15 +459,14 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
       return;
     }
 
+    if (pendingRazorpayOrder) {
+      await runInlineRazorpayPayment(pendingRazorpayOrder);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      if (pendingRazorpayOrder) {
-        await runInlineRazorpayPayment(pendingRazorpayOrder);
-        return;
-      }
-
       const deviceHash = await getDeviceFingerprintHash();
-      const scriptWarmup = ensureRazorpayCheckoutReady();
 
       const result = await createBookingOrder({
         firstName: data.firstName,
@@ -481,12 +506,6 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
         return;
       }
 
-      const scriptReady = await scriptWarmup;
-      if (!scriptReady) {
-        toast.error("Payment gateway is still loading. Please try again in a few seconds.");
-        return;
-      }
-
       const paymentContext = {
         orderId: result.orderId,
         orderNumber: result.orderNumber,
@@ -497,7 +516,7 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
         phone: data.phone,
       };
 
-      setPendingRazorpayOrder(paymentContext);
+      setIsSubmitting(false);
       await runInlineRazorpayPayment(paymentContext);
     } finally {
       setIsSubmitting(false);
@@ -542,6 +561,7 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const locationError = errors.city?.message || errors.state?.message;
   const selectedCategory = watch("category");
   const selectedDate = watch("date");
+  const isBusy = isSubmitting || isOpeningPayment;
   const formDisabled = (!decodedConsultantId || !slotHoldId) && !pendingRazorpayOrder;
   const submitLabel = pendingRazorpayOrder
     ? `Pay ₹${(pendingRazorpayOrder.amountPaise / 100).toFixed(2)}`
@@ -779,13 +799,13 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
                 <LpButton
                   type="submit"
                   variant="primary"
-                  disabled={isSubmitting || formDisabled}
+                  disabled={isBusy || formDisabled}
                   className="h-12 w-full rounded-xl border-0 bg-lp-brand-bright px-10 py-0 font-heading text-base font-semibold leading-none normal-case tracking-normal shadow-xl hover:shadow-lp-brand-bright/25 sm:w-auto sm:min-w-[220px]"
                 >
-                  {isSubmitting ? (
+                  {isBusy ? (
                     <>
                       <Loader2 className="size-5 animate-spin" aria-hidden />
-                      {pendingRazorpayOrder ? "Opening payment…" : "Booking..."}
+                      {isOpeningPayment ? "Opening payment…" : "Booking..."}
                     </>
                   ) : (
                     submitLabel
