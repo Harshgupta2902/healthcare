@@ -1903,6 +1903,7 @@ CREATE OR REPLACE FUNCTION public.patch_booking_order_status(
   p_new_status TEXT,
   p_failure_reason TEXT DEFAULT NULL,
   p_guest_appointment_id UUID DEFAULT NULL,
+  p_provider_order_id TEXT DEFAULT NULL,
   p_provider_payment_id TEXT DEFAULT NULL,
   p_paid_at TIMESTAMPTZ DEFAULT NULL,
   p_confirmed_at TIMESTAMPTZ DEFAULT NULL
@@ -1927,6 +1928,7 @@ BEGIN
      SET status = p_new_status,
          failure_reason = p_failure_reason,
          guest_appointment_id = COALESCE(p_guest_appointment_id, guest_appointment_id),
+         provider_order_id = COALESCE(p_provider_order_id, provider_order_id),
          provider_payment_id = COALESCE(p_provider_payment_id, provider_payment_id),
          paid_at = COALESCE(p_paid_at, paid_at),
          confirmed_at = COALESCE(p_confirmed_at, confirmed_at),
@@ -1936,8 +1938,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.finalize_booking_order(
   p_order_id UUID,

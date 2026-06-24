@@ -409,6 +409,7 @@ CREATE OR REPLACE FUNCTION public.patch_booking_order_status(
   p_new_status TEXT,
   p_failure_reason TEXT DEFAULT NULL,
   p_guest_appointment_id UUID DEFAULT NULL,
+  p_provider_order_id TEXT DEFAULT NULL,
   p_provider_payment_id TEXT DEFAULT NULL,
   p_paid_at TIMESTAMPTZ DEFAULT NULL,
   p_confirmed_at TIMESTAMPTZ DEFAULT NULL
@@ -449,6 +450,7 @@ BEGIN
      SET status = p_new_status,
          failure_reason = p_failure_reason,
          guest_appointment_id = COALESCE(p_guest_appointment_id, guest_appointment_id),
+         provider_order_id = COALESCE(p_provider_order_id, provider_order_id),
          provider_payment_id = COALESCE(p_provider_payment_id, provider_payment_id),
          paid_at = COALESCE(p_paid_at, paid_at),
          confirmed_at = COALESCE(p_confirmed_at, confirmed_at),
@@ -459,8 +461,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.finalize_booking_order(
   p_order_id UUID,
@@ -930,3 +932,54 @@ UPDATE public.app_settings
 SET value = value || '{"booking_advance_weeks": 2}'::jsonb
 WHERE key = 'booking'
   AND NOT (value ? 'booking_advance_weeks');
+
+-- ---------------------------------------------------------------------------
+-- Pending (2026-06-24): Razorpay — single patch_booking_order_status overload
+-- Run this if you see "Could not choose the best candidate function" after payment.
+-- ---------------------------------------------------------------------------
+
+DROP FUNCTION IF EXISTS public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TIMESTAMPTZ, TIMESTAMPTZ);
+
+CREATE OR REPLACE FUNCTION public.patch_booking_order_status(
+  p_order_id UUID,
+  p_expected_status TEXT,
+  p_new_status TEXT,
+  p_failure_reason TEXT DEFAULT NULL,
+  p_guest_appointment_id UUID DEFAULT NULL,
+  p_provider_order_id TEXT DEFAULT NULL,
+  p_provider_payment_id TEXT DEFAULT NULL,
+  p_paid_at TIMESTAMPTZ DEFAULT NULL,
+  p_confirmed_at TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_user_id UUID;
+  v_current TEXT;
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT user_id, status INTO v_user_id, v_current
+    FROM public.booking_orders WHERE id = p_order_id FOR UPDATE;
+  IF v_user_id IS NULL THEN RETURN FALSE; END IF;
+  IF v_user_id IS DISTINCT FROM v_uid THEN RAISE EXCEPTION 'Forbidden'; END IF;
+  IF v_current IS DISTINCT FROM p_expected_status THEN RETURN FALSE; END IF;
+  UPDATE public.booking_orders
+     SET status = p_new_status,
+         failure_reason = p_failure_reason,
+         guest_appointment_id = COALESCE(p_guest_appointment_id, guest_appointment_id),
+         provider_order_id = COALESCE(p_provider_order_id, provider_order_id),
+         provider_payment_id = COALESCE(p_provider_payment_id, provider_payment_id),
+         paid_at = COALESCE(p_paid_at, paid_at),
+         confirmed_at = COALESCE(p_confirmed_at, confirmed_at),
+         updated_at = NOW()
+   WHERE id = p_order_id;
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
