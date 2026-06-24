@@ -12,16 +12,21 @@ import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
 import { fetchBookingSettings } from "@/features/booking-slots/actions";
 import { verifySlotHoldForBooking } from "@/features/booking-slots/actions";
 import { meetingEndTimeFromStart } from "@/lib/booking/slots";
-import { PAYMENT_PROVIDER } from "./lib/constants";
+import { PAYMENT_PROVIDER, getPublicRazorpayKeyId } from "./lib/constants";
 import { generateOrderNumber } from "./lib/order-number";
 import { buildCheckoutHref } from "./lib/order-ref";
 import { getPaymentProvider } from "./lib/payment-providers";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPaymentSignature,
+} from "./lib/payment-providers/razorpay-server";
 import {
   createBookingOrderSchema,
   finalizeOrderSchema,
   mockPaymentOutcomeSchema,
   orderIdSchema,
   orderRefSchema,
+  razorpayVerifyPaymentSchema,
 } from "./schemas";
 import type {
   BookingOrderFailureReason,
@@ -52,6 +57,7 @@ async function patchOrderStatus(
   extras?: {
     failureReason?: BookingOrderFailureReason | null;
     guestAppointmentId?: string | null;
+    providerOrderId?: string | null;
     providerPaymentId?: string | null;
     paidAt?: string | null;
     confirmedAt?: string | null;
@@ -63,6 +69,7 @@ async function patchOrderStatus(
     p_new_status: next,
     p_failure_reason: extras?.failureReason ?? null,
     p_guest_appointment_id: extras?.guestAppointmentId ?? null,
+    p_provider_order_id: extras?.providerOrderId ?? null,
     p_provider_payment_id: extras?.providerPaymentId ?? null,
     p_paid_at: extras?.paidAt ?? null,
     p_confirmed_at: extras?.confirmedAt ?? null,
@@ -154,6 +161,9 @@ function mapOrderToCheckoutView(
   consultantName: string,
   consultantSpecialization: string | null,
 ): CheckoutOrderView {
+  const razorpayKeyId =
+    PAYMENT_PROVIDER === "razorpay" ? getPublicRazorpayKeyId() : null;
+
   return {
     id: row.id,
     orderNumber: row.order_number,
@@ -166,7 +176,122 @@ function mapOrderToCheckoutView(
     consultantName,
     consultantSpecialization,
     guestAppointmentId: row.guest_appointment_id,
+    paymentProvider: PAYMENT_PROVIDER,
+    razorpayKeyId,
   };
+}
+
+type PendingOrderValidation =
+  | { ok: true; row: BookingOrderRow }
+  | { ok: false; error: string };
+
+async function validatePendingCheckoutOrder(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orderId: string,
+  userId: string,
+): Promise<PendingOrderValidation> {
+  await expireStaleOrders(supabase);
+
+  const row = await loadOrderForUser(supabase, orderId, userId);
+  if (!row) return { ok: false, error: "Order not found." };
+
+  if (row.status === "failed") {
+    return {
+      ok: false,
+      error:
+        row.failure_reason === "expired"
+          ? "This order has expired. Please book again."
+          : "This order is no longer active.",
+    };
+  }
+
+  if (row.status !== "pending") {
+    return { ok: false, error: "This order is not awaiting payment." };
+  }
+
+  if (new Date(row.expires_at).getTime() < Date.now()) {
+    await patchOrderStatus(supabase, row.id, "pending", "failed", {
+      failureReason: "expired",
+    });
+    return { ok: false, error: "This order has expired. Please book again." };
+  }
+
+  return { ok: true, row };
+}
+
+async function fulfillBookingOrderAfterPayment(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  row: BookingOrderRow,
+  transactionId: string | null,
+) {
+  const zeroFee = row.amount_paise <= 0;
+
+  if (!zeroFee) {
+    const paidOk = await patchOrderStatus(supabase, row.id, "pending", "processing", {
+      providerPaymentId: transactionId,
+      paidAt: new Date().toISOString(),
+    });
+    if (!paidOk) return { error: "Could not update order after payment." };
+  } else {
+    const paidOk = await patchOrderStatus(supabase, row.id, "pending", "processing", {
+      paidAt: new Date().toISOString(),
+    });
+    if (!paidOk) return { error: "Could not start booking." };
+  }
+
+  try {
+    const bookingSettings = await fetchBookingSettings(supabase);
+    const meetingEndTime = meetingEndTimeFromStart(
+      row.booking_snapshot.time,
+      bookingSettings.meeting_duration_minutes,
+    );
+
+    const appointmentId = await insertGuestAppointmentFromSnapshot(
+      supabase,
+      userId,
+      row.professional_id,
+      row.booking_snapshot,
+      {
+        slotReservationId: row.slot_reservation_id,
+        meetingDurationMinutes: bookingSettings.meeting_duration_minutes,
+        meetingEndTime,
+      },
+    );
+
+    if (row.slot_reservation_id) {
+      const { data: confirmed } = await supabase.rpc("confirm_slot_reservation", {
+        p_hold_id: row.slot_reservation_id,
+        p_guest_appointment_id: appointmentId,
+      });
+      if (!confirmed) {
+        throw new Error("Could not confirm your slot reservation.");
+      }
+    }
+
+    const linked = await patchOrderStatus(supabase, row.id, "processing", "processing", {
+      guestAppointmentId: appointmentId,
+      providerPaymentId: zeroFee ? null : transactionId,
+    });
+
+    if (!linked) {
+      return { error: "Could not link appointment to order." };
+    }
+
+    return {
+      success: true as const,
+      orderId: row.id,
+      guestAppointmentId: appointmentId,
+      transactionId: zeroFee ? null : transactionId,
+    };
+  } catch (e) {
+    await patchOrderStatus(supabase, row.id, "processing", "failed", {
+      failureReason: "fulfillment_error",
+    });
+    return {
+      error: e instanceof Error ? e.message : "Could not create your appointment.",
+    };
+  }
 }
 
 export async function createBookingOrder(form: unknown) {
@@ -242,7 +367,7 @@ export async function createBookingOrder(form: unknown) {
       expires_at: expiresAt,
       slot_reservation_id: validated.data.holdId,
     })
-    .select("id")
+    .select("id, order_number")
     .single();
 
   if (error) {
@@ -259,8 +384,11 @@ export async function createBookingOrder(form: unknown) {
   return {
     success: true as const,
     orderId: data.id as string,
+    orderNumber: data.order_number as string,
     checkoutHref: buildCheckoutHref(data.id as string),
     amountPaise,
+    paymentProvider: PAYMENT_PROVIDER,
+    razorpayKeyId: PAYMENT_PROVIDER === "razorpay" ? getPublicRazorpayKeyId() : null,
   };
 }
 
@@ -326,30 +454,14 @@ export async function processMockPayment(input: unknown) {
   const auth = await requireAuthUser();
   if (!auth.ok) return { error: auth.error };
 
-  await expireStaleOrders(auth.supabase);
+  const validation = await validatePendingCheckoutOrder(
+    auth.supabase,
+    parsed.data.orderId,
+    auth.user.id,
+  );
+  if (!validation.ok) return { error: validation.error };
 
-  const row = await loadOrderForUser(auth.supabase, parsed.data.orderId, auth.user.id);
-  if (!row) return { error: "Order not found." };
-
-  if (row.status === "failed") {
-    return {
-      error:
-        row.failure_reason === "expired"
-          ? "This order has expired. Please book again."
-          : "This order is no longer active.",
-    };
-  }
-
-  if (row.status !== "pending") {
-    return { error: "This order is not awaiting payment." };
-  }
-
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    await patchOrderStatus(auth.supabase, row.id, "pending", "failed", {
-      failureReason: "expired",
-    });
-    return { error: "This order has expired. Please book again." };
-  }
+  const row = validation.row;
 
   if (parsed.data.outcome === "declined") {
     await patchOrderStatus(auth.supabase, row.id, "pending", "failed", {
@@ -367,73 +479,109 @@ export async function processMockPayment(input: unknown) {
     return { error: capture.message ?? "Payment could not be completed." };
   }
 
-  const zeroFee = row.amount_paise <= 0;
+  return fulfillBookingOrderAfterPayment(
+    auth.supabase,
+    auth.user.id,
+    row,
+    row.amount_paise <= 0 ? null : capture.transactionId,
+  );
+}
 
-  if (!zeroFee) {
-    const paidOk = await patchOrderStatus(auth.supabase, row.id, "pending", "processing", {
-      providerPaymentId: capture.transactionId,
-      paidAt: new Date().toISOString(),
-    });
-    if (!paidOk) return { error: "Could not update order after payment." };
-  } else {
-    const paidOk = await patchOrderStatus(auth.supabase, row.id, "pending", "processing", {
-      paidAt: new Date().toISOString(),
-    });
-    if (!paidOk) return { error: "Could not start booking." };
+export async function createRazorpayCheckoutOrder(input: unknown) {
+  if (PAYMENT_PROVIDER !== "razorpay") {
+    return { error: "Razorpay is not enabled for checkout." };
+  }
+
+  const parsed = orderIdSchema.safeParse(input);
+  if (!parsed.success) return { error: zodFirstError(parsed.error) };
+
+  const auth = await requireAuthUser();
+  if (!auth.ok) return { error: auth.error };
+
+  const validation = await validatePendingCheckoutOrder(
+    auth.supabase,
+    parsed.data.orderId,
+    auth.user.id,
+  );
+  if (!validation.ok) return { error: validation.error };
+
+  const row = validation.row;
+  if (row.amount_paise <= 0) {
+    return { error: "This order does not require payment." };
   }
 
   try {
-    const bookingSettings = await fetchBookingSettings(auth.supabase);
-    const meetingEndTime = meetingEndTimeFromStart(
-      row.booking_snapshot.time,
-      bookingSettings.meeting_duration_minutes,
-    );
-
-    const appointmentId = await insertGuestAppointmentFromSnapshot(
-      auth.supabase,
-      auth.user.id,
-      row.professional_id,
-      row.booking_snapshot,
-      {
-        slotReservationId: row.slot_reservation_id,
-        meetingDurationMinutes: bookingSettings.meeting_duration_minutes,
-        meetingEndTime,
-      },
-    );
-
-    if (row.slot_reservation_id) {
-      const { data: confirmed } = await auth.supabase.rpc("confirm_slot_reservation", {
-        p_hold_id: row.slot_reservation_id,
-        p_guest_appointment_id: appointmentId,
-      });
-      if (!confirmed) {
-        throw new Error("Could not confirm your slot reservation.");
-      }
-    }
-
-    const linked = await patchOrderStatus(auth.supabase, row.id, "processing", "processing", {
-      guestAppointmentId: appointmentId,
-      providerPaymentId: zeroFee ? null : capture.transactionId,
+    const razorpayOrder = await createRazorpayOrder({
+      amountPaise: row.amount_paise,
+      currency: row.currency,
+      receipt: row.order_number,
     });
 
-    if (!linked) {
-      return { error: "Could not link appointment to order." };
-    }
+    const stored = await patchOrderStatus(auth.supabase, row.id, "pending", "pending", {
+      providerOrderId: razorpayOrder.orderId,
+    });
+    if (!stored) return { error: "Could not prepare payment for this order." };
 
     return {
       success: true as const,
-      orderId: row.id,
-      guestAppointmentId: appointmentId,
-      transactionId: zeroFee ? null : capture.transactionId,
+      orderId: razorpayOrder.orderId,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
     };
   } catch (e) {
-    await patchOrderStatus(auth.supabase, row.id, "processing", "failed", {
-      failureReason: "fulfillment_error",
-    });
+    console.error("[createRazorpayCheckoutOrder]", e);
     return {
-      error: e instanceof Error ? e.message : "Could not create your appointment.",
+      error: e instanceof Error ? e.message : "Could not create payment order.",
     };
   }
+}
+
+export async function verifyRazorpayPayment(input: unknown) {
+  if (PAYMENT_PROVIDER !== "razorpay") {
+    return { error: "Razorpay is not enabled for checkout." };
+  }
+
+  const parsed = razorpayVerifyPaymentSchema.safeParse(input);
+  if (!parsed.success) return { error: zodFirstError(parsed.error) };
+
+  const auth = await requireAuthUser();
+  if (!auth.ok) return { error: auth.error };
+
+  const validation = await validatePendingCheckoutOrder(
+    auth.supabase,
+    parsed.data.orderId,
+    auth.user.id,
+  );
+  if (!validation.ok) return { error: validation.error };
+
+  const row = validation.row;
+
+  if (
+    row.provider_order_id &&
+    row.provider_order_id !== parsed.data.razorpayOrderId
+  ) {
+    return { error: "Payment order mismatch. Please try again." };
+  }
+
+  const signatureValid = verifyRazorpayPaymentSignature({
+    razorpayOrderId: parsed.data.razorpayOrderId,
+    razorpayPaymentId: parsed.data.razorpayPaymentId,
+    razorpaySignature: parsed.data.razorpaySignature,
+  });
+
+  if (!signatureValid) {
+    await patchOrderStatus(auth.supabase, row.id, "pending", "failed", {
+      failureReason: "payment_error",
+    });
+    return { error: "Payment verification failed. Please try again." };
+  }
+
+  return fulfillBookingOrderAfterPayment(
+    auth.supabase,
+    auth.user.id,
+    row,
+    parsed.data.razorpayPaymentId,
+  );
 }
 
 /** Run after meeting pipeline succeeds. */

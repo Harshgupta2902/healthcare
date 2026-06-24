@@ -3,6 +3,8 @@ export {
   getCheckoutOrder,
   cancelBookingOrder,
   processMockPayment,
+  createRazorpayCheckoutOrder,
+  verifyRazorpayPayment,
   finalizeBookingOrder,
   markBookingOrderFulfillmentFailed,
   getClientOrderHistory,
