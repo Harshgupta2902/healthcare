@@ -22,7 +22,6 @@ import { Label } from "@/components/ui/label";
 import { useDashboardSectionContext } from "./dashboard-section-context";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
     User,
@@ -38,7 +37,6 @@ import {
     CheckCircle,
     XCircle,
     FileText,
-    Mail,
     Info,
     Upload,
 } from "lucide-react";
@@ -49,6 +47,8 @@ import { ProfessionalProfilePanel } from "./ProfessionalProfilePanel";
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
 import { ProfessionalCredentialsList } from "./ProfessionalCredentialsList";
+import { ProfessionalPaymentsList } from "./ProfessionalPaymentsList";
+import { ProfessionalClientsList } from "./ProfessionalClientsList";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     normalizePhoneCountryCode,
@@ -979,50 +979,14 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <CardTitle>Financial Overview</CardTitle>
-                            <CardDescription>Track your transaction history and upcoming payouts</CardDescription>
+                            <CardDescription>Track your transaction history and payout status</CardDescription>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingPayments ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                </div>
-                            ) : payments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
-                                    <IndianRupee className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-lp-on-surface-variant font-bold">No payments processed yet.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {payments.map((payment) => (
-                                        <div
-                                            key={payment.id}
-                                            className="group flex w-full min-w-0 max-w-full flex-col overflow-hidden md:flex-row md:items-center justify-between p-4 sm:p-6 bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-300"
-                                        >
-                                            <div className="flex items-center gap-6">
-                                                <div className={`p-4 rounded-lg sm:rounded-2xl ${payment.status === "completed" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
-                                                    <IndianRupee className="h-8 w-8" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-3xl font-black text-lp-cta-bg tracking-tight">₹{(payment.amount / 100).toFixed(2)}</p>
-                                                    <p className="text-sm font-bold text-lp-on-surface-variant uppercase tracking-widest">
-                                                        {mounted ? new Date(payment.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 flex flex-wrap items-center gap-3 md:mt-0 md:gap-6">
-                                                <div className="text-left md:text-right">
-                                                    <p className="text-sm font-black text-lp-cta-bg">{payment.clientName || "Direct Payment"}</p>
-                                                    <p className="text-xs font-bold text-lp-on-surface-variant capitalize">{payment.paymentMethod}</p>
-                                                </div>
-                                                <Badge className={`rounded-xl px-4 py-1 font-black ${payment.status === "completed" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                                                    }`}>
-                                                    {payment.status}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ProfessionalPaymentsList
+                                payments={payments}
+                                isLoading={isLoadingPayments}
+                                mounted={mounted}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1030,109 +994,20 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "clients" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
+                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
                         <CardHeader className="pt-4">
                             <CardTitle>Client Records</CardTitle>
-                            <CardDescription>Comprehensive database of clients you have consulted with</CardDescription>
+                            <CardDescription>
+                                Registered patients and guest bookings you have consulted with
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingAppointments || isLoadingGuestBookings ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                </div>
-                            ) : guestAppointments.length === 0 && [...new Set(appointments.map((a) => a.clientId))].length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
-                                    <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-lp-on-surface-variant font-bold">Your client list is currently empty.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {guestAppointments.map((g) => (
-                                        <div
-                                            key={`guest-${g.id}`}
-                                            className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-indigo-100 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-indigo-50/30 transition-all duration-500"
-                                        >
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center font-black text-indigo-700 text-xl shadow-inner">
-                                                        {(g.firstName || "G").charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div className="overflow-hidden min-w-0">
-                                                        <Badge className="mb-1 rounded-full text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 border-0">Guest</Badge>
-                                                        <h4 className="font-black text-lp-cta-bg truncate text-lg">
-                                                            {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
-                                                        </h4>
-                                                        <p className="text-xs font-bold text-lp-on-surface-variant truncate mt-0.5">
-                                                            Guest booking
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
-                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Requested</p>
-                                                        <p className="text-xs font-black text-slate-800 pt-1">
-                                                            {mounted
-                                                                ? new Date(`${g.appointmentDate}T${(g.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleDateString("en-US", {
-                                                                      month: "short",
-                                                                      day: "numeric",
-                                                                      year: "numeric",
-                                                                  })
-                                                                : ""}
-                                                        </p>
-                                                    </div>
-                                                    <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
-                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Category</p>
-                                                        <p className="text-xs font-black text-lp-brand pt-1 truncate">{g.category}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {[...new Set(appointments.map((a) => a.clientId))].map((clientId) => {
-                                        const clientAppointments = appointments.filter((a) => a.clientId === clientId);
-                                        const latestAppointment = clientAppointments[0];
-                                        return (
-                                            <div
-                                                key={clientId}
-                                                className="group w-full min-w-0 max-w-full overflow-hidden p-4 sm:p-6 bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-lp-surface-container-low/50 transition-all duration-500"
-                                            >
-                                                <div className="flex flex-col gap-5">
-                                                    <div className="p-4 sm:p-5 flex items-center gap-4">
-                                                        <div className="h-14 w-14 rounded-lg sm:rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-black text-lp-on-surface-variant text-xl shadow-inner">
-                                                            {(latestAppointment.clientName || "C").charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div className="overflow-hidden">
-                                                            <h4 className="font-black text-lp-cta-bg truncate text-lg">{latestAppointment.clientName || "Healthcare Client"}</h4>
-                                                            {latestAppointment.clientEmail && (
-                                                                <p className="text-xs font-bold text-lp-on-surface-variant truncate flex items-center gap-1">
-                                                                    <Mail className="h-3 w-3" /> {latestAppointment.clientEmail}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 gap-2 text-center pt-2">
-                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
-                                                            <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Total Visits</p>
-                                                            <p className="text-xl font-black text-lp-brand">{clientAppointments.length}</p>
-                                                        </div>
-                                                        <div className="bg-white/80 p-3 rounded-lg sm:rounded-2xl border border-lp-outline-variant/30 shadow-sm">
-                                                            <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-tighter">Last Seen</p>
-                                                            <p className="text-xs font-black text-slate-800 pt-1">
-                                                                {mounted ? new Date(latestAppointment.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <Button variant="outline" className="w-full rounded-lg sm:rounded-2xl border-lp-outline-variant/30 bg-white font-black hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all group-hover:shadow-md">
-                                                        Open Full History
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                            <ProfessionalClientsList
+                                appointments={appointments}
+                                guestAppointments={guestAppointments}
+                                isLoading={isLoadingAppointments || isLoadingGuestBookings}
+                                mounted={mounted}
+                            />
                         </CardContent>
                     </Card>
                 </div>
