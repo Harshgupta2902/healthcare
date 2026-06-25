@@ -807,6 +807,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
     return (
         <div className="min-w-0">
+            {activeSection === "home" ? (
             <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 md:gap-6 lg:grid-cols-4">
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
@@ -853,6 +854,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                     </CardContent>
                 </Card>
             </div>
+            ) : null}
 
             <div className="space-y-6 sm:space-y-8">
 
