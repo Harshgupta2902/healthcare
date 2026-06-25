@@ -746,7 +746,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </Card>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
                 <ProfessionalScheduleCalendar
                     appointments={appointments}
                     guestAppointments={guestAppointments}
@@ -1453,16 +1453,6 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         </CardContent>
                     </Card>
                 </div>
-                ) : null}
-
-                {activeSection === "schedule" ? (
-                <ProfessionalScheduleCalendar
-                    appointments={appointments}
-                    guestAppointments={guestAppointments}
-                    availability={availability}
-                    mounted={mounted}
-                    isLoading={isLoadingAppointments || isLoadingGuestBookings || isLoadingAvail}
-                />
                 ) : null}
             </div>
         </div>

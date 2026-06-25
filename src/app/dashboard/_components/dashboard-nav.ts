@@ -10,7 +10,6 @@ import {
   GraduationCap,
   MessageSquare,
   Users,
-  LayoutGrid,
   LayoutDashboard,
   PenLine,
   type LucideIcon,
@@ -32,7 +31,6 @@ export type DashboardSectionId =
   | 'calendar'
   | 'payments'
   | 'clients'
-  | 'schedule'
 
 export type DashboardNavItem = {
   id: DashboardSectionId
@@ -64,7 +62,6 @@ const professionalPractice: DashboardNavItem[] = [
   { id: 'credentials', label: 'Credentials', mobileLabel: 'Creds', icon: GraduationCap, roles: ['professional'] },
   { id: 'consultations', label: 'Consultations', mobileLabel: 'Requests', icon: MessageSquare, roles: ['professional'] },
   { id: 'calendar', label: 'Availability', mobileLabel: 'Hours', icon: Clock, roles: ['professional'] },
-  { id: 'schedule', label: 'Schedule view', mobileLabel: 'Schedule', icon: LayoutGrid, roles: ['professional'] },
 ]
 
 const professionalBusiness: DashboardNavItem[] = [
@@ -146,7 +143,9 @@ export function getNavItemForSection(role: DashboardRole, section: DashboardSect
 export function normalizeDashboardSection(hash: string, role: DashboardRole): DashboardSectionId {
   const raw = hash.replace(/^#/, '').trim()
   if (!raw || raw === 'home') return getDefaultSectionForRole(role)
-  if (role === 'professional' && raw === 'availability') return 'calendar'
+  if (role === 'professional' && (raw === 'availability' || raw === 'schedule')) {
+    return raw === 'schedule' ? 'home' : 'calendar'
+  }
   if (isSectionAllowedForRole(raw, role)) return raw
   return getDefaultSectionForRole(role)
 }
