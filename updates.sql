@@ -983,3 +983,17 @@ $$;
 
 REVOKE ALL ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.patch_booking_order_status(UUID, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ) TO authenticated;
+
+-- Guest appointment meeting title (shown in schedule calendar + Google Calendar)
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS meeting_title text;
+
+COMMENT ON COLUMN public.guest_appointments.meeting_title IS
+  'Calendar event title (e.g. Psychiatric Care consultation with Dr. Name); set when meeting link is created.';
+
+-- Guest appointment meeting title (shown in schedule calendar + Google Calendar)
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS meeting_title text;
+
+COMMENT ON COLUMN public.guest_appointments.meeting_title IS
+  'Calendar event title (e.g. Psychiatric Care consultation with Dr. Name); set when meeting link is created.';

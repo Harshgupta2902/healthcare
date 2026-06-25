@@ -19,6 +19,7 @@ create table if not exists public.guest_appointments (
   slot_reservation_id uuid,
   message text,
   calendar_invite_url text,
+  meeting_title text,
   prescription_html text,
   prescription_updated_at timestamptz,
   created_at timestamptz not null default now(),
@@ -27,6 +28,7 @@ create table if not exists public.guest_appointments (
 );
 comment on column public.guest_appointments.professional_id is 'Professional (public.users.id) requested via consultant deeplink (?cref); null for generic bookings.';
 comment on column public.guest_appointments.calendar_invite_url is 'Video meeting URL (Google Meet or Jitsi); set when admin creates meeting and sends invites.';
+comment on column public.guest_appointments.meeting_title is 'Calendar event title (e.g. Psychiatric Care consultation with Dr. Name); set when meeting link is created.';
 comment on column public.guest_appointments.prescription_html is 'Rich HTML prescription written by assigned professional.';
 comment on column public.guest_appointments.prescription_updated_at is 'Timestamp when prescription_html was last updated.';
 
