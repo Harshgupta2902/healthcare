@@ -20,6 +20,8 @@ export type BookingSnapshot = {
   time: string;
   message: string;
   deviceHash: string;
+  sharePrescriptionsConsent?: boolean;
+  sharedPrescriptionIds?: string[];
 };
 
 export type BookingOrderRow = {

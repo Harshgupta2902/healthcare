@@ -21,6 +21,7 @@ import { recordProfessionalActivity, weekdayLong } from '@/lib/admin-notificatio
 import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
 import { normalizeAvailabilityTime } from '@/lib/booking/timezone'
 import type { FieldChange } from '@/lib/admin-notifications'
+import { fetchSharedPrescriptionCountsByGuestAppointmentIds } from '@/features/prescription-sharing/actions'
 
 const profileSchema = z
     .object({
@@ -952,6 +953,7 @@ export type ProfessionalGuestBooking = {
     age: number
     prescriptionHtml: string | null
     prescriptionUpdatedAt: string | null
+    sharedPrescriptionCount?: number
 }
 
 export async function getProfessionalDashboardData() {
@@ -978,6 +980,17 @@ export async function getProfessionalDashboardData() {
         supabase.from('payments').select(`*, client:users!payments_client_id_fkey(name)`).eq('professional_id', user.id).order('created_at', { ascending: false }),
         supabase.from('guest_appointments').select('*').eq('professional_id', user.id).order('created_at', { ascending: false }),
     ])
+
+    const guestIds = (guestRows ?? []).map((g: { id: string }) => g.id as string)
+    let sharedPrescriptionCounts: Record<string, number> = {}
+    try {
+        sharedPrescriptionCounts = await fetchSharedPrescriptionCountsByGuestAppointmentIds(
+            supabase,
+            guestIds,
+        )
+    } catch {
+        // Non-fatal: dashboard still loads without share counts
+    }
 
     const profDial =
         normalizePhoneCountryCode(
@@ -1096,6 +1109,7 @@ export async function getProfessionalDashboardData() {
                     age: g.age,
                     prescriptionHtml: g.prescription_html || null,
                     prescriptionUpdatedAt: g.prescription_updated_at || null,
+                    sharedPrescriptionCount: sharedPrescriptionCounts[g.id] ?? 0,
                 })
             ) || ([] as ProfessionalGuestBooking[]),
     }

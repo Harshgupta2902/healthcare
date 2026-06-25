@@ -35,6 +35,7 @@ import type {
   CheckoutOrderView,
   ClientOrderHistoryItem,
 } from "./types";
+import { attachSharedPrescriptionsToBooking } from "@/features/prescription-sharing/actions";
 
 async function requireAuthUser() {
   const supabase = await createClient();
@@ -269,6 +270,20 @@ async function fulfillBookingOrderAfterPayment(
       }
     }
 
+    if (
+      row.booking_snapshot.sharePrescriptionsConsent &&
+      row.booking_snapshot.sharedPrescriptionIds?.length
+    ) {
+      const { data: authUser } = await supabase.auth.getUser();
+      await attachSharedPrescriptionsToBooking(
+        supabase,
+        userId,
+        authUser.user?.email,
+        appointmentId,
+        row.booking_snapshot.sharedPrescriptionIds,
+      );
+    }
+
     const linked = await patchOrderStatus(supabase, row.id, "processing", "processing", {
       guestAppointmentId: appointmentId,
       providerPaymentId: zeroFee ? null : transactionId,
@@ -351,6 +366,8 @@ export async function createBookingOrder(form: unknown) {
     time: validated.data.time,
     message: validated.data.message ?? "",
     deviceHash: validated.data.deviceHash,
+    sharePrescriptionsConsent: validated.data.sharePrescriptionsConsent,
+    sharedPrescriptionIds: validated.data.sharedPrescriptionIds,
   };
 
   const { data, error } = await auth.supabase

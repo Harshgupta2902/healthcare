@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { deviceHashZodField } from "@/lib/device-rate-limit";
-
+import { MAX_SHARED_PRESCRIPTIONS } from "@/features/prescription-sharing/types";
 export const bookingSnapshotSchema = z.object({
   firstName: z.string().min(2),
   lastName: z.string().min(2),
@@ -16,10 +16,33 @@ export const bookingSnapshotSchema = z.object({
   deviceHash: deviceHashZodField,
 });
 
-export const createBookingOrderSchema = bookingSnapshotSchema.extend({
-  professionalId: z.string().uuid("Please select a consultant before booking."),
-  holdId: z.string().uuid("Please select and reserve a time slot before booking."),
-});
+export const createBookingOrderSchema = bookingSnapshotSchema
+  .extend({
+    professionalId: z.string().uuid("Please select a consultant before booking."),
+    holdId: z.string().uuid("Please select and reserve a time slot before booking."),
+    sharePrescriptionsConsent: z.boolean().optional().default(false),
+    sharedPrescriptionIds: z
+      .array(z.string().uuid())
+      .max(MAX_SHARED_PRESCRIPTIONS)
+      .optional()
+      .default([]),
+  })
+  .superRefine((val, ctx) => {
+    if (val.sharePrescriptionsConsent && val.sharedPrescriptionIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select at least one prescription to share.",
+        path: ["sharedPrescriptionIds"],
+      });
+    }
+    if (!val.sharePrescriptionsConsent && val.sharedPrescriptionIds.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please confirm consent before sharing prescriptions.",
+        path: ["sharePrescriptionsConsent"],
+      });
+    }
+  });
 
 export const orderIdSchema = z.object({
   orderId: z.string().uuid("Invalid order reference."),
