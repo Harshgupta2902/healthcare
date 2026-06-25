@@ -31,6 +31,7 @@ import {
   ExternalLink,
   Link2,
   Loader2,
+  FileText,
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -45,6 +46,9 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { buildProfessionalScheduleTitle } from "@/lib/calendar/consultationMeetingTitle";
+import { formatBookingDateLabel, formatBookingTimeLabel } from "@/lib/booking-display";
+import { getSharedPrescriptionsForGuestAppointment } from "@/features/prescription-sharing/actions";
+import type { SharedPrescriptionItem } from "@/features/prescription-sharing/types";
 import type { ProfessionalGuestBooking } from "@/features/professional/actions";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./professional-schedule-calendar.css";
@@ -77,6 +81,8 @@ export type ScheduleMeeting = {
   message?: string | null;
   appointmentType?: string;
   age?: number;
+  guestAppointmentId?: string;
+  sharedPrescriptionCount?: number;
 };
 
 type CalendarEvent = {
@@ -201,6 +207,8 @@ export function buildScheduleMeetings(
       message: guest.message,
       age: guest.age,
       meetingUrl: guest.calendarInviteUrl?.trim() || null,
+      guestAppointmentId: guest.id,
+      sharedPrescriptionCount: guest.sharedPrescriptionCount ?? 0,
     };
   });
 
@@ -564,6 +572,13 @@ function MeetingDetailsDialog({
   mounted: boolean;
 }) {
   const meetingUrl = meeting?.meetingUrl?.trim() || "";
+  const [sharedPrescriptionsOpen, setSharedPrescriptionsOpen] = useState(false);
+  const [sharedPrescriptions, setSharedPrescriptions] = useState<SharedPrescriptionItem[]>([]);
+  const [sharedPrescriptionsLoading, setSharedPrescriptionsLoading] = useState(false);
+  const [activePrescriptionId, setActivePrescriptionId] = useState<string | null>(null);
+
+  const sharedCount = meeting?.sharedPrescriptionCount ?? 0;
+  const guestAppointmentId = meeting?.guestAppointmentId;
 
   const handleCopyLink = async () => {
     if (!meetingUrl) return;
@@ -580,7 +595,32 @@ function MeetingDetailsDialog({
     window.open(meetingUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleViewSharedPrescriptions = async () => {
+    if (!guestAppointmentId || sharedCount <= 0) return;
+    setSharedPrescriptionsOpen(true);
+    setSharedPrescriptionsLoading(true);
+    setActivePrescriptionId(null);
+
+    const result = await getSharedPrescriptionsForGuestAppointment({ guestAppointmentId });
+    setSharedPrescriptionsLoading(false);
+
+    if ("error" in result && result.error) {
+      toast.error(result.error);
+      setSharedPrescriptionsOpen(false);
+      return;
+    }
+    if (!("success" in result) || !result.success) return;
+
+    setSharedPrescriptions(result.prescriptions);
+    if (result.prescriptions.length > 0) {
+      setActivePrescriptionId(result.prescriptions[0].id);
+    }
+  };
+
+  const activePrescription = sharedPrescriptions.find((item) => item.id === activePrescriptionId) ?? null;
+
   return (
+    <>
     <Dialog open={meeting != null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md rounded-2xl sm:max-w-lg">
         {meeting ? (
@@ -622,6 +662,35 @@ function MeetingDetailsDialog({
                   Meeting link is not available yet. It will appear here once the session is created.
                 </div>
               )}
+              {sharedCount > 0 ? (
+                <div className="rounded-xl border border-teal-200/60 bg-teal-50/70 px-3 py-3 dark:border-teal-900/40 dark:bg-teal-950/20">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex gap-3">
+                      <FileText className="mt-0.5 size-4 shrink-0 text-teal-700 dark:text-teal-300" aria-hidden />
+                      <div>
+                        <p className="font-medium text-lp-on-surface">
+                          {sharedCount} prior prescription{sharedCount === 1 ? "" : "s"} shared
+                        </p>
+                        <p className="text-lp-on-surface-variant">
+                          The patient consented to share prior prescriptions for this consultation.
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 rounded-lg bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-100">
+                      Rx ×{sharedCount}
+                    </Badge>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3 w-full cursor-pointer rounded-xl"
+                    onClick={() => void handleViewSharedPrescriptions()}
+                  >
+                    <FileText className="mr-2 size-4" />
+                    View shared prescriptions
+                  </Button>
+                </div>
+              ) : null}
             </div>
 
             {meetingUrl ? (
@@ -650,6 +719,70 @@ function MeetingDetailsDialog({
         ) : null}
       </DialogContent>
     </Dialog>
+
+    <Dialog open={sharedPrescriptionsOpen} onOpenChange={setSharedPrescriptionsOpen}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-heading text-xl">Shared prescriptions</DialogTitle>
+          <DialogDescription>
+            Prior prescriptions the patient chose to share for this consultation.
+          </DialogDescription>
+        </DialogHeader>
+
+        {sharedPrescriptionsLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-lp-on-surface-variant">
+            <Loader2 className="size-5 animate-spin text-lp-brand" aria-hidden />
+            <span className="text-sm">Loading prescriptions…</span>
+          </div>
+        ) : sharedPrescriptions.length === 0 ? (
+          <p className="py-6 text-sm text-lp-on-surface-variant">No shared prescriptions found.</p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+            <ul className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
+              {sharedPrescriptions.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActivePrescriptionId(item.id)}
+                    className={cn(
+                      "w-full rounded-xl border px-3 py-2 text-left transition-colors",
+                      activePrescriptionId === item.id
+                        ? "border-lp-brand/40 bg-lp-brand/5"
+                        : "border-lp-outline-variant/25 bg-lp-surface-container-low/40 hover:bg-lp-surface-container-low",
+                    )}
+                  >
+                    <span className="block text-sm font-semibold text-lp-on-surface">{item.category}</span>
+                    <span className="block text-xs text-lp-on-surface-variant">
+                      {formatBookingDateLabel(item.appointmentDate)} · {formatBookingTimeLabel(item.appointmentTime)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {activePrescription ? (
+              <div className="max-h-[50vh] overflow-y-auto rounded-xl border border-lp-outline-variant/25 bg-white p-4 dark:bg-lp-surface-container-lowest">
+                <div className="mb-3 space-y-1 border-b border-lp-outline-variant/20 pb-3">
+                  <p className="font-heading text-base font-semibold text-lp-on-surface">
+                    {activePrescription.category}
+                  </p>
+                  <p className="text-xs text-lp-on-surface-variant">
+                    {formatBookingDateLabel(activePrescription.appointmentDate)} ·{" "}
+                    {formatBookingTimeLabel(activePrescription.appointmentTime)}
+                    {activePrescription.professionalName ? ` · ${activePrescription.professionalName}` : ""}
+                  </p>
+                </div>
+                <div
+                  className="prose prose-sm max-w-none text-lp-on-surface"
+                  dangerouslySetInnerHTML={{ __html: activePrescription.prescriptionHtml }}
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

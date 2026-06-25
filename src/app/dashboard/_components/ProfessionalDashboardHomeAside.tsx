@@ -190,13 +190,20 @@ export function ProfessionalDashboardHomeAside({
     return groupTodayMeetingsByClient(today);
   }, [allMeetings]);
 
+  const hasTodayMeetings = todayMeetingGroups.length > 0;
+
   const upcomingMeetings = useMemo(() => {
     const now = Date.now();
     return allMeetings
-      .filter((meeting) => meeting.start.getTime() > now)
+      .filter((meeting) => {
+        if (meeting.start.getTime() <= now) return false;
+        // Avoid duplicating clients already listed under Today's meetings
+        if (hasTodayMeetings && isToday(meeting.start)) return false;
+        return true;
+      })
       .sort((a, b) => a.start.getTime() - b.start.getTime())
       .slice(0, MAX_ASIDE_ITEMS);
-  }, [allMeetings]);
+  }, [allMeetings, hasTodayMeetings]);
 
   const recentPayments = useMemo(
     () =>
@@ -211,13 +218,9 @@ export function ProfessionalDashboardHomeAside({
     [appointments, guestAppointments]
   );
 
-  const showTodayMeetings = !isLoading && todayMeetingGroups.length > 0;
+  const showTodayMeetings = !isLoading && hasTodayMeetings;
+  const showUpcomingMeetings = !isLoading && upcomingMeetings.length > 0;
   const showRecentEarnings = !isLoading && recentPayments.length > 0;
-  const showUpcomingMeetings =
-    !isLoading &&
-    !showTodayMeetings &&
-    !showRecentEarnings &&
-    upcomingMeetings.length > 0;
 
   if (isLoading) {
     return (
@@ -245,6 +248,22 @@ export function ProfessionalDashboardHomeAside({
         </AsideSection>
       ) : null}
 
+      {showUpcomingMeetings ? (
+        <AsideSection
+          title="Upcoming clients"
+          description="Your next scheduled consultations"
+          actionLabel="View dashboard"
+          actionSection="home"
+          onNavigate={setActiveSection}
+        >
+          <div className="space-y-2">
+            {upcomingMeetings.map((meeting) => (
+              <UpcomingMeetingRow key={meeting.id} meeting={meeting} mounted={mounted} />
+            ))}
+          </div>
+        </AsideSection>
+      ) : null}
+
       {showRecentEarnings ? (
         <AsideSection
           title="Recent earnings"
@@ -256,22 +275,6 @@ export function ProfessionalDashboardHomeAside({
           <div className="space-y-2">
             {recentPayments.map((payment) => (
               <EarningsRow key={payment.id} payment={payment} mounted={mounted} />
-            ))}
-          </div>
-        </AsideSection>
-      ) : null}
-
-      {showUpcomingMeetings ? (
-        <AsideSection
-          title="Upcoming meetings"
-          description="Your next scheduled consultations"
-          actionLabel="View dashboard"
-          actionSection="home"
-          onNavigate={setActiveSection}
-        >
-          <div className="space-y-2">
-            {upcomingMeetings.map((meeting) => (
-              <UpcomingMeetingRow key={meeting.id} meeting={meeting} mounted={mounted} />
             ))}
           </div>
         </AsideSection>
@@ -356,6 +359,10 @@ function TodayClientGroupRow({
     group.meetings.find((meeting) => meeting.meetingUrl?.trim()) ?? group.meetings[0];
   const meetingUrl = primaryMeeting.meetingUrl?.trim();
   const meetingCount = group.meetings.length;
+  const sharedPrescriptionCount = Math.max(
+    ...group.meetings.map((meeting) => meeting.sharedPrescriptionCount ?? 0),
+    0,
+  );
 
   return (
     <div className="flex items-start gap-3 rounded-xl border border-lp-outline-variant/20 bg-white p-3 shadow-sm">
@@ -386,6 +393,12 @@ function TodayClientGroupRow({
             : "—"}
         </p>
         <p className="mt-0.5 truncate text-xs text-lp-brand">{primaryMeeting.title}</p>
+        {sharedPrescriptionCount > 0 ? (
+          <p className="mt-1 text-xs font-medium text-teal-700">
+            {sharedPrescriptionCount} prior prescription
+            {sharedPrescriptionCount === 1 ? "" : "s"} shared
+          </p>
+        ) : null}
       </div>
       {meetingUrl ? (
         <Button
@@ -433,6 +446,12 @@ function UpcomingMeetingRow({
           {mounted ? format(meeting.start, "EEE, MMM d · h:mm a") : "—"}
         </p>
         <p className="mt-0.5 truncate text-xs text-lp-brand">{meeting.clientLabel}</p>
+        {(meeting.sharedPrescriptionCount ?? 0) > 0 ? (
+          <p className="mt-1 text-xs font-medium text-teal-700">
+            {meeting.sharedPrescriptionCount} prior prescription
+            {meeting.sharedPrescriptionCount === 1 ? "" : "s"} shared
+          </p>
+        ) : null}
       </div>
       {meetingUrl ? (
         <Button
