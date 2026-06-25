@@ -5,11 +5,13 @@ import {
   FileText,
   Shield,
   Calendar,
+  Clock,
   IndianRupee,
   GraduationCap,
   MessageSquare,
   Users,
   LayoutGrid,
+  LayoutDashboard,
   PenLine,
   type LucideIcon,
 } from 'lucide-react'
@@ -17,6 +19,7 @@ import {
 export type DashboardRole = 'client' | 'professional'
 
 export type DashboardSectionId =
+  | 'home'
   | 'profile'
   | 'history'
   | 'medications'
@@ -60,7 +63,7 @@ const clientBookings: DashboardNavItem[] = [
 const professionalPractice: DashboardNavItem[] = [
   { id: 'credentials', label: 'Credentials', mobileLabel: 'Creds', icon: GraduationCap, roles: ['professional'] },
   { id: 'consultations', label: 'Consultations', mobileLabel: 'Requests', icon: MessageSquare, roles: ['professional'] },
-  { id: 'calendar', label: 'Calendar', icon: Calendar, roles: ['professional'] },
+  { id: 'calendar', label: 'Availability', mobileLabel: 'Hours', icon: Clock, roles: ['professional'] },
   { id: 'schedule', label: 'Schedule view', mobileLabel: 'Schedule', icon: LayoutGrid, roles: ['professional'] },
 ]
 
@@ -89,9 +92,9 @@ export const clientNavGroups: DashboardNavGroup[] = [
 
 export const professionalNavGroups: DashboardNavGroup[] = [
   {
-    id: 'account',
-    label: 'Account',
-    items: [{ id: 'profile', label: 'Profile', icon: User, roles: ['professional'] }],
+    id: 'business',
+    label: 'Business',
+    items: professionalBusiness,
   },
   {
     id: 'practice',
@@ -99,11 +102,19 @@ export const professionalNavGroups: DashboardNavGroup[] = [
     items: professionalPractice,
   },
   {
-    id: 'business',
-    label: 'Business',
-    items: professionalBusiness,
+    id: 'account',
+    label: 'Account',
+    items: [{ id: 'profile', label: 'Profile', icon: User, roles: ['professional'] }],
   },
+
 ]
+
+export const dashboardHomeLink = {
+  href: '/dashboard',
+  label: 'Dashboard',
+  mobileLabel: 'Home',
+  icon: LayoutDashboard,
+} as const
 
 export const dashboardBlogLink = {
   href: '/dashboard/blog',
@@ -124,8 +135,8 @@ export function isSectionAllowedForRole(section: string, role: DashboardRole): s
   return getAllNavItemsForRole(role).some((item) => item.id === section)
 }
 
-export function getDefaultSectionForRole(role: DashboardRole): DashboardSectionId {
-  return 'profile'
+export function getDefaultSectionForRole(_role: DashboardRole): DashboardSectionId {
+  return 'home'
 }
 
 export function getNavItemForSection(role: DashboardRole, section: DashboardSectionId): DashboardNavItem | undefined {
@@ -134,7 +145,8 @@ export function getNavItemForSection(role: DashboardRole, section: DashboardSect
 
 export function normalizeDashboardSection(hash: string, role: DashboardRole): DashboardSectionId {
   const raw = hash.replace(/^#/, '').trim()
-  if (!raw) return getDefaultSectionForRole(role)
+  if (!raw || raw === 'home') return getDefaultSectionForRole(role)
+  if (role === 'professional' && raw === 'availability') return 'calendar'
   if (isSectionAllowedForRole(raw, role)) return raw
   return getDefaultSectionForRole(role)
 }

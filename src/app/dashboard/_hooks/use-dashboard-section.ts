@@ -30,6 +30,15 @@ export function useDashboardSection(role: DashboardRole) {
 
   const setActiveSection = useCallback(
     (section: DashboardSectionId) => {
+      if (section === 'home') {
+        const base = window.location.pathname + window.location.search
+        if (window.location.hash) {
+          history.replaceState(null, '', base)
+        }
+        setActiveSectionState('home')
+        return
+      }
+
       const normalized = normalizeDashboardSection(section, role)
       const nextHash = `#${normalized}`
       if (window.location.hash !== nextHash) {
