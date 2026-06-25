@@ -13,19 +13,12 @@ import { useDashboardSectionContext } from "./dashboard-section-context";
 import { dashboardGlassCard } from "./dashboard-theme";
 import {
   buildScheduleMeetings,
+  type ScheduleDashboardAppointment,
   type ScheduleMeeting,
 } from "./ProfessionalScheduleCalendar";
 
-type DashboardAppointment = {
-  id: string;
+type HomeAsideAppointment = ScheduleDashboardAppointment & {
   clientId: string;
-  appointmentType: string;
-  status: string;
-  startTime: string;
-  endTime: string;
-  clientName?: string;
-  clientEmail?: string;
-  meetingUrl: string | null;
 };
 
 type DashboardPayment = {
@@ -94,12 +87,12 @@ function guestClientKey(guest: ProfessionalGuestBooking): string {
 }
 
 function buildRecentClients(
-  appointments: DashboardAppointment[],
+  appointments: HomeAsideAppointment[],
   guestAppointments: ProfessionalGuestBooking[]
 ): RecentClient[] {
   const clients: RecentClient[] = [];
 
-  const byClientId = new Map<string, DashboardAppointment[]>();
+  const byClientId = new Map<string, HomeAsideAppointment[]>();
   for (const apt of appointments) {
     const list = byClientId.get(apt.clientId) ?? [];
     list.push(apt);
@@ -171,7 +164,7 @@ function buildRecentClients(
 }
 
 type ProfessionalDashboardHomeAsideProps = {
-  appointments: DashboardAppointment[];
+  appointments: HomeAsideAppointment[];
   guestAppointments: ProfessionalGuestBooking[];
   payments: DashboardPayment[];
   mounted: boolean;
@@ -240,8 +233,8 @@ export function ProfessionalDashboardHomeAside({
         <AsideSection
           title="Today's meetings"
           description="Your consultations scheduled for today"
-          actionLabel="Full schedule"
-          actionSection="schedule"
+          actionLabel="View dashboard"
+          actionSection="home"
           onNavigate={setActiveSection}
         >
           <div className="space-y-2">
@@ -272,8 +265,8 @@ export function ProfessionalDashboardHomeAside({
         <AsideSection
           title="Upcoming meetings"
           description="Your next scheduled consultations"
-          actionLabel="Full schedule"
-          actionSection="schedule"
+          actionLabel="View dashboard"
+          actionSection="home"
           onNavigate={setActiveSection}
         >
           <div className="space-y-2">

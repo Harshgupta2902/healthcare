@@ -49,7 +49,7 @@ import type { ProfessionalGuestBooking } from "@/features/professional/actions";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./professional-schedule-calendar.css";
 
-type DashboardAppointment = {
+export type ScheduleDashboardAppointment = {
   id: string;
   appointmentType: string;
   status: string;
@@ -155,7 +155,7 @@ function parseGuestEnd(guest: ProfessionalGuestBooking, start: Date) {
 }
 
 export function buildScheduleMeetings(
-  appointments: DashboardAppointment[],
+  appointments: ScheduleDashboardAppointment[],
   guestAppointments: ProfessionalGuestBooking[]
 ): ScheduleMeeting[] {
   const fromAppointments: ScheduleMeeting[] = appointments.map((apt) => {
@@ -245,7 +245,7 @@ function ScheduleHeader({ date }: HeaderProps) {
 }
 
 type ProfessionalScheduleCalendarProps = {
-  appointments: DashboardAppointment[];
+  appointments: ScheduleDashboardAppointment[];
   guestAppointments: ProfessionalGuestBooking[];
   availability: ScheduleAvailabilitySlot[];
   mounted: boolean;
@@ -358,12 +358,6 @@ export function ProfessionalScheduleCalendar({
   return (
     <div className={cn("animate-in fade-in slide-in-from-bottom-2 space-y-4", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-bold text-lp-cta-bg">My schedule</h2>
-          <p className="text-sm text-lp-on-surface-variant">
-            Your week at a glance — click a meeting for details
-          </p>
-        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
