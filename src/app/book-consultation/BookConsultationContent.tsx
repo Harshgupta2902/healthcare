@@ -56,6 +56,9 @@ import { BookingDatePicker } from "./booking-date-picker";
 import { BookingPopoverSelect } from "./booking-popover-select";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
 import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
+import { PrescriptionShareConsentSection } from "./PrescriptionShareConsentSection";
+import { getEligiblePrescriptionsForSharing } from "@/features/prescription-sharing/actions";
+import { MAX_SHARED_PRESCRIPTIONS, type EligiblePrescriptionItem } from "@/features/prescription-sharing/types";
 
 const healthCategories = [
   "General Medicine",
@@ -209,6 +212,13 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const [isSearching, setIsSearching] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prescriptionFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [eligiblePrescriptions, setEligiblePrescriptions] = useState<EligiblePrescriptionItem[]>([]);
+  const [eligiblePrescriptionsLoading, setEligiblePrescriptionsLoading] = useState(false);
+  const [sharePrescriptionsConsent, setSharePrescriptionsConsent] = useState(false);
+  const [sharedPrescriptionIds, setSharedPrescriptionIds] = useState<string[]>([]);
+  const [prescriptionShareError, setPrescriptionShareError] = useState<string | null>(null);
 
   const {
     register,
@@ -221,6 +231,8 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
     resolver: zodResolver(appointmentSchema),
     defaultValues: { category: "", state: "", city: "", time: "" },
   });
+
+  const watchedEmail = watch("email");
 
   useEffect(() => {
     let cancelled = false;
@@ -295,6 +307,50 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
     if (!authReady) return;
     void ensureRazorpayCheckoutReady();
   }, [authReady]);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    const email = watchedEmail?.trim();
+    const emailValid = email && z.string().email().safeParse(email).success;
+    if (!emailValid) {
+      setEligiblePrescriptions([]);
+      setSharePrescriptionsConsent(false);
+      setSharedPrescriptionIds([]);
+      setPrescriptionShareError(null);
+      setEligiblePrescriptionsLoading(false);
+      return;
+    }
+
+    if (prescriptionFetchTimerRef.current) {
+      clearTimeout(prescriptionFetchTimerRef.current);
+    }
+
+    setEligiblePrescriptionsLoading(true);
+    prescriptionFetchTimerRef.current = setTimeout(() => {
+      void getEligiblePrescriptionsForSharing({ email }).then((result) => {
+        setEligiblePrescriptionsLoading(false);
+        if ("error" in result && result.error) {
+          setEligiblePrescriptions([]);
+          return;
+        }
+        if (!("success" in result) || !result.success) return;
+
+        setEligiblePrescriptions(result.prescriptions);
+        if (result.prescriptions.length === 0) {
+          setSharePrescriptionsConsent(false);
+          setSharedPrescriptionIds([]);
+          setPrescriptionShareError(null);
+        }
+      });
+    }, 400);
+
+    return () => {
+      if (prescriptionFetchTimerRef.current) {
+        clearTimeout(prescriptionFetchTimerRef.current);
+      }
+    };
+  }, [authReady, watchedEmail]);
 
   useEffect(() => {
     if (!bookingConsultant) return;
@@ -464,6 +520,20 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
       return;
     }
 
+    if (sharePrescriptionsConsent && sharedPrescriptionIds.length === 0) {
+      setPrescriptionShareError("Select at least one prescription to share.");
+      return;
+    }
+    if (!sharePrescriptionsConsent && sharedPrescriptionIds.length > 0) {
+      setPrescriptionShareError("Please confirm consent before sharing prescriptions.");
+      return;
+    }
+    if (sharedPrescriptionIds.length > MAX_SHARED_PRESCRIPTIONS) {
+      setPrescriptionShareError(`You can share up to ${MAX_SHARED_PRESCRIPTIONS} prescriptions.`);
+      return;
+    }
+
+    setPrescriptionShareError(null);
     setIsSubmitting(true);
     try {
       const deviceHash = await getDeviceFingerprintHash();
@@ -483,6 +553,8 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
         professionalId: decodedConsultantId,
         holdId: slotHoldId!,
         deviceHash,
+        sharePrescriptionsConsent,
+        sharedPrescriptionIds: sharePrescriptionsConsent ? sharedPrescriptionIds : [],
       });
 
       if ("error" in result && result.error) {
@@ -653,6 +725,16 @@ export function BookConsultationContent({ authReady }: { authReady: boolean }) {
                   </div>
                 </div>
               </BookingSection>
+
+              <PrescriptionShareConsentSection
+                prescriptions={eligiblePrescriptions}
+                isLoading={eligiblePrescriptionsLoading}
+                consentEnabled={sharePrescriptionsConsent}
+                onConsentChange={setSharePrescriptionsConsent}
+                selectedIds={sharedPrescriptionIds}
+                onSelectedIdsChange={setSharedPrescriptionIds}
+                error={prescriptionShareError}
+              />
 
               <BookingSection icon={<Calendar className="size-6" aria-hidden />} title="Appointment Details">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4">
