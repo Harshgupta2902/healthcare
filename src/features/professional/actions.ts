@@ -862,6 +862,8 @@ export type ProfessionalGuestBooking = {
   appointmentTime: string
   meetingDurationMinutes?: number | null
   meetingEndTime?: string | null
+  calendarInviteUrl?: string | null
+  meetingTitle?: string | null
   message: string | null
     createdAt: string
     age: number
@@ -984,6 +986,8 @@ export async function getProfessionalDashboardData() {
                     appointment_time: string
                     meeting_duration_minutes: number | null
                     meeting_end_time: string | null
+                    calendar_invite_url: string | null
+                    meeting_title: string | null
                     message: string | null
                     created_at: string
                     age: number
@@ -1002,6 +1006,8 @@ export async function getProfessionalDashboardData() {
                     appointmentTime: g.appointment_time,
                     meetingDurationMinutes: g.meeting_duration_minutes,
                     meetingEndTime: g.meeting_end_time,
+                    calendarInviteUrl: g.calendar_invite_url || null,
+                    meetingTitle: g.meeting_title || null,
                     message: g.message,
                     createdAt: g.created_at,
                     age: g.age,

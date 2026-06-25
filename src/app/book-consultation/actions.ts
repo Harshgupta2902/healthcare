@@ -319,13 +319,18 @@ export async function bookConsultationMeetingSaveStep(input: unknown) {
   try {
     await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
     const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
-    await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
     pipeline.assertMeetUrlForAppointment(
       parsed.data.guestAppointmentId,
       parsed.data.meetUrl,
       parsed.data.provider,
     );
-    await pipeline.saveGuestMeetingUrl(auth.supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl);
+    await pipeline.saveGuestMeetingUrl(
+      auth.supabase,
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    );
     return { success: true as const, meetUrl: parsed.data.meetUrl };
   } catch (e) {
     return {

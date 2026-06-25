@@ -643,12 +643,15 @@ export async function saveGuestAppointmentCalendarInviteUrl(input: unknown) {
     return { success: false as const, error: 'A calendar link is already saved for this appointment.' }
   }
 
-  const { error } = await supabase
-    .from('guest_appointments')
-    .update({ calendar_invite_url: url })
-    .eq('id', guestAppointmentId)
-
-  if (error) return { success: false as const, error: error.message }
+  try {
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    await pipeline.saveGuestMeetingUrl(supabase, guestAppointmentId, url)
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not save meeting link.',
+    }
+  }
   revalidatePath('/application/enter/appointments')
   return { success: true as const }
 }
@@ -778,13 +781,18 @@ export async function guestMeetingSaveStep(input: unknown) {
   try {
     const supabase = await createClient()
     const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
-    await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
     pipeline.assertMeetUrlForAppointment(
       parsed.data.guestAppointmentId,
       parsed.data.meetUrl,
       parsed.data.provider,
     )
-    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl)
+    await pipeline.saveGuestMeetingUrl(
+      supabase,
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    )
     revalidatePath('/application/enter/appointments')
     return { success: true as const, meetUrl: parsed.data.meetUrl }
   } catch (e) {
@@ -809,7 +817,12 @@ export async function createAndSendGuestAppointmentMeeting(input: unknown) {
     const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
     const { createConsultationMeeting } = await import('@/lib/calendar/createConsultationMeeting')
     const result = await createConsultationMeeting(ctx)
-    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, result.meetUrl)
+    await pipeline.saveGuestMeetingUrl(
+      supabase,
+      parsed.data.guestAppointmentId,
+      result.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    )
     revalidatePath('/application/enter/appointments')
     return {
       success: true as const,

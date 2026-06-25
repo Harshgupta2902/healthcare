@@ -10,11 +10,13 @@ import {
   sendConsultationMeetingInviteToGuest,
   sendConsultationMeetingInviteToProfessional,
 } from '@/lib/mailer'
+import { buildConsultationMeetingTitle } from '@/lib/calendar/consultationMeetingTitle'
 
 export type GuestMeetingContext = {
   guestAppointmentId: string
   guestName: string
   guestEmail: string
+  category: string | null
   professionalName: string
   professionalEmail: string
   appointmentDate: string
@@ -24,6 +26,14 @@ export type GuestMeetingContext = {
 }
 
 export type MeetingProvider = 'google' | 'jitsi'
+
+export function meetingTitleForContext(ctx: GuestMeetingContext): string {
+  return buildConsultationMeetingTitle({
+    category: ctx.category,
+    professionalName: ctx.professionalName,
+    professionalEmail: ctx.professionalEmail,
+  })
+}
 
 export function buildJitsiMeetUrl(guestAppointmentId: string): string {
   const slug = guestAppointmentId.replace(/-/g, '').slice(0, 12)
@@ -47,7 +57,7 @@ export async function loadGuestMeetingContext(
   const { data: row, error: readErr } = await supabase
     .from('guest_appointments')
     .select(
-      'id, first_name, last_name, email, appointment_date, appointment_time, meeting_duration_minutes, meeting_end_time, calendar_invite_url, professional_id',
+      'id, first_name, last_name, email, category, appointment_date, appointment_time, meeting_duration_minutes, meeting_end_time, calendar_invite_url, professional_id',
     )
     .eq('id', guestAppointmentId)
     .maybeSingle()
@@ -86,6 +96,7 @@ export async function loadGuestMeetingContext(
     guestAppointmentId,
     guestName: `${row.first_name} ${row.last_name}`.trim(),
     guestEmail,
+    category: (row.category as string | null) ?? null,
     professionalName: (prof?.name as string | null) || profEmail,
     professionalEmail: profEmail,
     appointmentDate,
@@ -127,7 +138,7 @@ export async function generateGuestMeetingLink(
   ctx: GuestMeetingContext,
 ): Promise<{ meetUrl: string; provider: MeetingProvider }> {
   const { start, end } = getMeetingUtcRange(ctx)
-  const title = 'HealthHere Consultation'
+  const title = meetingTitleForContext(ctx)
   const attendeeEmails = [ctx.guestEmail, ctx.professionalEmail]
 
   const google = await createGoogleCalendarMeetEvent({
@@ -150,17 +161,24 @@ export async function generateGuestMeetingLink(
 function buildIcsForMeeting(ctx: GuestMeetingContext, meetUrl: string): string {
   const { start, end } = getMeetingUtcRange(ctx)
   const slotLabel = formatSlotLabel(ctx.appointmentDate, ctx.appointmentTime)
+  const title = meetingTitleForContext(ctx)
   const description = [
-    `Video consultation for ${ctx.guestName.trim() || 'patient'}.`,
+    title,
+    '',
+    `Patient: ${ctx.guestName.trim() || 'patient'}`,
+    `Consultant: ${ctx.professionalName}`,
+    ctx.category?.trim() ? `Type: ${ctx.category.trim()}` : null,
     '',
     `Join meeting: ${meetUrl}`,
     '',
     `Scheduled: ${slotLabel}`,
-  ].join('\n')
+  ]
+    .filter((line): line is string => line != null)
+    .join('\n')
 
   return buildConsultationIcs({
     uid: `${ctx.guestAppointmentId}@healthhere.com`,
-    title: 'HealthHere Consultation',
+    title,
     description,
     location: meetUrl,
     start,
@@ -208,11 +226,53 @@ export async function saveGuestMeetingUrl(
   supabase: SupabaseClient,
   guestAppointmentId: string,
   meetUrl: string,
+  meetingTitle?: string,
 ): Promise<void> {
+  let title = meetingTitle?.trim()
+  if (!title) {
+    title = await resolveGuestMeetingTitle(supabase, guestAppointmentId)
+  }
+
   const { error } = await supabase
     .from('guest_appointments')
-    .update({ calendar_invite_url: meetUrl.trim() })
+    .update({
+      calendar_invite_url: meetUrl.trim(),
+      meeting_title: title,
+    })
     .eq('id', guestAppointmentId)
 
   if (error) throw new Error(error.message)
+}
+
+async function resolveGuestMeetingTitle(
+  supabase: SupabaseClient,
+  guestAppointmentId: string,
+): Promise<string> {
+  const { data: row, error } = await supabase
+    .from('guest_appointments')
+    .select('category, professional_id')
+    .eq('id', guestAppointmentId)
+    .maybeSingle()
+
+  if (error || !row) {
+    return buildConsultationMeetingTitle({ category: null, professionalName: 'consultant' })
+  }
+
+  let professionalName = 'consultant'
+  let professionalEmail: string | undefined
+  if (row.professional_id) {
+    const { data: prof } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', row.professional_id as string)
+      .maybeSingle()
+    professionalName = (prof?.name as string | null)?.trim() || (prof?.email as string | null)?.trim() || 'consultant'
+    professionalEmail = (prof?.email as string | undefined)?.trim()
+  }
+
+  return buildConsultationMeetingTitle({
+    category: (row.category as string | null) ?? null,
+    professionalName,
+    professionalEmail,
+  })
 }
