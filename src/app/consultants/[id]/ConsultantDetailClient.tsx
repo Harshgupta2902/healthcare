@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  ExternalLink,
   GraduationCap,
   IndianRupee,
   MapPin,
@@ -60,13 +59,11 @@ export default function ConsultantDetailClient({ prof }: { prof: any }) {
             degree: prof.specialization || "Clinical practice",
             institution: "Verified professional profile",
             year: null as number | null,
-            document_url: null as string | null,
           },
           {
             degree: "Patient consultation",
             institution: "HealthHere care access network",
             year: null as number | null,
-            document_url: null as string | null,
           },
         ];
 
@@ -253,17 +250,7 @@ function QualificationCard({ qual }: { qual: any }) {
         {qual.year != null ? <span className="text-xs font-medium text-lp-on-surface-variant">{qual.year}</span> : null}
       </div>
       <h3 className="font-heading font-bold leading-snug text-lp-on-surface">{qual.degree || "Qualification"}</h3>
-      <p className="mb-4 mt-1 text-xs text-lp-on-surface-variant">{qual.institution || "—"}</p>
-      {qual.document_url ? (
-        <button
-          type="button"
-          className="flex items-center gap-1 text-xs font-bold text-lp-brand-bright hover:underline"
-          onClick={() => window.open(qual.document_url, "_blank", "noopener,noreferrer")}
-        >
-          View Document
-          <ExternalLink className="size-3 shrink-0" aria-hidden />
-        </button>
-      ) : null}
+      <p className="mt-1 text-xs text-lp-on-surface-variant">{qual.institution || "—"}</p>
     </div>
   );
 }

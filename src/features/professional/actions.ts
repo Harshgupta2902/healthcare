@@ -952,7 +952,7 @@ export async function getProfessionalById(id: string) {
     ] = await Promise.all([
         supabase.from('professional_profiles').select('*').eq('user_id', id).single(),
         supabase.from('users').select('name, email, image, phone, phone_country_code').eq('id', id).single(),
-        supabase.from('professional_qualifications').select('*').eq('professional_id', id).order('year', { ascending: false }),
+        supabase.from('professional_qualifications').select('degree, institution, year').eq('professional_id', id).order('year', { ascending: false }),
         supabase.from('professional_availability').select('*').eq('professional_id', id).order('day_of_week', { ascending: true })
     ]);
 
@@ -981,10 +981,7 @@ export async function getProfessionalById(id: string) {
         consultationFee: profProfile.consultation_fee,
         city: profProfile.city,
         isVerified: profProfile.is_verified,
-        qualifications: (qualifications || []).map((q: any) => ({
-            ...q,
-            document_url: q.document_approved === true ? q.document_url : null,
-        })),
+        qualifications: qualifications || [],
         availability: availability || []
     };
 }
