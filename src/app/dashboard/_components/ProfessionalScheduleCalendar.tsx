@@ -250,6 +250,7 @@ type ProfessionalScheduleCalendarProps = {
   availability: ScheduleAvailabilitySlot[];
   mounted: boolean;
   isLoading: boolean;
+  className?: string;
 };
 
 export function ProfessionalScheduleCalendar({
@@ -258,6 +259,7 @@ export function ProfessionalScheduleCalendar({
   availability,
   mounted,
   isLoading,
+  className,
 }: ProfessionalScheduleCalendarProps) {
   const [weekAnchor, setWeekAnchor] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedMeeting, setSelectedMeeting] = useState<ScheduleMeeting | null>(null);
@@ -354,7 +356,7 @@ export function ProfessionalScheduleCalendar({
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4">
+    <div className={cn("animate-in fade-in slide-in-from-bottom-2 space-y-4", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-heading text-2xl font-bold text-lp-cta-bg">My schedule</h2>

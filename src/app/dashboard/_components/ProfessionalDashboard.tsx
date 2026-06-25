@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
@@ -10,15 +10,11 @@ import {
     deleteQualification,
     getMyQualificationsSanitized,
     reuploadQualificationDocument,
-    updateAvailability,
-    deleteAvailability,
-    updateAppointmentStatus,
     updateConsultationRequestStatus,
     saveGuestPrescription,
     type ProfessionalGuestBooking,
 } from "@/features/professional/actions";
 import { uploadProfileImage } from "@/features/profile/actions";
-import { isValidHourlyAvailabilityWindow } from "@/lib/booking/slots";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +38,6 @@ import {
     Loader2,
     Edit,
     Plus,
-    Trash2,
     Clock,
     CheckCircle,
     XCircle,
@@ -55,14 +50,14 @@ import {
     Check,
     ChevronsUpDown
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { ProfessionalScheduleCalendar } from "./ProfessionalScheduleCalendar";
+import { ProfessionalAvailabilityPanel } from "./ProfessionalAvailabilityPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
 import { ProfessionalCredentialsList } from "./ProfessionalCredentialsList";
-import { ProfessionalScheduleCalendar } from "./ProfessionalScheduleCalendar";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     getPhoneCountryOptionByIso2,
@@ -178,10 +173,6 @@ interface Payment {
     clientName?: string;
 }
 
-const DAYS_OF_WEEK = [
-    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-];
-
 const SPECIALIZATIONS: string[] = [
     "General Physician",
     "Cardiologist",
@@ -262,7 +253,6 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     }, [initialData?.dashboardError]);
 
     const [showAddQualification, setShowAddQualification] = useState(false);
-    const [showAddAvailability, setShowAddAvailability] = useState(false);
     const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
     const [prescriptionModalRev, setPrescriptionModalRev] = useState(0);
     const [selectedGuestForPrescription, setSelectedGuestForPrescription] = useState<ProfessionalGuestBooking | null>(null);
@@ -277,26 +267,6 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [selectedQualFile, setSelectedQualFile] = useState<File | null>(null);
     const [isDraggingQual, setIsDraggingQual] = useState(false);
     const qualInputRef = useRef<HTMLInputElement>(null);
-
-    const [availabilityForm, setAvailabilityForm] = useState({
-        dayOfWeek: 1,
-        startTime: "09:00",
-        endTime: "17:00",
-        isAvailable: true
-    });
-    const [deletingAvailabilityId, setDeletingAvailabilityId] = useState<string | null>(null);
-
-    const scheduledDaySet = useMemo(
-        () => new Set(availability.map((slot) => slot.dayOfWeek)),
-        [availability],
-    );
-
-    const availableDayIndices = useMemo(
-        () => DAYS_OF_WEEK.map((_, index) => index).filter((index) => !scheduledDaySet.has(index)),
-        [scheduledDaySet],
-    );
-
-    const allWeekdaysScheduled = availableDayIndices.length === 0;
 
     useEffect(() => {
         if (!initialData && user) {
@@ -599,45 +569,6 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         }
     };
 
-    const openAddAvailabilityDialog = (open: boolean) => {
-        setShowAddAvailability(open);
-        if (open) {
-            const firstDay = availableDayIndices[0] ?? 1;
-            setAvailabilityForm({
-                dayOfWeek: firstDay,
-                startTime: "09:00",
-                endTime: "17:00",
-                isAvailable: true,
-            });
-        }
-    };
-
-    const handleUpdateAvail = async () => {
-        if (scheduledDaySet.has(availabilityForm.dayOfWeek)) {
-            toast.error(`${DAYS_OF_WEEK[availabilityForm.dayOfWeek]} is already on your schedule.`);
-            return;
-        }
-        if (!isValidHourlyAvailabilityWindow(availabilityForm.startTime, availabilityForm.endTime)) {
-            toast.error("End time must be at least 1 hour after start (use 24-hour format, e.g. 19:00 for 7 PM).");
-            return;
-        }
-        setIsSaving(true);
-        try {
-            const result = await updateAvailability(availabilityForm);
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-            toast.success("Availability updated");
-            setShowAddAvailability(false);
-            fetchAvailability();
-        } catch (error: any) {
-            toast.error(error.message || "Failed to update availability");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const handleDeleteQualification = async (id: string) => {
         try {
             const result = await deleteQualification(id);
@@ -671,36 +602,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         }
     };
 
-    const handleDeleteAvailability = async (id: string) => {
-        setDeletingAvailabilityId(id);
-        try {
-            const result = await deleteAvailability(id);
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-            toast.success("Availability deleted");
-            fetchAvailability();
-        } catch (error: any) {
-            toast.error(error.message || "Failed to delete");
-        } finally {
-            setDeletingAvailabilityId(null);
-        }
-    };
-
-    const handleUpdateAppointmentStatus = async (id: string, status: string) => {
-        try {
-            const result = await updateAppointmentStatus(id, status);
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-            toast.success(`Appointment ${status}`);
-            fetchAppointments();
-        } catch (error: any) {
-            toast.error(error.message || "Failed to update status");
-        }
-    };
+    const totalEarnings = payments.filter(p => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
+    const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
 
     const handleUpdateRequestStatus = async (id: string, status: string) => {
         try {
@@ -781,11 +684,10 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
         }
     };
 
-    const totalEarnings = payments.filter(p => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
-    const pendingPayments = payments.filter(p => p.status === "pending").reduce((sum, p) => sum + p.amount, 0);
-
     return (
         <div className="min-w-0">
+            {activeSection === "home" ? (
+            <>
             <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <Card className={dashboardStatCard}>
                     <CardContent className="p-4 sm:p-5">
@@ -842,6 +744,19 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     </CardContent>
                 </Card>
             </div>
+
+            <div className="w-full min-w-0 lg:w-1/2">
+                <ProfessionalScheduleCalendar
+                    appointments={appointments}
+                    guestAppointments={guestAppointments}
+                    availability={availability}
+                    mounted={mounted}
+                    isLoading={isLoadingAppointments || isLoadingGuestBookings || isLoadingAvail}
+                    className="min-w-0"
+                />
+            </div>
+            </>
+            ) : null}
 
             <div className="space-y-6">
 
@@ -1361,200 +1276,11 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 ) : null}
 
                 {activeSection === "calendar" ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6">
-                    <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-                        <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
-                            <CardHeader className="pt-4 bg-indigo-50/50">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="min-w-0">
-                                        <CardTitle className="text-lp-cta-bg font-black">Weekly Availability</CardTitle>
-                                        <CardDescription>Setup your core recurring working hours</CardDescription>
-                                    </div>
-                                    <Dialog open={showAddAvailability} onOpenChange={openAddAvailabilityDialog}>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                size="sm"
-                                                disabled={allWeekdaysScheduled}
-                                                className={`w-full px-5 sm:w-auto sm:rounded-full ${dashboardPrimaryButton}`}
-                                            >
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Add Slot
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="rounded-lg sm:rounded-2xl">
-                                            <DialogHeader>
-                                                <DialogTitle className="font-heading text-xl font-bold text-lp-cta-bg">
-                                                    Add availability time slot
-                                                </DialogTitle>
-                                                <DialogDescription>These slots will repeat every week</DialogDescription>
-                                            </DialogHeader>
-                                            <div className="space-y-6 pt-4">
-                                                <div className="space-y-2">
-                                                    <Label className="font-semibold text-lp-on-surface-variant">Select Day</Label>
-                                                    <Select
-                                                        value={availabilityForm.dayOfWeek.toString()}
-                                                        onValueChange={(value) =>
-                                                            setAvailabilityForm({
-                                                                ...availabilityForm,
-                                                                dayOfWeek: parseInt(value, 10),
-                                                            })
-                                                        }
-                                                    >
-                                                        <SelectTrigger className="h-12 rounded-xl">
-                                                            <SelectValue placeholder="Choose a day" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl">
-                                                            {availableDayIndices.map((index) => (
-                                                                <SelectItem key={index} value={index.toString()}>
-                                                                    {DAYS_OF_WEEK[index]}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {availableDayIndices.length === 0 ? (
-                                                        <p className="text-xs font-medium text-lp-on-surface-variant">
-                                                            All days are already scheduled. Remove a day to add another.
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                                                    <div className="space-y-2">
-                                                        <Label className="font-bold text-lp-on-surface-variant flex items-center gap-2">
-                                                            <Clock className="h-4 w-4" /> Start Time
-                                                        </Label>
-                                                        <Input
-                                                            type="time"
-                                                            value={availabilityForm.startTime}
-                                                            onChange={(e) => setAvailabilityForm({ ...availabilityForm, startTime: e.target.value })}
-                                                            className="rounded-xl h-12"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="font-bold text-lp-on-surface-variant flex items-center gap-2">
-                                                            <Clock className="h-4 w-4" /> End Time
-                                                        </Label>
-                                                        <Input
-                                                            type="time"
-                                                            value={availabilityForm.endTime}
-                                                            onChange={(e) => setAvailabilityForm({ ...availabilityForm, endTime: e.target.value })}
-                                                            className="rounded-xl h-12"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    onClick={handleUpdateAvail}
-                                                    className={`h-12 w-full rounded-xl text-base font-semibold sm:rounded-full ${dashboardPrimaryButton}`}
-                                                    disabled={isSaving || availableDayIndices.length === 0}
-                                                >
-                                                    {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                                                    Save Schedule
-                                                </Button>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                                {isLoadingAvail ? (
-                                    <div className="flex justify-center py-20">
-                                        <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                    </div>
-                                ) : availability.length === 0 ? (
-                                    <div className="text-center py-20 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
-                                        <p className="text-lp-on-surface-variant font-bold">Your schedule is empty.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {availability.map((slot) => (
-                                            <div
-                                                key={slot.id}
-                                                className="group flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-4 border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:bg-lp-surface-container-low transition-all sm:flex-row sm:items-center sm:justify-between"
-                                            >
-                                                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
-                                                    <div className="font-black text-lp-cta-bg sm:w-24 sm:border-r-2 sm:border-lp-outline-variant/30">
-                                                        {DAYS_OF_WEEK[slot.dayOfWeek]}
-                                                    </div>
-                                                    <div className="flex flex-wrap items-center gap-2 font-black text-lp-brand">
-                                                        <Clock className="h-4 w-4" />
-                                                        {slot.startTime} <span className="text-slate-300 font-normal mx-1">→</span> {slot.endTime}
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="self-end rounded-full text-lp-on-surface-variant hover:bg-red-50 hover:text-red-600 sm:self-auto"
-                                                    disabled={deletingAvailabilityId === slot.id}
-                                                    onClick={() => handleDeleteAvailability(slot.id)}
-                                                    aria-label={`Remove ${DAYS_OF_WEEK[slot.dayOfWeek]} slot`}
-                                                >
-                                                    {deletingAvailabilityId === slot.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin text-lp-brand" />
-                                                    ) : (
-                                                        <Trash2 className="h-4 w-4" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl overflow-hidden">
-                            <CardHeader className="pt-4 bg-emerald-50/50">
-                                <CardTitle className="text-lp-cta-bg font-black">Upcoming Appointments</CardTitle>
-                                <CardDescription>Confirmed consultations for the next 7 days</CardDescription>
-                            </CardHeader>
-                            <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                                {isLoadingAppointments ? (
-                                    <div className="flex justify-center py-20">
-                                        <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                    </div>
-                                ) : appointments.length === 0 ? (
-                                    <div className="text-center py-20 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl">
-                                        <p className="text-lp-on-surface-variant font-bold">No upcoming appointments scheduled.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {appointments.map((apt) => (
-                                            <div
-                                                key={apt.id}
-                                                className="w-full min-w-0 max-w-full overflow-hidden p-5 border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl bg-white shadow-sm"
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="h-10 w-10 rounded-full bg-lp-surface-container-low flex items-center justify-center font-black text-lp-on-surface-variant">
-                                                                {(apt.clientName || "P").charAt(0)}
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-extrabold text-lp-cta-bg">{apt.clientName || "Patient"}</h4>
-                                                                <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-none font-black text-[10px] uppercase">{apt.appointmentType}</Badge>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-col gap-1 pl-12 text-sm">
-                                                            <p className="text-lp-cta-bg font-black">{mounted ? new Date(apt.startTime).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}</p>
-                                                            <p className="text-lp-on-surface-variant font-bold uppercase text-[10px] tracking-widest">{apt.status}</p>
-                                                        </div>
-                                                    </div>
-                                                    {apt.status === "scheduled" && (
-                                                        <Button
-                                                            size="sm"
-                                                            className="rounded-lg sm:rounded-full px-6 bg-emerald-600 hover:bg-emerald-700 shadow-md font-bold"
-                                                            onClick={() => handleUpdateAppointmentStatus(apt.id, "completed")}
-                                                        >
-                                                            Mark Done
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                <ProfessionalAvailabilityPanel
+                    availability={availability}
+                    isLoading={isLoadingAvail}
+                    onChanged={fetchAvailability}
+                />
                 ) : null}
 
                 {activeSection === "payments" ? (
