@@ -80,7 +80,7 @@ export type SanitizedQualificationRow = {
     degree: string
     institution: string
     year: number | null
-    /** True when a file was uploaded (URL is hidden until approved). */
+    /** True when a file was uploaded. URL is available to the professional for their own credentials. */
     hasVerificationDocument: boolean
     documentUrl: string | null
     documentApproved: boolean | null
@@ -104,9 +104,93 @@ function mapQualificationForProfessionalSelf(q: {
         institution: q.institution,
         year: q.year,
         hasVerificationDocument: Boolean(q.document_url),
-        documentUrl: q.document_approved === true ? q.document_url : null,
+        documentUrl: q.document_url,
         documentApproved: q.document_approved ?? null,
         createdAt: q.created_at,
+    }
+}
+
+const reuploadQualificationDocumentSchema = z.object({
+    qualificationId: z.string().uuid('Invalid credential.'),
+})
+
+type QualificationFileUploadResult =
+    | { success: true; publicUrl: string; storagePath: string }
+    | { success: false; error: string }
+
+async function uploadQualificationFile(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    userId: string,
+    file: File
+): Promise<QualificationFileUploadResult> {
+    if (!file || file.size === 0) {
+        return { success: false, error: 'Please attach a verification document.' }
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        return { success: false, error: 'File is too large (maximum 10 MB).' }
+    }
+
+    const isImage = file.type.startsWith('image/')
+    let uploadBody: Buffer | ArrayBuffer = await file.arrayBuffer()
+    let contentType = file.type || 'application/octet-stream'
+    let ext = path.extname(file.name) || (isImage ? '.jpg' : '.bin')
+
+    if (isImage) {
+        try {
+            const buffer = Buffer.from(uploadBody as ArrayBuffer)
+            uploadBody = await sharp(buffer)
+                .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 85 })
+                .toBuffer()
+            contentType = 'image/webp'
+            ext = '.webp'
+        } catch {
+            uploadBody = await file.arrayBuffer()
+        }
+    }
+
+    const storageFileName = `${crypto.randomBytes(16).toString('hex')}${ext}`
+    const storagePath = `${userId}/${storageFileName}`
+
+    const { error: uploadError } = await supabase.storage
+        .from('qualifications')
+        .upload(storagePath, uploadBody, {
+            contentType,
+            upsert: false,
+        })
+
+    if (uploadError) {
+        console.error('Qualification storage upload failed:', uploadError)
+        return { success: false, error: uploadError.message }
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('qualifications')
+        .getPublicUrl(storagePath)
+
+    return { success: true, publicUrl, storagePath }
+}
+
+async function removeQualificationStorageFile(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    url: string
+) {
+    if (url.includes('/qualifications/')) {
+        const storagePath = url.split('/qualifications/')[1]
+        const { error: removeErr } = await supabase.storage.from('qualifications').remove([storagePath])
+        if (removeErr) {
+            console.error('Failed to remove qualification file from storage:', removeErr)
+        }
+        return
+    }
+
+    if (url.startsWith('/uploads/')) {
+        try {
+            await fs.unlink(path.join(process.cwd(), 'public', url))
+        } catch (err) {
+            console.error('Failed to delete legacy local file:', err)
+        }
     }
 }
 
@@ -298,43 +382,12 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
             year = y
         }
 
-        const isImage = file.type.startsWith('image/')
-        let uploadBody: Buffer | ArrayBuffer = await file.arrayBuffer()
-        let contentType = file.type || 'application/octet-stream'
-        let ext = path.extname(file.name) || (isImage ? '.jpg' : '.bin')
-
-        if (isImage) {
-            try {
-                const buffer = Buffer.from(uploadBody as ArrayBuffer)
-                uploadBody = await sharp(buffer)
-                    .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
-                    .webp({ quality: 85 })
-                    .toBuffer()
-                contentType = 'image/webp'
-                ext = '.webp'
-            } catch {
-                uploadBody = await file.arrayBuffer()
-            }
+        const uploaded = await uploadQualificationFile(supabase, user.id, file)
+        if (!uploaded.success) {
+            return { success: false, error: uploaded.error }
         }
 
-        const storageFileName = `${crypto.randomBytes(16).toString('hex')}${ext}`
-        const storagePath = `${user.id}/${storageFileName}`
-
-        const { error: uploadError } = await supabase.storage
-            .from('qualifications')
-            .upload(storagePath, uploadBody, {
-                contentType,
-                upsert: false,
-            })
-
-        if (uploadError) {
-            console.error('Qualification storage upload failed:', uploadError)
-            return { success: false, error: uploadError.message }
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('qualifications')
-            .getPublicUrl(storagePath)
+        const { publicUrl, storagePath } = uploaded
 
         const parsed = qualificationSchema.safeParse({
             degree,
@@ -393,11 +446,98 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
     }
 }
 
+export type ReuploadQualificationDocumentResult =
+    | { success: true; documentUrl: string }
+    | { success: false; error: string }
+
+export async function reuploadQualificationDocument(
+    qualificationId: string,
+    formData: FormData
+): Promise<ReuploadQualificationDocumentResult> {
+    try {
+        const parsedId = reuploadQualificationDocumentSchema.safeParse({ qualificationId })
+        if (!parsedId.success) {
+            return { success: false, error: zodFirstError(parsedId.error) }
+        }
+
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return { success: false, error: 'You must be signed in to re-upload a document.' }
+        }
+
+        const file = formData.get('file') as File
+        const uploaded = await uploadQualificationFile(supabase, user.id, file)
+        if (!uploaded.success) {
+            return { success: false, error: uploaded.error }
+        }
+
+        const { data: qual, error: qualError } = await supabase
+            .from('professional_qualifications')
+            .select('id, degree, institution, year, document_url')
+            .eq('id', parsedId.data.qualificationId)
+            .eq('professional_id', user.id)
+            .single()
+
+        if (qualError || !qual) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: 'Credential not found.' }
+        }
+
+        const documentUrlParsed = z.string().url().safeParse(uploaded.publicUrl)
+        if (!documentUrlParsed.success) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: 'Invalid document URL.' }
+        }
+
+        if (qual.document_url) {
+            await removeQualificationStorageFile(supabase, qual.document_url)
+        }
+
+        const { error: updateError } = await supabase
+            .from('professional_qualifications')
+            .update({
+                document_url: documentUrlParsed.data,
+                document_approved: null,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', qual.id)
+            .eq('professional_id', user.id)
+
+        if (updateError) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: updateError.message }
+        }
+
+        const { data: actorRow } = await supabase.from('users').select('name').eq('id', user.id).single()
+        const actorName = (actorRow?.name || 'Professional').trim() || 'Professional'
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.qualification_reuploaded',
+            title: 'Credentials: document re-uploaded',
+            body: `${actorName} re-uploaded verification for ${qual.degree} — ${qual.institution}. Status reset to in review.`,
+            metadata: {
+                section: 'credentials',
+                qualificationId: qual.id,
+                degree: qual.degree,
+                institution: qual.institution,
+                year: qual.year,
+            },
+        })
+
+        return { success: true, documentUrl: documentUrlParsed.data }
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Something went wrong while re-uploading your document.'
+        console.error('reuploadQualificationDocument:', e)
+        return { success: false, error: message }
+    }
+}
+
 export type DeleteQualificationResult =
     | { success: true }
     | { success: false; error: string }
 
-/** Returns qualifications without exposing document URLs until admin approval. */
+/** Returns the signed-in professional's qualifications including document URLs for self-service review. */
 export async function getMyQualificationsSanitized(): Promise<
     | { success: true; qualifications: SanitizedQualificationRow[] }
     | { success: false; error: string }
@@ -442,22 +582,7 @@ export async function deleteQualification(id: string): Promise<DeleteQualificati
             .single()
 
         if (qual?.document_url) {
-            const url = qual.document_url
-            if (url.includes('/qualifications/')) {
-                const storagePath = url.split('/qualifications/')[1]
-                const { error: removeErr } = await supabase.storage
-                    .from('qualifications')
-                    .remove([storagePath])
-                if (removeErr) {
-                    console.error('Failed to remove qualification file from storage:', removeErr)
-                }
-            } else if (url.startsWith('/uploads/')) {
-                try {
-                    await fs.unlink(path.join(process.cwd(), 'public', url))
-                } catch (err) {
-                    console.error('Failed to delete legacy local file:', err)
-                }
-            }
+            await removeQualificationStorageFile(supabase, qual.document_url)
         }
 
         const { error } = await supabase
