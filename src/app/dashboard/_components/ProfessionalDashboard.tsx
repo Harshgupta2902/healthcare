@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { ProfessionalScheduleCalendar } from "./ProfessionalScheduleCalendar";
 import { ProfessionalAvailabilityPanel } from "./ProfessionalAvailabilityPanel";
+import { ProfessionalDashboardHomeAside } from "./ProfessionalDashboardHomeAside";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
@@ -745,7 +746,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 </Card>
             </div>
 
-            <div className="w-full min-w-0 lg:w-1/2">
+            <div className="grid gap-6 lg:grid-cols-2">
                 <ProfessionalScheduleCalendar
                     appointments={appointments}
                     guestAppointments={guestAppointments}
@@ -753,6 +754,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     mounted={mounted}
                     isLoading={isLoadingAppointments || isLoadingGuestBookings || isLoadingAvail}
                     className="min-w-0"
+                />
+                <ProfessionalDashboardHomeAside
+                    appointments={appointments}
+                    guestAppointments={guestAppointments}
+                    payments={payments}
+                    mounted={mounted}
+                    isLoading={isLoadingAppointments || isLoadingGuestBookings || isLoadingPayments}
                 />
             </div>
             </>
