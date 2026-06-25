@@ -60,6 +60,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
+import { ProfessionalCredentialsList } from "./ProfessionalCredentialsList";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     getPhoneCountryOptionByIso2,
@@ -1129,11 +1130,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
                                     <CardTitle>Qualifications & Licenses</CardTitle>
-                                    <CardDescription>Your educational background and certifications</CardDescription>
+                                    <CardDescription>
+                                        Manage degrees and certifications — view institution, year, and verification status.
+                                    </CardDescription>
                                 </div>
                                 <Dialog open={showAddQualification} onOpenChange={setShowAddQualification}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 shadow-lg px-5 sm:w-auto sm:rounded-full sm:px-6">
+                                        <Button size="sm" className={cn("w-full rounded-xl px-5 sm:w-auto", dashboardPrimaryButton)}>
                                             <Plus className="h-4 w-4 mr-2" />
                                             Add Credential
                                         </Button>
@@ -1237,7 +1240,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Button onClick={handleAddQual} className="w-full rounded-lg sm:rounded-full h-12 bg-indigo-600 text-lg font-bold" disabled={isSaving}>
+                                            <Button onClick={handleAddQual} className={cn("h-12 w-full text-lg font-bold", dashboardPrimaryButton)} disabled={isSaving}>
                                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                                                 Verify & Add Credential
                                             </Button>
@@ -1246,102 +1249,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                                 </Dialog>
                             </div>
                         </CardHeader>
-                        <CardContent className="min-w-0 overflow-hidden p-3 sm:p-6 md:p-8">
-                            {isLoadingQuals ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                </div>
-                            ) : qualifications.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-lp-outline-variant/30">
-                                    <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                                        <GraduationCap className="h-10 w-10 text-slate-300" />
-                                    </div>
-                                    <h4 className="text-lg font-black text-lp-cta-bg">No Credentials Listed</h4>
-                                    <p className="text-lp-on-surface-variant max-w-xs mx-auto mt-2">Display your professional authority by adding your degrees and certifications.</p>
-                                    <Button variant="link" onClick={() => setShowAddQualification(true)} className="mt-4 text-lp-brand font-bold">Add your first one now →</Button>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2">
-                                    {qualifications.map((qual) => (
-                                        <div
-                                            key={qual.id}
-                                            className="group relative w-full min-w-0 max-w-full overflow-hidden p-5 sm:p-6 bg-white border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-start gap-3 mb-3">
-                                                        <div className="p-2 bg-indigo-50 rounded-lg text-lp-brand">
-                                                            <GraduationCap className="h-6 w-6" />
-                                                        </div>
-                                                        <h4 className="min-w-0 break-words font-black text-lp-cta-bg text-lg">
-                                                            {qual.degree}
-                                                        </h4>
-                                                    </div>
-                                                    <p className="break-words text-lp-on-surface-variant font-bold">{qual.institution}</p>
-                                                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-sm font-medium text-lp-on-surface-variant">
-                                                        {qual.year && (
-                                                            <span className="flex min-w-0 items-center gap-1">
-                                                                <Clock className="h-3 w-3" /> {qual.year}
-                                                            </span>
-                                                        )}
-                                                        {qual.hasVerificationDocument && qual.documentApproved === true && qual.documentUrl && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="link"
-                                                                className="p-0 h-auto text-indigo-500 font-bold cursor-pointer"
-                                                                onClick={() => window.open(qual.documentUrl!, "_blank")}
-                                                            >
-                                                                <FileText className="h-3 w-3 mr-1" />
-                                                                Verification Link
-                                                            </Button>
-                                                        )}
-                                                        {qual.hasVerificationDocument && qual.documentApproved == null && (
-                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-lp-on-surface-variant">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="link"
-                                                                    className="h-auto min-w-0 p-0 text-lp-on-surface-variant font-bold pointer-events-none cursor-not-allowed"
-                                                                    disabled
-                                                                    tabIndex={-1}
-                                                                    aria-disabled
-                                                                >
-                                                                    <FileText className="h-3 w-3 mr-1" />
-                                                                    Verification Link
-                                                                </Button>
-                                                                <span className="text-xs font-black uppercase tracking-wider text-amber-600">(In Review)</span>
-                                                            </span>
-                                                        )}
-                                                        {qual.hasVerificationDocument && qual.documentApproved === false && (
-                                                            <span className="flex min-w-0 flex-wrap items-center gap-2 text-lp-on-surface-variant">
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="link"
-                                                                    className="h-auto min-w-0 p-0 text-lp-on-surface-variant font-bold pointer-events-none cursor-not-allowed"
-                                                                    disabled
-                                                                    tabIndex={-1}
-                                                                    aria-disabled
-                                                                >
-                                                                    <FileText className="h-3 w-3 mr-1" />
-                                                                    Verification Link
-                                                                </Button>
-                                                                <span className="text-xs font-black uppercase tracking-wider text-rose-600">(Verification failed)</span>
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="rounded-full hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity"
-                                                    onClick={() => handleDeleteQualification(qual.id)}
-                                                >
-                                                    <Trash2 className="h-5 w-5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
+                            <ProfessionalCredentialsList
+                                qualifications={qualifications}
+                                isLoading={isLoadingQuals}
+                                onDelete={handleDeleteQualification}
+                                onAddClick={() => setShowAddQualification(true)}
+                            />
                         </CardContent>
                     </Card>
                 </div>
