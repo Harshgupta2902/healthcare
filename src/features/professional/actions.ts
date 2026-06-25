@@ -19,6 +19,7 @@ import {
 import { getUniversitiesNames, searchUniversityNames } from '@/lib/universities-gist'
 import { recordProfessionalActivity, weekdayLong } from '@/lib/admin-notifications'
 import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
+import { normalizeAvailabilityTime } from '@/lib/booking/timezone'
 import type { FieldChange } from '@/lib/admin-notifications'
 
 const profileSchema = z
@@ -712,6 +713,88 @@ export async function deleteAvailability(id: string) {
             metadata: { section: 'calendar', day_of_week: slot.day_of_week },
         })
     }
+
+    return { success: true as const }
+}
+
+const patchAvailabilitySlotSchema = z.object({
+    id: z.string().uuid(),
+    dayOfWeek: z.number().min(0).max(6),
+    startTime: z.string().min(1),
+    endTime: z.string().min(1),
+    isAvailable: z.boolean().optional(),
+})
+
+export async function patchAvailabilitySlot(data: unknown) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
+
+    const parsed = patchAvailabilitySlotSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+    const validated = parsed.data
+    const startTime = normalizeAvailabilityTime(validated.startTime)
+    const endTime = normalizeAvailabilityTime(validated.endTime)
+
+    if (!isValidHourlyAvailabilityWindow(startTime, endTime)) {
+        return {
+            success: false as const,
+            error: 'End time must be at least 1 hour after start time (use 24-hour format, e.g. 19:00 for 7 PM).',
+        }
+    }
+
+    const { data: current } = await supabase
+        .from('professional_availability')
+        .select('id, day_of_week, start_time, end_time, is_available')
+        .eq('id', validated.id)
+        .eq('professional_id', user.id)
+        .maybeSingle()
+
+    if (!current) return { success: false as const, error: 'Availability slot not found.' }
+
+    if (validated.dayOfWeek !== current.day_of_week) {
+        const { data: dayConflict } = await supabase
+            .from('professional_availability')
+            .select('id')
+            .eq('professional_id', user.id)
+            .eq('day_of_week', validated.dayOfWeek)
+            .neq('id', validated.id)
+            .maybeSingle()
+
+        if (dayConflict) {
+            return {
+                success: false as const,
+                error: `${weekdayLong(validated.dayOfWeek)} is already on your weekly schedule.`,
+            }
+        }
+    }
+
+    const { error } = await supabase
+        .from('professional_availability')
+        .update({
+            day_of_week: validated.dayOfWeek,
+            start_time: startTime,
+            end_time: endTime,
+            is_available: validated.isAvailable ?? current.is_available,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', validated.id)
+        .eq('professional_id', user.id)
+
+    if (error) return { success: false as const, error: error.message }
+
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.calendar_slot_added',
+        title: 'Availability: weekly slot updated',
+        changes: [{
+            label: `Availability · ${weekdayLong(validated.dayOfWeek)}`,
+            from: `${current.start_time}–${current.end_time}`,
+            to: `${startTime}–${endTime}`,
+        }],
+        metadata: { section: 'availability', day_of_week: validated.dayOfWeek },
+    })
 
     return { success: true as const }
 }
