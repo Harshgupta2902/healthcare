@@ -19,13 +19,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDashboardSectionContext } from "./dashboard-section-context";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
     User,
@@ -36,39 +33,28 @@ import {
     MessageSquare,
     Video,
     Loader2,
-    Edit,
     Plus,
     Clock,
     CheckCircle,
     XCircle,
-    Save,
     FileText,
     Mail,
     Info,
     Upload,
-    Camera,
-    Check,
-    ChevronsUpDown
 } from "lucide-react";
 import { ProfessionalScheduleCalendar } from "./ProfessionalScheduleCalendar";
 import { ProfessionalAvailabilityPanel } from "./ProfessionalAvailabilityPanel";
 import { ProfessionalDashboardHomeAside } from "./ProfessionalDashboardHomeAside";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
+import { ProfessionalProfilePanel } from "./ProfessionalProfilePanel";
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
 import { ProfessionalCredentialsList } from "./ProfessionalCredentialsList";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
-    getPhoneCountryOptionByIso2,
     normalizePhoneCountryCode,
-    resolveCountryIsoFromDialCode,
 } from "@/lib/phone-country-options";
 import { cn } from "@/lib/utils";
-import { PhoneCountryFields } from "@/components/PhoneCountryFields";
 import {
-    dashboardGlassCard,
     dashboardPrimaryButton,
     dashboardStatCard,
     dashboardStatIconWrap,
@@ -173,30 +159,6 @@ interface Payment {
     createdAt: string;
     clientName?: string;
 }
-
-const SPECIALIZATIONS: string[] = [
-    "General Physician",
-    "Cardiologist",
-    "Dermatologist",
-    "Neurologist",
-    "Pediatrician",
-    "Psychiatrist",
-    "Orthopedic",
-    "Gynecologist",
-    "ENT Specialist",
-    "Ophthalmologist",
-    "Psychologist",
-    "Clinical psychologist",
-    "Clinical psychologist (Associate)",
-    "Rehabilitation psychologist",
-    "Rehabilitation counsellor",
-    "Radiologist",
-    "Ayurveda",
-    "Homeopathy",
-    "Naturopathy",
-    "Oncologist",
-    "General surgeon",
-];
 
 export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const user = initialData?.user;
@@ -769,305 +731,26 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             <div className="space-y-6">
 
                 {activeSection === "profile" ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className={dashboardGlassCard}>
-                        <CardHeader className="border-b border-lp-outline-variant/20 bg-gradient-to-r from-lp-surface-container-low/80 to-lp-surface-container/50 pt-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0">
-                                    <CardTitle className="text-xl font-black text-lp-cta-bg">Professional Information</CardTitle>
-                                    <CardDescription>Your professional profile and contact details</CardDescription>
-                                </div>
-                                {!isEditingProfile ? (
-                                    <Button onClick={() => setIsEditingProfile(true)} size="sm" variant="outline" className="w-full rounded-lg px-5 sm:w-auto sm:rounded-full">
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Edit Profile
-                                    </Button>
-                                ) : (
-                                    <div className="flex w-full gap-2 sm:w-auto">
-                                        <Button onClick={() => { setIsEditingProfile(false); setProfileForm(profile || {}); }} size="sm" variant="outline" className="flex-1 rounded-lg px-5 sm:flex-none sm:rounded-full">
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handleSaveProfile} size="sm" disabled={isSaving} className={`flex-1 rounded-lg px-5 sm:flex-none sm:rounded-full ${dashboardPrimaryButton}`}>
-                                            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                            Save
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingProfile ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                </div>
-                            ) : (
-                                <div className="space-y-8">
-                                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-8">
-                                        <div className="relative group">
-                                            <input
-                                                type="file"
-                                                ref={profileImageInputRef}
-                                                onChange={handleProfileImageUpload}
-                                                accept="image/*"
-                                                className="hidden"
-                                            />
-                                            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 ring-4 ring-white shadow-2xl relative overflow-hidden">
-                                                <AvatarImage src={profileForm.profilePhotoUrl || undefined} className="object-cover" />
-                                                <AvatarFallback className="bg-gradient-to-br from-lp-brand to-lp-brand-bright text-lp-on-brand text-4xl font-bold">
-                                                    {(user.user_metadata?.name || user.email)?.slice(0, 2).toUpperCase()}
-                                                </AvatarFallback>
-                                                {isUploadingImage ? (
-                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer" onClick={() => profileImageInputRef.current?.click()}>
-                                                        <Camera className="h-8 w-8 text-white" />
-                                                    </div>
-                                                )}
-                                            </Avatar>
-                                            {!isEditingProfile && profile?.isVerified && (
-                                                <div className="absolute -bottom-2 -right-2 bg-green-500 text-white p-1.5 rounded-full border-4 border-white shadow-lg">
-                                                    <CheckCircle className="h-5 w-5" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="w-full flex-1 space-y-4 text-center sm:text-left">
-                                            {isEditingProfile ? (
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm font-bold text-lp-on-surface-variant">Profile Photo URL</Label>
-                                                    <Input
-                                                        placeholder="Enter image URL"
-                                                        value={profileForm.profilePhotoUrl || ""}
-                                                        onChange={(e) => setProfileForm({ ...profileForm, profilePhotoUrl: e.target.value })}
-                                                        className="rounded-xl border-lp-outline-variant/30 focus:ring-slate-400"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-1">
-                                                    <h3 className="text-xl sm:text-2xl font-black text-lp-cta-bg">
-                                                        {formatProfessionalDisplayName(
-                                                            user.user_metadata?.name || "",
-                                                            profile?.nameTitle
-                                                        ) || "Professional"}
-                                                    </h3>
-                                                    <p className="text-sm font-semibold uppercase tracking-wide text-lp-brand">{profile?.specialization || "Not Specified"}</p>
-                                                    {profile?.isVerified && (
-                                                        <Badge className="bg-green-50 text-green-700 border-green-100 mt-2 font-bold px-3">Verified Medical Professional</Badge>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <Separator className="bg-lp-surface-container-low" />
-
-                                    <div className="grid min-w-0 gap-6 md:grid-cols-2">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Title & full name</Label>
-                                            {isEditingProfile ? (
-                                                <div className="flex flex-col overflow-hidden rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low/30 sm:flex-row">
-                                                    <Select
-                                                        value={profileForm.nameTitle ?? "_none_"}
-                                                        onValueChange={(v) =>
-                                                            setProfileForm({
-                                                                ...profileForm,
-                                                                nameTitle: v === "_none_" ? null : v,
-                                                            })
-                                                        }
-                                                    >
-                                                        <SelectTrigger
-                                                            className={cn(
-                                                                "shrink-0 rounded-none border-0",
-                                                                "w-full sm:w-32",
-                                                                "focus:ring-0 focus:ring-offset-0"
-                                                            )}
-                                                            aria-label="Title"
-                                                        >
-                                                            <SelectValue placeholder="Title" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl">
-                                                            <SelectItem value="_none_">None</SelectItem>
-                                                            {PROFESSIONAL_NAME_TITLES.map((t) => (
-                                                                <SelectItem key={t} value={t}>
-                                                                    {t}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <Input
-                                                        value={user.user_metadata?.name || ""}
-                                                        disabled
-                                                        className="min-w-0 flex-1 rounded-none border-0 border-t border-lp-outline-variant/30/80 bg-lp-surface-container-low/50 font-bold shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:border-l sm:border-t-0"
-                                                    />
-                                                </div>
-                                            ) : (
-                                                <div className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-low/30 sm:flex-row">
-                                                    <div className="flex h-11 w-full shrink-0 items-center border-b border-lp-outline-variant/30/80 bg-lp-surface-container-low/50 px-3 text-sm font-bold text-lp-cta-bg sm:h-12 sm:w-32 sm:border-b-0 sm:border-r">
-                                                        {profileForm.nameTitle ?? "—"}
-                                                    </div>
-                                                    <div className="flex min-h-12 flex-1 items-center px-4 py-2 text-sm font-bold text-lp-cta-bg">
-                                                        {user.user_metadata?.name || ""}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Email Address</Label>
-                                            <Input value={user.email || ""} disabled className="bg-lp-surface-container-low/50 rounded-xl border-none font-bold" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Specialization *</Label>
-                                            <Popover open={isSpecializationOpen} onOpenChange={setIsSpecializationOpen}>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        aria-expanded={isSpecializationOpen}
-                                                        className="rounded-xl w-full justify-between"
-                                                        disabled={!isEditingProfile}
-                                                    >
-                                                        {profileForm.specialization || "Select specialization"}
-                                                        <ChevronsUpDown className="opacity-50 ml-2 h-4 w-4 shrink-0" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="p-0 rounded-xl w-[--radix-popover-trigger-width]">
-                                                    <Command>
-                                                        <CommandInput placeholder="Search specialization..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>No specialization found.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {SPECIALIZATIONS.map((spec) => (
-                                                                    <CommandItem
-                                                                        key={spec}
-                                                                        value={spec}
-                                                                        onSelect={() => {
-                                                                            setProfileForm({ ...profileForm, specialization: spec });
-                                                                            setIsSpecializationOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Check
-                                                                            className={`mr-2 h-4 w-4 ${profileForm.specialization === spec ? "opacity-100" : "opacity-0"}`}
-                                                                        />
-                                                                        {spec}
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Medical License Number</Label>
-                                            <Input
-                                                placeholder="Enter license number"
-                                                value={profileForm.licenseNumber || ""}
-                                                onChange={(e) => setProfileForm({ ...profileForm, licenseNumber: e.target.value })}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">City / Primary Practice Location</Label>
-                                            <Input
-                                                placeholder="e.g., Mumbai, Bangalore"
-                                                value={profileForm.city || ""}
-                                                onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-sm font-bold text-lp-on-surface-variant">Contact Phone</Label>
-                                            <PhoneCountryFields
-                                                countryIso={
-                                                    profileForm.phoneCountryIso ??
-                                                    resolveCountryIsoFromDialCode(
-                                                        normalizePhoneCountryCode(profileForm.phoneCountryCode) ??
-                                                            DEFAULT_PHONE_COUNTRY_CODE
-                                                    )
-                                                }
-                                                nationalNumber={(profileForm.phone || "").replace(/\D/g, "")}
-                                                onCountryIsoChange={(iso) => {
-                                                    const row = getPhoneCountryOptionByIso2(iso);
-                                                    if (!row) return;
-                                                    const digits = (profileForm.phone || "")
-                                                        .replace(/\D/g, "")
-                                                        .slice(0, row.maxLength);
-                                                    setProfileForm({
-                                                        ...profileForm,
-                                                        phoneCountryIso: row.iso2,
-                                                        phoneCountryCode: row.dialCode,
-                                                        phone: digits,
-                                                    });
-                                                }}
-                                                onNationalChange={(digits) =>
-                                                    setProfileForm({ ...profileForm, phone: digits })
-                                                }
-                                                disabled={!isEditingProfile}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <Label className="text-sm font-bold text-lp-on-surface-variant">Experience</Label>
-                                                <span className="text-[10px] font-bold text-lp-brand uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
-                                                    {profileForm.yearsOfExperience || 0} Years
-                                                </span>
-                                            </div>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
-                                                placeholder="Total years of medical practice"
-                                                value={profileForm.yearsOfExperience || ""}
-                                                onChange={(e) => {
-                                                    const val = e.target.value === "" ? null : parseInt(e.target.value);
-                                                    setProfileForm({ ...profileForm, yearsOfExperience: val });
-                                                }}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl border-lp-outline-variant/30 h-12 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <Label className="text-sm font-bold text-lp-on-surface-variant">Consultation Fee</Label>
-                                                <span className="text-[10px] font-black text-lp-brand uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full ring-1 ring-indigo-100">
-                                                    ₹{((profileForm.consultationFee || 0) / 100).toLocaleString('en-IN')} INR
-                                                </span>
-                                            </div>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
-                                                placeholder="Enter fee in rupees (e.g. 500)"
-                                                value={profileForm.consultationFee !== null && profileForm.consultationFee !== undefined ? Math.floor((profileForm.consultationFee || 0) / 100) : ""}
-                                                onChange={(e) => {
-                                                    const val = e.target.value === "" ? null : parseInt(e.target.value);
-                                                    setProfileForm({ ...profileForm, consultationFee: val === null ? null : val * 100 });
-                                                }}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl border-lp-outline-variant/30 h-12"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-lp-on-surface-variant">Professional Bio</Label>
-                                        <Textarea
-                                            placeholder="Write about yourself, your experience, and expertise..."
-                                            value={profileForm.bio || ""}
-                                            onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                                            disabled={!isEditingProfile}
-                                            rows={6}
-                                            className="rounded-lg sm:rounded-2xl border-lp-outline-variant/30 resize-none"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                <ProfessionalProfilePanel
+                    user={user}
+                    profile={profile}
+                    profileForm={profileForm}
+                    setProfileForm={setProfileForm}
+                    isEditingProfile={isEditingProfile}
+                    setIsEditingProfile={setIsEditingProfile}
+                    isLoadingProfile={isLoadingProfile}
+                    isSaving={isSaving}
+                    isUploadingImage={isUploadingImage}
+                    profileImageInputRef={profileImageInputRef}
+                    onProfileImageUpload={handleProfileImageUpload}
+                    onSaveProfile={handleSaveProfile}
+                    onCancelEdit={() => {
+                        setIsEditingProfile(false);
+                        setProfileForm(profile || {});
+                    }}
+                    isSpecializationOpen={isSpecializationOpen}
+                    setIsSpecializationOpen={setIsSpecializationOpen}
+                />
                 ) : null}
 
                 {activeSection === "credentials" ? (
