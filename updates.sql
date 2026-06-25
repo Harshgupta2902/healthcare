@@ -997,3 +997,365 @@ ALTER TABLE public.guest_appointments
 
 COMMENT ON COLUMN public.guest_appointments.meeting_title IS
   'Calendar event title (e.g. Psychiatric Care consultation with Dr. Name); set when meeting link is created.';
+
+-- ---------------------------------------------------------------------------
+-- Prescription sharing consent (book-consultation → professional dashboard)
+-- Patient may share up to 5 prior prescriptions with a new consultant.
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.guest_appointments
+  ADD COLUMN IF NOT EXISTS prescription_share_consent boolean NOT NULL DEFAULT false;
+
+COMMENT ON COLUMN public.guest_appointments.prescription_share_consent IS
+  'Patient consented to share selected prior prescriptions with the assigned consultant for this booking.';
+
+CREATE TABLE IF NOT EXISTS public.guest_appointment_prescription_shares (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guest_appointment_id uuid NOT NULL REFERENCES public.guest_appointments(id) ON DELETE CASCADE,
+  source_guest_appointment_id uuid NOT NULL REFERENCES public.guest_appointments(id) ON DELETE CASCADE,
+  consented_at timestamptz NOT NULL DEFAULT now(),
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  CONSTRAINT guest_appointment_prescription_shares_distinct_source
+    CHECK (guest_appointment_id <> source_guest_appointment_id),
+  CONSTRAINT guest_appointment_prescription_shares_unique_pair
+    UNIQUE (guest_appointment_id, source_guest_appointment_id)
+);
+
+CREATE INDEX IF NOT EXISTS guest_appointment_prescription_shares_guest_idx
+  ON public.guest_appointment_prescription_shares (guest_appointment_id);
+
+CREATE INDEX IF NOT EXISTS guest_appointment_prescription_shares_source_idx
+  ON public.guest_appointment_prescription_shares (source_guest_appointment_id);
+
+COMMENT ON TABLE public.guest_appointment_prescription_shares IS
+  'Links a new guest booking to prior guest appointments whose prescriptions the patient chose to share (max 5 per booking).';
+
+CREATE OR REPLACE FUNCTION public.enforce_prescription_share_limit()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF (
+    SELECT COUNT(*)
+    FROM public.guest_appointment_prescription_shares
+    WHERE guest_appointment_id = NEW.guest_appointment_id
+  ) >= 5 THEN
+    RAISE EXCEPTION 'Maximum 5 prescriptions can be shared per booking';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_enforce_prescription_share_limit ON public.guest_appointment_prescription_shares;
+CREATE TRIGGER trg_enforce_prescription_share_limit
+  BEFORE INSERT ON public.guest_appointment_prescription_shares
+  FOR EACH ROW
+  EXECUTE FUNCTION public.enforce_prescription_share_limit();
+
+ALTER TABLE public.guest_appointment_prescription_shares ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'guest_appointment_prescription_shares'
+      AND policyname = 'Patients insert own prescription shares'
+  ) THEN
+    CREATE POLICY "Patients insert own prescription shares"
+      ON public.guest_appointment_prescription_shares
+      FOR INSERT TO authenticated
+      WITH CHECK (
+        created_by = auth.uid()
+        AND EXISTS (
+          SELECT 1 FROM public.guest_appointments ga
+          WHERE ga.id = guest_appointment_id
+            AND ga.created_by = auth.uid()
+        )
+        AND EXISTS (
+          SELECT 1 FROM public.guest_appointments src
+          WHERE src.id = source_guest_appointment_id
+            AND src.prescription_html IS NOT NULL
+            AND btrim(src.prescription_html) <> ''
+            AND (
+              src.created_by = auth.uid()
+              OR (
+                src.email IS NOT NULL
+                AND lower(btrim(src.email)) = lower(btrim(
+                  (SELECT u.email FROM public.users u WHERE u.id = auth.uid())
+                ))
+              )
+            )
+        )
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'guest_appointment_prescription_shares'
+      AND policyname = 'Patients read own prescription shares'
+  ) THEN
+    CREATE POLICY "Patients read own prescription shares"
+      ON public.guest_appointment_prescription_shares
+      FOR SELECT TO authenticated
+      USING (
+        created_by = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM public.guest_appointments ga
+          WHERE ga.id = guest_appointment_id
+            AND ga.created_by = auth.uid()
+        )
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'guest_appointment_prescription_shares'
+      AND policyname = 'Professionals read shares for assigned bookings'
+  ) THEN
+    CREATE POLICY "Professionals read shares for assigned bookings"
+      ON public.guest_appointment_prescription_shares
+      FOR SELECT TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.guest_appointments ga
+          WHERE ga.id = guest_appointment_id
+            AND ga.professional_id = auth.uid()
+        )
+      );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'guest_appointments'
+      AND policyname = 'Professionals read shared source prescriptions'
+  ) THEN
+    CREATE POLICY "Professionals read shared source prescriptions"
+      ON public.guest_appointments
+      FOR SELECT TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM public.guest_appointment_prescription_shares s
+          INNER JOIN public.guest_appointments ga ON ga.id = s.guest_appointment_id
+          WHERE s.source_guest_appointment_id = guest_appointments.id
+            AND ga.professional_id = auth.uid()
+        )
+      );
+  END IF;
+END$$;
+
+-- Fix: attach prescription shares via SECURITY DEFINER (RLS insert policy was too strict)
+CREATE OR REPLACE FUNCTION public.attach_guest_appointment_prescription_shares(
+  p_guest_appointment_id uuid,
+  p_source_ids uuid[]
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_account_email text;
+  v_booking_email text;
+  src_id uuid;
+  v_count int;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF p_source_ids IS NULL OR array_length(p_source_ids, 1) IS NULL THEN
+    RAISE EXCEPTION 'No prescriptions selected';
+  END IF;
+
+  IF array_length(p_source_ids, 1) > 5 THEN
+    RAISE EXCEPTION 'Maximum 5 prescriptions can be shared per booking';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.guest_appointments ga
+    WHERE ga.id = p_guest_appointment_id
+      AND ga.created_by = v_uid
+  ) THEN
+    RAISE EXCEPTION 'Booking not found or not owned by you';
+  END IF;
+
+  SELECT lower(btrim(ga.email))
+  INTO v_booking_email
+  FROM public.guest_appointments ga
+  WHERE ga.id = p_guest_appointment_id;
+
+  SELECT lower(btrim(COALESCE(u.email, au.email)))
+  INTO v_account_email
+  FROM auth.users au
+  LEFT JOIN public.users u ON u.id = au.id
+  WHERE au.id = v_uid;
+
+  FOREACH src_id IN ARRAY p_source_ids LOOP
+    IF src_id = p_guest_appointment_id THEN
+      RAISE EXCEPTION 'Cannot share a prescription from the same booking';
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1 FROM public.guest_appointments src
+      WHERE src.id = src_id
+        AND src.prescription_html IS NOT NULL
+        AND btrim(src.prescription_html) <> ''
+        AND (
+          src.created_by = v_uid
+          OR (
+            src.email IS NOT NULL
+            AND (
+              (v_account_email IS NOT NULL AND lower(btrim(src.email)) = v_account_email)
+              OR (v_booking_email IS NOT NULL AND lower(btrim(src.email)) = v_booking_email)
+            )
+          )
+        )
+    ) THEN
+      RAISE EXCEPTION 'One or more selected prescriptions are not available to share';
+    END IF;
+  END LOOP;
+
+  FOREACH src_id IN ARRAY p_source_ids LOOP
+    INSERT INTO public.guest_appointment_prescription_shares (
+      guest_appointment_id,
+      source_guest_appointment_id,
+      created_by
+    ) VALUES (
+      p_guest_appointment_id,
+      src_id,
+      v_uid
+    )
+    ON CONFLICT (guest_appointment_id, source_guest_appointment_id) DO NOTHING;
+  END LOOP;
+
+  SELECT COUNT(*)
+  INTO v_count
+  FROM public.guest_appointment_prescription_shares
+  WHERE guest_appointment_id = p_guest_appointment_id;
+
+  IF v_count > 5 THEN
+    RAISE EXCEPTION 'Maximum 5 prescriptions can be shared per booking';
+  END IF;
+
+  UPDATE public.guest_appointments
+  SET prescription_share_consent = true
+  WHERE id = p_guest_appointment_id
+    AND created_by = v_uid;
+
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.attach_guest_appointment_prescription_shares(uuid, uuid[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.attach_guest_appointment_prescription_shares(uuid, uuid[]) TO authenticated;
+
+-- Fix: read share counts via SECURITY DEFINER (works when PostgREST schema cache is stale)
+CREATE OR REPLACE FUNCTION public.get_professional_prescription_share_counts(
+  p_guest_ids uuid[] DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_result jsonb;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT COALESCE(
+    jsonb_object_agg(t.guest_appointment_id::text, t.share_count),
+    '{}'::jsonb
+  )
+  INTO v_result
+  FROM (
+    SELECT s.guest_appointment_id, COUNT(*)::int AS share_count
+    FROM public.guest_appointment_prescription_shares s
+    INNER JOIN public.guest_appointments ga ON ga.id = s.guest_appointment_id
+    WHERE ga.professional_id = v_uid
+      AND (
+        p_guest_ids IS NULL
+        OR cardinality(p_guest_ids) = 0
+        OR s.guest_appointment_id = ANY(p_guest_ids)
+      )
+    GROUP BY s.guest_appointment_id
+  ) t;
+
+  RETURN v_result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_professional_prescription_share_counts(uuid[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_professional_prescription_share_counts(uuid[]) TO authenticated;
+
+-- Fix: load shared prescription payload for professional dashboard (bypasses RLS + schema cache)
+CREATE OR REPLACE FUNCTION public.get_shared_prescriptions_for_professional_booking(
+  p_guest_appointment_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_prof uuid;
+  v_result jsonb;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT ga.professional_id
+  INTO v_prof
+  FROM public.guest_appointments ga
+  WHERE ga.id = p_guest_appointment_id;
+
+  IF v_prof IS NULL OR v_prof <> v_uid THEN
+    RAISE EXCEPTION 'You are not allowed to view shared prescriptions for this consultation';
+  END IF;
+
+  SELECT COALESCE(
+    jsonb_agg(
+      jsonb_build_object(
+        'id', s.id,
+        'sourceGuestAppointmentId', s.source_guest_appointment_id,
+        'category', src.category,
+        'appointmentDate', src.appointment_date,
+        'appointmentTime', src.appointment_time,
+        'prescriptionUpdatedAt', src.prescription_updated_at,
+        'prescriptionHtml', src.prescription_html,
+        'consentedAt', s.consented_at,
+        'professionalId', src.professional_id
+      )
+      ORDER BY s.consented_at ASC
+    ),
+    '[]'::jsonb
+  )
+  INTO v_result
+  FROM public.guest_appointment_prescription_shares s
+  INNER JOIN public.guest_appointments src ON src.id = s.source_guest_appointment_id
+  WHERE s.guest_appointment_id = p_guest_appointment_id
+    AND src.prescription_html IS NOT NULL
+    AND btrim(src.prescription_html) <> '';
+
+  RETURN v_result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_shared_prescriptions_for_professional_booking(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_shared_prescriptions_for_professional_booking(uuid) TO authenticated;
+
+-- Reload PostgREST schema cache so new tables/functions are visible to .from() queries
+NOTIFY pgrst, 'reload schema';
