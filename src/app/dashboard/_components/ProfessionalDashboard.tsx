@@ -59,6 +59,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
+import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     getPhoneCountryOptionByIso2,
@@ -1351,173 +1352,19 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                     <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-lg sm:rounded-2xl">
                         <CardHeader className="pt-4">
                             <CardTitle>Consultation Requests</CardTitle>
-                            <CardDescription>Manage incoming video and text consultation requests from new clients</CardDescription>
+                            <CardDescription>
+                                Grouped by client email — expand a row to view date, category, address, time, message, and prescribe.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingRequests || isLoadingGuestBookings ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-[var(--color-primary)]" />
-                                </div>
-                            ) : consultationRequests.length === 0 && guestAppointments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-lp-surface-container-low/50 rounded-lg sm:rounded-2xl border-2 border-dashed border-lp-outline-variant/30">
-                                    <div className="bg-white h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                                        <MessageSquare className="h-10 w-10 text-slate-300" />
-                                    </div>
-                                    <h4 className="text-lg font-black text-lp-cta-bg">Quiet Inbox</h4>
-                                    <p className="text-lp-on-surface-variant max-w-xs mx-auto mt-2">Guest bookings from your public link and in-app requests will show here.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-10">
-                                    {guestAppointments.length > 0 && (
-                                        <div className="space-y-4">
-                                            <div className="grid min-w-0 gap-4 lg:grid-cols-3">
-                                                {guestAppointments.map((g) => (
-                                                    <div
-                                                        key={g.id}
-                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-indigo-100 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
-                                                    >
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="bg-lp-surface-container-low h-8 w-8 rounded-full flex items-center justify-center font-bold text-lp-on-surface-variant text-xs">
-                                                                {(g.firstName || "G").charAt(0)}
-                                                            </div>
-                                                            <p className="font-bold text-slate-800">
-                                                                {`${g.firstName} ${g.lastName}`.trim() || "Guest"}
-                                                            </p>
-                                                            <span className="text-lp-on-surface-variant text-sm">·</span>
-                                                            <span className="text-sm font-bold text-lp-on-surface-variant">Age {g.age}</span>
-                                                        </div>
-                                                        <p className="text-xs font-black uppercase tracking-wide text-lp-on-surface-variant mt-2">
-                                                            {g.category} · {g.city}, {g.state}
-                                                        </p>
-                                                        <p className="text-sm font-bold text-lp-brand flex items-center gap-2 mt-2">
-                                                            <CalendarIcon className="h-4 w-4" />
-                                                            {mounted
-                                                                ? new Date(`${g.appointmentDate}T${g.appointmentTime || "00:00"}:00`).toLocaleString("en-US", {
-                                                                      weekday: "short",
-                                                                      year: "numeric",
-                                                                      month: "short",
-                                                                      day: "numeric",
-                                                                      hour: "numeric",
-                                                                      minute: "2-digit",
-                                                                  })
-                                                                : ""}
-                                                            {g.meetingDurationMinutes ? (
-                                                                <span className="text-xs font-semibold text-lp-on-surface-variant">
-                                                                    · {g.meetingDurationMinutes} min meeting
-                                                                    {g.meetingEndTime ? ` (ends ${g.meetingEndTime})` : ""}
-                                                                </span>
-                                                            ) : null}
-                                                        </p>
-                                                        {g.message && (
-                                                            <div className="relative mt-3">
-                                                                <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
-                                                                <p className="text-lp-on-surface-variant italic text-sm pl-4 line-clamp-2">"{g.message}"</p>
-                                                            </div>
-                                                        )}
-                                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                                                            <Button
-                                                                size="sm"
-                                                                variant={g.prescriptionHtml ? "outline" : "default"}
-                                                                className={cn(
-                                                                    "rounded-lg sm:rounded-full font-black",
-                                                                    g.prescriptionHtml
-                                                                        ? "border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                                                                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                                                                )}
-                                                                onClick={() => openPrescriptionModal(g)}
-                                                            >
-                                                                {g.prescriptionHtml ? "Edit Prescription" : "Prescribe"}
-                                                            </Button>
-                                                            {g.prescriptionHtml && (
-                                                                <Badge className="w-fit bg-green-50 text-green-700 border-green-100 text-[10px] uppercase font-black">
-                                                                    Saved
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {consultationRequests.length > 0 && (
-                                        <div className="space-y-4">
-                                            {guestAppointments.length > 0 && (
-                                                <h3 className="text-xs font-black uppercase tracking-widest text-lp-on-surface-variant">In-app consultation requests</h3>
-                                            )}
-                                            <div className="grid min-w-0 gap-4 lg:grid-cols-3">
-                                                {consultationRequests.map((request) => (
-                                                    <div
-                                                        key={request.id}
-                                                        className="group w-full min-w-0 max-w-full overflow-hidden p-4 bg-white border border-lp-outline-variant/30 rounded-lg sm:rounded-2xl hover:shadow-xl transition-all duration-300"
-                                                    >
-                                                        <div className="flex flex-col justify-between gap-4 h-full">
-                                                            <div className="flex-1 space-y-3">
-                                                                <div className="flex flex-wrap items-center gap-3">
-                                                                    <div className={`p-2 rounded-xl ${request.requestType === "video" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"}`}>
-                                                                        {request.requestType === "video" ? <Video className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
-                                                                    </div>
-                                                                    <h4 className="font-black text-lp-cta-bg text-lg uppercase tracking-tight">
-                                                                        {request.requestType} Consulting
-                                                                    </h4>
-                                                                    <Badge className={`rounded-full px-3 py-1 font-black uppercase text-[10px] ${request.status === "pending" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                                                                        request.status === "accepted" ? "bg-green-100 text-green-700 border-green-200" :
-                                                                            "bg-red-100 text-red-700 border-red-200"
-                                                                        }`}>
-                                                                        {request.status}
-                                                                    </Badge>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="bg-lp-surface-container-low h-8 w-8 rounded-full flex items-center justify-center font-bold text-lp-on-surface-variant text-xs">
-                                                                        {(request.clientName || "C").charAt(0)}
-                                                                    </div>
-                                                                    <p className="font-bold text-slate-800">
-                                                                        {request.clientName || "Healthcare Client"}
-                                                                    </p>
-                                                                </div>
-                                                                {request.preferredDate && (
-                                                                    <p className="text-sm font-bold text-lp-brand flex items-center gap-2">
-                                                                        <CalendarIcon className="h-4 w-4" />
-                                                                        {mounted ? new Date(request.preferredDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                                                                        {request.preferredTime && <span className="text-lp-on-surface-variant">• {request.preferredTime}</span>}
-                                                                    </p>
-                                                                )}
-                                                                {request.message && (
-                                                                    <div className="relative mt-4">
-                                                                        <div className="absolute top-0 left-0 w-1 h-full bg-slate-200 rounded-full" />
-                                                                        <p className="text-lp-on-surface-variant italic text-sm pl-4 line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">"{request.message}"</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {request.status === "pending" && (
-                                                                <div className="grid grid-cols-2 gap-2 pt-1 sm:flex">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        className="rounded-lg sm:rounded-full bg-green-600 hover:bg-green-700 shadow-lg text-white font-black px-4 sm:px-5"
-                                                                        onClick={() => handleUpdateRequestStatus(request.id, "accepted")}
-                                                                    >
-                                                                        <CheckCircle className="h-4 w-4 mr-1.5" />
-                                                                        Accept
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        className="rounded-lg sm:rounded-full text-red-600 border-red-200 hover:bg-red-50 font-black px-4 sm:px-5"
-                                                                        onClick={() => handleUpdateRequestStatus(request.id, "rejected")}
-                                                                    >
-                                                                        <XCircle className="h-4 w-4 mr-1.5" />
-                                                                        Decline
-                                                                    </Button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            <ConsultationRequestsGroupedList
+                                guestAppointments={guestAppointments}
+                                consultationRequests={consultationRequests}
+                                mounted={mounted}
+                                isLoading={isLoadingRequests || isLoadingGuestBookings}
+                                onPrescribe={openPrescriptionModal}
+                                onUpdateRequestStatus={handleUpdateRequestStatus}
+                            />
                         </CardContent>
                     </Card>
 
