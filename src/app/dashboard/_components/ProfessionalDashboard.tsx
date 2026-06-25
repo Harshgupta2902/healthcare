@@ -62,6 +62,7 @@ import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/p
 import { QualificationInstitutionInput } from "./QualificationInstitutionInput";
 import { ConsultationRequestsGroupedList } from "./ConsultationRequestsGroupedList";
 import { ProfessionalCredentialsList } from "./ProfessionalCredentialsList";
+import { ProfessionalScheduleCalendar } from "./ProfessionalScheduleCalendar";
 import {
     DEFAULT_PHONE_COUNTRY_CODE,
     getPhoneCountryOptionByIso2,
@@ -500,6 +501,8 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                         appointmentTime: g.appointment_time,
                         meetingDurationMinutes: g.meeting_duration_minutes,
                         meetingEndTime: g.meeting_end_time,
+                        calendarInviteUrl: g.calendar_invite_url || null,
+                        meetingTitle: g.meeting_title || null,
                         message: g.message,
                         createdAt: g.created_at,
                         age: g.age,
@@ -1719,122 +1722,13 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                 ) : null}
 
                 {activeSection === "schedule" ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-8">
-                <Separator className="bg-slate-200" />
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[var(--color-primary)] text-white rounded-xl shadow-lg shadow-indigo-200">
-                        <CalendarIcon className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black text-lp-cta-bg">Pictorial Schedule</h2>
-                        <p className="text-lp-on-surface-variant font-bold text-sm">A visual overview of your recurring and date-specific time</p>
-                    </div>
-                </div>
-
-                <Card className="border-none shadow-2xl bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-3xl overflow-hidden">
-                    <CardHeader className="pt-4 bg-white/80 border-b border-slate-50">
-                        <CardTitle>Schedule Visualization</CardTitle>
-                        <CardDescription>Green indicates recurring availability, Blue represents specific day appointments.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="min-w-0 overflow-hidden p-4 sm:p-8">
-                        <div className="grid min-w-0 grid-cols-1 gap-6 sm:gap-12 lg:grid-cols-3">
-                            <div className="lg:col-span-1 flex justify-center p-5 sm:p-8 border-none rounded-xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-100">
-                                {mounted ? (
-                                    <Calendar
-                                        mode="single"
-                                        className="p-3 border-none"
-                                        modifiers={{
-                                            available: (date) => availability.some(slot => slot.dayOfWeek === date.getDay()),
-                                            appointment: (date) => appointments.some(apt => {
-                                                const aptDate = new Date(apt.startTime);
-                                                return (
-                                                    aptDate.getDate() === date.getDate() &&
-                                                    aptDate.getMonth() === date.getMonth() &&
-                                                    aptDate.getFullYear() === date.getFullYear()
-                                                );
-                                            })
-                                        }}
-                                        modifiersClassNames={{
-                                            available: "bg-green-50 text-green-700 font-black border-b-4 border-green-500 rounded-none hover:bg-green-100",
-                                            appointment: "bg-indigo-600 text-white font-black ring-4 ring-indigo-100 rounded-xl hover:bg-indigo-700"
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="h-[350px] w-full flex items-center justify-center">
-                                        <Loader2 className="h-8 w-8 animate-spin text-slate-200" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="lg:col-span-2 space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50/30 p-5 sm:p-6 rounded-xl sm:rounded-3xl border border-green-100 shadow-sm">
-                                        <h4 className="text-green-800 font-black flex items-center gap-2 mb-4 text-sm uppercase tracking-wider">
-                                            <CheckCircle className="h-4 w-4" /> Weekly Slots
-                                        </h4>
-                                        <div className="space-y-3">
-                                            {DAYS_OF_WEEK.map((day, idx) => {
-                                                const daySlots = availability.filter(s => s.dayOfWeek === idx);
-                                                if (daySlots.length === 0) return null;
-                                                return (
-                                                    <div key={idx} className="text-xs flex justify-between items-center bg-white/60 p-2.5 rounded-xl border border-green-100">
-                                                        <span className="font-extrabold text-lp-cta-bg">{day}</span>
-                                                        <span className="text-emerald-700 font-black">{daySlots.map(s => `${s.startTime}-${s.endTime}`).join(", ")}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                            {availability.length === 0 && <p className="text-xs text-lp-on-surface-variant italic">Configure your weekly hours in the Calendar tab.</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50/30 p-5 sm:p-6 rounded-xl sm:rounded-3xl border border-indigo-100 shadow-sm">
-                                        <h4 className="text-indigo-800 font-black flex items-center gap-2 mb-4 text-sm uppercase tracking-wider">
-                                            <Info className="h-4 w-4" /> Schedule Legend
-                                        </h4>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-lg sm:rounded-2xl">
-                                                <div className="w-4 h-4 bg-green-50 border-b-4 border-green-500 rounded-sm" />
-                                                <span className="font-bold text-slate-700">Days with recurring availability set</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 text-xs bg-white/60 p-3 rounded-lg sm:rounded-2xl">
-                                                <div className="w-4 h-4 bg-indigo-600 rounded-lg shadow-sm" />
-                                                <span className="font-bold text-slate-700">Specific dates with scheduled clients</span>
-                                            </div>
-                                            <div className="flex items-start gap-3 p-3 text-[10px] leading-relaxed text-lp-on-surface-variant bg-lp-surface-container-low/40 rounded-lg sm:rounded-2xl mt-2">
-                                                <Info className="h-4 w-4 flex-shrink-0" />
-                                                <span>Note: Appointment dates are highlighted in solid blue and take priority over recurring availability in the calendar view.</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-indigo-900 text-indigo-100 p-5 sm:p-8 rounded-xl sm:rounded-3xl shadow-xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
-                                    <div className="relative z-10 flex items-start gap-4">
-                                        <div className="bg-white/10 p-2 rounded-xl">
-                                            <Clock className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-lg font-black text-white mb-2">Practice Optimisation</h4>
-                                            <ul className="text-xs space-y-3 font-medium opacity-80">
-                                                <li className="flex items-center gap-2">
-                                                    <div className="h-1 w-1 bg-white rounded-full" /> Weekly slots recur indefinitely for your listed specialties.
-                                                </li>
-                                                <li className="flex items-center gap-2">
-                                                    <div className="h-1 w-1 bg-white rounded-full" /> Use the "Calendar" tab to update or cancel specific hours.
-                                                </li>
-                                                <li className="flex items-center gap-2">
-                                                    <div className="h-1 w-1 bg-white rounded-full" /> Keep your consultation fee updated for transparency.
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                </div>
+                <ProfessionalScheduleCalendar
+                    appointments={appointments}
+                    guestAppointments={guestAppointments}
+                    availability={availability}
+                    mounted={mounted}
+                    isLoading={isLoadingAppointments || isLoadingGuestBookings || isLoadingAvail}
+                />
                 ) : null}
             </div>
         </div>

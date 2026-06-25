@@ -1,0 +1,251 @@
+/* HealthHere professional schedule — Google Calendar / Practo-inspired theme */
+
+.pro-schedule-calendar .rbc-calendar {
+  font-family: var(--font-sans);
+  background: #fff;
+  border: none;
+}
+
+.pro-schedule-calendar .rbc-time-view {
+  border: none;
+}
+
+.pro-schedule-calendar .rbc-time-header {
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.pro-schedule-calendar .rbc-time-header-content {
+  border-left: 1px solid rgb(243 244 246);
+}
+
+.pro-schedule-calendar .rbc-time-header-gutter {
+  background: rgb(249 250 251);
+}
+
+.pro-schedule-calendar .rbc-time-content {
+  border-top: none;
+}
+
+.pro-schedule-calendar .rbc-time-content > .rbc-day-slot {
+  min-height: 0;
+}
+
+.pro-schedule-calendar .rbc-timeslot-group {
+  min-height: 64px;
+}
+
+.pro-schedule-calendar .rbc-time-gutter {
+  background: rgb(249 250 251);
+}
+
+.pro-schedule-calendar .rbc-time-gutter .rbc-timeslot-group {
+  border-bottom: 1px solid rgb(243 244 246);
+}
+
+.pro-schedule-calendar .rbc-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgb(107 114 128);
+  padding-right: 8px;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid rgb(243 244 246);
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-time-slot:nth-child(2) {
+  border-top: 1px dashed rgb(249 250 251);
+}
+
+.pro-schedule-calendar .rbc-day-bg {
+  border-left: 1px solid rgb(243 244 246);
+}
+
+.pro-schedule-calendar .rbc-day-bg.rbc-today-col {
+  background: rgb(239 246 255 / 0.55);
+}
+
+.pro-schedule-calendar .rbc-day-bg.rbc-off-range-day {
+  background: rgb(249 250 251 / 0.8);
+}
+
+.pro-schedule-calendar .rbc-header {
+  padding: 12px 4px;
+  border-bottom: none;
+  border-left: 1px solid rgb(243 244 246);
+  background: rgb(249 250 251 / 0.6);
+  font-weight: 600;
+}
+
+.pro-schedule-calendar .rbc-header.rbc-today-header {
+  background: rgb(239 246 255 / 0.7);
+}
+
+.pro-schedule-calendar .rbc-allday-cell {
+  display: none;
+}
+
+.pro-schedule-calendar .rbc-time-header-cell .rbc-header {
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.pro-schedule-calendar .rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+  z-index: 5;
+}
+
+.pro-schedule-calendar .rbc-current-time-indicator::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background-color: #ef4444;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-events-container {
+  margin-right: 4px;
+  margin-left: 2px;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 4px 6px !important;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+  transition: box-shadow 0.15s ease, filter 0.15s ease;
+  flex-flow: column nowrap !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
+  min-height: 28px !important;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event:hover {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.14);
+  filter: brightness(0.98);
+  z-index: 10 !important;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event:focus {
+  outline: 2px solid #0059bb;
+  outline-offset: 1px;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event.rbc-selected {
+  box-shadow: 0 0 0 2px #0059bb;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event-label {
+  display: none !important;
+}
+
+.pro-schedule-calendar .rbc-day-slot .rbc-event-content {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+  line-height: 1.25 !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+.pro-schedule-event-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+.pro-schedule-event-inner__title {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-schedule-event-inner__time {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.25;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-schedule-event-inner__type {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-schedule-event-inner--compact .pro-schedule-event-inner__time {
+  display: none;
+}
+
+.pro-schedule-calendar .rbc-event--guest {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  border-left: 4px solid #2563eb !important;
+  color: #1e3a8a !important;
+}
+
+.pro-schedule-calendar .rbc-event--appointment {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
+  border-left: 4px solid #4f46e5 !important;
+  color: #312e81 !important;
+}
+
+.pro-schedule-calendar .rbc-event--video {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border-left: 4px solid #059669 !important;
+  color: #064e3b !important;
+}
+
+.pro-schedule-calendar .rbc-today .rbc-day-number.is-today {
+  background: #0059bb;
+  color: #fff;
+}
+
+.pro-schedule-calendar .rbc-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 4px;
+  border-radius: 9999px;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0b1c30;
+}
+
+.pro-schedule-calendar .rbc-header-day-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.pro-schedule-calendar .rbc-non-work-hour {
+  background: rgb(249 250 251 / 0.65);
+}
