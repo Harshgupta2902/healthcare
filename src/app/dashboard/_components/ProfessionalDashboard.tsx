@@ -9,6 +9,7 @@ import {
     addQualification,
     deleteQualification,
     getMyQualificationsSanitized,
+    reuploadQualificationDocument,
     updateAvailability,
     deleteAvailability,
     updateAppointmentStatus,
@@ -232,6 +233,7 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
     const [isLoadingGuestBookings, setIsLoadingGuestBookings] = useState(!initialData?.guestAppointments);
     const [isLoadingPayments, setIsLoadingPayments] = useState(!initialData?.payments);
     const [isSaving, setIsSaving] = useState(false);
+    const [reuploadingQualId, setReuploadingQualId] = useState<string | null>(null);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -644,6 +646,25 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
             fetchQualifications();
         } catch (error: any) {
             toast.error(error.message || "Failed to delete");
+        }
+    };
+
+    const handleReuploadQualification = async (id: string, file: File) => {
+        setReuploadingQualId(id);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const result = await reuploadQualificationDocument(id, formData);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+            toast.success("Document re-uploaded. Status reset to in review.");
+            fetchQualifications();
+        } catch (error: any) {
+            toast.error(error.message || "Failed to re-upload document");
+        } finally {
+            setReuploadingQualId(null);
         }
     };
 
@@ -1253,7 +1274,9 @@ export function ProfessionalDashboard({ initialData }: { initialData: any }) {
                             <ProfessionalCredentialsList
                                 qualifications={qualifications}
                                 isLoading={isLoadingQuals}
+                                reuploadingId={reuploadingQualId}
                                 onDelete={handleDeleteQualification}
+                                onReupload={handleReuploadQualification}
                                 onAddClick={() => setShowAddQualification(true)}
                             />
                         </CardContent>
