@@ -152,16 +152,7 @@ export default function Header({ className }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDashboardClick}>
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                My Dashboard
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                <Stethoscope className="h-4 w-4 mr-2" />
-                Professional Portal
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign out
               </DropdownMenuItem>
@@ -322,7 +313,12 @@ export default function Header({ className }: HeaderProps) {
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                   </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start cursor-pointer" onClick={handleSignOut}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={handleSignOut}
+                  >
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
                   </Button>
                 </>
