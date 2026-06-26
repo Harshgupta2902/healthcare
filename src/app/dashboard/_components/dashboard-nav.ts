@@ -71,9 +71,9 @@ const professionalBusiness: DashboardNavItem[] = [
 
 export const clientNavGroups: DashboardNavGroup[] = [
   {
-    id: 'account',
-    label: 'Account',
-    items: [{ id: 'profile', label: 'Profile', icon: User, roles: ['client'] }],
+    id: 'bookings',
+    label: 'Bookings',
+    items: clientBookings,
   },
   {
     id: 'health-records',
@@ -81,9 +81,9 @@ export const clientNavGroups: DashboardNavGroup[] = [
     items: clientHealthRecords,
   },
   {
-    id: 'bookings',
-    label: 'Bookings',
-    items: clientBookings,
+    id: 'account',
+    label: 'Account',
+    items: [{ id: 'profile', label: 'Profile', icon: User, roles: ['client'] }],
   },
 ]
 
