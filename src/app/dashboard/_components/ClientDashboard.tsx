@@ -76,8 +76,14 @@ import {
 } from "lucide-react";
 import { ClientOrdersSection } from "./sections/client";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
+import { ClientMedicalHistoryList } from "./ClientMedicalHistoryList";
+import { ClientMedicationsList } from "./ClientMedicationsList";
+import { ClientDocumentsList } from "./ClientDocumentsList";
+import { ClientInsuranceList } from "./ClientInsuranceList";
+import { ClientAppointmentsList } from "./ClientAppointmentsList";
 import type { ClientOrderHistoryItem } from "@/features/booking-orders/types";
 import {
+    dashboardGlassCard,
     dashboardGlassCardLg,
     dashboardPrimaryButton,
     dashboardProfileBanner,
@@ -1165,13 +1171,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "history" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                        <CardHeader className="pt-4 bg-red-50/30">
+                    <Card className={dashboardGlassCard}>
+                        <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
-                                    <CardTitle className="text-xl font-black flex items-center gap-2 text-red-900">
-                                        <Activity className="h-6 w-6" /> Medical Conditions
-                                    </CardTitle>
+                                    <CardTitle className="font-heading text-xl font-bold">Medical Conditions</CardTitle>
                                     <CardDescription>History of diagnosed health conditions</CardDescription>
                                 </div>
                                 <Dialog open={showAddCondition} onOpenChange={setShowAddCondition}>
@@ -1245,58 +1249,12 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             </div>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingHistory ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-red-500" />
-                                </div>
-                            ) : medicalHistory.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-red-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-red-100">
-                                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-200" />
-                                    <h4 className="text-lg font-black text-lp-cta-bg">No Conditions Reported</h4>
-                                    <p className="text-lp-on-surface-variant mt-1">Keep your longitudinal health record updated.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2">
-                                    {medicalHistory.map((condition) => (
-                                        <div
-                                            key={condition.id}
-                                            className="group relative w-full min-w-0 max-w-full overflow-hidden p-5 sm:p-6 bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl hover:bg-slate-50/50 transition-all duration-500"
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-                                                            <Stethoscope className="h-5 w-5" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-extrabold text-lp-cta-bg text-lg uppercase tracking-tight">{condition.conditionName}</h4>
-                                                            <Badge className={`mt-1 font-black text-[10px] uppercase rounded-full ${condition.status === 'active' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-lp-surface-container-low text-lp-on-surface-variant border-none'}`}>
-                                                                {condition.status}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                    {condition.diagnosisDate && mounted && (
-                                                        <p className="text-xs font-bold text-lp-on-surface-variant pl-11">
-                                                            Diagnosed: {new Date(condition.diagnosisDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric', day: 'numeric' })}
-                                                        </p>
-                                                    )}
-                                                    {condition.notes && (
-                                                        <p className="text-sm text-lp-on-surface-variant pl-11 bg-slate-50/50 p-3 rounded-lg sm:rounded-2xl italic">"{condition.notes}"</p>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover:opacity-100"
-                                                    onClick={() => handleDeleteCondition(condition.id)}
-                                                >
-                                                    <Trash2 className="h-5 w-5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ClientMedicalHistoryList
+                                records={medicalHistory}
+                                isLoading={isLoadingHistory}
+                                mounted={mounted}
+                                onDelete={handleDeleteCondition}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1304,12 +1262,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "medications" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                        <CardHeader className="pt-4 bg-blue-50/30">
+                    <Card className={dashboardGlassCard}>
+                        <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <CardTitle className="text-xl font-black flex items-center gap-2 text-blue-900">
-                                    <Pill className="h-6 w-6" /> Current Medications
-                                </CardTitle>
+                                <div>
+                                    <CardTitle className="font-heading text-xl font-bold">Current Medications</CardTitle>
+                                    <CardDescription>Active prescriptions and dosage tracking</CardDescription>
+                                </div>
                                 <Dialog open={showAddMedication} onOpenChange={setShowAddMedication}>
                                     <DialogTrigger asChild>
                                         <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 shadow-lg px-5 sm:w-auto sm:rounded-full sm:px-8 font-bold">
@@ -1375,56 +1334,12 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             </div>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingMeds ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
-                                </div>
-                            ) : medications.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-blue-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-blue-100">
-                                    <div className="bg-white h-16 w-16 mx-auto mb-4 rounded-full flex items-center justify-center shadow-inner">
-                                        <Pill className="h-8 w-8 text-blue-200" />
-                                    </div>
-                                    <h4 className="text-lg font-black text-lp-cta-bg">No Active Prescriptions</h4>
-                                    <p className="text-lp-on-surface-variant mt-1">Add medications to receive reminders and safety alerts.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {medications.map((med) => (
-                                        <div key={med.id} className="group w-full min-w-0 max-w-full overflow-hidden bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500">
-                                            <div className="p-5 sm:p-6">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-lg sm:rounded-2xl flex items-center justify-center font-black">
-                                                        {med.dosage.match(/\d+/)?.[0] || 'M'}
-                                                    </div>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="rounded-full text-slate-200 hover:text-red-500 hover:bg-red-50"
-                                                        onClick={() => handleDeleteMedication(med.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                                <h4 className="font-black text-lp-cta-bg text-lg uppercase truncate">{med.medicationName}</h4>
-                                                <Badge className="bg-blue-50 text-blue-700 border-none font-black text-[10px] mt-1 mb-4">{med.dosage} - {med.frequency}</Badge>
-
-                                                <div className="space-y-4 pt-4 border-t border-slate-50">
-                                                    <div className="flex justify-between items-center text-xs">
-                                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Doctor</span>
-                                                        <span className="font-black text-lp-cta-bg uppercase tracking-tight">{med.prescribingDoctor || "Self"}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center text-xs">
-                                                        <span className="text-lp-on-surface-variant font-bold uppercase tracking-tighter">Status</span>
-                                                        <span className={`font-black uppercase tracking-tight ${med.isActive ? 'text-green-500' : 'text-slate-300'}`}>
-                                                            {med.isActive ? 'Active Plan' : 'Inactive'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ClientMedicationsList
+                                records={medications}
+                                isLoading={isLoadingMeds}
+                                mounted={mounted}
+                                onDelete={handleDeleteMedication}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1432,13 +1347,11 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "documents" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
+                    <Card className={dashboardGlassCard}>
                         <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0">
-                                    <CardTitle className="text-xl font-black flex items-center gap-2">
-                                        <FileText className="h-6 w-6 text-lp-brand" /> Vault Documents
-                                    </CardTitle>
+                                    <CardTitle className="font-heading text-xl font-bold">Vault Documents</CardTitle>
                                     <CardDescription>Secure storage for lab reports and prescriptions</CardDescription>
                                 </div>
                                 <Dialog open={showAddDocument} onOpenChange={setShowAddDocument}>
@@ -1538,55 +1451,12 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             </div>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingDocs ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-                                </div>
-                            ) : documents.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-slate-50/20 rounded-xl sm:rounded-3xl border-2 border-dashed border-lp-outline-variant/30">
-                                    <p className="text-lp-on-surface-variant font-bold">Your document vault is empty.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {documents.map((doc) => (
-                                        <div key={doc.id} className="group w-full min-w-0 max-w-full bg-white border border-slate-50 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
-                                            <div className="p-5 sm:p-6">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="h-12 w-12 bg-indigo-50 text-lp-brand rounded-lg sm:rounded-2xl flex items-center justify-center">
-                                                        <FileText className="h-6 w-6" />
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                                                        onClick={() => handleDeleteDocument(doc.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                                <h4 className="font-black text-lp-cta-bg truncate uppercase tracking-tight">{doc.documentName}</h4>
-                                                <p className="text-xs font-black text-lp-brand uppercase tracking-widest mt-1">{doc.documentType}</p>
-                                                <div className="mt-4 flex items-center justify-between">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] font-bold text-lp-on-surface-variant uppercase tracking-tighter">Size</span>
-                                                        <span className="text-xs font-black text-slate-700">
-                                                            {doc.fileSize ? `${(doc.fileSize / 1024 / 1024).toFixed(2)} MB` : "N/A"}
-                                                        </span>
-                                                    </div>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="rounded-full font-black text-[10px] uppercase tracking-widest border-indigo-100 text-lp-brand hover:bg-indigo-50"
-                                                        onClick={() => window.open(doc.fileUrl, '_blank')}
-                                                    >
-                                                        <ExternalLink className="h-3 w-3 mr-1" /> View
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ClientDocumentsList
+                                records={documents}
+                                isLoading={isLoadingDocs}
+                                mounted={mounted}
+                                onDelete={handleDeleteDocument}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1594,12 +1464,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "insurance" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                        <CardHeader className="pt-4 bg-emerald-50/30">
+                    <Card className={dashboardGlassCard}>
+                        <CardHeader className="pt-4">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <CardTitle className="text-xl font-black flex items-center gap-2 text-emerald-900">
-                                    <Shield className="h-6 w-6" /> Insurance Plans
-                                </CardTitle>
+                                <div>
+                                    <CardTitle className="font-heading text-xl font-bold">Insurance Plans</CardTitle>
+                                    <CardDescription>Direct billing and coverage verification</CardDescription>
+                                </div>
                                 <Dialog open={showAddInsurance} onOpenChange={setShowAddInsurance}>
                                     <DialogTrigger asChild>
                                         <Button size="sm" className="w-full rounded-lg bg-emerald-600 font-bold shadow-lg px-5 sm:w-auto sm:rounded-full sm:px-8">
@@ -1653,48 +1524,12 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             </div>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingInsurance ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
-                                </div>
-                            ) : insuranceData.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-emerald-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-emerald-100">
-                                    <p className="text-lp-on-surface-variant font-bold">No insurance policies linked.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-8">
-                                    {insuranceData.map((ins) => (
-                                        <div key={ins.id} className="group relative w-full min-w-0 max-w-full overflow-hidden bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500">
-                                            <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-50">
-                                                <div className="p-5 sm:p-8 md:w-1/3 bg-slate-50/40">
-                                                    <p className="text-[10px] font-black uppercase text-lp-on-surface-variant tracking-widest mb-1">Coverage Provider</p>
-                                                    <h4 className="text-2xl font-black text-lp-cta-bg group-hover:text-emerald-600 transition-colors uppercase tracking-tighter">{ins.providerName}</h4>
-                                                    <Badge className="mt-4 bg-emerald-100 text-emerald-700 border-none font-black px-4 py-1">Verified Active</Badge>
-                                                </div>
-                                                <div className="p-5 sm:p-8 md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Policy ID</p>
-                                                        <p className="font-extrabold text-lp-cta-bg tracking-wider text-lg">{ins.policyNumber}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Beneficiary</p>
-                                                        <p className="font-extrabold text-lp-cta-bg tracking-tight text-lg">{ins.policyHolderName}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase text-lp-on-surface-variant mb-1">Expiration</p>
-                                                        <p className="font-extrabold text-red-400 tracking-tight text-lg">{ins.expirationDate || 'Lifetime'}</p>
-                                                    </div>
-                                                    <div className="flex items-end md:justify-end">
-                                                        <Button variant="ghost" className="w-full rounded-lg sm:rounded-2xl text-red-300 hover:text-red-500 hover:bg-red-50 font-black px-5 sm:w-auto sm:px-6" onClick={() => handleDeleteInsurance(ins.id)}>
-                                                            <Trash2 className="h-5 w-5 mr-2" /> Disconnect Policy
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ClientInsuranceList
+                                records={insuranceData}
+                                isLoading={isLoadingInsurance}
+                                mounted={mounted}
+                                onDelete={handleDeleteInsurance}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1702,114 +1537,22 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "appointments" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="border border-lp-outline-variant/20 shadow-xl bg-lp-surface-container-lowest/80 backdrop-blur-md rounded-xl sm:rounded-3xl">
-                        <CardHeader className="pt-4 bg-indigo-50/30">
-                            <CardTitle className="text-xl font-black flex items-center gap-2 text-indigo-900">
-                                <Calendar className="h-6 w-6" /> My Consultation Requests
-                            </CardTitle>
+                    <Card className={dashboardGlassCard}>
+                        <CardHeader className="pt-4">
+                            <CardTitle className="font-heading text-xl font-bold">My Consultation Requests</CardTitle>
                             <CardDescription>Requests submitted from the book consultation page</CardDescription>
                         </CardHeader>
                         <CardContent className="min-w-0 overflow-hidden p-4 sm:p-6 md:p-8">
-                            {isLoadingAppointments ? (
-                                <div className="flex justify-center py-20">
-                                    <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-                                </div>
-                            ) : appointments.length === 0 ? (
-                                <div className="text-center py-16 sm:py-24 bg-indigo-50/10 rounded-xl sm:rounded-3xl border-2 border-dashed border-indigo-100">
-                                    <Calendar className="h-12 w-12 mx-auto mb-4 text-indigo-200" />
-                                    <h4 className="text-lg font-black text-lp-cta-bg">No requests yet</h4>
-                                    <p className="text-lp-on-surface-variant mt-1">Your consultation requests will appear here.</p>
-                                </div>
-                            ) : (
-                                <div className="grid min-w-0 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {appointments.map((apt) => (
-                                        <div
-                                            key={apt.id}
-                                            className="group w-full min-w-0 max-w-full overflow-hidden p-5 bg-white border border-lp-outline-variant/30 rounded-xl sm:rounded-3xl hover:shadow-2xl transition-all duration-500"
-                                        >
-                                            <div className="flex items-center justify-between gap-3">
-                                                <Badge className="font-black text-[10px] uppercase rounded-full bg-amber-50 text-amber-700 border-amber-100">
-                                                    Submitted
-                                                </Badge>
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-lp-on-surface-variant">
-                                                    {apt.category}
-                                                </p>
-                                            </div>
-
-                                            <div className="mt-4 space-y-1">
-                                                <h4 className="font-black text-lp-cta-bg truncate text-lg">
-                                                    {apt.professionalName || "Consultation Team"}
-                                                </h4>
-                                                <p className="text-xs text-lp-on-surface-variant font-bold truncate uppercase tracking-wide">
-                                                    {apt.city}, {apt.state}
-                                                </p>
-                                            </div>
-
-                                            <div className="mt-4 p-3 rounded-lg sm:rounded-2xl bg-indigo-50/40 border border-indigo-100/60">
-                                                <p className="text-xs font-black text-lp-on-surface-variant uppercase tracking-wider">Schedule</p>
-                                                <p className="text-sm font-black text-indigo-700">
-                                                    {mounted
-                                                        ? new Date(`${apt.appointmentDate}T${(apt.appointmentTime || "00:00").slice(0, 5)}:00`).toLocaleString('en-US', {
-                                                            weekday: 'short',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            year: 'numeric',
-                                                            hour: 'numeric',
-                                                            minute: '2-digit',
-                                                        })
-                                                        : ''}
-                                                </p>
-                                            </div>
-
-                                            {apt.message && (
-                                                <p className="mt-3 text-sm text-lp-on-surface-variant italic line-clamp-2">"{apt.message}"</p>
-                                            )}
-
-                                            {apt.prescriptionUpdatedAt && (
-                                                <p className="mt-2 text-[11px] font-black uppercase tracking-wider text-emerald-600">
-                                                    Prescription updated{" "}
-                                                    {mounted
-                                                        ? new Date(apt.prescriptionUpdatedAt).toLocaleDateString("en-US", {
-                                                            month: "short",
-                                                            day: "numeric",
-                                                            year: "numeric",
-                                                        })
-                                                        : ""}
-                                                </p>
-                                            )}
-
-                                            {apt.prescriptionHtml && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => void handleViewPrescriptionPdf(apt)}
-                                                    disabled={prescriptionPdfLoadingAppointmentId === apt.id}
-                                                    className="mt-3 w-full rounded-full border-emerald-100 text-emerald-700 hover:bg-emerald-50 font-black"
-                                                    >
-                                                    {prescriptionPdfLoadingAppointmentId === apt.id ? (
-                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                    ) : (
-                                                        <FileText className="h-4 w-4 mr-2" />
-                                                    )}
-                                                    {prescriptionPdfLoadingAppointmentId === apt.id ? "Preparing PDF…" : "View PDF"}
-                                                </Button>
-                                            )}
-
-                                            {/* {apt.calendarInviteUrl && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mt-4 w-full rounded-full border-indigo-100 text-indigo-700 hover:bg-indigo-50 font-black"
-                                                    onClick={() => window.open(apt.calendarInviteUrl || '', '_blank')}
-                                                >
-                                                    <ExternalLink className="h-4 w-4 mr-2" />
-                                                    Open Invite
-                                                </Button>
-                                            )} */}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <ClientAppointmentsList
+                                records={appointments}
+                                isLoading={isLoadingAppointments}
+                                mounted={mounted}
+                                prescriptionPdfLoadingId={prescriptionPdfLoadingAppointmentId}
+                                onViewPrescriptionPdf={(record) => {
+                                    const apt = appointments.find((a) => a.id === record.id);
+                                    if (apt) void handleViewPrescriptionPdf(apt);
+                                }}
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -1817,7 +1560,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
 
                 {activeSection === "orders" ? (
                 <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <ClientOrdersSection orders={orders} isLoading={isLoadingOrders} />
+                    <ClientOrdersSection orders={orders} isLoading={isLoadingOrders} mounted={mounted} />
                 </div>
                 ) : null}
             </div>
