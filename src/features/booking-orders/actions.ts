@@ -36,6 +36,7 @@ import type {
   ClientOrderHistoryItem,
 } from "./types";
 import { attachSharedPrescriptionsToBooking } from "@/features/prescription-sharing/actions";
+import { requireClientForBooking } from "@/lib/booking/require-client-booking";
 
 async function requireAuthUser() {
   const supabase = await createClient();
@@ -315,8 +316,8 @@ export async function createBookingOrder(form: unknown) {
     return { error: zodFirstError(validated.error) };
   }
 
-  const auth = await requireAuthUser();
-  if (!auth.ok) return { error: auth.error };
+  const auth = await requireClientForBooking();
+  if (!auth.ok) return { error: auth.error, ...(auth.role ? { code: "wrong_role" as const } : {}) };
 
   const headerStore = await headers();
   const clientIp = getClientIpFromHeaders(headerStore);
@@ -415,7 +416,7 @@ export async function getCheckoutOrder(input: unknown) {
     return { error: zodFirstError(parsed.error) };
   }
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const { decodeOrderRef } = await import("./lib/order-ref");
@@ -439,7 +440,7 @@ export async function cancelBookingOrder(input: unknown) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   await expireStaleOrders(auth.supabase);
@@ -468,7 +469,7 @@ export async function processMockPayment(input: unknown) {
   const parsed = mockPaymentOutcomeSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const validation = await validatePendingCheckoutOrder(
@@ -512,7 +513,7 @@ export async function createRazorpayCheckoutOrder(input: unknown) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const validation = await validatePendingCheckoutOrder(
@@ -561,7 +562,7 @@ export async function verifyRazorpayPayment(input: unknown) {
   const parsed = razorpayVerifyPaymentSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const validation = await validatePendingCheckoutOrder(
@@ -606,7 +607,7 @@ export async function finalizeBookingOrder(input: unknown) {
   const parsed = finalizeOrderSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const { data, error } = await auth.supabase.rpc("finalize_booking_order", {
@@ -629,7 +630,7 @@ export async function markBookingOrderFulfillmentFailed(input: unknown) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   const ok = await patchOrderStatus(
@@ -645,7 +646,7 @@ export async function markBookingOrderFulfillmentFailed(input: unknown) {
 }
 
 export async function getClientOrderHistory() {
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { success: false as const, error: auth.error };
 
   await expireStaleOrders(auth.supabase);

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
 import { formatProfessionalDisplayName } from "@/lib/professional-name-title";
 import { zodFirstError } from "@/lib/server-action-result";
+import { requireClientForBooking } from "@/lib/booking/require-client-booking";
 import {
   attachSharedPrescriptionsSchema,
   eligiblePrescriptionsQuerySchema,
@@ -126,7 +127,7 @@ export async function getEligiblePrescriptionsForSharing(input?: unknown) {
   const parsed = eligiblePrescriptionsQuerySchema.safeParse(input ?? {});
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
+  const auth = await requireClientForBooking();
   if (!auth.ok) return { error: auth.error };
 
   try {

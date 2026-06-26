@@ -19,6 +19,7 @@ import {
   listBookableDates,
 } from "@/lib/booking/bookable-dates";
 import { zodFirstError } from "@/lib/server-action-result";
+import { requireClientForBooking } from "@/lib/booking/require-client-booking";
 import {
   activeHoldSchema,
   holdIdSchema,
@@ -49,12 +50,7 @@ export type GetAvailableSlotsResult =
     };
 
 async function requireAuthUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, error: "You must be signed in." };
-  return { ok: true as const, supabase, user };
+  return requireClientForBooking();
 }
 
 export async function fetchBookingSettings(
