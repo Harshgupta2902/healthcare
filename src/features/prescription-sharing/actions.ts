@@ -177,10 +177,13 @@ export async function attachSharedPrescriptionsToBooking(
     }
   }
 
-  const { error: rpcError } = await supabase.rpc("attach_guest_appointment_prescription_shares", {
-    p_guest_appointment_id: guestAppointmentId,
-    p_source_ids: parsed.data.sharedPrescriptionIds,
-  });
+  const { data: attached, error: rpcError } = await supabase.rpc(
+    "attach_guest_appointment_prescription_shares",
+    {
+      p_guest_appointment_id: guestAppointmentId,
+      p_source_ids: parsed.data.sharedPrescriptionIds,
+    },
+  );
 
   if (rpcError) {
     const migrationHint =
@@ -191,10 +194,7 @@ export async function attachSharedPrescriptionsToBooking(
     throw new Error(`${rpcError.message}${migrationHint}`);
   }
 
-  const verifiedCounts = await fetchSharedPrescriptionCountsByGuestAppointmentIds(supabase, [
-    guestAppointmentId,
-  ]);
-  if ((verifiedCounts[guestAppointmentId] ?? 0) === 0) {
+  if (attached !== true) {
     throw new Error(
       "Could not attach shared prescriptions to your booking. Ensure database migrations are applied.",
     );
@@ -287,7 +287,10 @@ export async function fetchSharedPrescriptionCountsByGuestAppointmentIds(
     for (const [id, count] of Object.entries(rpcData as Record<string, number>)) {
       counts[id] = Number(count) || 0;
     }
-    return counts;
+    // Professional-only RPC returns {} for patients; fall through to direct read.
+    if (Object.keys(counts).length > 0) {
+      return counts;
+    }
   }
 
   const { data, error } = await supabase
