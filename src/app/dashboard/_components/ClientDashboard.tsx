@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { fetchGuestAppointmentProfessionalMeta } from "@/lib/guest-appointment-professional-meta";
@@ -68,14 +68,14 @@ import {
     Save,
     Camera,
     Shield,
-    Activity,
+    Clock,
     Stethoscope,
     ExternalLink,
     ShieldCheck,
     IndianRupee,
 } from "lucide-react";
 import { ClientOrdersSection } from "./sections/client";
-import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
+import { buildClientScheduleMeetings, ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { ClientMedicalHistoryList } from "./ClientMedicalHistoryList";
 import { ClientMedicationsList } from "./ClientMedicationsList";
 import { ClientDocumentsList } from "./ClientDocumentsList";
@@ -238,6 +238,17 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const homeStats = useMemo(() => {
+        const now = Date.now();
+        const meetings = buildClientScheduleMeetings(appointments);
+        return {
+            upcoming: meetings.filter((m) => m.end.getTime() >= now).length,
+            pastVisits: meetings.filter((m) => m.end.getTime() < now).length,
+            prescriptions: appointments.filter((a) => Boolean(a.prescriptionHtml?.trim())).length,
+            confirmedOrders: orders.filter((o) => o.status === "confirmed").length,
+        };
+    }, [appointments, orders]);
 
     useEffect(() => {
         if (initialData?.dashboardError) {
@@ -824,22 +835,22 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
                         <div className={dashboardStatIconWrap}>
-                            <Activity className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className={dashboardStatLabel}>Conditions</p>
-                            <p className={dashboardStatValue}>{medicalHistory.filter(h => h.status === 'active').length}</p>
+                            <p className={dashboardStatLabel}>Upcoming</p>
+                            <p className={dashboardStatValue}>{homeStats.upcoming}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
                         <div className={dashboardStatIconWrap}>
-                            <Pill className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className={dashboardStatLabel}>Active Meds</p>
-                            <p className={dashboardStatValue}>{medications.filter(m => m.isActive).length}</p>
+                            <p className={dashboardStatLabel}>Past visits</p>
+                            <p className={dashboardStatValue}>{homeStats.pastVisits}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -849,19 +860,19 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className={dashboardStatLabel}>Documents</p>
-                            <p className={dashboardStatValue}>{documents.length}</p>
+                            <p className={dashboardStatLabel}>Prescriptions</p>
+                            <p className={dashboardStatValue}>{homeStats.prescriptions}</p>
                         </div>
                     </CardContent>
                 </Card>
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
                         <div className={dashboardStatIconWrap}>
-                            <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
+                            <IndianRupee className="h-5 w-5 sm:h-6 sm:w-6" />
                         </div>
                         <div className="min-w-0">
-                            <p className={dashboardStatLabel}>Insurance</p>
-                            <p className={dashboardStatValue}>{insuranceData.length}</p>
+                            <p className={dashboardStatLabel}>Confirmed orders</p>
+                            <p className={dashboardStatValue}>{homeStats.confirmedOrders}</p>
                         </div>
                     </CardContent>
                 </Card>
