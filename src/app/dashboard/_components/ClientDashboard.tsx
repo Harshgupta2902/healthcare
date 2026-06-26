@@ -75,6 +75,7 @@ import {
     IndianRupee,
 } from "lucide-react";
 import { ClientOrdersSection } from "./sections/client";
+import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import type { ClientOrderHistoryItem } from "@/features/booking-orders/types";
 import {
     dashboardGlassCardLg,
@@ -176,6 +177,8 @@ interface Appointment {
     city: string;
     appointmentDate: string;
     appointmentTime: string;
+    meetingDurationMinutes?: number | null;
+    meetingEndTime?: string | null;
     message: string | null;
     calendarInviteUrl: string | null;
     prescriptionHtml: string | null;
@@ -499,6 +502,8 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                             city: apt.city,
                             appointmentDate: apt.appointment_date,
                             appointmentTime: apt.appointment_time,
+                            meetingDurationMinutes: apt.meeting_duration_minutes ?? null,
+                            meetingEndTime: apt.meeting_end_time ?? null,
                             message: apt.message,
                             calendarInviteUrl: apt.calendar_invite_url || null,
                             prescriptionHtml: apt.prescription_html || null,
@@ -808,6 +813,7 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
     return (
         <div className="min-w-0">
             {activeSection === "home" ? (
+            <>
             <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:gap-4 md:gap-6 lg:grid-cols-4">
                 <Card className={dashboardStatCard}>
                     <CardContent className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
@@ -854,6 +860,13 @@ export function ClientDashboard({ initialData }: { initialData: any }) {
                     </CardContent>
                 </Card>
             </div>
+
+            <ClientScheduleCalendar
+                appointments={appointments}
+                mounted={mounted}
+                isLoading={isLoadingAppointments}
+            />
+            </>
             ) : null}
 
             <div className="space-y-6 sm:space-y-8">

@@ -564,6 +564,8 @@ export async function getClientDashboardData() {
                 city: apt.city,
                 appointmentDate: apt.appointment_date,
                 appointmentTime: apt.appointment_time,
+                meetingDurationMinutes: apt.meeting_duration_minutes ?? null,
+                meetingEndTime: apt.meeting_end_time ?? null,
                 message: apt.message,
                 calendarInviteUrl: apt.calendar_invite_url || null,
                 prescriptionHtml: apt.prescription_html || null,

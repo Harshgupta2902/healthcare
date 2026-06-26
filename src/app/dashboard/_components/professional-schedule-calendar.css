@@ -219,6 +219,13 @@
   color: #064e3b !important;
 }
 
+.pro-schedule-calendar .rbc-event--past {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+  border-left: 4px solid #64748b !important;
+  color: #334155 !important;
+  opacity: 0.9;
+}
+
 .pro-schedule-calendar .rbc-today .rbc-day-number.is-today {
   background: #0059bb;
   color: #fff;
