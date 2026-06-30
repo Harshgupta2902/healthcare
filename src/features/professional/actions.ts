@@ -18,7 +18,10 @@ import {
 } from '@/lib/phone-country-options'
 import { getUniversitiesNames, searchUniversityNames } from '@/lib/universities-gist'
 import { recordProfessionalActivity, weekdayLong } from '@/lib/admin-notifications'
+import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
+import { normalizeAvailabilityTime } from '@/lib/booking/timezone'
 import type { FieldChange } from '@/lib/admin-notifications'
+import { fetchSharedPrescriptionCountsByGuestAppointmentIds } from '@/features/prescription-sharing/actions'
 
 const profileSchema = z
     .object({
@@ -79,7 +82,7 @@ export type SanitizedQualificationRow = {
     degree: string
     institution: string
     year: number | null
-    /** True when a file was uploaded (URL is hidden until approved). */
+    /** True when a file was uploaded. URL is available to the professional for their own credentials. */
     hasVerificationDocument: boolean
     documentUrl: string | null
     documentApproved: boolean | null
@@ -103,9 +106,93 @@ function mapQualificationForProfessionalSelf(q: {
         institution: q.institution,
         year: q.year,
         hasVerificationDocument: Boolean(q.document_url),
-        documentUrl: q.document_approved === true ? q.document_url : null,
+        documentUrl: q.document_url,
         documentApproved: q.document_approved ?? null,
         createdAt: q.created_at,
+    }
+}
+
+const reuploadQualificationDocumentSchema = z.object({
+    qualificationId: z.string().uuid('Invalid credential.'),
+})
+
+type QualificationFileUploadResult =
+    | { success: true; publicUrl: string; storagePath: string }
+    | { success: false; error: string }
+
+async function uploadQualificationFile(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    userId: string,
+    file: File
+): Promise<QualificationFileUploadResult> {
+    if (!file || file.size === 0) {
+        return { success: false, error: 'Please attach a verification document.' }
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        return { success: false, error: 'File is too large (maximum 10 MB).' }
+    }
+
+    const isImage = file.type.startsWith('image/')
+    let uploadBody: Buffer | ArrayBuffer = await file.arrayBuffer()
+    let contentType = file.type || 'application/octet-stream'
+    let ext = path.extname(file.name) || (isImage ? '.jpg' : '.bin')
+
+    if (isImage) {
+        try {
+            const buffer = Buffer.from(uploadBody as ArrayBuffer)
+            uploadBody = await sharp(buffer)
+                .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 85 })
+                .toBuffer()
+            contentType = 'image/webp'
+            ext = '.webp'
+        } catch {
+            uploadBody = await file.arrayBuffer()
+        }
+    }
+
+    const storageFileName = `${crypto.randomBytes(16).toString('hex')}${ext}`
+    const storagePath = `${userId}/${storageFileName}`
+
+    const { error: uploadError } = await supabase.storage
+        .from('qualifications')
+        .upload(storagePath, uploadBody, {
+            contentType,
+            upsert: false,
+        })
+
+    if (uploadError) {
+        console.error('Qualification storage upload failed:', uploadError)
+        return { success: false, error: uploadError.message }
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('qualifications')
+        .getPublicUrl(storagePath)
+
+    return { success: true, publicUrl, storagePath }
+}
+
+async function removeQualificationStorageFile(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    url: string
+) {
+    if (url.includes('/qualifications/')) {
+        const storagePath = url.split('/qualifications/')[1]
+        const { error: removeErr } = await supabase.storage.from('qualifications').remove([storagePath])
+        if (removeErr) {
+            console.error('Failed to remove qualification file from storage:', removeErr)
+        }
+        return
+    }
+
+    if (url.startsWith('/uploads/')) {
+        try {
+            await fs.unlink(path.join(process.cwd(), 'public', url))
+        } catch (err) {
+            console.error('Failed to delete legacy local file:', err)
+        }
     }
 }
 
@@ -297,43 +384,12 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
             year = y
         }
 
-        const isImage = file.type.startsWith('image/')
-        let uploadBody: Buffer | ArrayBuffer = await file.arrayBuffer()
-        let contentType = file.type || 'application/octet-stream'
-        let ext = path.extname(file.name) || (isImage ? '.jpg' : '.bin')
-
-        if (isImage) {
-            try {
-                const buffer = Buffer.from(uploadBody as ArrayBuffer)
-                uploadBody = await sharp(buffer)
-                    .resize(2400, 2400, { fit: 'inside', withoutEnlargement: true })
-                    .webp({ quality: 85 })
-                    .toBuffer()
-                contentType = 'image/webp'
-                ext = '.webp'
-            } catch {
-                uploadBody = await file.arrayBuffer()
-            }
+        const uploaded = await uploadQualificationFile(supabase, user.id, file)
+        if (!uploaded.success) {
+            return { success: false, error: uploaded.error }
         }
 
-        const storageFileName = `${crypto.randomBytes(16).toString('hex')}${ext}`
-        const storagePath = `${user.id}/${storageFileName}`
-
-        const { error: uploadError } = await supabase.storage
-            .from('qualifications')
-            .upload(storagePath, uploadBody, {
-                contentType,
-                upsert: false,
-            })
-
-        if (uploadError) {
-            console.error('Qualification storage upload failed:', uploadError)
-            return { success: false, error: uploadError.message }
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('qualifications')
-            .getPublicUrl(storagePath)
+        const { publicUrl, storagePath } = uploaded
 
         const parsed = qualificationSchema.safeParse({
             degree,
@@ -392,11 +448,98 @@ export async function addQualification(formData: FormData): Promise<AddQualifica
     }
 }
 
+export type ReuploadQualificationDocumentResult =
+    | { success: true; documentUrl: string }
+    | { success: false; error: string }
+
+export async function reuploadQualificationDocument(
+    qualificationId: string,
+    formData: FormData
+): Promise<ReuploadQualificationDocumentResult> {
+    try {
+        const parsedId = reuploadQualificationDocumentSchema.safeParse({ qualificationId })
+        if (!parsedId.success) {
+            return { success: false, error: zodFirstError(parsedId.error) }
+        }
+
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return { success: false, error: 'You must be signed in to re-upload a document.' }
+        }
+
+        const file = formData.get('file') as File
+        const uploaded = await uploadQualificationFile(supabase, user.id, file)
+        if (!uploaded.success) {
+            return { success: false, error: uploaded.error }
+        }
+
+        const { data: qual, error: qualError } = await supabase
+            .from('professional_qualifications')
+            .select('id, degree, institution, year, document_url')
+            .eq('id', parsedId.data.qualificationId)
+            .eq('professional_id', user.id)
+            .single()
+
+        if (qualError || !qual) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: 'Credential not found.' }
+        }
+
+        const documentUrlParsed = z.string().url().safeParse(uploaded.publicUrl)
+        if (!documentUrlParsed.success) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: 'Invalid document URL.' }
+        }
+
+        if (qual.document_url) {
+            await removeQualificationStorageFile(supabase, qual.document_url)
+        }
+
+        const { error: updateError } = await supabase
+            .from('professional_qualifications')
+            .update({
+                document_url: documentUrlParsed.data,
+                document_approved: null,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', qual.id)
+            .eq('professional_id', user.id)
+
+        if (updateError) {
+            await supabase.storage.from('qualifications').remove([uploaded.storagePath])
+            return { success: false, error: updateError.message }
+        }
+
+        const { data: actorRow } = await supabase.from('users').select('name').eq('id', user.id).single()
+        const actorName = (actorRow?.name || 'Professional').trim() || 'Professional'
+        await recordProfessionalActivity(supabase, {
+            actorUserId: user.id,
+            type: 'professional.qualification_reuploaded',
+            title: 'Credentials: document re-uploaded',
+            body: `${actorName} re-uploaded verification for ${qual.degree} — ${qual.institution}. Status reset to in review.`,
+            metadata: {
+                section: 'credentials',
+                qualificationId: qual.id,
+                degree: qual.degree,
+                institution: qual.institution,
+                year: qual.year,
+            },
+        })
+
+        return { success: true, documentUrl: documentUrlParsed.data }
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Something went wrong while re-uploading your document.'
+        console.error('reuploadQualificationDocument:', e)
+        return { success: false, error: message }
+    }
+}
+
 export type DeleteQualificationResult =
     | { success: true }
     | { success: false; error: string }
 
-/** Returns qualifications without exposing document URLs until admin approval. */
+/** Returns the signed-in professional's qualifications including document URLs for self-service review. */
 export async function getMyQualificationsSanitized(): Promise<
     | { success: true; qualifications: SanitizedQualificationRow[] }
     | { success: false; error: string }
@@ -441,22 +584,7 @@ export async function deleteQualification(id: string): Promise<DeleteQualificati
             .single()
 
         if (qual?.document_url) {
-            const url = qual.document_url
-            if (url.includes('/qualifications/')) {
-                const storagePath = url.split('/qualifications/')[1]
-                const { error: removeErr } = await supabase.storage
-                    .from('qualifications')
-                    .remove([storagePath])
-                if (removeErr) {
-                    console.error('Failed to remove qualification file from storage:', removeErr)
-                }
-            } else if (url.startsWith('/uploads/')) {
-                try {
-                    await fs.unlink(path.join(process.cwd(), 'public', url))
-                } catch (err) {
-                    console.error('Failed to delete legacy local file:', err)
-                }
-            }
+            await removeQualificationStorageFile(supabase, qual.document_url)
         }
 
         const { error } = await supabase
@@ -510,8 +638,11 @@ export async function updateAvailability(data: any) {
         }
     }
 
-    if (validatedData.startTime >= validatedData.endTime) {
-        return { success: false as const, error: 'End time must be after start time.' }
+    if (!isValidHourlyAvailabilityWindow(validatedData.startTime, validatedData.endTime)) {
+        return {
+            success: false as const,
+            error: 'End time must be at least 1 hour after start time (use 24-hour format, e.g. 19:00 for 7 PM).',
+        }
     }
 
     const { error } = await supabase.from('professional_availability').insert({
@@ -583,6 +714,88 @@ export async function deleteAvailability(id: string) {
             metadata: { section: 'calendar', day_of_week: slot.day_of_week },
         })
     }
+
+    return { success: true as const }
+}
+
+const patchAvailabilitySlotSchema = z.object({
+    id: z.string().uuid(),
+    dayOfWeek: z.number().min(0).max(6),
+    startTime: z.string().min(1),
+    endTime: z.string().min(1),
+    isAvailable: z.boolean().optional(),
+})
+
+export async function patchAvailabilitySlot(data: unknown) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false as const, error: 'You must be signed in.' }
+
+    const parsed = patchAvailabilitySlotSchema.safeParse(data)
+    if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+    const validated = parsed.data
+    const startTime = normalizeAvailabilityTime(validated.startTime)
+    const endTime = normalizeAvailabilityTime(validated.endTime)
+
+    if (!isValidHourlyAvailabilityWindow(startTime, endTime)) {
+        return {
+            success: false as const,
+            error: 'End time must be at least 1 hour after start time (use 24-hour format, e.g. 19:00 for 7 PM).',
+        }
+    }
+
+    const { data: current } = await supabase
+        .from('professional_availability')
+        .select('id, day_of_week, start_time, end_time, is_available')
+        .eq('id', validated.id)
+        .eq('professional_id', user.id)
+        .maybeSingle()
+
+    if (!current) return { success: false as const, error: 'Availability slot not found.' }
+
+    if (validated.dayOfWeek !== current.day_of_week) {
+        const { data: dayConflict } = await supabase
+            .from('professional_availability')
+            .select('id')
+            .eq('professional_id', user.id)
+            .eq('day_of_week', validated.dayOfWeek)
+            .neq('id', validated.id)
+            .maybeSingle()
+
+        if (dayConflict) {
+            return {
+                success: false as const,
+                error: `${weekdayLong(validated.dayOfWeek)} is already on your weekly schedule.`,
+            }
+        }
+    }
+
+    const { error } = await supabase
+        .from('professional_availability')
+        .update({
+            day_of_week: validated.dayOfWeek,
+            start_time: startTime,
+            end_time: endTime,
+            is_available: validated.isAvailable ?? current.is_available,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', validated.id)
+        .eq('professional_id', user.id)
+
+    if (error) return { success: false as const, error: error.message }
+
+    await recordProfessionalActivity(supabase, {
+        actorUserId: user.id,
+        type: 'professional.calendar_slot_added',
+        title: 'Availability: weekly slot updated',
+        changes: [{
+            label: `Availability · ${weekdayLong(validated.dayOfWeek)}`,
+            from: `${current.start_time}–${current.end_time}`,
+            to: `${startTime}–${endTime}`,
+        }],
+        metadata: { section: 'availability', day_of_week: validated.dayOfWeek },
+    })
 
     return { success: true as const }
 }
@@ -729,13 +942,18 @@ export type ProfessionalGuestBooking = {
     category: string
     state: string
     city: string
-    appointmentDate: string
-    appointmentTime: string
-    message: string | null
+  appointmentDate: string
+  appointmentTime: string
+  meetingDurationMinutes?: number | null
+  meetingEndTime?: string | null
+  calendarInviteUrl?: string | null
+  meetingTitle?: string | null
+  message: string | null
     createdAt: string
     age: number
     prescriptionHtml: string | null
     prescriptionUpdatedAt: string | null
+    sharedPrescriptionCount?: number
 }
 
 export async function getProfessionalDashboardData() {
@@ -762,6 +980,17 @@ export async function getProfessionalDashboardData() {
         supabase.from('payments').select(`*, client:users!payments_client_id_fkey(name)`).eq('professional_id', user.id).order('created_at', { ascending: false }),
         supabase.from('guest_appointments').select('*').eq('professional_id', user.id).order('created_at', { ascending: false }),
     ])
+
+    const guestIds = (guestRows ?? []).map((g: { id: string }) => g.id as string)
+    let sharedPrescriptionCounts: Record<string, number> = {}
+    try {
+        sharedPrescriptionCounts = await fetchSharedPrescriptionCountsByGuestAppointmentIds(
+            supabase,
+            guestIds,
+        )
+    } catch {
+        // Non-fatal: dashboard still loads without share counts
+    }
 
     const profDial =
         normalizePhoneCountryCode(
@@ -851,6 +1080,10 @@ export async function getProfessionalDashboardData() {
                     city: string
                     appointment_date: string
                     appointment_time: string
+                    meeting_duration_minutes: number | null
+                    meeting_end_time: string | null
+                    calendar_invite_url: string | null
+                    meeting_title: string | null
                     message: string | null
                     created_at: string
                     age: number
@@ -867,11 +1100,16 @@ export async function getProfessionalDashboardData() {
                     city: g.city,
                     appointmentDate: g.appointment_date,
                     appointmentTime: g.appointment_time,
+                    meetingDurationMinutes: g.meeting_duration_minutes,
+                    meetingEndTime: g.meeting_end_time,
+                    calendarInviteUrl: g.calendar_invite_url || null,
+                    meetingTitle: g.meeting_title || null,
                     message: g.message,
                     createdAt: g.created_at,
                     age: g.age,
                     prescriptionHtml: g.prescription_html || null,
                     prescriptionUpdatedAt: g.prescription_updated_at || null,
+                    sharedPrescriptionCount: sharedPrescriptionCounts[g.id] ?? 0,
                 })
             ) || ([] as ProfessionalGuestBooking[]),
     }
@@ -942,7 +1180,7 @@ export async function getProfessionalById(id: string) {
     ] = await Promise.all([
         supabase.from('professional_profiles').select('*').eq('user_id', id).single(),
         supabase.from('users').select('name, email, image, phone, phone_country_code').eq('id', id).single(),
-        supabase.from('professional_qualifications').select('*').eq('professional_id', id).order('year', { ascending: false }),
+        supabase.from('professional_qualifications').select('degree, institution, year').eq('professional_id', id).order('year', { ascending: false }),
         supabase.from('professional_availability').select('*').eq('professional_id', id).order('day_of_week', { ascending: true })
     ]);
 
@@ -971,10 +1209,7 @@ export async function getProfessionalById(id: string) {
         consultationFee: profProfile.consultation_fee,
         city: profProfile.city,
         isVerified: profProfile.is_verified,
-        qualifications: (qualifications || []).map((q: any) => ({
-            ...q,
-            document_url: q.document_approved === true ? q.document_url : null,
-        })),
+        qualifications: qualifications || [],
         availability: availability || []
     };
 }

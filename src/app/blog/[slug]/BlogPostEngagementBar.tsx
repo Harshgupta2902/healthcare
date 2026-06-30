@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import Link from 'next/link'
+import { openAuthModal } from '@/features/auth/open-auth-modal'
 import { Eye, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toggleBlogPostLike } from '@/features/blog/actions'
@@ -86,8 +86,13 @@ export function BlogPostEngagementBar({
             {liked ? 'Liked' : 'Like'}
           </Button>
         ) : (
-          <Button asChild variant="outline" size="sm" className="rounded-xl">
-            <Link href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}>Sign in to like</Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={() => openAuthModal({ view: 'login', redirect: loginRedirect })}
+          >
+            Sign in to like
           </Button>
         ))}
     </div>

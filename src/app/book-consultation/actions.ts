@@ -19,6 +19,10 @@ import {
   type BookingFormPrefill,
 } from "@/lib/booking-profile-prefill";
 import indianCities from "@/data/indian-cities.json";
+import {
+  assertClientCanBook,
+  type BookingUserRole,
+} from "@/lib/booking/require-client-booking";
 
 const placesSearchSchema = z.object({
   input: z.string().min(1, "Input is required").max(100, "Input too long"),
@@ -114,6 +118,28 @@ const guestAppointmentSchema = z.object({
   deviceHash: deviceHashZodField,
 });
 
+export async function getBookConsultationAccess(): Promise<
+  | { ok: true }
+  | { ok: false; reason: "unauthenticated" }
+  | { ok: false; reason: "wrong_role"; role: BookingUserRole; error: string }
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, reason: "unauthenticated" };
+  }
+
+  const roleCheck = await assertClientCanBook(supabase, user.id);
+  if (!roleCheck.ok) {
+    return { ok: false, reason: "wrong_role", role: roleCheck.role, error: roleCheck.error };
+  }
+
+  return { ok: true };
+}
+
 export async function submitGuestAppointment(form: unknown) {
   const validated = guestAppointmentSchema.safeParse(form);
   if (!validated.success) {
@@ -136,6 +162,15 @@ export async function submitGuestAppointment(form: unknown) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return { error: "You must be signed in to book a consultation." };
+  }
+
+  const roleCheck = await assertClientCanBook(supabase, user.id);
+  if (!roleCheck.ok) {
+    return { error: roleCheck.error, code: "wrong_role" as const };
+  }
+
   const payload = {
     first_name: validated.data.firstName,
     last_name: validated.data.lastName,
@@ -148,7 +183,7 @@ export async function submitGuestAppointment(form: unknown) {
     appointment_date: validated.data.date,
     appointment_time: validated.data.time,
     message: validated.data.message ?? null,
-    created_by: user?.id ?? null,
+    created_by: user.id,
     professional_id: validated.data.professionalId,
   };
 
@@ -319,13 +354,18 @@ export async function bookConsultationMeetingSaveStep(input: unknown) {
   try {
     await assertGuestAppointmentOwner(auth.supabase, parsed.data.guestAppointmentId, auth.userId);
     const pipeline = await import('@/lib/calendar/guestMeetingPipeline');
-    await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
+    const ctx = await pipeline.loadGuestMeetingContext(auth.supabase, parsed.data.guestAppointmentId);
     pipeline.assertMeetUrlForAppointment(
       parsed.data.guestAppointmentId,
       parsed.data.meetUrl,
       parsed.data.provider,
     );
-    await pipeline.saveGuestMeetingUrl(auth.supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl);
+    await pipeline.saveGuestMeetingUrl(
+      auth.supabase,
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    );
     return { success: true as const, meetUrl: parsed.data.meetUrl };
   } catch (e) {
     return {

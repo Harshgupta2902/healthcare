@@ -9,7 +9,7 @@ import {
   FileText,
   MapPin,
   Check,
-  ChevronsUpDown,
+  ChevronDown,
   Loader2,
   BadgeCheck,
   Zap,
@@ -33,20 +33,32 @@ import {
 import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
 import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
-import { createClient } from "@/lib/supabase/client";
 import { getBookingFormPrefill, searchPlaces, type PlacePrediction } from "./actions";
 import { getProfessionalById } from "@/features/professional/actions";
-import { buildBookingSuccessHref } from "@/lib/booking-confirmation-ref";
 import { buildBookConsultationHref, decodeConsultantIdRef } from "@/lib/consultant-booking-ref";
+import {
+  buildBookingSuccessHref,
+  createBookingOrder,
+  createRazorpayCheckoutOrder,
+  finalizeBookingOrder,
+  markBookingOrderFulfillmentFailed,
+  verifyRazorpayPayment,
+} from "@/features/booking-orders";
+import {
+  openRazorpayCheckout,
+  ensureRazorpayCheckoutReady,
+  razorpayCheckoutLoadErrorMessage,
+} from "@/features/booking-orders/lib/razorpay-checkout";
+import { BookConsultationProgressDialog } from "./BookConsultationProgressDialog";
 import { HOME_DOC_AVATARS } from "@/app/home/constants";
-import { BOOKING_TIME_SLOTS } from "./constants";
+import { BookingSlotPicker } from "./booking-slot-picker";
+import { BookingDatePicker } from "./booking-date-picker";
+import { BookingPopoverSelect } from "./booking-popover-select";
 import { BookingConsultantSidebar } from "./booking-consultant-sidebar";
 import { BookingConsultantPickerDialog } from "./booking-consultant-picker-dialog";
-import { BookingChooseSpecialistCard } from "./booking-choose-specialist-card";
-import {
-  BookConsultationProgressDialog,
-  type BookingPipelinePayload,
-} from "./BookConsultationProgressDialog";
+import { PrescriptionShareConsentSection } from "./PrescriptionShareConsentSection";
+import { getEligiblePrescriptionsForSharing } from "@/features/prescription-sharing/actions";
+import { MAX_SHARED_PRESCRIPTIONS, type EligiblePrescriptionItem } from "@/features/prescription-sharing/types";
 
 const healthCategories = [
   "General Medicine",
@@ -160,26 +172,37 @@ function BookingSelect({
   );
 }
 
-export function BookConsultationContent() {
+export function BookConsultationContent({ authReady }: { authReady: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cref = searchParams.get("cref")?.trim() ?? "";
-  const isConsultantBooking = cref.length > 0;
-  const decodedConsultantId = useMemo(
-    () => (isConsultantBooking ? decodeConsultantIdRef(cref) : null),
-    [cref, isConsultantBooking],
-  );
+  const decodedConsultantId = useMemo(() => decodeConsultantIdRef(cref), [cref]);
+  const needsSpecialist = !decodedConsultantId;
   const [bookingConsultant, setBookingConsultant] = useState<
     Awaited<ReturnType<typeof getProfessionalById>> | undefined
   >(undefined);
   const [bookingConsultantLoading, setBookingConsultantLoading] = useState(false);
   const [consultantPickerOpen, setConsultantPickerOpen] = useState(false);
-  const [bookingPipeline, setBookingPipeline] = useState<{
-    payload: BookingPipelinePayload;
-    patientLabel: string;
-    sessionKey: number;
-  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOpeningPayment, setIsOpeningPayment] = useState(false);
+  const [slotHoldId, setSlotHoldId] = useState<string | null>(null);
+  const [fulfillment, setFulfillment] = useState<{
+    orderId: string;
+    guestAppointmentId: string;
+    transactionId: string | null;
+    sessionKey: number;
+    patientLabel: string;
+  } | null>(null);
+  const [pendingRazorpayOrder, setPendingRazorpayOrder] = useState<{
+    orderId: string;
+    orderNumber: string;
+    razorpayKeyId: string;
+    amountPaise: number;
+    patientLabel: string;
+    email: string;
+    phone: string;
+  } | null>(null);
+  const pickerAutoOpenedRef = useRef(false);
 
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
@@ -189,6 +212,13 @@ export function BookConsultationContent() {
   const [isSearching, setIsSearching] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prescriptionFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [eligiblePrescriptions, setEligiblePrescriptions] = useState<EligiblePrescriptionItem[]>([]);
+  const [eligiblePrescriptionsLoading, setEligiblePrescriptionsLoading] = useState(false);
+  const [sharePrescriptionsConsent, setSharePrescriptionsConsent] = useState(false);
+  const [sharedPrescriptionIds, setSharedPrescriptionIds] = useState<string[]>([]);
+  const [prescriptionShareError, setPrescriptionShareError] = useState<string | null>(null);
 
   const {
     register,
@@ -202,6 +232,8 @@ export function BookConsultationContent() {
     defaultValues: { category: "", state: "", city: "", time: "" },
   });
 
+  const watchedEmail = watch("email");
+
   useEffect(() => {
     let cancelled = false;
     void getBookingFormPrefill().then(({ prefill }) => {
@@ -214,12 +246,12 @@ export function BookConsultationContent() {
         ...(prefill.email ? { email: prefill.email } : {}),
         ...(prefill.phone ? { phone: prefill.phone } : {}),
         ...(prefill.age != null ? { age: prefill.age } : {}),
-        ...(!isConsultantBooking && prefill.city
+        ...(!decodedConsultantId && prefill.city
           ? { city: prefill.city, state: prefill.state || prefill.city }
           : {}),
       }));
 
-      if (!isConsultantBooking && prefill.city) {
+      if (!decodedConsultantId && prefill.city) {
         setCity(prefill.city);
         setStateName(prefill.state || prefill.city);
       }
@@ -227,7 +259,29 @@ export function BookConsultationContent() {
     return () => {
       cancelled = true;
     };
-  }, [reset, isConsultantBooking]);
+  }, [reset, decodedConsultantId]);
+
+  useEffect(() => {
+    if (!needsSpecialist) {
+      pickerAutoOpenedRef.current = false;
+      return;
+    }
+    if (!authReady) return;
+    if (pickerAutoOpenedRef.current) return;
+    pickerAutoOpenedRef.current = true;
+    if (cref && !decodedConsultantId) {
+      toast.error("That specialist link is invalid or expired.", {
+        description: "Please choose a specialist to continue.",
+      });
+    }
+    setConsultantPickerOpen(true);
+  }, [authReady, needsSpecialist, cref, decodedConsultantId]);
+
+  useEffect(() => {
+    if (decodedConsultantId) {
+      setConsultantPickerOpen(false);
+    }
+  }, [decodedConsultantId]);
 
   useEffect(() => {
     if (!decodedConsultantId) {
@@ -248,6 +302,55 @@ export function BookConsultationContent() {
       cancelled = true;
     };
   }, [decodedConsultantId]);
+
+  useEffect(() => {
+    if (!authReady) return;
+    void ensureRazorpayCheckoutReady();
+  }, [authReady]);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    const email = watchedEmail?.trim();
+    const emailValid = email && z.string().email().safeParse(email).success;
+    if (!emailValid) {
+      setEligiblePrescriptions([]);
+      setSharePrescriptionsConsent(false);
+      setSharedPrescriptionIds([]);
+      setPrescriptionShareError(null);
+      setEligiblePrescriptionsLoading(false);
+      return;
+    }
+
+    if (prescriptionFetchTimerRef.current) {
+      clearTimeout(prescriptionFetchTimerRef.current);
+    }
+
+    setEligiblePrescriptionsLoading(true);
+    prescriptionFetchTimerRef.current = setTimeout(() => {
+      void getEligiblePrescriptionsForSharing({ email }).then((result) => {
+        setEligiblePrescriptionsLoading(false);
+        if ("error" in result && result.error) {
+          setEligiblePrescriptions([]);
+          return;
+        }
+        if (!("success" in result) || !result.success) return;
+
+        setEligiblePrescriptions(result.prescriptions);
+        if (result.prescriptions.length === 0) {
+          setSharePrescriptionsConsent(false);
+          setSharedPrescriptionIds([]);
+          setPrescriptionShareError(null);
+        }
+      });
+    }, 400);
+
+    return () => {
+      if (prescriptionFetchTimerRef.current) {
+        clearTimeout(prescriptionFetchTimerRef.current);
+      }
+    };
+  }, [authReady, watchedEmail]);
 
   useEffect(() => {
     if (!bookingConsultant) return;
@@ -305,63 +408,236 @@ export function BookConsultationContent() {
     };
   }, [searchQuery]);
 
+  const runInlineRazorpayPayment = async (input: {
+    orderId: string;
+    orderNumber: string;
+    razorpayKeyId: string;
+    amountPaise: number;
+    patientLabel: string;
+    email: string;
+    phone: string;
+  }) => {
+    setIsOpeningPayment(true);
+    try {
+      const scriptReady = await ensureRazorpayCheckoutReady();
+      if (!scriptReady.ok) {
+        toast.error(razorpayCheckoutLoadErrorMessage(scriptReady.reason));
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+
+      const created = await createRazorpayCheckoutOrder({ orderId: input.orderId });
+      if ("error" in created && created.error) {
+        toast.error(created.error);
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+      if (!("success" in created) || !created.success) {
+        toast.error("Could not create payment order. Please try again.");
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+
+      const checkout = await openRazorpayCheckout(
+        {
+          key: input.razorpayKeyId,
+          amount: created.amount,
+          currency: created.currency,
+          orderId: created.orderId,
+          orderNumber: input.orderNumber,
+          customerName: input.patientLabel,
+          customerEmail: input.email,
+          customerPhone: input.phone,
+          onDismiss: () => {
+            setPendingRazorpayOrder(input);
+            toast.message("Payment cancelled. Click Pay to try again.");
+          },
+          onFailure: (message) => {
+            setPendingRazorpayOrder(input);
+            toast.error(message);
+          },
+          onSuccess: (response) => {
+            void (async () => {
+              const verified = await verifyRazorpayPayment({
+                orderId: input.orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              if ("error" in verified && verified.error) {
+                toast.error(verified.error);
+                setPendingRazorpayOrder(input);
+                return;
+              }
+
+              if (!("success" in verified) || !verified.success) return;
+
+              setPendingRazorpayOrder(null);
+              setFulfillment({
+                orderId: verified.orderId,
+                guestAppointmentId: verified.guestAppointmentId,
+                transactionId: verified.transactionId,
+                sessionKey: Date.now(),
+                patientLabel: input.patientLabel,
+              });
+            })();
+          },
+        },
+        { assumeScriptReady: true },
+      );
+
+      if (!checkout.ok) {
+        toast.error(
+          checkout.reason === "script"
+            ? "Could not load Razorpay checkout. Refresh and try again."
+            : "Could not open Razorpay checkout. Please try again.",
+        );
+        setPendingRazorpayOrder(input);
+        return false;
+      }
+
+      return true;
+    } finally {
+      setIsOpeningPayment(false);
+    }
+  };
+
   const onSubmit = async (data: AppointmentForm) => {
     if (!decodedConsultantId) {
-      toast.error("Please select a consultant before booking.", {
-        description: 'Use "Browse & select" on the right to choose a specialist.',
-      });
+      toast.error("Please select a specialist before booking.");
       setConsultantPickerOpen(true);
       return;
     }
 
+    if (!slotHoldId && !pendingRazorpayOrder) {
+      toast.error("Please select and reserve an hourly time slot before booking.");
+      return;
+    }
+
+    if (pendingRazorpayOrder) {
+      await runInlineRazorpayPayment(pendingRazorpayOrder);
+      return;
+    }
+
+    if (sharePrescriptionsConsent && sharedPrescriptionIds.length === 0) {
+      setPrescriptionShareError("Select at least one prescription to share.");
+      return;
+    }
+    if (!sharePrescriptionsConsent && sharedPrescriptionIds.length > 0) {
+      setPrescriptionShareError("Please confirm consent before sharing prescriptions.");
+      return;
+    }
+    if (sharedPrescriptionIds.length > MAX_SHARED_PRESCRIPTIONS) {
+      setPrescriptionShareError(`You can share up to ${MAX_SHARED_PRESCRIPTIONS} prescriptions.`);
+      return;
+    }
+
+    setPrescriptionShareError(null);
     setIsSubmitting(true);
     try {
       const deviceHash = await getDeviceFingerprintHash();
-      setBookingPipeline({
-        payload: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          age: data.age,
-          phone: data.phone,
-          email: data.email,
-          category: bookingConsultant?.specialization?.trim() || data.category,
-          state: data.state || bookingConsultant?.city?.trim() || "Online",
-          city: data.city || bookingConsultant?.city?.trim() || "Online",
-          date: data.date,
-          time: data.time,
-          message: data.message ?? "",
-          professionalId: decodedConsultantId,
-          deviceHash,
-        },
-        patientLabel: `${data.firstName} ${data.lastName}`.trim(),
-        sessionKey: Date.now(),
+
+      const result = await createBookingOrder({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        age: data.age,
+        phone: data.phone,
+        email: data.email,
+        category: bookingConsultant?.specialization?.trim() || data.category,
+        state: data.state || bookingConsultant?.city?.trim() || "Online",
+        city: data.city || bookingConsultant?.city?.trim() || "Online",
+        date: data.date,
+        time: data.time,
+        message: data.message ?? "",
+        professionalId: decodedConsultantId,
+        holdId: slotHoldId!,
+        deviceHash,
+        sharePrescriptionsConsent,
+        sharedPrescriptionIds: sharePrescriptionsConsent ? sharedPrescriptionIds : [],
       });
+
+      if ("error" in result && result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (!("success" in result) || !result.success) return;
+
+      const patientLabel = `${data.firstName} ${data.lastName}`.trim();
+      const useInlineRazorpay =
+        result.paymentProvider === "razorpay" && result.amountPaise > 0;
+
+      if (!useInlineRazorpay) {
+        router.push(result.checkoutHref);
+        return;
+      }
+
+      if (!result.razorpayKeyId) {
+        toast.error("Razorpay is not configured. Please contact support.");
+        return;
+      }
+
+      const paymentContext = {
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        razorpayKeyId: result.razorpayKeyId,
+        amountPaise: result.amountPaise,
+        patientLabel,
+        email: data.email,
+        phone: data.phone,
+      };
+
+      setIsSubmitting(false);
+      await runInlineRazorpayPayment(paymentContext);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleFulfillmentComplete = async (appointmentId: string) => {
+    if (!fulfillment) return;
+
+    const fin = await finalizeBookingOrder({
+      orderId: fulfillment.orderId,
+      guestAppointmentId: appointmentId,
+      transactionId: fulfillment.transactionId,
+    });
+
+    if ("error" in fin && fin.error) {
+      toast.error(fin.error);
+      return;
+    }
+
+    setFulfillment(null);
+    router.push(buildBookingSuccessHref(appointmentId));
+  };
+
+  const handleFulfillmentFailed = async () => {
+    if (!fulfillment) return;
+    await markBookingOrderFulfillmentFailed({ orderId: fulfillment.orderId });
+    setFulfillment(null);
+    toast.error("We could not finish setting up your consultation. Your order was marked as failed.");
+  };
+
   const handleSelectConsultant = (consultantId: string) => {
-    void (async () => {
-      const href = buildBookConsultationHref(consultantId);
-      const supabase = createClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        router.push(`/login?redirect=${encodeURIComponent(href)}`);
-        return;
-      }
-
-      router.push(href);
-    })();
+    const href = buildBookConsultationHref(consultantId);
+    if (!href.includes("cref=")) {
+      toast.error("Please select a valid specialist.");
+      return;
+    }
+    window.location.assign(href);
   };
 
   const locationLabel = city ? `${city}${stateName ? `, ${stateName}` : ""}` : "";
   const locationError = errors.city?.message || errors.state?.message;
   const selectedCategory = watch("category");
+  const selectedDate = watch("date");
+  const isBusy = isSubmitting || isOpeningPayment;
+  const formDisabled = (!decodedConsultantId || !slotHoldId) && !pendingRazorpayOrder;
+  const submitLabel = pendingRazorpayOrder
+    ? `Pay ₹${(pendingRazorpayOrder.amountPaise / 100).toFixed(2)}`
+    : "Confirm Booking";
   const categoryOptions = useMemo(() => {
     const trimmed = selectedCategory?.trim();
     if (trimmed && !(healthCategories as readonly string[]).includes(trimmed)) {
@@ -378,9 +654,9 @@ export function BookConsultationContent() {
             Schedule Your Consultation
           </h1>
           <p className="font-sans text-lg leading-relaxed text-lp-on-surface-variant">
-            {isConsultantBooking
+            {decodedConsultantId
               ? "Complete your details to book with your selected specialist."
-              : "Connect with world-class healthcare specialists in just a few steps."}
+              : "Choose a specialist to get started, then complete your booking details."}
           </p>
         </div>
 
@@ -450,6 +726,16 @@ export function BookConsultationContent() {
                 </div>
               </BookingSection>
 
+              <PrescriptionShareConsentSection
+                prescriptions={eligiblePrescriptions}
+                isLoading={eligiblePrescriptionsLoading}
+                consentEnabled={sharePrescriptionsConsent}
+                onConsentChange={setSharePrescriptionsConsent}
+                selectedIds={sharedPrescriptionIds}
+                onSelectedIdsChange={setSharedPrescriptionIds}
+                error={prescriptionShareError}
+              />
+
               <BookingSection icon={<Calendar className="size-6" aria-hidden />} title="Appointment Details">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4">
                   <BookingSelect id="location" label="Location Search" error={locationError} className="md:col-span-1">
@@ -473,7 +759,7 @@ export function BookConsultationContent() {
                             <MapPin className="size-5 shrink-0 text-lp-outline-variant" aria-hidden />
                             <span className="truncate">{locationLabel || "Enter city or clinic name"}</span>
                           </span>
-                          <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
+                          <ChevronDown className="size-4 shrink-0 opacity-50" aria-hidden />
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[var(--radix-popover-trigger-width)] rounded-xl border border-lp-outline-variant/30 p-0 shadow-lg" align="start">
@@ -525,48 +811,45 @@ export function BookConsultationContent() {
                     </Popover>
                   </BookingSelect>
 
-                  <BookingSelect id="category" label="Medical Category" error={errors.category?.message}>
-                    <select
-                      id="category"
-                      className={lpBookingFieldClass}
-                      value={watch("category")}
-                      onChange={(e) => setValue("category", e.target.value, { shouldValidate: true })}
-                    >
-                      <option value="">Select category</option>
-                      {categoryOptions.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </BookingSelect>
-
-                  <LpTextField
-                    id="date"
-                    label="Preferred Date"
-                    type="date"
-                    rounding="lg"
-                    inputClassName="bg-lp-surface-container-low border-lp-outline-variant/50"
-                    error={errors.date?.message}
-                    min={new Date().toISOString().split("T")[0]}
-                    {...register("date")}
+                  <BookingPopoverSelect
+                    id="category"
+                    label="Medical Category"
+                    value={watch("category")}
+                    onChange={(category) => setValue("category", category, { shouldValidate: true })}
+                    options={[...categoryOptions]}
+                    placeholder="Select category"
+                    error={errors.category?.message}
                   />
 
-                  <BookingSelect id="time" label="Preferred Time" error={errors.time?.message}>
-                    <select
-                      id="time"
-                      className={lpBookingFieldClass}
-                      value={watch("time")}
-                      onChange={(e) => setValue("time", e.target.value, { shouldValidate: true })}
-                    >
-                      <option value="">Select time slot</option>
-                      {BOOKING_TIME_SLOTS.map((slot) => (
-                        <option key={slot.value} value={slot.value}>
-                          {slot.label}
-                        </option>
-                      ))}
-                    </select>
-                  </BookingSelect>
+                  <div className="md:col-span-2">
+                    <BookingDatePicker
+                      professionalId={decodedConsultantId}
+                      value={selectedDate}
+                      onChange={(date) => {
+                        setSlotHoldId(null);
+                        setValue("time", "");
+                        setValue("date", date, { shouldValidate: true });
+                      }}
+                      error={errors.date?.message}
+                      disabled={!decodedConsultantId}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <p className="font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
+                      Hourly Time Slot
+                    </p>
+                    <BookingSlotPicker
+                      professionalId={decodedConsultantId}
+                      date={selectedDate}
+                      disabled={!decodedConsultantId || !selectedDate}
+                      onHoldChange={(hold) => setSlotHoldId(hold?.holdId ?? null)}
+                      onTimeChange={(time) => setValue("time", time, { shouldValidate: true })}
+                    />
+                    {errors.time?.message ? (
+                      <p className="text-xs font-medium text-red-600">{errors.time.message}</p>
+                    ) : null}
+                  </div>
                 </div>
               </BookingSection>
 
@@ -598,27 +881,25 @@ export function BookConsultationContent() {
                 <LpButton
                   type="submit"
                   variant="primary"
-                  disabled={isSubmitting || Boolean(bookingPipeline)}
+                  disabled={isBusy || formDisabled}
                   className="h-12 w-full rounded-xl border-0 bg-lp-brand-bright px-10 py-0 font-heading text-base font-semibold leading-none normal-case tracking-normal shadow-xl hover:shadow-lp-brand-bright/25 sm:w-auto sm:min-w-[220px]"
                 >
-                  {isSubmitting ? (
+                  {isBusy ? (
                     <>
                       <Loader2 className="size-5 animate-spin" aria-hidden />
-                      Booking...
+                      {isOpeningPayment ? "Opening payment…" : "Booking..."}
                     </>
                   ) : (
-                    "Confirm Booking"
+                    submitLabel
                   )}
                 </LpButton>
               </div>
             </div>
 
-            {isConsultantBooking ? (
+            {decodedConsultantId ? (
               <BookingConsultantSidebar consultant={bookingConsultant ?? undefined} loading={bookingConsultantLoading} />
             ) : (
             <aside className="space-y-6 lg:col-span-4">
-              <BookingChooseSpecialistCard onClick={() => setConsultantPickerOpen(true)} />
-
               <div className="relative overflow-hidden rounded-xl bg-lp-brand-bright p-6 text-lp-on-secondary-container sm:p-8">
                 <div className="relative z-10">
                   <h3 className="mb-2 font-heading text-2xl font-bold text-white">Expert Care Awaits</h3>
@@ -683,21 +964,27 @@ export function BookConsultationContent() {
           open={consultantPickerOpen}
           onOpenChange={setConsultantPickerOpen}
           onSelect={handleSelectConsultant}
-        />
-        <BookConsultationProgressDialog
-          open={Boolean(bookingPipeline)}
-          onOpenChange={(open) => {
-            if (!open) setBookingPipeline(null);
-          }}
-          payload={bookingPipeline?.payload ?? null}
-          patientLabel={bookingPipeline?.patientLabel ?? ""}
-          sessionKey={bookingPipeline?.sessionKey ?? 0}
-          onComplete={(appointmentId) => {
-            setBookingPipeline(null);
-            router.push(buildBookingSuccessHref(appointmentId));
-          }}
+          required={needsSpecialist}
         />
       </div>
+
+      <BookConsultationProgressDialog
+        open={Boolean(fulfillment)}
+        onOpenChange={(open) => {
+          if (!open) setFulfillment(null);
+        }}
+        payload={null}
+        guestAppointmentId={fulfillment?.guestAppointmentId ?? null}
+        orderId={fulfillment?.orderId ?? null}
+        patientLabel={fulfillment?.patientLabel ?? ""}
+        sessionKey={fulfillment?.sessionKey ?? 0}
+        onComplete={(appointmentId) => {
+          void handleFulfillmentComplete(appointmentId);
+        }}
+        onPipelineFailed={() => {
+          void handleFulfillmentFailed();
+        }}
+      />
     </div>
   );
 }

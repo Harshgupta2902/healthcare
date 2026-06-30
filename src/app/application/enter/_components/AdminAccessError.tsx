@@ -4,6 +4,7 @@ import { AlertCircle, LogIn, Shield } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { openAuthModal } from '@/features/auth/open-auth-modal'
 import { motion } from 'framer-motion'
 
 interface AdminAccessErrorProps {
@@ -15,7 +16,6 @@ interface AdminAccessErrorProps {
 
 export function AdminAccessError({ title, message, isAuthenticated, userRole }: AdminAccessErrorProps) {
   const router = useRouter()
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -48,7 +48,7 @@ export function AdminAccessError({ title, message, isAuthenticated, userRole }: 
           <div className="flex gap-3">
             {!isAuthenticated ? (
               <Button
-                onClick={() => router.push('/login')}
+                onClick={() => openAuthModal({ view: 'login', redirect: '/application/enter' })}
                 className="flex-1 rounded-xl bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand shadow-lg shadow-lp-brand/25 hover:shadow-xl"
               >
                 <LogIn className="w-4 h-4 mr-2" />

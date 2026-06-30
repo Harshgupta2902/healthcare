@@ -5,6 +5,20 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { zodFirstError } from '@/lib/server-action-result'
+import {
+  parseRegistrationSettings,
+  REGISTRATION_SETTINGS_KEY,
+  registrationSettingsSchema,
+  type RegistrationSettings,
+} from '@/lib/registration-settings'
+import {
+  BOOKING_SETTINGS_KEY,
+  bookingSettingsSchema,
+  parseBookingSettings,
+  type BookingSettings,
+} from '@/lib/booking-settings'
+import { isValidHourlyAvailabilityWindow } from '@/lib/booking/slots'
+import { normalizeAvailabilityTime } from '@/lib/booking/timezone'
 
 // ============================================
 // SCHEMAS
@@ -366,6 +380,109 @@ export async function updateProfessional(id: string, data: Partial<z.infer<typeo
   return { success: true as const, data: result }
 }
 
+const professionalUserIdSchema = z.string().uuid('Invalid professional user id.')
+
+const adminAvailabilityTimingSlotSchema = z.object({
+  id: z.string().uuid('Invalid availability slot.'),
+  startTime: z.string().min(1, 'Start time is required.'),
+  endTime: z.string().min(1, 'End time is required.'),
+})
+
+const adminUpdateAvailabilityTimingsSchema = z.object({
+  professionalUserId: professionalUserIdSchema,
+  slots: z.array(adminAvailabilityTimingSlotSchema),
+})
+
+export type AdminAvailabilitySlot = {
+  id: string
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isAvailable: boolean
+}
+
+export async function getProfessionalAvailabilityForAdmin(professionalUserId: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const idParsed = professionalUserIdSchema.safeParse(professionalUserId)
+  if (!idParsed.success) return { success: false as const, error: zodFirstError(idParsed.error) }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('professional_availability')
+    .select('id, day_of_week, start_time, end_time, is_available')
+    .eq('professional_id', idParsed.data)
+    .order('day_of_week', { ascending: true })
+
+  if (error) return { success: false as const, error: error.message }
+
+  return {
+    success: true as const,
+    slots: (data ?? []).map((row) => ({
+      id: row.id as string,
+      dayOfWeek: Number(row.day_of_week),
+      startTime: normalizeAvailabilityTime(String(row.start_time ?? '')),
+      endTime: normalizeAvailabilityTime(String(row.end_time ?? '')),
+      isAvailable: Boolean(row.is_available),
+    })) satisfies AdminAvailabilitySlot[],
+  }
+}
+
+export async function updateProfessionalAvailabilityTimings(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = adminUpdateAvailabilityTimingsSchema.safeParse(input)
+  if (!parsed.success) return { success: false as const, error: zodFirstError(parsed.error) }
+
+  for (const slot of parsed.data.slots) {
+    const start = normalizeAvailabilityTime(slot.startTime)
+    const end = normalizeAvailabilityTime(slot.endTime)
+    if (!isValidHourlyAvailabilityWindow(start, end)) {
+      return {
+        success: false as const,
+        error: 'Each day needs end time at least 1 hour after start (24-hour format, e.g. 19:00 for 7 PM).',
+      }
+    }
+  }
+
+  const supabase = await createClient()
+  const slotIds = parsed.data.slots.map((s) => s.id)
+
+  if (slotIds.length > 0) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('professional_availability')
+      .select('id')
+      .eq('professional_id', parsed.data.professionalUserId)
+      .in('id', slotIds)
+
+    if (fetchError) return { success: false as const, error: fetchError.message }
+    if ((existing ?? []).length !== slotIds.length) {
+      return { success: false as const, error: 'One or more availability slots were not found.' }
+    }
+  }
+
+  for (const slot of parsed.data.slots) {
+    const { error } = await supabase
+      .from('professional_availability')
+      .update({
+        start_time: normalizeAvailabilityTime(slot.startTime),
+        end_time: normalizeAvailabilityTime(slot.endTime),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', slot.id)
+      .eq('professional_id', parsed.data.professionalUserId)
+
+    if (error) return { success: false as const, error: error.message }
+  }
+
+  revalidatePath('/application/enter/professionals')
+  revalidatePath('/book-consultation')
+  revalidatePath('/consultants', 'layout')
+  return { success: true as const }
+}
+
 export async function setProfessionalVerified(profileRowId: string, isVerified: boolean) {
   const auth = await requireAdmin()
   if (!auth.ok) return { success: false as const, error: auth.error }
@@ -526,12 +643,15 @@ export async function saveGuestAppointmentCalendarInviteUrl(input: unknown) {
     return { success: false as const, error: 'A calendar link is already saved for this appointment.' }
   }
 
-  const { error } = await supabase
-    .from('guest_appointments')
-    .update({ calendar_invite_url: url })
-    .eq('id', guestAppointmentId)
-
-  if (error) return { success: false as const, error: error.message }
+  try {
+    const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
+    await pipeline.saveGuestMeetingUrl(supabase, guestAppointmentId, url)
+  } catch (e) {
+    return {
+      success: false as const,
+      error: e instanceof Error ? e.message : 'Could not save meeting link.',
+    }
+  }
   revalidatePath('/application/enter/appointments')
   return { success: true as const }
 }
@@ -661,13 +781,18 @@ export async function guestMeetingSaveStep(input: unknown) {
   try {
     const supabase = await createClient()
     const pipeline = await import('@/lib/calendar/guestMeetingPipeline')
-    await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
+    const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
     pipeline.assertMeetUrlForAppointment(
       parsed.data.guestAppointmentId,
       parsed.data.meetUrl,
       parsed.data.provider,
     )
-    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, parsed.data.meetUrl)
+    await pipeline.saveGuestMeetingUrl(
+      supabase,
+      parsed.data.guestAppointmentId,
+      parsed.data.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    )
     revalidatePath('/application/enter/appointments')
     return { success: true as const, meetUrl: parsed.data.meetUrl }
   } catch (e) {
@@ -692,7 +817,12 @@ export async function createAndSendGuestAppointmentMeeting(input: unknown) {
     const ctx = await pipeline.loadGuestMeetingContext(supabase, parsed.data.guestAppointmentId)
     const { createConsultationMeeting } = await import('@/lib/calendar/createConsultationMeeting')
     const result = await createConsultationMeeting(ctx)
-    await pipeline.saveGuestMeetingUrl(supabase, parsed.data.guestAppointmentId, result.meetUrl)
+    await pipeline.saveGuestMeetingUrl(
+      supabase,
+      parsed.data.guestAppointmentId,
+      result.meetUrl,
+      pipeline.meetingTitleForContext(ctx),
+    )
     revalidatePath('/application/enter/appointments')
     return {
       success: true as const,
@@ -1807,4 +1937,308 @@ export async function markAllAdminNotificationsRead() {
   revalidatePath('/application/enter')
   revalidatePath('/application/enter/notifications')
   return { success: true as const }
+}
+
+// ============================================
+// APP SETTINGS
+// ============================================
+
+const updateRegistrationSettingsSchema = registrationSettingsSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: 'At least one setting must be provided.' },
+)
+
+export async function getAdminRegistrationSettings(): Promise<
+  | { success: true; data: RegistrationSettings; updatedAt: string | null }
+  | { success: false; error: string }
+> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('value, updated_at')
+    .eq('key', REGISTRATION_SETTINGS_KEY)
+    .maybeSingle()
+
+  if (error) return { success: false, error: error.message }
+
+  return {
+    success: true,
+    data: parseRegistrationSettings(data?.value),
+    updatedAt: data?.updated_at ?? null,
+  }
+}
+
+export async function updateRegistrationSettings(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = updateRegistrationSettingsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false as const, error: zodFirstError(parsed.error) }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const currentRes = await getAdminRegistrationSettings()
+  if (!currentRes.success) {
+    return { success: false as const, error: currentRes.error }
+  }
+
+  const nextValue: RegistrationSettings = {
+    ...currentRes.data,
+    ...parsed.data,
+  }
+
+  const { error } = await supabase.from('app_settings').upsert(
+    {
+      key: REGISTRATION_SETTINGS_KEY,
+      value: nextValue,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id ?? null,
+    },
+    { onConflict: 'key' },
+  )
+
+  if (error) return { success: false as const, error: error.message }
+
+  revalidatePath('/application/enter/settings')
+  revalidatePath('/')
+  return { success: true as const, data: nextValue }
+}
+
+const updateBookingSettingsSchema = bookingSettingsSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: 'At least one setting must be provided.' },
+)
+
+export async function getAdminBookingSettings(): Promise<
+  | { success: true; data: BookingSettings; updatedAt: string | null }
+  | { success: false; error: string }
+> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false, error: auth.error }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('app_settings')
+    .select('value, updated_at')
+    .eq('key', BOOKING_SETTINGS_KEY)
+    .maybeSingle()
+
+  if (error) return { success: false, error: error.message }
+
+  return {
+    success: true,
+    data: parseBookingSettings(data?.value),
+    updatedAt: data?.updated_at ?? null,
+  }
+}
+
+export async function updateBookingSettings(input: unknown) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error }
+
+  const parsed = updateBookingSettingsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false as const, error: zodFirstError(parsed.error) }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const currentRes = await getAdminBookingSettings()
+  if (!currentRes.success) {
+    return { success: false as const, error: currentRes.error }
+  }
+
+  const nextValue: BookingSettings = {
+    ...currentRes.data,
+    ...parsed.data,
+  }
+
+  const { error } = await supabase.from('app_settings').upsert(
+    {
+      key: BOOKING_SETTINGS_KEY,
+      value: nextValue,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id ?? null,
+    },
+    { onConflict: 'key' },
+  )
+
+  if (error) return { success: false as const, error: error.message }
+
+  revalidatePath('/application/enter/settings')
+  revalidatePath('/book-consultation')
+  return { success: true as const, data: nextValue }
+}
+
+// ============================================
+// BOOKING ORDERS & PAYMENTS (admin)
+// ============================================
+
+export type BookingOrderAdminRow = {
+  id: string
+  order_number: string
+  status: string
+  failure_reason: string | null
+  amount_paise: number
+  currency: string
+  expires_at: string
+  paid_at: string | null
+  confirmed_at: string | null
+  created_at: string
+  guest_appointment_id: string | null
+  payment_provider: string
+  provider_payment_id: string | null
+  booking_snapshot: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    phone?: string
+    date?: string
+    time?: string
+    category?: string
+    city?: string
+    state?: string
+  }
+  client: { id: string; name: string; email: string } | null
+  professional: { id: string; name: string; email: string } | null
+}
+
+export type PaymentAdminRow = {
+  id: string
+  booking_order_id: string
+  amount: number
+  status: string
+  payment_method: string
+  transaction_id: string | null
+  created_at: string
+  guest_appointment_id: string | null
+  order_number: string | null
+  client: { id: string; name: string; email: string } | null
+  professional: { id: string; name: string; email: string } | null
+}
+
+export async function getAdminBookingOrders(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  status?: string,
+) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  await supabase.rpc('expire_stale_booking_orders')
+
+  let query = supabase
+    .from('booking_orders')
+    .select(
+      `
+      *,
+      client:users!booking_orders_user_id_fkey(id, name, email),
+      professional:users!booking_orders_professional_id_fkey(id, name, email)
+    `,
+      { count: 'exact' },
+    )
+    .order('created_at', { ascending: false })
+
+  const statusFilter = status?.trim()
+  if (statusFilter && statusFilter !== 'all') {
+    query = query.eq('status', statusFilter)
+  }
+
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      query = query.or(`order_number.ilike.${term},failure_reason.ilike.${term}`)
+    }
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  const { data: rows, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+  const data = (rows ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    order_number: row.order_number as string,
+    status: row.status as string,
+    failure_reason: (row.failure_reason as string | null) ?? null,
+    amount_paise: row.amount_paise as number,
+    currency: row.currency as string,
+    expires_at: row.expires_at as string,
+    paid_at: (row.paid_at as string | null) ?? null,
+    confirmed_at: (row.confirmed_at as string | null) ?? null,
+    created_at: row.created_at as string,
+    guest_appointment_id: (row.guest_appointment_id as string | null) ?? null,
+    payment_provider: row.payment_provider as string,
+    provider_payment_id: (row.provider_payment_id as string | null) ?? null,
+    booking_snapshot: (row.booking_snapshot as BookingOrderAdminRow['booking_snapshot']) ?? {},
+    client: (row.client as BookingOrderAdminRow['client']) ?? null,
+    professional: (row.professional as BookingOrderAdminRow['professional']) ?? null,
+  })) satisfies BookingOrderAdminRow[]
+
+  return { success: true as const, data, count: count || 0 }
+}
+
+export async function getAdminPayments(page: number = 1, limit: number = 10, search?: string) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { success: false as const, error: auth.error, data: [], count: 0 }
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('payments')
+    .select(
+      `
+      *,
+      client:users!payments_client_id_fkey(id, name, email),
+      professional:users!payments_professional_id_fkey(id, name, email),
+      booking_order:booking_orders!payments_booking_order_id_fkey(order_number)
+    `,
+      { count: 'exact' },
+    )
+    .order('created_at', { ascending: false })
+
+  const rawSearch = search?.trim() ?? ''
+  if (rawSearch) {
+    const escaped = rawSearch.replace(/[%]/g, '').replace(/,/g, ' ').trim()
+    if (escaped) {
+      const term = `%${escaped}%`
+      query = query.or(`transaction_id.ilike.${term},payment_method.ilike.${term}`)
+    }
+  }
+
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  const { data: rows, error, count } = await query.range(from, to)
+
+  if (error) return { success: false as const, error: error.message, data: [], count: 0 }
+
+  const data = (rows ?? []).map((row: Record<string, unknown>) => {
+    const bookingOrder = row.booking_order as { order_number?: string } | null
+    return {
+      id: row.id as string,
+      booking_order_id: row.booking_order_id as string,
+      amount: row.amount as number,
+      status: row.status as string,
+      payment_method: row.payment_method as string,
+      transaction_id: (row.transaction_id as string | null) ?? null,
+      created_at: row.created_at as string,
+      guest_appointment_id: (row.guest_appointment_id as string | null) ?? null,
+      order_number: bookingOrder?.order_number ?? null,
+      client: (row.client as PaymentAdminRow['client']) ?? null,
+      professional: (row.professional as PaymentAdminRow['professional']) ?? null,
+    }
+  }) satisfies PaymentAdminRow[]
+
+  return { success: true as const, data, count: count || 0 }
 }

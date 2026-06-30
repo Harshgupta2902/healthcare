@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { openAuthModal } from "@/features/auth/open-auth-modal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Video, MessageSquare, MapPin, Clock, Shield, Calendar, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
@@ -193,7 +194,7 @@ export default function HowItWorksPage() {
               We're not just another healthcare app. We're your dedicated health partner, available whenever and wherever you need us.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl cursor-pointer bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => router.push("/register")}>
+              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl cursor-pointer bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => openAuthModal({ view: "signup" })}>
                 Create Free Account
               </Button>
               <Button

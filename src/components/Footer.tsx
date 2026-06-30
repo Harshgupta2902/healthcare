@@ -19,10 +19,6 @@ export default function Footer({ className }: FooterProps) {
     return null;
   }
 
-  if (pathname === "/register" || pathname?.startsWith("/register/")) {
-    return null;
-  }
-
   const hasMobileStickyCta = pathname?.startsWith("/consultants/");
 
   return (

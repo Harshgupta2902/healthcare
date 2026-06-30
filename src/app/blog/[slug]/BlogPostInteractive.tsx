@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import Link from 'next/link'
+import { openAuthModal } from '@/features/auth/open-auth-modal'
 import { Loader2, Trash2, BadgeCheck, Reply, ChevronDown, Clock } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -192,8 +192,12 @@ export function BlogPostInteractive({
           <p className="text-lp-on-surface-variant">
             Sign in as a patient or consultant to join the conversation.
           </p>
-          <Button asChild className="mt-4 rounded-xl" variant="outline">
-            <Link href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}>Sign in</Link>
+          <Button
+            className="mt-4 rounded-xl"
+            variant="outline"
+            onClick={() => openAuthModal({ view: 'login', redirect: loginRedirect })}
+          >
+            Sign in
           </Button>
         </div>
       )}

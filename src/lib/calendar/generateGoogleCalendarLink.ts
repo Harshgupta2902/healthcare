@@ -18,7 +18,11 @@ export function formatGoogleCalendarUtc(d: Date): string {
 }
 
 /** Interpret guest slot as Asia/Kolkata wall time (no DST). */
-export function guestSlotToUtcDates(appointmentDate: string, appointmentTime: string): { start: Date; end: Date } {
+export function guestSlotToUtcDates(
+  appointmentDate: string,
+  appointmentTime: string,
+  durationMinutes = 60,
+): { start: Date; end: Date } {
   const raw = (appointmentTime || '09:00').trim()
   const [hRaw, mRaw = '00'] = raw.split(':')
   const hh = String(Math.min(23, Math.max(0, parseInt(hRaw || '9', 10)))).padStart(2, '0')
@@ -28,8 +32,29 @@ export function guestSlotToUtcDates(appointmentDate: string, appointmentTime: st
   if (Number.isNaN(start.getTime())) {
     throw new Error('Invalid appointment date or time')
   }
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000)
   return { start, end }
+}
+
+/** Meeting end from optional meeting_end_time (IST HH:mm) on same appointment date. */
+export function guestSlotToUtcDatesWithMeetingEnd(
+  appointmentDate: string,
+  appointmentTime: string,
+  meetingEndTime?: string | null,
+  durationMinutes = 60,
+): { start: Date; end: Date } {
+  const { start } = guestSlotToUtcDates(appointmentDate, appointmentTime, durationMinutes)
+  if (meetingEndTime?.trim()) {
+    const raw = meetingEndTime.trim()
+    const [hRaw, mRaw = '00'] = raw.split(':')
+    const hh = String(Math.min(23, Math.max(0, parseInt(hRaw || '0', 10)))).padStart(2, '0')
+    const mm = String(Math.min(59, Math.max(0, parseInt(mRaw.slice(0, 2) || '0', 10)))).padStart(2, '0')
+    const end = new Date(`${appointmentDate}T${hh}:${mm}:00+05:30`)
+    if (!Number.isNaN(end.getTime()) && end.getTime() > start.getTime()) {
+      return { start, end }
+    }
+  }
+  return { start, end: new Date(start.getTime() + durationMinutes * 60 * 1000) }
 }
 
 function normalizeAttendeeEmails(rawList: string[]): string[] {

@@ -11,5 +11,14 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <div className="relative overflow-x-clip bg-lp-surface">
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-lp-surface-container-low via-lp-surface to-lp-secondary-fixed/40 opacity-90" />
+        <div className="absolute top-[-10%] right-[-5%] h-[500px] w-[500px] animate-pulse rounded-full bg-lp-brand/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] h-[600px] w-[600px] rounded-full bg-lp-surface-variant/50 blur-[140px]" />
+      </div>
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
 }

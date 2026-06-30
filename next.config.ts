@@ -5,7 +5,7 @@ const html2canvasAlias = "html2canvas-pro";
 
 const nextConfig: NextConfig = {
   async headers() {
-    const headers: { key: string; value: string }[] = [
+    const securityHeaders: { key: string; value: string }[] = [
       { key: "X-Frame-Options", value: "SAMEORIGIN" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       {
@@ -16,27 +16,24 @@ const nextConfig: NextConfig = {
         key: "Permissions-Policy",
         value: "geolocation=(), camera=(self)",
       },
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              key: "Content-Security-Policy",
+              value: "upgrade-insecure-requests",
+            },
+          ]
+        : []),
+    ];
+
+    // Do not set COEP/COOP — they apply to the whole document on client-side
+    // navigation and block Razorpay checkout.js + payment iframe.
+    return [
       {
-        key: "Cross-Origin-Resource-Policy",
-        value: "same-origin",
-      },
-      {
-        key: "Cross-Origin-Embedder-Policy",
-        value: "require-corp",
-      },
-      {
-        key: "Cross-Origin-Opener-Policy",
-        value: "same-origin",
+        source: "/:path*",
+        headers: securityHeaders,
       },
     ];
-    // Minimum CSP per security baseline; scoped to production so http://localhost dev is not broken.
-    if (process.env.NODE_ENV === "production") {
-      headers.push({
-        key: "Content-Security-Policy",
-        value: "upgrade-insecure-requests",
-      });
-    }
-    return [{ source: "/:path*", headers }];
   },
   serverExternalPackages: ['better-auth'],
   turbopack: {

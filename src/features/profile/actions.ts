@@ -8,10 +8,23 @@ import { cookies, headers } from 'next/headers'
 import sharp from 'sharp'
 import {
     assertLoginRateLimits,
+    assertRegisterOtpRateLimits,
     assertSignupRateLimits,
     deviceHashZodField,
     getClientIpFromHeaders,
 } from '@/lib/device-rate-limit'
+import { getRegistrationSettings } from '@/lib/app-settings'
+import {
+  REGISTRATION_OTP_EXPIRY_MINUTES,
+  REGISTRATION_OTP_LENGTH,
+} from '@/lib/registration-constants'
+import { sendRegistrationOtpEmail } from '@/lib/mailer'
+import {
+    generateRegistrationOtp,
+    hashRegistrationOtp,
+    isRegistrationOtpFormatValid,
+    normalizeRegistrationEmail,
+} from '@/lib/registration-otp'
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -170,13 +183,23 @@ const signUpSchema = z.object({
 
 export type SignUpInput = z.infer<typeof signUpSchema>
 
-export async function signUp(input: SignUpInput) {
-    const parsed = signUpSchema.safeParse(input)
-    if (!parsed.success) {
-        return { error: zodFirstError(parsed.error), code: 'validation' as const }
-    }
+const verifyOtpSignUpSchema = signUpSchema.extend({
+    otp: z.string().trim().min(1, 'Verification code is required'),
+})
 
-    const { email, password, name, role, nameTitle, deviceHash } = parsed.data
+export type VerifyOtpSignUpInput = z.infer<typeof verifyOtpSignUpSchema>
+
+type SignUpResult =
+    | {
+          success: true
+          user: import('@supabase/supabase-js').User | null
+          session: import('@supabase/supabase-js').Session | null
+          needsConfirmation: boolean
+      }
+    | { error: string; code?: string }
+
+async function executeSignUp(parsed: z.infer<typeof signUpSchema>): Promise<SignUpResult> {
+    const { email, password, name, role, nameTitle, deviceHash } = parsed
 
     const headerStore = await headers()
     const clientIp = getClientIpFromHeaders(headerStore)
@@ -185,10 +208,9 @@ export async function signUp(input: SignUpInput) {
         return { error: rateLimit.error, code: rateLimit.reason }
     }
 
-    console.log("ServerAction: signUp called with", { email, name, role, nameTitle });
     const supabase = await createClient()
     const titleForMeta =
-        role === "professional" && nameTitle?.trim() ? nameTitle.trim() : undefined
+        role === 'professional' && nameTitle?.trim() ? nameTitle.trim() : undefined
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -197,20 +219,16 @@ export async function signUp(input: SignUpInput) {
                 name,
                 role,
                 ...(titleForMeta ? { name_title: titleForMeta } : {}),
-            }
-        }
+            },
+        },
     })
 
     if (error) {
-        console.error("ServerAction: signUp error:", error.message);
+        console.error('ServerAction: signUp error:', error.message)
         return { error: error.message }
     }
 
-    console.log("ServerAction: signUp success:", { userId: data.user?.id, session: !!data.session });
-
-    // If session is present (auto-login), sync immediately
     if (data.session) {
-        console.log("ServerAction: Auto-login detected, syncing session...");
         await syncUserSession()
     }
 
@@ -218,8 +236,159 @@ export async function signUp(input: SignUpInput) {
         success: true,
         user: data.user,
         session: data.session,
-        needsConfirmation: !data.session && data.user ? true : false
+        needsConfirmation: !data.session && data.user ? true : false,
     }
+}
+
+export async function signUp(input: SignUpInput) {
+    const parsed = signUpSchema.safeParse(input)
+    if (!parsed.success) {
+        return { error: zodFirstError(parsed.error), code: 'validation' as const }
+    }
+
+    const settings = await getRegistrationSettings()
+    if (settings.email_otp_enabled) {
+        return {
+            error: 'Email verification is required. Please request a verification code first.',
+            code: 'otp_required' as const,
+        }
+    }
+
+    return executeSignUp(parsed.data)
+}
+
+export async function requestRegistrationOtp(input: SignUpInput) {
+    const parsed = signUpSchema.safeParse(input)
+    if (!parsed.success) {
+        return { error: zodFirstError(parsed.error), code: 'validation' as const }
+    }
+
+    const settings = await getRegistrationSettings()
+    if (!settings.email_otp_enabled) {
+        return {
+            error: 'Email verification is not required. You can create your account directly.',
+            code: 'otp_disabled' as const,
+        }
+    }
+
+    const { email, name, role, nameTitle, deviceHash } = parsed.data
+    const normalizedEmail = normalizeRegistrationEmail(email)
+
+    const headerStore = await headers()
+    const clientIp = getClientIpFromHeaders(headerStore)
+    const otpRateLimit = await assertRegisterOtpRateLimits({
+        ip: clientIp,
+        deviceHash,
+        email: normalizedEmail,
+    })
+    if (!otpRateLimit.ok) {
+        return { error: otpRateLimit.error, code: otpRateLimit.reason }
+    }
+
+    const otpCode = generateRegistrationOtp(REGISTRATION_OTP_LENGTH)
+    const otpHash = hashRegistrationOtp(normalizedEmail, otpCode)
+    const expiresAt = new Date(Date.now() + REGISTRATION_OTP_EXPIRY_MINUTES * 60 * 1000)
+
+    const supabase = await createClient()
+    const { error: rpcError } = await supabase.rpc('create_registration_email_otp', {
+        p_email: normalizedEmail,
+        p_otp_hash: otpHash,
+        p_payload: {
+            name,
+            role,
+            ...(nameTitle?.trim() ? { name_title: nameTitle.trim() } : {}),
+        },
+        p_expires_at: expiresAt.toISOString(),
+        p_max_attempts: settings.otp_max_attempts,
+    })
+
+    if (rpcError) {
+        console.error('[requestRegistrationOtp] RPC error:', rpcError)
+        return { error: 'Could not send verification code. Please try again.' }
+    }
+
+    try {
+        await sendRegistrationOtpEmail({
+            email: normalizedEmail,
+            recipientName: name,
+            otpCode,
+            expiryMinutes: REGISTRATION_OTP_EXPIRY_MINUTES,
+        })
+    } catch (mailErr) {
+        console.error('[requestRegistrationOtp] mail error:', mailErr)
+        return {
+            error: 'Could not send verification email. Check your email address or try again later.',
+        }
+    }
+
+    return {
+        success: true as const,
+        expiresInMinutes: REGISTRATION_OTP_EXPIRY_MINUTES,
+        otpLength: REGISTRATION_OTP_LENGTH,
+        resendCooldownSeconds: settings.resend_cooldown_seconds,
+    }
+}
+
+export async function verifyOtpAndSignUp(input: VerifyOtpSignUpInput) {
+    const parsed = verifyOtpSignUpSchema.safeParse(input)
+    if (!parsed.success) {
+        return { error: zodFirstError(parsed.error), code: 'validation' as const }
+    }
+
+    const settings = await getRegistrationSettings()
+    if (!settings.email_otp_enabled) {
+        const { otp: _otp, ...signUpInput } = parsed.data
+        return signUp(signUpInput)
+    }
+
+    const { email, otp } = parsed.data
+    const normalizedEmail = normalizeRegistrationEmail(email)
+
+    if (!isRegistrationOtpFormatValid(otp, REGISTRATION_OTP_LENGTH)) {
+        return {
+            error: `Enter the ${REGISTRATION_OTP_LENGTH}-character verification code from your email.`,
+            code: 'validation' as const,
+        }
+    }
+
+    const otpHash = hashRegistrationOtp(normalizedEmail, otp)
+    const supabase = await createClient()
+    const { data: verifyData, error: verifyError } = await supabase.rpc(
+        'verify_registration_email_otp',
+        {
+            p_email: normalizedEmail,
+            p_otp_hash: otpHash,
+        },
+    )
+
+    if (verifyError) {
+        console.error('[verifyOtpAndSignUp] verify RPC error:', verifyError)
+        return { error: 'Could not verify code. Please try again.' }
+    }
+
+    const verifyResult = (verifyData ?? null) as { ok?: boolean; reason?: string } | null
+    if (!verifyResult?.ok) {
+        const reason = verifyResult?.reason
+        if (reason === 'expired') {
+            return { error: 'This verification code has expired. Please request a new one.', code: 'expired' }
+        }
+        if (reason === 'locked') {
+            return {
+                error: 'Too many incorrect attempts. Please request a new verification code.',
+                code: 'locked',
+            }
+        }
+        return { error: 'Invalid verification code. Please check and try again.', code: 'invalid_otp' }
+    }
+
+    const signUpResult = await executeSignUp(parsed.data)
+    if ('error' in signUpResult) {
+        return signUpResult
+    }
+
+    await supabase.rpc('consume_registration_email_otp', { p_email: normalizedEmail })
+
+    return signUpResult
 }
 
 export async function signOut() {

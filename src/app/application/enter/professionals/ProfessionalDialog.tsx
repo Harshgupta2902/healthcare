@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ProfessionalAvailabilityTimingsEditor } from './ProfessionalAvailabilityTimingsEditor'
 
 const professionalSchema = z.object({
   user_id: z.string().uuid('Invalid user ID'),
@@ -320,6 +321,9 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
                 </FormItem>
               )}
             />
+            {professional?.user_id ? (
+              <ProfessionalAvailabilityTimingsEditor professionalUserId={professional.user_id} />
+            ) : null}
             <DialogFooter>
               <Button
                 type="button"

@@ -14,6 +14,8 @@ import {
     normalizePhoneCountryCode,
 } from '@/lib/phone-country-options'
 import { fetchGuestAppointmentProfessionalMeta } from '@/lib/guest-appointment-professional-meta'
+import { getClientOrderHistory } from '@/features/booking-orders/actions'
+import type { ClientOrderHistoryItem } from '@/features/booking-orders/types'
 import { sendNewsletterEmail } from '@/lib/mailer'
 import { verifyUnsubscribeToken } from '@/lib/newsletter-token'
 import {
@@ -441,7 +443,8 @@ export async function getClientDashboardData() {
         { data: medications },
         { data: documents },
         { data: insurance },
-        { data: guestAppointments }
+        { data: guestAppointments },
+        orderHistoryResult,
     ] = await Promise.all([
         supabase.from('users').select('*').eq('id', user.id).single(),
         supabase.from('client_medical_profiles').select('*').eq('user_id', user.id).single(),
@@ -454,7 +457,8 @@ export async function getClientDashboardData() {
             .select('*')
             .eq('created_by', user.id)
             .order('appointment_date', { ascending: true })
-            .order('appointment_time', { ascending: true })
+            .order('appointment_time', { ascending: true }),
+        getClientOrderHistory(),
     ])
 
     const professionalIds = Array.from(
@@ -560,6 +564,8 @@ export async function getClientDashboardData() {
                 city: apt.city,
                 appointmentDate: apt.appointment_date,
                 appointmentTime: apt.appointment_time,
+                meetingDurationMinutes: apt.meeting_duration_minutes ?? null,
+                meetingEndTime: apt.meeting_end_time ?? null,
                 message: apt.message,
                 calendarInviteUrl: apt.calendar_invite_url || null,
                 prescriptionHtml: apt.prescription_html || null,
@@ -570,7 +576,8 @@ export async function getClientDashboardData() {
                 professionalQualificationsSummary: meta?.qualificationsSummary ?? null,
                 createdAt: apt.created_at,
             }
-        }) || []
+        }) || [],
+        orders: orderHistoryResult.success ? orderHistoryResult.orders : ([] as ClientOrderHistoryItem[]),
     }
 }
 

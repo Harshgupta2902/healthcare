@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { signOut } from "@/features/profile/actions";
+import { logoutAndRedirectHome } from "@/features/auth/logout";
+import { getCurrentPathRedirect } from "@/features/auth/current-path-redirect";
+import { openAuthModal } from "@/features/auth/open-auth-modal";
 
 interface HeaderProps {
   className?: string;
@@ -98,28 +100,22 @@ export default function Header({ className }: HeaderProps) {
     return null;
   }
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setIsMobileMenuOpen(false);
-    try {
-      const { error } = await supabase.auth.signOut({ scope: "global" });
-      if (error) console.error(error);
-    } catch (e) {
-      console.error(e);
-    }
-    setUser(null);
-    setIsPending(false);
-    try {
-      await signOut();
-    } catch {
-      /* server action may still complete */
-    }
-    router.refresh();
-    router.replace("/");
+    void logoutAndRedirectHome();
   };
 
   const handleDashboardClick = () => {
     router.push("/dashboard");
     setIsMobileMenuOpen(false);
+  };
+
+  const openLoginModal = () => {
+    openAuthModal({ view: "login", redirect: getCurrentPathRedirect(pathname ?? "/") });
+  };
+
+  const openSignupModal = () => {
+    openAuthModal({ view: "signup", redirect: getCurrentPathRedirect(pathname ?? "/") });
   };
 
   const renderAuthSection = () => {
@@ -131,7 +127,7 @@ export default function Header({ className }: HeaderProps) {
           <Button
             variant="outline"
             size="sm"
-            className="h-9 rounded-lg border-lp-outline-variant px-3 text-sm font-semibold text-lp-on-surface hover:bg-lp-surface-container-low"
+            className="h-9 rounded-lg cursor-pointer border-lp-outline-variant px-3 text-sm font-semibold text-lp-on-surface hover:bg-lp-surface-container-low"
             onClick={handleDashboardClick}
           >
             <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -156,16 +152,7 @@ export default function Header({ className }: HeaderProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDashboardClick}>
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                My Dashboard
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                <Stethoscope className="h-4 w-4 mr-2" />
-                Professional Portal
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign out
               </DropdownMenuItem>
@@ -181,11 +168,11 @@ export default function Header({ className }: HeaderProps) {
           type="button"
           variant="headerGuest"
           className="hidden sm:block"
-          onClick={() => router.push("/login")}
+          onClick={openLoginModal}
         >
           Login
         </LpButton>
-        <LpButton type="button" variant="headerGuestCta" onClick={() => router.push("/register")}>
+        <LpButton type="button" variant="headerGuestCta" onClick={openSignupModal}>
           Sign up
         </LpButton>
       </div>
@@ -326,7 +313,12 @@ export default function Header({ className }: HeaderProps) {
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
                   </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start cursor-pointer" onClick={handleSignOut}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start cursor-pointer text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={handleSignOut}
+                  >
                     <LogOut className="mr-2 h-4 w-4" /> Sign out
                   </Button>
                 </>
@@ -338,7 +330,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      router.push("/login");
+                      openLoginModal();
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -350,7 +342,7 @@ export default function Header({ className }: HeaderProps) {
                     fullWidth
                     className="justify-center"
                     onClick={() => {
-                      router.push("/register");
+                      openSignupModal();
                       setIsMobileMenuOpen(false);
                     }}
                   >

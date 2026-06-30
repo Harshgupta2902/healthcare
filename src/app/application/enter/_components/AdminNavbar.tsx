@@ -2,12 +2,9 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import { Search, Bell, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { signOut } from '@/features/profile/actions'
+import { logoutAndRedirectHome } from '@/features/auth/logout'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -24,24 +21,10 @@ interface AdminNavbarProps {
 }
 
 export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarProps) {
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
 
-  const handleLogout = async () => {
-    const supabase = createClient()
-    try {
-      const { error } = await supabase.auth.signOut({ scope: 'global' })
-      if (error) console.error(error)
-    } catch (e) {
-      console.error(e)
-    }
-    try {
-      await signOut()
-    } catch {
-      /* noop */
-    }
-    router.refresh()
-    router.replace('/')
+  const handleLogout = () => {
+    void logoutAndRedirectHome()
   }
 
   const initials = user.name
@@ -56,11 +39,7 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
   const showNameLine = Boolean(name && email && name.toLowerCase() !== email.toLowerCase())
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="liquid-glass-strong h-16 shrink-0 border-b border-white/50 shadow-sm dark:border-white/10"
-    >
+    <header className="liquid-glass-strong h-16 shrink-0 border-b border-white/50 shadow-sm dark:border-white/10">
       <div className="flex h-full items-center justify-between gap-3 px-3 sm:px-6">
         <div className="min-w-0 flex-1 sm:max-w-md">
           <div className="relative">
@@ -135,6 +114,6 @@ export function AdminNavbar({ user, unreadNotificationCount = 0 }: AdminNavbarPr
           </div>
         </div>
       </div>
-    </motion.header>
+    </header>
   )
 }
