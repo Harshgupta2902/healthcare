@@ -2,9 +2,10 @@
 
 Client + Professional app only. **No admin features** in mobile.
 
-Phases **1–3 implemented** (foundation, professional + booking APIs, polish: offline cache, biometrics, assistant, prescriptions).
+**Status (June 2026):** Phase 1 mostly complete · Phase 2 partial · Phase 3 mostly pending.  
+See [docs/FLUTTER_AND_API_PLAN.md](../docs/FLUTTER_AND_API_PLAN.md) for the full parity matrix and flow diagrams.
 
-## Prerequisites (on your dev machine)
+## Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) 3.16+
 - Android Studio / Xcode for emulators (optional)
@@ -13,7 +14,6 @@ Phases **1–3 implemented** (foundation, professional + booking APIs, polish: o
 
 ```bash
 cd mobile
-flutter create . --org com.healthhere --project-name healthhere_mobile
 flutter pub get
 ```
 
@@ -30,34 +30,77 @@ Copy `env.mobile.example` → `.env.mobile`:
 flutter run --dart-define-from-file=.env.mobile
 ```
 
-## Features by phase
+## Implementation status by phase
 
-### Phase 1
-- Auth (login, register, forgot password, role routing)
-- Client dashboard, medical history, medications, appointments
-- Consultant directory (Supabase SDK)
-- Profile edit, settings
+### Phase 1 — Foundation ✅ Mostly done
 
-### Phase 2
-- Professional dashboard (consultations, calendar, clients, credentials)
-- Guest booking flow + booking success
-- Medical documents + insurance (Storage SDK)
-- Contact form (API)
-- All `/api/v1` routes on Next.js — see [docs/API.md](../docs/API.md)
+- [x] Auth (login, register, forgot password, role routing)
+- [x] Client dashboard shell (home, search, history, profile)
+- [x] Medical history, medications, documents, insurance (Supabase SDK + Storage)
+- [x] Consultant directory + detail (Supabase SDK)
+- [x] Profile edit, settings (logout)
+- [x] `POST /api/v1/auth/sync-session` after login/signup
+- [ ] Session restore on splash (always routes to `/login` today)
+- [ ] Clean up orphaned legacy screens (`*AccountScreen`, `BookScreen`, etc.)
 
-### Phase 3
-- AI assistant screen (API context)
-- Prescription compose + send (API)
-- Hive offline cache for dashboard
-- Biometric unlock toggle (local_auth)
+### Phase 2 — Professional + booking 🟡 Partial
+
+- [x] Professional dashboard (home, requests, calendar, clients, profile)
+- [x] Availability CRUD, credentials + document upload
+- [x] Guest booking flow + booking success (legacy API)
+- [x] Contact form (`POST /api/v1/contact`)
+- [x] Prescription compose + send (`POST /api/v1/prescriptions/send`)
+- [x] All 11 existing `/api/v1` routes on Next.js — see [docs/API.md](../docs/API.md)
+- [ ] Booking orders + Razorpay (web has this; mobile does not)
+- [ ] Real slot picker (mobile uses hardcoded time slots)
+- [ ] Blog read + engagement
+- [ ] Meeting join / pipeline wired in UI
+- [ ] Logged-in appointment booking + cancel/status UI
+
+### Phase 3 — Polish & parity ❌ Mostly pending
+
+- [x] Hive offline cache (client dashboard only)
+- [ ] AI assistant screen (`GET /api/v1/assistant/context` — API exists, no screen)
+- [ ] Biometric unlock toggle (`BiometricService` exists, no Settings UI)
+- [ ] Professional payments screen (placeholder exists, not routed)
+- [ ] Author blog screens
+- [ ] OTP registration (match web)
+- [ ] Push notifications (FCM)
+- [ ] Analytics, App Store review
 
 ## Roles
 
 | Role | App behavior |
 |------|----------------|
-| `client` | Patient dashboard |
-| `professional` | Doctor dashboard |
-| `admin` | Blocked → `/admin-web-only` (web only) |
+| `client` | Patient dashboard — tabs: Home · Search · History · Profile |
+| `professional` | Doctor dashboard — tabs: Home · Requests · Calendar · Clients · Profile |
+| `admin` | Blocked → `/admin-web-only` (open web admin + sign out) |
+
+## Architecture (short)
+
+```
+Flutter UI → Riverpod repositories
+              ├── Supabase SDK (auth, CRUD, storage) — primary
+              ├── Dio → Next.js /api/v1/* — server-only flows
+              └── Hive — client dashboard offline fallback
+```
+
+Full Mermaid flow diagrams: [FLUTTER_AND_API_PLAN.md §18](../docs/FLUTTER_AND_API_PLAN.md#18-app-flow-diagrams-mermaid).
+
+## Key routes
+
+| Route | Screen |
+|-------|--------|
+| `/splash` → `/onboarding` or `/login` | Bootstrap |
+| `/login`, `/register`, `/forgot-password` | Auth |
+| `/home`, `/search`, `/history`, `/profile` | Client shell |
+| `/home`, `/requests`, `/calendar`, `/clients`, `/profile` | Pro shell |
+| `/book/:professionalUserId` | Guest booking (public) |
+| `/booking/success/:id` | Booking confirmation |
+| `/prescription/:guestAppointmentId` | Pro prescription send |
+| `/consultants/:userId` | Consultant detail |
+| `/contact` | Contact form |
+| `/settings` | Settings |
 
 ## Build
 
@@ -66,4 +109,7 @@ flutter build apk --dart-define-from-file=.env.mobile
 flutter build ios --dart-define-from-file=.env.mobile
 ```
 
-See [docs/FLUTTER_AND_API_PLAN.md](../docs/FLUTTER_AND_API_PLAN.md) for architecture and screen inventory.
+## Related docs
+
+- [FLUTTER_AND_API_PLAN.md](../docs/FLUTTER_AND_API_PLAN.md) — architecture, parity matrix, Mermaid flows
+- [API.md](../docs/API.md) — REST endpoint reference
