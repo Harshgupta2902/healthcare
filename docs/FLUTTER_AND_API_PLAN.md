@@ -1,78 +1,142 @@
 # HealthHere — Flutter App & API Planning
 
-> Planning document for extending the existing Next.js + Supabase web app with a **mobile API layer** and a **Flutter client**.  
-> Based on the current codebase at `c:\CodeBase\healthcare`.
+> Living document for the **Next.js + Supabase web app** and the **Flutter mobile client** (`mobile/`).  
+> **Last audited:** June 2026 — reconciled against current web routes, Server Actions, `/api/v1/*`, and `mobile/lib/`.
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Current Architecture (Web)](#2-current-architecture-web)
-3. [API Strategy](#3-api-strategy)
-4. [SDK vs API — Decision Guide](#4-sdk-vs-api--decision-guide)
-5. [Flutter Screens — Complete List](#5-flutter-screens--complete-list)
-6. [Screen-by-Screen API Mapping](#6-screen-by-screen-api-mapping)
-7. [Proposed API Endpoints (Build List)](#7-proposed-api-endpoints-build-list)
-8. [Flutter App Architecture](#8-flutter-app-architecture)
-9. [Design System & Theme](#9-design-system--theme)
-10. [Smooth & Professional UX Guidelines](#10-smooth--professional-ux-guidelines)
-11. [Phased Rollout](#11-phased-rollout)
-12. [Project Structure](#12-project-structure)
-13. [Security & Compliance](#13-security--compliance)
-14. [Testing & Quality](#14-testing--quality)
-15. [Open Decisions](#15-open-decisions)
+2. [Implementation Status — Web vs Mobile](#2-implementation-status--web-vs-mobile)
+3. [Current Architecture (Web)](#3-current-architecture-web)
+4. [API Strategy](#4-api-strategy)
+5. [SDK vs API — Decision Guide](#5-sdk-vs-api--decision-guide)
+6. [Flutter Screens — Inventory & Status](#6-flutter-screens--inventory--status)
+7. [Screen-by-Screen API Mapping](#7-screen-by-screen-api-mapping)
+8. [REST API Reference](#8-rest-api-reference)
+9. [Mobile Backlog — What Still Needs Building](#9-mobile-backlog--what-still-needs-building)
+10. [Flutter App Architecture](#10-flutter-app-architecture)
+11. [Design System & Theme](#11-design-system--theme)
+12. [Smooth & Professional UX Guidelines](#12-smooth--professional-ux-guidelines)
+13. [Phased Rollout (Updated)](#13-phased-rollout-updated)
+14. [Project Structure](#14-project-structure)
+15. [Security & Compliance](#15-security--compliance)
+16. [Testing & Quality](#16-testing--quality)
+17. [Open Decisions](#17-open-decisions)
+18. [App Flow Diagrams (Mermaid)](#18-app-flow-diagrams-mermaid)
+19. [Complete Screen Navigation Reference](#19-complete-screen-navigation-reference)
 
 ---
 
 ## 1. Executive Summary
 
-The HealthHere web app is a **Next.js 15 + Supabase** healthcare platform with three roles:
+HealthHere is a **Next.js 15 + Supabase** healthcare platform with three roles:
 
 | Role | Web route | Mobile app |
 |------|-----------|------------|
-| **Client** (patient) | `/dashboard` | ✅ Full Flutter app |
-| **Professional** (doctor) | `/dashboard` | ✅ Full Flutter app |
-| **Admin** | `/application/enter` | ❌ **Not in mobile app** — web only |
+| **Client** (patient) | `/dashboard` | ✅ Core app implemented |
+| **Professional** (doctor) | `/dashboard` | ✅ Core app implemented |
+| **Admin** | `/application/enter` | ❌ **Web only** — blocked in Flutter |
 
-> **Confirmed scope:** The Flutter app is **only for Client (patient) and Professional (doctor)**. No admin screens, no admin WebView, no `/api/v1/admin/*` routes. Admins use the **web app only** (`/application/enter`).
+### What changed since the original plan
 
-**Today:** All mutations go through **Next.js Server Actions** — there are **no REST API routes**. Flutter cannot call Server Actions directly.
+| Area | Original plan | Current reality |
+|------|---------------|-----------------|
+| REST API (`/api/v1/*`) | "Must build ~10 routes" | ✅ **All 11 routes shipped** — see [docs/API.md](./API.md) |
+| Web booking | Simple guest form | ✅ **Slot holds + booking orders + Razorpay checkout** |
+| Web auth | Dedicated `/login` pages | ✅ **Modal auth on homepage** (`?auth=login`) |
+| Web registration | Email/password only | ✅ **OTP registration** (`requestRegistrationOtp`) |
+| Prescription sharing | Not in plan | ✅ **Consent + attach prior prescriptions at booking** |
+| Mobile blog | Phase 2 | ❌ **Not started** in Flutter |
+| Mobile AI assistant | Phase 3 "done" | ❌ **Not implemented** (API exists, no screen) |
+| Mobile biometrics | Phase 3 "done" | 🟡 **Service only** — no Settings UI |
+| Mobile payments | Phase 3 placeholder | ❌ **Not wired** — web has Razorpay |
 
-**Recommended approach:** A **hybrid architecture**:
+### Hybrid architecture (unchanged recommendation)
 
-1. **Supabase Flutter SDK** for auth, RLS-protected reads/writes, storage uploads, and realtime (Phase 1 — fastest path).
-2. **New Next.js API routes** (`src/app/api/v1/...`) only for server-only logic that cannot run on the client (Phase 2 — meetings, emails, PDFs, rate limits).
+1. **Supabase Flutter SDK** — auth, RLS-protected CRUD, storage, realtime where applicable.
+2. **Next.js REST API** (`/api/v1/...`) — server secrets, email, Google APIs, payment orchestration.
 
-This keeps one backend (Supabase + existing Next.js server) and avoids duplicating business logic in a separate API server.
+~70% of mobile screens can use the SDK directly. Server-only flows need REST (existing or new routes).
 
-### Out of scope (mobile app)
+### Out of scope (mobile)
 
 | Item | Status |
 |------|--------|
-| Admin dashboard (`/application/enter`) | **Not in app** — web only |
-| Admin screens (users, CMS, newsletter, etc.) | **Not in app** |
-| Admin WebView / in-app browser for admin | **Not in app** |
-| `/api/v1/admin/*` REST routes for mobile | **Will not be built** |
-| Admin role in Flutter navigation | **Blocked** — show “use web” message + sign out |
-
-Admin workflows stay on the existing Next.js web app and Server Actions (`src/features/admin/actions.ts`). No mobile work for admin.
-
-### At a glance — do we build APIs?
-
-| Integration type | Screens / features | Build new API? |
-|------------------|-------------------|----------------|
-| **Supabase Flutter SDK** (Auth, DB, Storage) | ~38 screens | **No** — use SDK directly |
-| **Supabase RPC** (Postgres functions) | Newsletter, blog likes/views, guest confirm | **No** — call `supabase.rpc()` |
-| **New REST API** (`/api/v1/...`) | Guest booking, meetings, email, Places, prescriptions | **Yes** — ~10 routes to create |
-| **Static / local only** | Splash, legal pages, onboarding | **No** |
-| ~~Admin (mobile)~~ | — | **Out of scope** — web only |
-
-**Bottom line:** ~80% of the app uses the **Supabase SDK** with zero new backend. Only ~10 REST endpoints are needed for server-only work (secrets, email, Google APIs). **Zero admin APIs or screens.**
+| Admin dashboard (`/application/enter`) | Web only |
+| Admin CMS, newsletter campaigns, booking settings | Web only |
+| `/api/v1/admin/*` for mobile | Will not be built |
+| Admin role in Flutter navigation | Blocked → `/admin-web-only` |
 
 ---
 
-## 2. Current Architecture (Web)
+## 2. Implementation Status — Web vs Mobile
+
+### 2.1 Feature parity matrix
+
+| Feature | Web | Mobile | Gap / notes |
+|---------|-----|--------|-------------|
+| **Auth — login / register / forgot password** | ✅ Modal + pages | ✅ Dedicated screens | Web uses modal; mobile uses `/login`, `/register` |
+| **OTP registration** | ✅ | ❌ | Mobile uses standard `signUp` only |
+| **Role routing (client / pro / admin block)** | ✅ | ✅ | |
+| **Client dashboard** | ✅ Hash sections | ✅ Bottom-nav shell | Mobile groups health records under Profile tab |
+| **Professional dashboard** | ✅ Hash sections | ✅ Bottom-nav shell | |
+| **Medical history / medications** | ✅ | ✅ | SDK CRUD |
+| **Medical documents + insurance** | ✅ | ✅ | Storage upload works |
+| **Consultant directory + detail** | ✅ Public `/consultants` | ✅ `/search` tab (auth required) | Mobile requires login for directory |
+| **Guest booking** | ✅ Full flow | ✅ `/book/:professionalUserId` | Mobile uses legacy guest API — **no slot holds / payment** |
+| **Booking orders + Razorpay checkout** | ✅ `/book-consultation/checkout` | ❌ | **Major gap** — needs new API routes |
+| **Slot reservation (hold/release)** | ✅ `booking-slots` actions | ❌ | Hardcoded time slots in mobile UI |
+| **Prescription sharing at booking** | ✅ Consent step | ❌ | |
+| **Logged-in appointment booking** | ✅ Dashboard flow | ❌ | `bookAppointment()` in repo, no UI |
+| **Appointment cancel / status update** | ✅ | ❌ | Repo methods exist, no UI |
+| **Meeting join (Meet/Jitsi link)** | ✅ Admin + email | 🟡 | `meeting_url` on model; call button is noop |
+| **Prescription compose (guest booking)** | ✅ Lexical editor | ✅ Basic HTML screen | WebView/native rich text TBD |
+| **Professional payments / earnings** | ✅ Razorpay records | ❌ | Placeholder screen exists, not routed |
+| **Blog — read + engagement** | ✅ | ❌ | No `blog/` feature folder |
+| **Blog — author dashboard** | ✅ `/dashboard/blog` | ❌ | |
+| **Newsletter subscribe** | ✅ RPC | ❌ | API unsubscribe exists, unused |
+| **Contact form** | ✅ | ✅ | REST API |
+| **AI health assistant** | ✅ Global widget (all pages) | ❌ | `GET /api/v1/assistant/context` not wired |
+| **Push notifications** | ❌ (admin inbox only) | ❌ | Local toggles only |
+| **Chat / messaging** | ❌ (marketing copy only) | ❌ | `ChatScreen` placeholder, not routed |
+| **Public marketing pages** | ✅ About, Services, etc. | ❌ | Mobile skips to functional app |
+| **Offline cache** | N/A | 🟡 | Client dashboard only (Hive) |
+| **Biometric unlock** | N/A | 🟡 | `BiometricService` exists, no UI |
+| **Saved / favorite doctors** | ❌ | ✅ | Local `SharedPreferences` only |
+
+**Legend:** ✅ Done · 🟡 Partial · ❌ Not started
+
+### 2.2 REST API usage in mobile
+
+| Endpoint | Web | Mobile wired? |
+|----------|-----|---------------|
+| `POST /api/v1/auth/sync-session` | ✅ | ✅ After login/signup |
+| `GET /api/v1/places/search` | ✅ | ✅ Guest booking |
+| `POST /api/v1/booking/guest` | ✅ | ✅ Guest booking |
+| `GET /api/v1/booking/guest/:id/confirm` | ✅ | ✅ Success screen |
+| `POST /api/v1/meetings/create` | ✅ | ❌ Defined in `ApiRepository`, unused |
+| `POST /api/v1/meetings/guest/pipeline` | ✅ | ❌ Defined, unused |
+| `POST /api/v1/contact` | ✅ | ✅ |
+| `POST /api/v1/newsletter/unsubscribe` | ✅ | ❌ |
+| `GET /api/v1/universities/search` | ✅ | ❌ Qualification form uses manual entry |
+| `POST /api/v1/prescriptions/send` | ✅ | ✅ |
+| `GET /api/v1/assistant/context` | ✅ | ❌ No assistant screen |
+
+### 2.3 Mobile routes today (`mobile/lib/core/router/app_router.dart`)
+
+**Routed:** `/splash`, `/onboarding`, `/welcome`, `/login`, `/register`, `/forgot-password`, `/admin-web-only`, `/settings`, `/settings/notifications`, `/contact`, `/profile/edit`, `/book/:professionalUserId`, `/booking/success/:id`, `/prescription/:guestAppointmentId`, `/consultants/:userId`
+
+**Shell tabs:**
+- Client: `/home`, `/search`, `/history`, `/profile`
+- Professional: `/home`, `/requests`, `/calendar`, `/clients`, `/profile`
+
+**Orphaned screens (exist in `lib/` but not in router):** `ChatScreen`, `BookScreen`, `MyDoctorScreen`, `ClientAccountScreen`, `ClientProfileScreen`, `ProfessionalAccountScreen`, `ProfessionalProfileScreen`, `ProfessionalBookScreen`, `ProfessionalMyDoctorScreen`, `ProfessionalPaymentsScreen`
+
+---
+
+## 3. Current Architecture (Web)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -81,13 +145,16 @@ Admin workflows stay on the existing Next.js web app and Server Actions (`src/fe
 │  │   Pages     │  │ Server       │  │  Supabase SSR       │ │
 │  │   (RSC)     │──│ Actions      │──│  (auth + cookies)   │ │
 │  └─────────────┘  └──────────────┘  └─────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  REST API v1  src/app/api/v1/*  (mobile + server-only) │ │
+│  └─────────────────────────────────────────────────────────┘ │
 └────────────────────────────┬────────────────────────────────┘
                              │
               ┌──────────────┴──────────────┐
               ▼                             ▼
      ┌─────────────────┐          ┌─────────────────┐
      │  Supabase Auth  │          │  Postgres + RLS │
-     │  + Storage      │          │  (22 tables)    │
+     │  + Storage      │          │  (~30 tables)   │
      └─────────────────┘          └─────────────────┘
 ```
 
@@ -99,43 +166,68 @@ Admin workflows stay on the existing Next.js web app and Server Actions (`src/fe
 | Dashboard theme | `src/app/dashboard/_components/dashboard-theme.ts` |
 | Admin theme | `src/app/application/enter/_components/admin-theme.ts` |
 | DB schema | `SUPABASE_SETUP.sql` |
-| Auth | `src/lib/supabase/*`, `middleware.ts` |
+| Auth + middleware | `src/lib/supabase/*`, `middleware.ts` |
 | Client actions | `src/features/client/actions.ts` |
 | Professional actions | `src/features/professional/actions.ts` |
 | Admin actions | `src/features/admin/actions.ts` |
 | Guest booking | `src/app/book-consultation/actions.ts` |
+| **Booking slots** | `src/features/booking-slots/actions.ts` |
+| **Booking orders + payments** | `src/features/booking-orders/actions.ts` |
+| **Prescription sharing** | `src/features/prescription-sharing/actions.ts` |
+| **OTP registration** | `src/features/auth/actions.ts` |
+| AI assistant | `src/features/assistant/actions.ts` |
+| Mobile API routes | `src/app/api/v1/**/route.ts` |
+| API docs | `docs/API.md` |
+
+### Web routes (summary)
+
+**Public:** `/`, `/about`, `/services`, `/how-it-works`, `/contact`, `/support`, `/terms`, `/privacy`, `/accessibility`, `/consultants`, `/consultants/[id]`, `/specialists`, `/blog`, `/blog/[slug]`, `/unsubscribe`
+
+**Booking:** `/book-consultation`, `/book-consultation/checkout`, `/book-consultation/success`
+
+**Dashboard (role-aware):** `/dashboard` (hash sections), `/dashboard/blog`, `/dashboard/blog/new`, `/dashboard/blog/[id]/edit`
+
+**Admin (web only):** `/application/enter/*` — users, professionals, appointments, booking-orders, payments, medical records, blog CMS, newsletter, enquiries, settings, notifications
+
+**Global UI (not routes):** `HealthHereAssistant` floating widget in root layout; auth modal on homepage.
 
 ### Database tables (Flutter-relevant)
 
-| Table | Client | Professional | Public read |
-|-------|--------|--------------|-------------|
-| `users` | own row | own row | limited (directory) |
-| `client_medical_profiles` | CRUD own | read assigned | — |
-| `medical_history` | CRUD own | read assigned | — |
-| `medications` | CRUD own | read assigned | — |
-| `medical_documents` | CRUD own | read assigned | — |
-| `insurance` | CRUD own | — | — |
-| `professional_profiles` | read verified | CRUD own | verified only |
-| `professional_qualifications` | — | CRUD own | — |
-| `professional_availability` | read | CRUD own | read for booking |
-| `appointments` | CRUD own | CRUD own | — |
-| `guest_appointments` | — | — | create (guest flow) |
-| `blog_posts`, `blog_categories` | read | read | published only |
-| `blog_comments`, `blog_post_likes` | CRUD own | CRUD own | read |
+| Table | Client | Professional | Public read | Mobile today |
+|-------|--------|--------------|-------------|--------------|
+| `users` | own row | own row | limited | ✅ |
+| `client_medical_profiles` | CRUD own | read assigned | — | ✅ |
+| `medical_history` | CRUD own | read assigned | — | ✅ |
+| `medications` | CRUD own | read assigned | — | ✅ |
+| `medical_documents` | CRUD own | read assigned | — | ✅ |
+| `insurance` | CRUD own | — | — | ✅ |
+| `professional_profiles` | read verified | CRUD own | verified only | ✅ |
+| `professional_qualifications` | — | CRUD own | — | ✅ |
+| `professional_availability` | read | CRUD own | read for booking | ✅ |
+| `appointments` | CRUD own | CRUD own | — | ✅ read only |
+| `guest_appointments` | — | read assigned | create (guest) | ✅ |
+| `booking_orders` | own orders | — | — | ❌ |
+| `payments` | — | read own | — | ❌ |
+| `professional_slot_reservations` | hold slots | — | — | ❌ |
+| `blog_posts`, `blog_categories` | read | read | published | ❌ |
+| `blog_comments`, `blog_post_likes` | CRUD own | CRUD own | read | ❌ |
+| `newsletter_subscribers` | subscribe | — | — | ❌ |
+| `registration_email_otps` | OTP flow | — | — | ❌ |
+| `google_meet_events` | read via appointment | read | — | 🟡 URL only |
 
 ---
 
-## 3. API Strategy
+## 4. API Strategy
 
-### 3.1 Three layers
+### 4.1 Three layers
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                      Flutter App                              │
 │  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐ │
 │  │ Supabase SDK   │  │ REST Client    │  │ Local cache   │ │
-│  │ (auth, CRUD,   │  │ (server-only   │  │ (Hive/Drift)  │ │
-│  │  storage, RT)  │  │  operations)   │  │               │ │
+│  │ (auth, CRUD,   │  │ (server-only   │  │ (Hive)        │ │
+│  │  storage)      │  │  operations)   │  │               │ │
 │  └───────┬────────┘  └───────┬────────┘  └───────────────┘ │
 └──────────┼───────────────────┼──────────────────────────────┘
            │                   │
@@ -143,828 +235,1174 @@ Admin workflows stay on the existing Next.js web app and Server Actions (`src/fe
    ┌───────────────┐   ┌───────────────────────────┐
    │   Supabase    │   │  Next.js API v1           │
    │   (RLS)       │   │  src/app/api/v1/...       │
-   └───────────────┘   │  Bearer: Supabase JWT     │
-                       └───────────────────────────┘
+   └───────────────┘   └───────────────────────────┘
 ```
 
-### 3.2 What goes where
+### 4.2 What goes where
 
 | Operation | Layer | Reason |
 |-----------|-------|--------|
 | Sign in / sign up / sign out | Supabase Auth SDK | Same as web |
-| Read/write profile, medical data | Supabase + RLS | Policies already exist |
-| Upload profile / medical docs | Supabase Storage | Buckets + RLS configured |
+| Read/write profile, medical data | Supabase + RLS | Policies exist |
+| Upload profile / medical docs | Supabase Storage | Buckets + RLS |
 | Consultant directory | Supabase query | `professional_profiles` + RLS |
 | Book appointment (logged-in) | Supabase insert | `appointments` table |
-| Blog read, like, comment | Supabase | RLS covers engagement |
-| Guest consultation booking | **API route** | Google Places, meeting pipeline, email |
-| Create Google Meet / Jitsi link | **API route** | OAuth tokens server-side |
-| Send prescription PDF email | **API route** | Nodemailer + HTML/PDF generation |
-| Newsletter subscribe/unsubscribe | Supabase RPC + API | HMAC unsubscribe needs server |
-| AI assistant context | **API route** | `src/features/assistant/actions.ts` |
+| Blog read, like, comment | Supabase + RPC | RLS + engagement RPCs |
+| Guest consultation (legacy) | **API** | `POST /api/v1/booking/guest` |
+| **Booking order + payment** | **Server Actions today** → **new API for mobile** | Razorpay secrets, slot holds |
+| Create Google Meet / Jitsi link | **API** | OAuth tokens server-side |
+| Send prescription PDF email | **API** | `POST /api/v1/prescriptions/send` |
+| Newsletter unsubscribe | **API** | HMAC token validation |
+| AI assistant context | **API** | `GET /api/v1/assistant/context` |
+| OTP registration | **Server Actions today** → **new API for mobile** | Rate limits, email |
 
-### 3.3 API route conventions (new)
+### 4.3 API route conventions
 
-When adding routes under `src/app/api/v1/`:
-
-- **Auth:** Validate `Authorization: Bearer <supabase_access_token>` via `supabase.auth.getUser(token)`.
-- **Validation:** Reuse existing Zod schemas from `src/features/*/actions.ts` — extract schemas to shared `src/lib/schemas/` to avoid duplication.
-- **Response shape:**
-
-```json
-{
-  "success": true,
-  "data": { },
-  "error": null
-}
-```
-
-- **Errors:** HTTP status + `{ "success": false, "error": { "code": "...", "message": "..." } }`.
-- **Versioning:** Prefix all routes with `/api/v1/`.
-- **Rate limiting:** Reuse `src/lib/device-rate-limit.ts` patterns.
+- **Auth:** `Authorization: Bearer <supabase_access_token>` → `supabase.auth.getUser(token)`.
+- **Validation:** Reuse Zod schemas from `src/features/*/actions.ts`.
+- **Response envelope:** `{ success, data, error }` — see [docs/API.md](./API.md).
+- **Versioning:** `/api/v1/` prefix.
+- **Rate limiting:** `src/lib/device-rate-limit.ts` patterns.
 
 ---
 
-## 4. SDK vs API — Decision Guide
+## 5. SDK vs API — Decision Guide
 
-Use this flow for every feature before writing code.
-
-### 4.1 Four integration types
+### 5.1 Integration types
 
 | Type | Package | When to use | Build API? |
 |------|---------|-------------|------------|
-| **A. Supabase Auth SDK** | `supabase_flutter` | Login, register, logout, password reset, session refresh | **No** |
-| **B. Supabase Database SDK** | `supabase_flutter` | CRUD on tables where RLS policies already exist | **No** |
-| **C. Supabase Storage SDK** | `supabase_flutter` | Profile photos, medical docs, qualification uploads | **No** |
-| **D. Supabase RPC** | `supabase_flutter` | Logic already in Postgres (`subscribe_newsletter`, `toggle_blog_post_like`, etc.) | **No** |
-| **E. REST API (new)** | `dio` → `/api/v1/...` | Server secrets, third-party APIs, email, PDF generation, rate limits | **Yes — must create** |
-| **F. WebView** | `webview_flutter` | Lexical prescription editor only (short-term, Phase 3) | **No** — use existing web page if needed |
+| **A. Supabase Auth SDK** | `supabase_flutter` | Login, register, logout, password reset | No |
+| **B. Supabase Database SDK** | `supabase_flutter` | CRUD where RLS exists | No |
+| **C. Supabase Storage SDK** | `supabase_flutter` | Avatars, medical docs, qualifications | No |
+| **D. Supabase RPC** | `supabase_flutter` | Postgres functions (newsletter, blog likes) | No |
+| **E. REST API** | `dio` → `/api/v1/...` | Secrets, email, Google APIs, payments | Yes (existing + new) |
+| **F. WebView** | `webview_flutter` | Lexical prescription editor (short-term) | No |
 
-### 4.2 Decision flowchart
+### 5.2 What you do NOT need REST for
 
-```mermaid
-flowchart TD
-    A[New Flutter feature] --> B{Needs server secret<br/>or email or Google API?}
-    B -->|Yes| C[Create REST API route<br/>src/app/api/v1/...]
-    B -->|No| D{Postgres function<br/>already exists?}
-    D -->|Yes| E[Supabase RPC<br/>supabase.rpc]
-    D -->|No| F{File upload?}
-    F -->|Yes| G[Supabase Storage SDK]
-    F -->|No| H{Auth action?}
-    H -->|Yes| I[Supabase Auth SDK]
-    H -->|No| J[Supabase DB SDK<br/>table select/insert/update]
-```
+| Feature | Correct approach |
+|---------|------------------|
+| User profile read/update | `supabase.from('users')` |
+| Medical history / medications CRUD | SDK + RLS |
+| Appointment list | `supabase.from('appointments')` + joins |
+| Consultant directory | `professional_profiles` where `is_verified` |
+| Profile image upload | `supabase.storage.from('avatars')` |
+| Blog post list | `blog_posts` where `status = 'published'` |
 
-### 4.3 What you do NOT need to build
+### 5.3 What MUST use REST (existing or to build)
 
-These are common mistakes — **do not** create REST APIs for:
+| Reason | Examples | Mobile status |
+|--------|----------|---------------|
+| Server secrets | Google Places, Razorpay | Places ✅ · Razorpay ❌ |
+| OAuth on server | Google Calendar / Meet | API exists, UI ❌ |
+| Email / PDF | Prescriptions, booking emails | Prescriptions ✅ |
+| HMAC tokens | Newsletter unsubscribe | API exists, UI ❌ |
+| Multi-step pipelines | Guest meeting pipeline | API exists, UI ❌ |
+| Slot holds + orders | `booking-slots`, `booking-orders` actions | **Need new API routes** |
 
-| Feature | Wrong approach | Correct approach |
-|---------|----------------|------------------|
-| User profile read/update | `GET /api/users/me` | `supabase.from('users').select().eq('id', uid)` |
-| Medical history CRUD | Custom REST endpoints | `supabase.from('medical_history')` + RLS |
-| Appointment list | Custom REST endpoints | `supabase.from('appointments')` + joins |
-| Consultant directory | Custom REST endpoints | `supabase.from('professional_profiles').eq('is_verified', true)` |
-| Profile image upload | Multipart REST upload | `supabase.storage.from('profiles').upload()` |
-| Blog post list | Custom REST endpoints | `supabase.from('blog_posts').eq('status', 'published')` |
-| Sign in / sign up | Custom auth API | `supabase.auth.signInWithPassword()` |
+### 5.4 Supabase RPC functions
 
-RLS in `SUPABASE_SETUP.sql` already enforces who can read/write each row — the SDK respects it automatically when the user is logged in.
-
-### 4.4 What you MUST build (REST API)
-
-Only when logic lives in Next.js Server Actions and touches secrets:
-
-| Reason | Examples from codebase |
-|--------|------------------------|
-| **API keys hidden on server** | Google Places search (`searchPlaces`) |
-| **OAuth tokens on server** | Google Calendar / Meet (`createConsultationMeeting`) |
-| **Email sending** | Guest booking emails, prescription PDF (`mailer.ts`) |
-| **HMAC / signed tokens** | Newsletter unsubscribe (`unsubscribeNewsletter`) |
-| **Device rate limiting** | Contact form, auth (`device-rate-limit.ts`) |
-| **Multi-step server pipeline** | Guest meeting pipeline (`guestMeetingPipeline.ts`) |
-| **External data proxy** | University search (`searchUniversities` — GitHub gist) |
-
-### 4.5 Supabase RPC functions (call via SDK — no REST needed)
-
-Already in `SUPABASE_SETUP.sql` — use `supabase.rpc('name', params)`:
-
-| RPC function | Used by screen |
-|--------------|----------------|
-| `subscribe_newsletter` | Newsletter signup |
-| `get_newsletter_status` | Newsletter status |
-| `set_newsletter_status` | Unsubscribe (with email) |
-| `get_guest_appointment_confirmation` | Booking success screen |
-| `toggle_blog_post_like` | Blog post like button |
-| `increment_blog_post_view` | Blog post view tracking |
-| `try_newsletter_rate_limit` | Newsletter (server-side in API if needed) |
-
-### 4.6 Flutter code pattern per type
-
-```dart
-// A/B/C — Supabase SDK (most screens)
-final profile = await supabase.from('users').select().eq('id', userId).single();
-await supabase.from('medical_history').insert({...});
-await supabase.storage.from('profiles').upload(path, file);
-
-// D — Supabase RPC
-await supabase.rpc('subscribe_newsletter', params: {'p_email': email});
-await supabase.rpc('toggle_blog_post_like', params: {'p_post_id': postId, 'p_user_id': userId});
-
-// E — REST API (only for server-only features)
-final dio = ref.read(dioProvider); // attaches Bearer token
-final res = await dio.post('/api/v1/booking/guest', data: formData);
-```
+| RPC function | Web | Mobile |
+|--------------|-----|--------|
+| `subscribe_newsletter` | ✅ | ❌ |
+| `get_newsletter_status` | ✅ | ❌ |
+| `set_newsletter_status` | ✅ | ❌ |
+| `get_guest_appointment_confirmation` | ✅ | ✅ via REST confirm route |
+| `toggle_blog_post_like` | ✅ | ❌ |
+| `increment_blog_post_view` | ✅ | ❌ |
+| `try_newsletter_rate_limit` | ✅ | ❌ |
 
 ---
 
-## 5. Flutter Screens — Complete List
+## 6. Flutter Screens — Inventory & Status
 
-**Total: 49 screens** — Client + Professional + public only. **No admin screens.**
+**Planned: ~49 screens** · **Routed today: ~25** · **Fully working: ~20**
 
-Mirrors web routes under `src/app/` (excluding `/application/enter/*`).
+### 6.1 App shell & auth
 
-### 5.1 App shell & auth (7 screens)
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Splash | `/splash` | ✅ | Does not auto-restore session → always `/login` after onboarding |
+| Onboarding | `/onboarding` | ✅ | |
+| Welcome | `/welcome` | ✅ | Extra vs original plan |
+| Login | `/login` | ✅ | |
+| Register | `/register` | ✅ | Client + professional; no OTP flow |
+| Forgot password | `/forgot-password` | ✅ | |
+| Reset password (deep link) | `/reset-password` | ❌ | Not routed |
+| Admin web-only blocker | `/admin-web-only` | ✅ | |
 
-| # | Screen | Flutter route | Phase | Auth |
-|---|--------|---------------|-------|------|
-| 1 | Splash | `/` | 1 | — |
-| 2 | Onboarding (3 slides) | `/onboarding` | 1 | — |
-| 3 | Login | `/login` | 1 | — |
-| 4 | Register | `/register` | 1 | — |
-| 5 | Register role picker (client / professional) | `/register/role` | 1 | — |
-| 6 | Forgot password | `/forgot-password` | 1 | — |
-| 7 | Reset password (deep link) | `/reset-password` | 1 | — |
+### 6.2 Public / marketing
 
-### 5.2 Public / marketing (11 screens)
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Home (client) | `/home` | ✅ | Dashboard home, not marketing landing |
+| Consultants directory | `/search` | ✅ | Auth required |
+| Consultant detail | `/consultants/:userId` | ✅ | Hardcoded ratings |
+| Contact | `/contact` | ✅ | |
+| About, Services, How it works, Specialists | — | ❌ | Web only |
+| Privacy, Terms, Support | — | ❌ | Link to web or add static screens |
 
-| # | Screen | Flutter route | Web equivalent | Phase |
-|---|--------|---------------|----------------|-------|
-| 8 | Home | `/home` | `/` | 2 |
-| 9 | About | `/about` | `/about` | 3 |
-| 10 | Services | `/services` | `/services` | 3 |
-| 11 | How it works | `/how-it-works` | `/how-it-works` | 3 |
-| 12 | Specialists | `/specialists` | `/specialists` | 2 |
-| 13 | Consultants directory | `/consultants` | `/consultants` | 1 |
-| 14 | Consultant detail | `/consultants/:id` | `/consultants/[id]` | 1 |
-| 15 | Contact | `/contact` | `/contact` | 2 |
-| 16 | Privacy policy | `/privacy` | `/privacy` | 1 |
-| 17 | Terms | `/terms` | `/terms` | 1 |
-| 18 | Support | `/support` | `/support` | 3 |
+### 6.3 Booking flow
 
-### 5.3 Booking flow (4 screens)
-
-| # | Screen | Flutter route | Web equivalent | Phase |
-|---|--------|---------------|----------------|-------|
-| 19 | Book consultation (multi-step form) | `/book` | `/book-consultation` | 2 |
-| 20 | Address autocomplete (sub-view) | embedded in `/book` | Places search | 2 |
-| 21 | Booking success | `/book/success/:id` | `/book-consultation/success` | 2 |
-| 22 | Book appointment (logged-in user) | `/appointments/book` | dashboard flow | 2 |
-
-### 5.4 Blog (4 screens)
-
-| # | Screen | Flutter route | Web equivalent | Phase |
-|---|--------|---------------|----------------|-------|
-| 23 | Blog feed | `/blog` | `/blog` | 2 |
-| 24 | Blog post detail | `/blog/:slug` | `/blog/[slug]` | 2 |
-| 25 | Blog comments sheet | modal on `/blog/:slug` | inline on web | 2 |
-| 26 | My blog posts (author) | `/dashboard/blog` | `/dashboard/blog` | 3 |
-
-### 5.5 Client dashboard — patient (10 screens)
-
-Web tabs from `ClientDashboard.tsx`: profile, history, medications, documents, insurance, appointments.
-
-| # | Screen | Flutter route | Tab / action | Phase |
-|---|--------|---------------|--------------|-------|
-| 27 | Client dashboard shell | `/dashboard` | bottom nav host | 1 |
-| 28 | Profile | `/dashboard/profile` | tab | 1 |
-| 29 | Medical history list | `/dashboard/history` | tab | 1 |
-| 30 | Add / edit condition | `/dashboard/history/add` | push | 1 |
-| 31 | Medications list | `/dashboard/medications` | tab | 1 |
-| 32 | Add medication | `/dashboard/medications/add` | push | 1 |
-| 33 | Documents list | `/dashboard/documents` | tab | 1 |
-| 34 | Upload document | `/dashboard/documents/upload` | push | 2 |
-| 35 | Insurance list | `/dashboard/insurance` | tab | 2 |
-| 36 | Appointments list + detail | `/dashboard/appointments` | tab | 1 |
-
-### 5.6 Professional dashboard — doctor (9 screens)
-
-Web tabs from `ProfessionalDashboard.tsx`: profile, credentials, consultations, calendar, payments, clients.
-
-| # | Screen | Flutter route | Tab / action | Phase |
-|---|--------|---------------|--------------|-------|
-| 37 | Professional dashboard shell | `/dashboard` | role-branched | 2 |
-| 38 | Professional profile | `/dashboard/profile` | tab | 2 |
-| 39 | Credentials & qualifications | `/dashboard/credentials` | tab | 2 |
-| 40 | Add qualification + doc upload | `/dashboard/credentials/add` | push | 2 |
-| 41 | Consultations list | `/dashboard/consultations` | tab | 2 |
-| 42 | Consultation detail + status | `/dashboard/consultations/:id` | push | 2 |
-| 43 | Availability calendar | `/dashboard/calendar` | tab | 2 |
-| 44 | Payments summary | `/dashboard/payments` | tab | 3 |
-| 45 | Clients list | `/dashboard/clients` | tab | 2 |
-
-### 5.7 Shared authenticated (4 screens)
-
-| # | Screen | Flutter route | Phase |
-|---|--------|---------------|-------|
-| 46 | Settings | `/settings` | 1 |
-| 47 | Change password | `/settings/password` | 2 |
-| 48 | Prescription compose + send | `/prescriptions/new` | 3 |
-| 49 | AI health assistant | `/assistant` | 3 |
-
-### 5.8 Admin login handling (not an admin app)
-
-Admins are **not supported** on mobile. If `users.role === 'admin'` after login:
-
-| Screen | Flutter route | Behavior |
-|--------|---------------|----------|
-| Admin not supported | `/admin-web-only` | Message: “Admin panel is available on the web only.” Link to `https://yourdomain.com/application/enter` + **Sign out** button. No WebView, no admin data, no admin API calls. |
-
-Registration on mobile remains **client** and **professional** only (same as web — admin accounts are created via web/admin).
-
-### 5.9 Bottom navigation per role
-
-**Client (5 tabs):** Home · Appointments · Consultants · Blog · Profile  
-**Professional (5 tabs):** Consultations · Calendar · Clients · Blog · Profile  
-
-Dashboard medical tabs (history, meds, docs, insurance) live **inside Profile** as sub-sections or a "Health Records" hub — same data as web, mobile-friendly grouping.
-
----
-
-## 6. Screen-by-Screen API Mapping
-
-Master reference: every screen → integration type → exact implementation.
-
-**Legend:**  
-🟢 **SDK** = Supabase Flutter SDK (no API to build)  
-🟣 **RPC** = Supabase `rpc()` (no API to build)  
-🔴 **REST** = New `/api/v1/...` route (must build)  
-⚪ **Static** = No backend  
-🚫 **Blocked** = Admin — not supported in app  
-
-### 6.1 Auth & onboarding
-
-| Screen | Integration | How to implement | Create API? |
-|--------|-------------|------------------|-------------|
-| Splash | ⚪ Static | Local asset + check `supabase.auth.currentSession` | No |
-| Onboarding | ⚪ Static | `shared_preferences` for "seen" flag | No |
-| Login | 🟢 SDK Auth | `signInWithPassword({ email, password })` | No |
-| Register | 🟢 SDK Auth | `signUp()` → trigger `handle_new_user` creates `users` row | No |
-| Register role | 🟢 SDK DB | Update `users.role` = `client` \| `professional` | No |
-| Forgot password | 🟢 SDK Auth | `resetPasswordForEmail(email)` | No |
-| Reset password | 🟢 SDK Auth | Deep link → `updateUser({ password })` | No |
-| Post-login sync | 🔴 REST | `POST /api/v1/auth/sync-session` — copies `users.role` to JWT metadata (same as web `syncUserSession`) | **Yes** |
-| Admin login detected | 🚫 Blocked | Redirect to `/admin-web-only` — message + open web link + sign out. **No admin UI, no admin API** | No |
-
-### 6.2 Public & marketing
-
-| Screen | Integration | How to implement | Create API? |
-|--------|-------------|------------------|-------------|
-| Home | ⚪ Static + 🟢 SDK | Hero static; optional featured consultants via SDK | No |
-| About, Services, How it works | ⚪ Static | Hardcode or CMS later | No |
-| Specialists | ⚪ Static | Same as web constants | No |
-| Consultants directory | 🟢 SDK DB | `from('professional_profiles').select('*, users(*)').eq('is_verified', true)` — mirrors `searchProfessionals` | No |
-| Consultant detail | 🟢 SDK DB | `getProfessionalById` equivalent via `.eq('id', id).single()` + availability join | No |
-| Contact | 🔴 REST | `POST /api/v1/contact` — rate limit + insert `contact_messages` | **Yes** |
-| Privacy, Terms, Support | ⚪ Static | Render markdown / WebView of web page | No |
-
-### 6.3 Booking
-
-| Screen | Integration | How to implement | Create API? |
-|--------|-------------|------------------|-------------|
-| Book consultation (guest) | 🔴 REST | `POST /api/v1/booking/guest` — validates Zod, inserts `guest_appointments`, triggers meeting pipeline | **Yes** |
-| Address autocomplete | 🔴 REST | `GET /api/v1/places/search?q=...` — proxies Google Places (hides API key) | **Yes** |
-| Booking success | 🟣 RPC | `rpc('get_guest_appointment_confirmation', { p_id: id })` | No |
-| Book appointment (logged-in) | 🟢 SDK DB | Insert `appointments` row; optional 🔴 `POST /api/v1/meetings/create` for Meet link | Partial |
-| Booking prefill (logged-in) | 🟢 SDK DB | Read `users` + `client_medical_profiles` — mirrors `getBookingFormPrefill` | No |
-| Meeting link creation | 🔴 REST | `POST /api/v1/meetings/create` — Google Calendar OAuth server-side | **Yes** |
-| Guest meeting pipeline | 🔴 REST | `POST /api/v1/meetings/guest/pipeline` — multi-step email + Meet | **Yes** |
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Book consultation (guest) | `/book/:professionalUserId` | ✅ | Legacy guest API; static time slots |
+| Booking success | `/booking/success/:id` | ✅ | |
+| **Checkout / Razorpay** | — | ❌ | Web: `/book-consultation/checkout` |
+| Book appointment (logged-in) | — | ❌ | Repo method only |
+| Slot picker (real availability) | — | ❌ | Needs `booking-slots` API |
 
 ### 6.4 Blog
 
-| Screen | Integration | How to implement | Create API? |
-|--------|-------------|------------------|-------------|
-| Blog feed | 🟢 SDK DB | `blog_posts` + `blog_categories` where `status = 'published'` | No |
-| Blog post detail | 🟢 SDK DB | `.eq('slug', slug).single()` + related posts query | No |
-| Record view | 🟣 RPC | `rpc('increment_blog_post_view', { p_post_id, p_viewer_key })` | No |
-| Like / unlike | 🟣 RPC | `rpc('toggle_blog_post_like', { p_post_id, p_user_id })` | No |
-| Comments list | 🟢 SDK DB | `from('blog_comments').eq('post_id', id).eq('status', 'approved')` | No |
-| Add comment | 🟢 SDK DB | Insert `blog_comments` (RLS + trigger enforces rules) | No |
-| Delete own comment | 🟢 SDK DB | `.delete().eq('id', id)` — RLS ensures ownership | No |
-| My blog posts (author) | 🟢 SDK DB | `blog_posts` where `author_id = uid` | No |
-| Author create/edit post | 🟢 SDK DB + Storage | Insert/update `blog_posts`; cover via `blog-covers` bucket | No |
+| Screen | Route | Status |
+|--------|-------|--------|
+| Blog feed | `/blog` | ❌ |
+| Blog post detail | `/blog/:slug` | ❌ |
+| Comments / likes | modal | ❌ |
+| My blog posts (author) | `/dashboard/blog` | ❌ |
 
 ### 6.5 Client dashboard
 
-| Screen | Integration | Supabase table / method | Create API? |
-|--------|-------------|-------------------------|-------------|
-| Dashboard stats | 🟢 SDK DB | Aggregate queries on `appointments`, `medical_history`, etc. — mirrors `getClientDashboardData` | No |
-| Profile view/edit | 🟢 SDK DB | `users` + `client_medical_profiles` upsert | No |
-| Profile photo | 🟢 SDK Storage | `storage.from('profiles').upload()` + update `users.avatar_url` | No |
-| Medical history list | 🟢 SDK DB | `medical_history` where `user_id = uid` | No |
-| Add/delete condition | 🟢 SDK DB | insert / delete on `medical_history` | No |
-| Medications list | 🟢 SDK DB | `medications` | No |
-| Add/delete medication | 🟢 SDK DB | insert / delete on `medications` | No |
-| Documents list | 🟢 SDK DB | `medical_documents` | No |
-| Upload document | 🟢 SDK Storage + DB | Upload `medical-documents` bucket → insert metadata row | No |
-| Delete document | 🟢 SDK DB + Storage | Delete row + storage object | No |
-| Insurance list | 🟢 SDK DB | `insurance` | No |
-| Add/delete insurance | 🟢 SDK DB | insert / delete on `insurance` | No |
-| Appointments list | 🟢 SDK DB | `appointments` with professional join | No |
-| Appointment detail | 🟢 SDK DB | Single row + join; meeting URL from `google_meet_events` if exists | No |
-| Newsletter subscribe | 🟣 RPC | `rpc('subscribe_newsletter', { p_email })` | No |
-| Newsletter unsubscribe | 🔴 REST | `POST /api/v1/newsletter/unsubscribe` — HMAC token validation (server secret) | **Yes** |
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Dashboard shell | shell | ✅ | 4 tabs |
+| Profile + health records hub | `/profile` | ✅ | History, meds, docs, insurance in tabs |
+| Profile edit | `/profile/edit` | ✅ | |
+| Medical history add/edit | inline | ✅ | |
+| Medications add | inline | ✅ | |
+| Documents upload | inline | ✅ | Storage SDK |
+| Insurance | inline | ✅ | |
+| Appointments list | `/history` | 🟡 | List only; no cancel/join |
+| **Orders history** | — | ❌ | Web dashboard `#orders` |
 
 ### 6.6 Professional dashboard
 
-| Screen | Integration | Supabase table / method | Create API? |
-|--------|-------------|-------------------------|-------------|
-| Dashboard stats | 🟢 SDK DB | Joins on appointments, clients — mirrors `getProfessionalDashboardData` | No |
-| Pro profile edit | 🟢 SDK DB | `professional_profiles` + `users` update | No |
-| Qualifications list | 🟢 SDK DB | `professional_qualifications` | No |
-| Add qualification | 🟢 SDK Storage + DB | Upload `qualifications` bucket → insert row (pending approval) | No |
-| Delete qualification | 🟢 SDK DB | delete row + storage file | No |
-| University search | 🔴 REST | `GET /api/v1/universities/search?q=...` — proxies GitHub gist (same as `searchUniversities`) | **Yes** |
-| Consultations list | 🟢 SDK DB | `appointments` + `guest_appointments` where professional assigned | No |
-| Update consultation status | 🟢 SDK DB | Update `appointments.status` or guest equivalent | No |
-| Availability list | 🟢 SDK DB | `professional_availability` | No |
-| Add/edit/delete availability | 🟢 SDK DB | CRUD on `professional_availability` | No |
-| Clients list | 🟢 SDK DB | Distinct clients from `appointments` join `users` | No |
-| Client medical view | 🟢 SDK DB | Read client `medical_history`, `medications` via RLS (professional assigned) | No |
-| Payments summary | 🟢 SDK DB | Read `consultation_fee` × completed appointments (computed client-side) | No |
-| Prescription send | 🔴 REST | `POST /api/v1/prescriptions/send` — Lexical HTML → PDF → email | **Yes** |
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Dashboard home | `/home` | ✅ | |
+| Consultations / requests | `/requests` | ✅ | Guest + upcoming |
+| Consultation detail + status | push | 🟡 | No status update UI |
+| Availability calendar | `/calendar` | ✅ | CRUD via SDK |
+| Clients list | `/clients` | ✅ | Read-only |
+| Credentials | `/profile` panel | ✅ | Add qualification + upload |
+| Payments summary | — | ❌ | Placeholder screen orphaned |
+| Prescription compose | `/prescription/:id` | ✅ | API send |
 
 ### 6.7 Shared authenticated
 
-| Screen | Integration | How to implement | Create API? |
-|--------|-------------|------------------|-------------|
-| Settings | 🟢 SDK DB | Read `users`; sign out via Auth SDK | No |
-| Change password | 🟢 SDK Auth | `updateUser({ password })` | No |
-| AI assistant | 🔴 REST | `GET /api/v1/assistant/context` — server aggregates page context | **Yes** |
-| Admin web-only blocker | 🚫 Blocked | Static screen at `/admin-web-only` — not an admin feature | No |
+| Screen | Route | Status | Notes |
+|--------|-------|--------|-------|
+| Settings | `/settings` | 🟡 | Logout works; theme/2FA/delete are UI-only |
+| Notifications | `/settings/notifications` | 🟡 | Local toggles; no FCM |
+| Change password | — | ❌ | |
+| AI health assistant | — | ❌ | API ready |
+| Chat / messages | — | ❌ | Placeholder only |
 
-### 6.8 Summary counts
+### 6.8 Bottom navigation (current)
 
-| Integration | Screen actions | New API to build? |
-|-------------|----------------|-----------------|
-| 🟢 Supabase SDK (Auth / DB / Storage) | ~45 | No |
-| 🟣 Supabase RPC | 6 features | No |
-| 🔴 REST API (new routes) | 10 endpoints | **Yes** |
-| ⚪ Static / local | 8 screens | No |
-| 🚫 Admin (blocked) | 1 blocker screen only | **No — not building admin** |
+**Client:** Home · Search (consultants) · History (appointments) · Profile  
+**Professional:** Home · Requests · Calendar · Clients · Profile
+
+Original plan had Blog tab — **not implemented**.
 
 ---
 
-## 7. Proposed API Endpoints (Build List)
+## 7. Screen-by-Screen API Mapping
 
-**These 10 routes do not exist today.** Each wraps existing Server Action logic from `src/features/` or `src/app/book-consultation/actions.ts`.  
-**Admin routes (`/api/v1/admin/*`) are not part of this plan** — admin stays on web Server Actions only.
+**Legend:** 🟢 SDK · 🟣 RPC · 🔴 REST · ⚪ Static · 🚫 Blocked
 
-### 7.1 Must build (Phase 1–2)
+### 7.1 Auth & onboarding
 
-| Priority | Method | Endpoint | Server Action source | Used by screens |
-|----------|--------|----------|---------------------|-----------------|
-| P0 | `POST` | `/api/v1/auth/sync-session` | `profile/actions.ts` → `syncUserSession` | Login (all roles) |
-| P1 | `GET` | `/api/v1/places/search` | `book-consultation/actions.ts` → `searchPlaces` | Book consultation |
-| P1 | `POST` | `/api/v1/booking/guest` | `book-consultation/actions.ts` → `submitGuestAppointment` | Book consultation |
-| P1 | `POST` | `/api/v1/meetings/create` | `lib/calendar/createConsultationMeeting.ts` | Appointment detail, booking |
-| P1 | `POST` | `/api/v1/meetings/guest/pipeline` | `lib/calendar/guestMeetingPipeline.ts` | Guest booking (automated after submit) |
-| P2 | `POST` | `/api/v1/contact` | `contact/actions.ts` → `submitContactForm` | Contact screen |
-| P2 | `POST` | `/api/v1/newsletter/unsubscribe` | `client/actions.ts` → `unsubscribeNewsletter` | Unsubscribe deep link |
-| P2 | `GET` | `/api/v1/universities/search` | `professional/actions.ts` → `searchUniversities` | Add qualification |
+| Screen | Integration | Mobile | Create API? |
+|--------|-------------|--------|-------------|
+| Login / register | 🟢 Auth SDK | ✅ | No |
+| OTP registration | 🔴 REST (new) | ❌ | **Yes** — wrap `requestRegistrationOtp` / `verifyOtpAndSignUp` |
+| Post-login sync | 🔴 REST | ✅ `sync-session` | No (exists) |
+| Admin detected | 🚫 Blocked | ✅ | No |
 
-### 7.2 Build in Phase 3
+### 7.2 Booking (updated for web parity)
 
-| Priority | Method | Endpoint | Server Action source | Used by screens |
-|----------|--------|----------|---------------------|-----------------|
-| P3 | `POST` | `/api/v1/prescriptions/send` | `professional/actions.ts` → `saveGuestPrescription` | Prescription screen |
-| P3 | `GET` | `/api/v1/assistant/context` | `assistant/actions.ts` → `getAssistantContext` | AI assistant |
+| Screen | Integration | Mobile | Create API? |
+|--------|-------------|--------|-------------|
+| Guest booking (legacy) | 🔴 REST | ✅ `booking/guest` | No |
+| **Slot holds** | 🔴 REST (new) | ❌ | **Yes** — wrap `reserveSlot`, `releaseSlot`, `getAvailableSlots` |
+| **Create booking order** | 🔴 REST (new) | ❌ | **Yes** — wrap `createBookingOrder` |
+| **Razorpay checkout** | 🔴 REST (new) | ❌ | **Yes** — wrap `createRazorpayCheckoutOrder`, `verifyRazorpayPayment` |
+| **Prescription sharing** | 🔴 REST (new) | ❌ | **Yes** — wrap `getEligiblePrescriptionsForSharing`, `attachSharedPrescriptionsToBooking` |
+| Booking success | 🔴 REST / 🟣 RPC | ✅ confirm route | No |
+| Logged-in book | 🟢 SDK DB | ❌ | No |
+| Meeting create / pipeline | 🔴 REST | ❌ unused | No (wire UI first) |
 
-### 7.3 NOT needed as REST (use SDK/RPC instead)
+### 7.3 Blog (all missing on mobile)
 
-| Web Server Action | Flutter replacement |
-|-------------------|---------------------|
-| `getClientDashboardData` | Compose SDK queries in repository |
-| `getProfessionalDashboardData` | Compose SDK queries in repository |
-| `searchProfessionals` / `getProfessionalById` | SDK select on `professional_profiles` |
-| `updateProfile`, `updateMedicalProfile` | SDK update on `users` / `client_medical_profiles` |
-| `addMedicalCondition`, `addMedication`, etc. | SDK insert |
-| `getPublishedBlogPosts`, `getBlogPostBySlug` | SDK select on `blog_posts` |
-| `subscribeNewsletter` | `rpc('subscribe_newsletter')` |
-| `getGuestAppointmentConfirmation` | `rpc('get_guest_appointment_confirmation')` |
-| `toggleBlogPostLike`, `recordBlogPostView` | RPC functions |
-| `signIn`, `signUp`, `signOut` | Supabase Auth SDK |
-| All `src/features/admin/actions.ts` | **Web only** — not exposed to mobile |
+| Screen | Integration | Create API? |
+|--------|-------------|-------------|
+| Blog feed / detail | 🟢 SDK DB | No |
+| Like / view | 🟣 RPC | No |
+| Comments | 🟢 SDK DB | No |
+| Author posts | 🟢 SDK + Storage | No |
+
+### 7.4 Client / professional dashboards
+
+Most CRUD screens use 🟢 SDK — **implemented** for core health records, credentials, availability.
+
+| Gap | Integration | Create API? |
+|-----|-------------|-------------|
+| Professional payments | 🟢 SDK (`payments` table) or compose query | No — SDK likely sufficient |
+| Client order history | 🟢 SDK (`booking_orders`) | No |
+| University search (credentials) | 🔴 REST | No (exists) — **wire UI** |
+| Prescription send | 🔴 REST | No (exists) — ✅ wired |
+
+### 7.5 Shared
+
+| Screen | Integration | Mobile | Create API? |
+|--------|-------------|--------|-------------|
+| AI assistant | 🔴 REST | ❌ | No (exists) — build screen |
+| Newsletter unsubscribe | 🔴 REST | ❌ | No — deep link handler |
 
 ---
 
-## 8. Flutter App Architecture
+## 8. REST API Reference
 
-### 8.1 Recommended stack
+### 8.1 Shipped endpoints (web + mobile)
 
-| Layer | Package | Notes |
-|-------|---------|-------|
-| Framework | Flutter 3.x (stable) | iOS + Android |
-| State | **Riverpod 2** or **Bloc** | Riverpod fits Supabase streams well |
-| Routing | **go_router** | Role-based redirects mirror web middleware |
-| Backend | **supabase_flutter** | Auth, DB, Storage, Realtime |
-| HTTP (API v1) | **dio** | Interceptors for JWT + refresh |
-| Forms | **flutter_form_builder** + validators | Match Zod rules on client |
-| Local cache | **drift** or **hive** | Offline read for profile, appointments |
-| Images | **cached_network_image** | Profile avatars, blog covers |
-| Fonts | **google_fonts** | Inter + Manrope |
-| Animations | built-in + **flutter_animate** | Micro-interactions |
-| Secure storage | **flutter_secure_storage** | Refresh tokens if needed |
+Documented in [docs/API.md](./API.md). Implementation: `src/app/api/v1/**/route.ts`.
 
-### 8.2 App modules (feature-first)
+| Method | Endpoint | Mobile wired? |
+|--------|----------|---------------|
+| `POST` | `/api/v1/auth/sync-session` | ✅ |
+| `GET` | `/api/v1/places/search` | ✅ |
+| `POST` | `/api/v1/booking/guest` | ✅ |
+| `GET` | `/api/v1/booking/guest/:id/confirm` | ✅ |
+| `POST` | `/api/v1/meetings/create` | ❌ |
+| `POST` | `/api/v1/meetings/guest/pipeline` | ❌ |
+| `POST` | `/api/v1/contact` | ✅ |
+| `POST` | `/api/v1/newsletter/unsubscribe` | ❌ |
+| `GET` | `/api/v1/universities/search` | ❌ |
+| `POST` | `/api/v1/prescriptions/send` | ✅ |
+| `GET` | `/api/v1/assistant/context` | ❌ |
+
+### 8.2 Proposed new endpoints (mobile parity with current web booking)
+
+These wrap existing Server Actions — **not built yet**:
+
+| Priority | Method | Endpoint | Server Action source | Needed for |
+|----------|--------|----------|---------------------|------------|
+| **P0** | `GET` | `/api/v1/booking/settings` | `booking-slots` → `getBookingSettings` | Slot config |
+| **P0** | `GET` | `/api/v1/booking/dates` | `getBookableDates` | Calendar picker |
+| **P0** | `GET` | `/api/v1/booking/slots` | `getAvailableSlots` | Time slot list |
+| **P0** | `POST` | `/api/v1/booking/slots/reserve` | `reserveSlot` | Hold slot |
+| **P0** | `POST` | `/api/v1/booking/slots/release` | `releaseSlot` | Release hold |
+| **P0** | `POST` | `/api/v1/booking/orders` | `createBookingOrder` | Start paid booking |
+| **P0** | `GET` | `/api/v1/booking/orders/:id` | `getCheckoutOrder` | Checkout screen |
+| **P0** | `POST` | `/api/v1/booking/orders/:id/razorpay` | `createRazorpayCheckoutOrder` | Payment |
+| **P0** | `POST` | `/api/v1/booking/orders/:id/verify` | `verifyRazorpayPayment` | Payment confirm |
+| **P1** | `GET` | `/api/v1/prescriptions/sharing/eligible` | `getEligiblePrescriptionsForSharing` | Booking consent step |
+| **P1** | `POST` | `/api/v1/prescriptions/sharing/attach` | `attachSharedPrescriptionsToBooking` | Booking consent step |
+| **P1** | `POST` | `/api/v1/auth/register-otp` | `requestRegistrationOtp` | OTP signup |
+| **P1** | `POST` | `/api/v1/auth/verify-otp` | `verifyOtpAndSignUp` | OTP signup |
+| **P2** | `POST` | `/api/v1/booking/orders/:id/mock-pay` | `processMockPayment` | Dev/testing only |
+
+### 8.3 NOT needed as REST (use SDK/RPC)
+
+Same as before — profile, medical CRUD, appointments list, blog (when built), consultant directory, newsletter subscribe (`rpc`), auth sign-in/out.
+
+All `src/features/admin/actions.ts` — **web only**.
+
+---
+
+## 9. Mobile Backlog — What Still Needs Building
+
+Prioritized for parity with the **current** web app.
+
+### P0 — Booking & payments (biggest web/mobile gap)
+
+- [ ] Add `/api/v1/booking/*` routes (Section 8.2)
+- [ ] Replace static `TimeSlotRow` with real slot API + hold timer
+- [ ] Razorpay Flutter SDK or WebView checkout screen
+- [ ] Prescription sharing consent step in booking flow
+- [ ] Client **Orders** tab or section under appointments
+- [ ] Wire `url_launcher` for `meeting_url` / calendar invite on appointment cards
+
+### P1 — Core UX gaps
+
+- [ ] Session restore on splash (skip login when valid session)
+- [ ] Logged-in appointment booking (SDK insert + optional meeting API)
+- [ ] Appointment status updates (pro) and cancel (client) — SDK + UI
+- [ ] University search in qualification form (API exists)
+- [ ] OTP registration flow (match web)
+- [ ] Delete orphaned screens or merge into shell (`*AccountScreen`, `BookScreen`, etc.)
+- [ ] Consultant directory accessible without login (match web public `/consultants`)
+
+### P2 — Feature parity
+
+- [ ] **Blog** feature module: feed, detail, likes (RPC), comments (SDK)
+- [ ] **Author blog** screens for client + pro (`/dashboard/blog` equivalent)
+- [ ] **AI assistant** floating FAB + `GET /api/v1/assistant/context`
+- [ ] Professional **payments** screen — read `payments` table / `getProfessionalPayments` logic via SDK
+- [ ] Newsletter subscribe (RPC) + unsubscribe deep link handler
+- [ ] Static legal screens or in-app WebView for `/privacy`, `/terms`
+- [ ] Reset password deep link route
+
+### P3 — Polish & platform
+
+- [ ] Biometric unlock toggle in Settings (service exists)
+- [ ] FCM push notifications (requires Firebase project)
+- [ ] Pro offline cache (Hive — client only today)
+- [ ] Analytics (Firebase/Mixpanel)
+- [ ] `flutter test` + widget tests for critical flows
+- [ ] App Store / Play Store compliance review
+- [ ] Dark mode (optional)
+- [ ] i18n (Settings placeholder today)
+
+### Explicitly not planned
+
+- Admin mobile app
+- Patient–provider chat (not on web either)
+- In-app video calling (web uses Meet/Jitsi links + email only)
+
+---
+
+## 10. Flutter App Architecture
+
+### 10.1 Stack (as implemented)
+
+| Layer | Package | Status |
+|-------|---------|--------|
+| Framework | Flutter 3.x | ✅ |
+| State | Riverpod | ✅ |
+| Routing | go_router | ✅ |
+| Backend | supabase_flutter | ✅ |
+| HTTP | dio | ✅ |
+| Local cache | hive_flutter | 🟡 client only |
+| Images | cached_network_image | ✅ |
+| Fonts | google_fonts | ✅ |
+| Animations | flutter_animate | ✅ |
+| Biometrics | local_auth | 🟡 service only |
+| Forms | manual + AppTextField | ✅ |
+
+### 10.2 Actual `lib/` structure
 
 ```
-lib/
-├── main.dart
-├── app.dart                    # MaterialApp.router + theme
+mobile/lib/
+├── main.dart, app.dart
 ├── core/
-│   ├── config/                 # env: SUPABASE_URL, API_BASE_URL
-│   ├── theme/                  # AppTheme, colors, typography
-│   ├── router/                 # go_router + auth guards
-│   ├── network/                # Dio client, API interceptors
-│   └── supabase/               # Supabase init singleton
+│   ├── config/env.dart
+│   ├── network/          # dio_client, api_repository, api_endpoints
+│   ├── router/app_router.dart
+│   ├── services/         # cache, biometrics, saved_doctors, device_hash
+│   ├── supabase/
+│   └── theme/
 ├── features/
-│   ├── auth/                   # login, register, forgot password
-│   ├── onboarding/             # role selection, profile setup
-│   ├── dashboard/              # role-branched home
-│   ├── client/                 # medical tabs
-│   ├── professional/           # consultations, calendar, prescriptions
-│   ├── consultants/            # directory + detail
-│   ├── appointments/           # list, book, detail
-│   ├── blog/                   # feed, post, comments
-│   ├── booking/                # guest flow (API)
-│   └── profile/                # settings, avatar upload
+│   ├── auth/
+│   ├── booking/
+│   ├── client/
+│   ├── consultants/
+│   ├── contact/
+│   ├── dashboard/
+│   ├── onboarding/
+│   ├── professional/
+│   └── profile/
+│   └── (blog/ — NOT YET)
 └── shared/
-    ├── widgets/                # glass cards, buttons, inputs
-    └── models/                 # Freezed/json_serializable DTOs
+    ├── models/models.dart
+    └── widgets/
 ```
 
-### 8.3 Role-based navigation
-
-After login, fetch `users.role` from Supabase:
+### 10.3 Role-based navigation
 
 ```
-client       → /dashboard (patient tabs)
-professional → /dashboard (pro tabs)
-admin        → /admin-web-only (blocker — not an admin app)
+client       → /home (client shell)
+professional → /home (pro shell)
+admin        → /admin-web-only
 ```
 
-Use `go_router` redirect:
-
-```dart
-// Pseudocode
-if (!isLoggedIn) return '/login';
-switch (role) {
-  case 'client':
-  case 'professional':
-    return '/dashboard';
-  case 'admin':
-    return '/admin-web-only'; // static message + open browser + sign out
-  default:
-    return '/login';
-}
-```
-
-Do **not** add `/admin`, admin tabs, admin API clients, or WebView for `/application/enter`.
-
-### 8.4 Data flow pattern
+### 10.4 Data flow
 
 ```
 UI (ConsumerWidget)
-  → Repository (abstract)
-    → SupabaseDataSource  (CRUD via RLS)
-    → ApiDataSource       (Dio → /api/v1/...)
-  → Model (freezed)
+  → Repository (Riverpod)
+    → Supabase client (CRUD via RLS)
+    → ApiRepository (Dio → /api/v1/...)
+    → CacheService (Hive fallback)
 ```
-
-Repositories hide whether data comes from Supabase or REST — UI stays the same.
 
 ---
 
-## 9. Design System & Theme
+## 11. Design System & Theme
 
-Port the web **lp-*** (landing page) tokens from `src/app/globals.css` and `dashboard-theme.ts`. These are the primary brand colors across dashboards.
+Port web **lp-*** tokens from `src/app/globals.css` and `dashboard-theme.ts`. Mobile implementation: `mobile/lib/core/theme/`.
 
-### 9.1 Color palette
+### 11.1 Color palette
 
-| Token (web) | Hex | Flutter `Color` | Usage |
-|-------------|-----|-----------------|-------|
-| `lp-surface` | `#F8F9FF` | `surface` | App background |
-| `lp-on-surface` | `#0B1C30` | `onSurface` | Primary text |
-| `lp-on-surface-variant` | `#44474D` | `onSurfaceVariant` | Labels, secondary text |
-| `lp-brand` | `#0059BB` | `primary` | Buttons, links, active nav |
-| `lp-brand-bright` | `#0070EA` | `primaryBright` | Gradient end, highlights |
-| `lp-on-brand` | `#FFFFFF` | `onPrimary` | Text on brand buttons |
-| `lp-surface-container-low` | `#EFF4FF` | `surfaceContainerLow` | Stat cards, sections |
-| `lp-surface-container` | `#E5EEFF` | `surfaceContainer` | Icon backgrounds |
-| `lp-surface-container-lowest` | `#FFFFFF` | `surfaceContainerLowest` | Cards on tinted bg |
-| `lp-outline-variant` | `#C5C6CD` | `outline` | Borders |
-| `lp-cta-bg` | `#000000` | `ctaBackground` | Headings, stat values |
-| `destructive` | `#EF4444` | `error` | Errors, delete |
-| `ring` | `#4EA4FF` | `focusRing` | Focus states |
+| Token (web) | Hex | Usage |
+|-------------|-----|-------|
+| `lp-surface` | `#F8F9FF` | App background |
+| `lp-brand` | `#0059BB` | Primary |
+| `lp-brand-bright` | `#0070EA` | Gradient end |
+| `lp-on-surface` | `#0B1C30` | Primary text |
+| `destructive` | `#EF4444` | Errors |
 
-### 9.2 Typography
+### 11.2 Typography
 
-| Role | Font | Weight | Size (mobile) |
-|------|------|--------|---------------|
-| Display / page title | **Manrope** | 700 | 24–28 sp |
-| Section heading | **Manrope** | 600 | 18–20 sp |
-| Body | **Inter** | 400–500 | 14–16 sp |
-| Label / stat | **Inter** | 600 | 10–12 sp, `letterSpacing: 1.2`, uppercase |
-| Button | **Inter** | 600 | 14–16 sp |
+| Role | Font | Mobile |
+|------|------|--------|
+| Headings | Manrope | `google_fonts` via `AppTypography` |
+| Body | Inter | `google_fonts` via `AppTypography` |
 
-```dart
-// Example: lib/core/theme/app_typography.dart
-class AppTypography {
-  static TextStyle pageTitle = GoogleFonts.manrope(
-    fontSize: 24, fontWeight: FontWeight.w700,
-    color: AppColors.ctaBackground, letterSpacing: -0.5,
-  );
-  static TextStyle sectionLabel = GoogleFonts.inter(
-    fontSize: 11, fontWeight: FontWeight.w600,
-    color: AppColors.primary, letterSpacing: 1.5,
-  ).copyWith(textBaseline: TextBaseline.alphabetic);
-}
-```
+### 11.3 Components
 
-### 9.3 Shape & elevation
-
-| Element | Web class | Flutter equivalent |
-|---------|-----------|-------------------|
-| Cards | `rounded-xl` / `rounded-2xl` | `BorderRadius.circular(12–16)` |
-| Buttons | `rounded-xl` | `BorderRadius.circular(12)` |
-| Inputs | `rounded-xl` | `BorderRadius.circular(12)` |
-| Bottom nav | fixed + blur | `ClipRRect` + `BackdropFilter` |
-| Primary button | gradient brand → brand-bright | `LinearGradient` + `BoxDecoration` |
-
-### 9.4 Glassmorphism (signature look)
-
-Web uses `backdrop-blur-md`, semi-transparent white, soft borders. In Flutter:
-
-```dart
-Widget glassCard({required Widget child}) {
-  return ClipRRect(
-    borderRadius: BorderRadius.circular(16),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.75),
-          border: Border.all(color: AppColors.outline.withOpacity(0.25)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0x0A0A192F),
-              blurRadius: 20, offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: child,
-      ),
-    ),
-  );
-}
-```
-
-Use glass cards for: stat tiles, profile sections, list items — **not** for dropdowns/modals (use opaque `surfaceContainerLowest` per admin-theme guidance).
-
-### 9.5 Component mapping (web → Flutter)
-
-| Web (Shadcn) | Flutter widget |
-|--------------|----------------|
-| `lp-button` | `PrimaryGradientButton` |
-| `lp-text-field` | `AppTextField` (filled, rounded-xl) |
-| `Tabs` | `NavigationBar` (mobile) + `TabBar` (tablet) |
-| `Card` | `GlassCard` |
-| `Avatar` | `CircleAvatar` + cached image |
-| `Sonner` toast | `fluttertoast` or custom overlay |
-| `Dialog` | `showModalBottomSheet` (mobile-first) |
-
-### 9.6 Light mode first
-
-The web app is **light-mode healthcare**. Ship Flutter in light mode initially; add dark mode later using `lp-primary-container` (`#0D1C32`) tokens already defined in CSS.
+Glass cards (`GlassCard`), gradient buttons (`PrimaryButton`), bottom nav (`GlassNavBar`) — aligned with web glassmorphism. See `mobile/lib/shared/widgets/`.
 
 ---
 
-## 10. Smooth & Professional UX Guidelines
+## 12. Smooth & Professional UX Guidelines
 
-### 10.1 Performance targets
+(Unchanged principles — apply to new screens as they are built.)
 
 | Metric | Target |
 |--------|--------|
 | Cold start | < 2.5 s to first frame |
-| Screen transition | 60 fps, 250–350 ms |
-| List scroll | 60 fps with `ListView.builder` |
-| Image load | Placeholder shimmer → fade-in |
-| API response perceived | Skeleton UI within 100 ms |
+| Screen transition | 250–350 ms |
+| List scroll | `ListView.builder` for long lists |
 
-### 10.2 Animation principles
-
-| Interaction | Duration | Curve |
-|-------------|----------|-------|
-| Page push | 300 ms | `Curves.easeOutCubic` |
-| Tab switch | 200 ms | `Curves.easeInOut` |
-| Button press | 100 ms scale 0.97 | `Curves.easeOut` |
-| Card appear (stagger) | 50 ms × index | `flutter_animate` |
-| Pull-to-refresh | native + brand color indicator | — |
-
-Avoid heavy animations on lists with 50+ items — animate headers and cards only.
-
-### 10.3 Navigation patterns
-
-- **Bottom navigation** for client/pro dashboards (mirror web mobile nav in `dashboard-theme.ts`).
-- **4–5 tabs max** per role; nest detail screens with standard push.
-- **Deep links:** `healthhere://appointment/:id`, `healthhere://blog/:slug`.
-- **Safe areas:** Respect `SafeArea` + `env(safe-area-inset-bottom)` equivalent.
-
-### 10.4 Forms & validation
-
-- Validate on blur, not every keystroke (less janky).
-- Match web Zod rules (email format, required fields, date ranges).
-- Show inline errors below fields with `error` color `#EF4444`.
-- Disable submit + show loading spinner on primary button during API calls.
-
-### 10.5 Empty & error states
-
-Use the web admin `emptyState` pattern: dashed border, muted text, single CTA.
-
-```
-┌─────────────────────────────┐
-│     [illustration/icon]      │
-│   No appointments yet        │
-│   Book a consultation        │
-│   [ Book now ]               │
-└─────────────────────────────┘
-```
-
-### 10.6 Healthcare trust signals
-
-- Show verification badge on verified professionals.
-- Use calm blues — no aggressive reds except errors.
-- Display last-updated timestamps on medical records.
-- Confirm destructive actions (delete document) with bottom sheet dialog.
-
-### 10.7 Offline behavior
-
-| Data | Offline |
-|------|---------|
-| Profile, appointments | Cache last fetch; show stale banner |
-| Medical writes | Queue + sync when online |
-| Blog | Cache read-only |
-| Booking / meetings | Require online |
+- Bottom navigation for dashboards (4–5 tabs max).
+- Deep links: `healthhere://appointment/:id`, `healthhere://blog/:slug` (not configured yet).
+- Validate forms on blur; match web Zod rules.
+- Empty states via `EmptyState` widget.
+- Destructive actions → confirmation bottom sheet.
+- Offline: cache profile/appointments (client ✅); queue writes when online.
 
 ---
 
-## 11. Phased Rollout
+## 13. Phased Rollout (Updated)
 
-### Phase 1 — Foundation ✅ Implemented
+### Phase 1 — Foundation ✅ Mostly done
 
-- [x] Flutter project setup, theme, shared widgets
-- [x] Supabase auth (login, register, sign out)
-- [x] Role detection + dashboard shell
-- [x] Client tabs: Profile, Appointments, Medical History, Medications
-- [x] Consultant directory — SDK
+- [x] Flutter project in `mobile/`, theme, shared widgets
+- [x] Supabase auth (login, register, sign out, role routing)
+- [x] Client shell: home, appointments, profile + health records
+- [x] Consultant directory (SDK)
 - [x] Profile edit + medical profile
 - [x] `POST /api/v1/auth/sync-session`
-- [ ] Shared Zod schemas extract (optional)
+- [ ] Session restore on splash
+- [ ] Remove or merge orphaned legacy screens
+- [ ] Shared Zod → JSON Schema extract (optional)
 
-### Phase 2 — Professional + Booking API ✅ Implemented
+### Phase 2 — Professional + booking 🟡 Partial
 
-- [x] Professional dashboard tabs
-- [x] Availability CRUD — SDK
-- [x] Appointment management — SDK
-- [x] API routes (see `docs/API.md`)
-- [ ] Push notifications (FCM) — requires Firebase project setup
-- [x] Blog read + engagement — SDK + RPC
+- [x] Professional dashboard (requests, calendar, clients, credentials)
+- [x] Availability CRUD (SDK)
+- [x] Guest booking flow (legacy API)
+- [x] Booking success screen
+- [x] Medical documents + insurance (Storage)
+- [x] Contact form (API)
+- [x] Prescription send (API)
+- [x] All 11 existing `/api/v1` routes on Next.js
+- [ ] **Booking orders + Razorpay** (web parity)
+- [ ] **Real slot picker** (not static times)
+- [ ] Blog read + engagement
+- [ ] Meeting join / pipeline wired in UI
+- [ ] Logged-in booking + appointment lifecycle UI
+- [ ] Push notifications (FCM)
 
-### Phase 3 — Polish & Scale ✅ Core implemented
+### Phase 3 — Polish & parity ❌ Mostly pending
 
-- [x] Prescription save via API
-- [x] Offline cache (Hive)
-- [x] Biometric login toggle
-- [x] AI assistant (API)
-- [ ] Analytics (Firebase/Mixpanel) — configure on your Firebase project
-- [ ] App Store compliance review — manual step
+- [ ] AI assistant screen (API exists)
+- [x] Hive offline cache (client dashboard only)
+- [ ] Biometric login toggle (service exists, no UI)
+- [ ] Professional payments screen
+- [ ] Author blog screens
+- [ ] OTP registration
+- [ ] Analytics
+- [ ] App Store compliance review
 
 ---
 
-## 12. Project Structure
+## 14. Project Structure
 
-### 12.1 Monorepo option (recommended)
-
-Keep Flutter app in the same repo for shared docs and versioning:
+### Monorepo layout
 
 ```
 healthcare/
-├── src/                    # existing Next.js
+├── src/                         # Next.js web
+├── mobile/                      # Flutter app (67+ Dart files)
 ├── docs/
-│   └── FLUTTER_AND_API_PLAN.md   # this file
-├── mobile/                 # NEW — Flutter app
-│   ├── lib/
-│   ├── android/
-│   ├── ios/
-│   └── pubspec.yaml
+│   ├── FLUTTER_AND_API_PLAN.md  # this file
+│   └── API.md                   # REST reference
 └── SUPABASE_SETUP.sql
 ```
 
-### 12.2 Environment variables
+### Environment variables
 
-| Variable | Web | Flutter |
-|----------|-----|---------|
+| Variable | Web | Flutter (`.env.mobile`) |
+|----------|-----|-------------------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✓ | `SUPABASE_URL` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓ | `SUPABASE_ANON_KEY` |
-| `API_BASE_URL` | — | `https://yourdomain.com` |
+| Deployed origin | — | `API_BASE_URL`, `WEB_BASE_URL` |
 
-Use `--dart-define-from-file=.env.mobile` for Flutter builds. **Never** embed service role key in the app.
+Run: `flutter run --dart-define-from-file=.env.mobile`
 
-### 12.3 Shared schema strategy
-
-1. Create `src/lib/schemas/` with Zod schemas extracted from Server Actions.
-2. Export JSON Schema from Zod (`zod-to-json-schema`) for Flutter code generation (`json_serializable`).
-3. Single source of truth for validation rules across web, API, and mobile.
+**Never** embed service role key or Razorpay secret in the app.
 
 ---
 
-## 13. Security & Compliance
+## 15. Security & Compliance
 
 | Topic | Approach |
 |-------|----------|
 | Authentication | Supabase JWT; `getUser()` on every API route |
-| Authorization | Postgres RLS (primary) + role checks in API routes |
-| PHI / medical data | Encrypt in transit (TLS); RLS ensures row isolation |
-| File uploads | Supabase Storage policies; max size mirrors web |
-| API keys | Google Places, email — server-side only in API routes |
-| Session | Short-lived access token; refresh via Supabase SDK |
-| Audit | Log sensitive API mutations server-side |
-| HIPAA note | Review BAA with Supabase; add privacy policy link in app settings |
+| Authorization | Postgres RLS + role checks in API routes |
+| PHI | TLS in transit; RLS row isolation |
+| File uploads | Storage policies; size limits match web |
+| API keys | Google Places, Razorpay, email — server only |
+| Payments | Razorpay order creation server-side only |
+| HIPAA note | Review BAA with Supabase; privacy link in settings |
 
 ---
 
-## 14. Testing & Quality
+## 16. Testing & Quality
 
-| Layer | Tool |
-|-------|------|
-| Flutter unit | `flutter test` |
-| Flutter widget | `golden_toolkit` for theme regression |
-| Flutter integration | `integration_test` |
-| API routes | Vitest + supertest (add to Next.js project) |
-| E2E | Maestro or Patrol (mobile flows) |
-| CI | GitHub Actions: `flutter analyze`, `flutter test`, API tests |
+| Layer | Tool | Status |
+|-------|------|--------|
+| Flutter unit | `flutter test` | ❌ No tests in repo |
+| Flutter analyze | `flutter analyze` | Run in CI |
+| API routes | Vitest + supertest | ❌ Not set up |
+| E2E mobile | Maestro / Patrol | ❌ Not set up |
 
 ### Definition of done (per feature)
 
-- [ ] Matches design tokens (screenshot review)
-- [ ] Works on iOS + Android
-- [ ] Loading, empty, error states implemented
-- [ ] RLS verified — user cannot access other users' rows
-- [ ] API route has Zod validation + auth guard
+- [ ] Matches design tokens
+- [ ] iOS + Android
+- [ ] Loading, empty, error states
+- [ ] RLS verified
+- [ ] API route has Zod + auth guard (if new)
 
 ---
 
-## 15. Open Decisions
+## 17. Open Decisions
 
-| Decision | Options | Recommendation |
-|----------|---------|----------------|
-| Admin on mobile? | — | **Decided: no admin in app** — web only (`/application/enter`) |
-| State management | Riverpod vs Bloc | **Riverpod** — simpler with Supabase streams |
-| Repo layout | Monorepo vs separate repo | **Monorepo** `mobile/` folder |
-| Push notifications | FCM only vs FCM + APNs | FCM (covers both via FlutterFire) |
-| Prescription editor | WebView Lexical vs native | **WebView** short-term; native rich text later |
-| AI assistant in app | Phase 2 vs Phase 3 | Phase 3 — needs API route first |
-
----
-
-## Quick Start Checklist
-
-### Web team (API prep)
-
-1. Create `src/lib/schemas/` — extract Zod from `src/features/*/actions.ts`.
-2. Add `src/app/api/v1/_lib/auth.ts` — shared Bearer token validation.
-3. Implement first route: `POST /api/v1/auth/sync-session`.
-4. Document endpoints in `docs/API.md` (OpenAPI optional).
-
-### Mobile team (Flutter)
-
-1. `flutter create mobile` inside repo root.
-2. Add `supabase_flutter`, `go_router`, `riverpod`, `google_fonts`.
-3. Implement `AppTheme` from Section 9 color table.
-4. Build auth flow → dashboard shell with role routing.
-5. Connect first Supabase query: `users` profile read.
+| Decision | Status | Recommendation |
+|----------|--------|----------------|
+| Admin on mobile? | **Decided: no** | Web only |
+| Mobile booking flow | **Open** | Migrate to orders + Razorpay (match web) vs keep legacy guest API |
+| Razorpay in Flutter | **Open** | Official `razorpay_flutter` vs WebView checkout page |
+| State management | **Decided** | Riverpod (in use) |
+| Prescription editor | **Open** | WebView Lexical vs native rich text |
+| Blog in mobile | **Open** | Phase 2 parity vs defer |
+| Public consultant browse without login | **Open** | Match web (`/consultants` is public) |
+| Orphan screen cleanup | **Open** | Delete legacy `*AccountScreen` paths vs wire into router |
 
 ---
 
-## References
+## 18. App Flow Diagrams (Mermaid)
 
-- Web theme: `src/app/globals.css` (lines 122–140, lp-* tokens)
-- Dashboard UI patterns: `src/app/dashboard/_components/dashboard-theme.ts`
+Copy any block into [Mermaid Live Editor](https://mermaid.live) or a Markdown preview that supports Mermaid to edit and export.
+
+> **Solid lines** = implemented today · **Dashed lines** = planned / not wired · Labels marked *(gap)* = web has it, mobile does not.
+
+### 18.1 System architecture (web + mobile + backends)
+
+```mermaid
+flowchart TB
+  subgraph clients["Clients"]
+    WEB["Next.js Web App"]
+    MOB["Flutter Mobile App"]
+  end
+
+  subgraph nextjs["Next.js Server"]
+    RSC["Server Components / Pages"]
+    SA["Server Actions"]
+    API["REST API /api/v1/*"]
+  end
+
+  subgraph supabase["Supabase"]
+    AUTH["Auth"]
+    DB["Postgres + RLS"]
+    STOR["Storage"]
+  end
+
+  subgraph external["External — server only"]
+    PLACES["Google Places"]
+    MEET["Google Meet / Jitsi"]
+    RAZOR["Razorpay"]
+    MAIL["Email / PDF"]
+  end
+
+  WEB --> RSC
+  WEB --> SA
+  MOB --> AUTH
+  MOB --> DB
+  MOB --> STOR
+  MOB --> API
+
+  RSC --> DB
+  SA --> DB
+  SA --> STOR
+  API --> AUTH
+  API --> DB
+  API --> PLACES
+  API --> MEET
+  API --> MAIL
+
+  SA --> RAZOR
+  SA -.->|"booking orders — mobile gap"| MOB
+```
+
+### 18.2 Mobile app launch and navigation
+
+```mermaid
+flowchart TD
+  START([App launch]) --> SPLASH["/splash"]
+  SPLASH --> ENV{Env configured?}
+  ENV -->|No| LOGIN
+  ENV -->|Yes| ONB{Onboarding done?}
+  ONB -->|No| ONBOARD["/onboarding"]
+  ONB -->|Yes| LOGIN["/login"]
+  ONBOARD --> WELCOME["/welcome"]
+  WELCOME --> LOGIN
+
+  LOGIN --> AUTH_OK{Sign in / sign up}
+  AUTH_OK --> SYNC["POST /api/v1/auth/sync-session"]
+  SYNC --> ROLE{users.role}
+
+  ROLE -->|client| CHOME["/home — Client shell"]
+  ROLE -->|professional| PHOME["/home — Pro shell"]
+  ROLE -->|admin| BLOCK["/admin-web-only"]
+
+  BLOCK --> WEBLINK["Open WEB_BASE_URL/application/enter"]
+  BLOCK --> SIGNOUT["Sign out"]
+
+  CHOME --> CTABS["Tabs: Home · Search · History · Profile"]
+  PHOME --> PTABS["Tabs: Home · Requests · Calendar · Clients · Profile"]
+
+  LOGIN -.->|"not implemented"| AUTO["Skip login if session valid"]
+```
+
+### 18.3 go_router auth guard (redirect logic)
+
+```mermaid
+flowchart TD
+  NAV([Navigation request]) --> SPLASH_CHK{Path is /splash?}
+  SPLASH_CHK -->|Yes| ALLOW1[Allow — no redirect]
+  SPLASH_CHK -->|No| LOAD{Auth or user loading?}
+  LOAD -->|Yes| ALLOW2[Allow — wait]
+  LOAD -->|No| SESS{Session exists?}
+
+  SESS -->|No| PUB{Public route?}
+  PUB -->|Yes| ALLOW3["Allow: /login, /register, /forgot-password, /onboarding, /welcome, /book/*, /booking/success/*, /contact"]
+  PUB -->|No| REDIR_LOGIN["Redirect → /login"]
+
+  SESS -->|Yes| ADMIN{role is admin?}
+  ADMIN -->|Yes| ADMIN_CHK{On /admin-web-only?}
+  ADMIN_CHK -->|No| REDIR_ADMIN["Redirect → /admin-web-only"]
+  ADMIN_CHK -->|Yes| ALLOW4[Allow]
+
+  ADMIN -->|No| AUTH_ROUTE{On auth route?}
+  AUTH_ROUTE -->|Yes| REDIR_HOME["Redirect → /home"]
+  AUTH_ROUTE -->|No| ALLOW5[Allow]
+```
+
+### 18.4 Authentication flow
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant UI as Login / Register screen
+  participant Repo as AuthRepository
+  participant SB as Supabase Auth
+  participant DB as Supabase DB
+  participant API as Next.js /api/v1
+
+  User->>UI: email + password
+  UI->>Repo: signIn or signUp
+
+  alt Sign up
+    Repo->>SB: auth.signUp
+    Repo->>DB: upsert users row
+    opt professional role
+      Repo->>DB: upsert professional_profiles stub
+    end
+  else Sign in
+    Repo->>SB: auth.signInWithPassword
+  end
+
+  SB-->>Repo: session + JWT
+  Repo->>API: POST /auth/sync-session Bearer JWT
+  API-->>Repo: role metadata synced
+  Repo->>DB: select users by id
+  DB-->>Repo: AppUser
+  Repo-->>UI: AppUser
+
+  alt role admin
+    UI->>User: navigate /admin-web-only
+  else role client or professional
+    UI->>User: navigate /home
+  end
+```
+
+### 18.5 Data layer — when SDK vs REST
+
+```mermaid
+flowchart LR
+  subgraph ui["Flutter UI"]
+    SCREEN["Screen / Widget"]
+  end
+
+  subgraph repos["Riverpod Repositories"]
+    AUTH_R["AuthRepository"]
+    CLIENT_R["ClientRepository"]
+    PRO_R["ProfessionalRepository"]
+    BOOK_R["BookingRepository"]
+    CON_R["ConsultantsRepository"]
+    API_R["ApiRepository"]
+  end
+
+  subgraph backends["Backends"]
+    SDK["Supabase SDK"]
+    REST["Dio → /api/v1"]
+    CACHE["Hive cache"]
+  end
+
+  SCREEN --> AUTH_R
+  SCREEN --> CLIENT_R
+  SCREEN --> PRO_R
+  SCREEN --> BOOK_R
+  SCREEN --> CON_R
+
+  AUTH_R --> SDK
+  AUTH_R --> REST
+  CLIENT_R --> SDK
+  CLIENT_R --> CACHE
+  PRO_R --> SDK
+  CON_R --> SDK
+  BOOK_R --> REST
+
+  REST --> EP1["sync-session ✅"]
+  REST --> EP2["places/search ✅"]
+  REST --> EP3["booking/guest ✅"]
+  REST --> EP4["booking confirm ✅"]
+  REST --> EP5["contact ✅"]
+  REST --> EP6["prescriptions/send ✅"]
+  REST --> EP7["meetings/* ❌ unused"]
+  REST --> EP8["assistant/context ❌ unused"]
+  REST -.-> EP9["booking/orders ❌ not built"]
+```
+
+### 18.6 Client user journey (implemented)
+
+```mermaid
+flowchart TD
+  HOME["/home ClientHomeScreen"] --> STATS["Dashboard stats — Supabase"]
+  HOME --> BROWSE["Browse consultants"]
+  HOME --> BOOK_BTN["Book CTA"]
+
+  SEARCH["/search ConsultantsListScreen"] --> DETAIL["/consultants/:userId"]
+  DETAIL --> SAVE["Save doctor — SharedPreferences"]
+  DETAIL --> BOOK_ROUTE["/book/:professionalUserId"]
+
+  HISTORY["/history AppointmentsScreen"] --> APT_LIST["appointments table — SDK"]
+  APT_LIST -.->|"gap: noop"| JOIN["Join call — meeting_url"]
+
+  PROFILE["/profile ClientDashboardProfileScreen"] --> TABS["Tabs: Summary · Meds · Docs · Insurance"]
+  TABS --> CRUD["CRUD — medical_history, medications, medical_documents, insurance"]
+  TABS --> UPLOAD["Upload — medical-documents bucket"]
+  PROFILE --> EDIT["/profile/edit"]
+  PROFILE --> SETTINGS["/settings"]
+
+  BOOK_BTN --> BOOK_ROUTE
+  BOOK_ROUTE --> GUEST_FLOW
+```
+
+### 18.7 Professional user journey (implemented)
+
+```mermaid
+flowchart TD
+  PHOME["/home ProfessionalHomeScreen"] --> PSTATS["Stats + guest bookings — SDK"]
+  PHOME --> UPCOMING["Upcoming appointments"]
+
+  REQUESTS["/requests ProfessionalConsultationsScreen"] --> GUEST["guest_appointments list"]
+  REQUESTS --> UPCOMING2["appointments list"]
+  GUEST --> RX["/prescription/:guestAppointmentId"]
+  RX --> SEND["POST /api/v1/prescriptions/send"]
+
+  CALENDAR["/calendar Availability CRUD"] --> AVAIL["professional_availability — SDK insert/update/delete"]
+
+  CLIENTS["/clients Read-only list"] --> FROM_APT["Distinct clients from appointments join"]
+
+  PPROFILE["/profile ProfessionalDashboardProfileScreen"] --> CRED["Credentials panel"]
+  CRED --> QUAL["professional_qualifications + qualifications bucket"]
+
+  PPROFILE -.->|"gap: not routed"| PAY["ProfessionalPaymentsScreen placeholder"]
+```
+
+### 18.8 Guest booking flow (mobile — legacy path)
+
+```mermaid
+flowchart TD
+  START(["From consultant detail"]) --> BOOK["/book/:professionalUserId"]
+  BOOK --> S1["Step 1: Patient info"]
+  S1 --> S2["Step 2: Category + location"]
+  S2 --> PLACES["GET /api/v1/places/search"]
+  S2 --> S3["Step 3: Date — next 14 days local"]
+  S3 --> S4["Step 4: Time — hardcoded slots"]
+  S4 --> S5["Step 5: Review + submit"]
+  S5 --> POST["POST /api/v1/booking/guest"]
+  POST --> GA[("guest_appointments row")]
+  POST --> SUCCESS["/booking/success/:id"]
+  SUCCESS --> CONFIRM["GET /api/v1/booking/guest/:id/confirm"]
+
+  S4 -.->|"web uses instead"| SLOT["Slot hold + booking_orders + Razorpay"]
+  POST -.->|"not called today"| PIPE["POST /api/v1/meetings/guest/pipeline"]
+```
+
+### 18.9 Guest booking flow (web — target parity)
+
+```mermaid
+flowchart TD
+  WEB_START(["/book-consultation"]) --> PICK["Pick consultant + slot"]
+  PICK --> HOLD["reserveSlot — booking-slots action"]
+  HOLD --> FORM["Multi-step form + prescription sharing consent"]
+  FORM --> ORDER["createBookingOrder"]
+  ORDER --> BO[("booking_orders")]
+  ORDER --> CHECKOUT["/book-consultation/checkout"]
+  CHECKOUT --> RAZOR["Razorpay or mock payment"]
+  RAZOR --> VERIFY["verifyRazorpayPayment"]
+  VERIFY --> FINAL["finalizeBookingOrder"]
+  FINAL --> GA[("guest_appointments")]
+  FINAL --> SUCCESS["/book-consultation/success"]
+
+  MOBILE["Mobile today"] -.->|"gap"| WEB_START
+```
+
+### 18.10 Web dashboard vs mobile shell
+
+```mermaid
+flowchart LR
+  subgraph web["Web — single /dashboard hash sections"]
+    WC["client: profile, history, meds, docs, insurance, appointments, orders"]
+    WP["professional: profile, credentials, consultations, calendar, payments, clients"]
+    WB["blog: /dashboard/blog"]
+    WA["admin: /application/enter/*"]
+  end
+
+  subgraph mobile["Mobile — bottom nav shell"]
+    MC["client: /home /search /history /profile"]
+    MP["professional: /home /requests /calendar /clients /profile"]
+  end
+
+  WC <-->|"health records in Profile tab"| MC
+  WP <-->|"credentials in Profile tab"| MP
+  WB -.->|"not in mobile"| MC
+  WB -.->|"not in mobile"| MP
+  WA -.->|"blocked /admin-web-only"| mobile
+```
+
+### 18.11 End-to-end request lifecycle (authenticated read)
+
+```mermaid
+sequenceDiagram
+  participant UI as Flutter Screen
+  participant RP as Riverpod Provider
+  participant Repo as Repository
+  participant SB as Supabase Client
+  participant RLS as Postgres RLS
+  participant Hive as Hive Cache
+
+  UI->>RP: watch dashboardProvider
+  RP->>Repo: getClientDashboardData
+
+  Repo->>SB: from appointments / medical_history / etc.
+  SB->>RLS: query with user JWT
+  RLS-->>SB: own rows only
+  SB-->>Repo: JSON rows
+
+  alt network error
+    Repo->>Hive: read cached snapshot
+    Hive-->>Repo: stale data
+  end
+
+  Repo-->>RP: DashboardModel
+  RP-->>UI: rebuild UI
+```
+
+---
+
+## 19. Complete Screen Navigation Reference
+
+> **Copy-friendly reference** — every routed screen, entry conditions, and where each action goes.  
+> Source: `mobile/lib/core/router/app_router.dart` + screen `context.go` / `context.push` calls.
+
+### 19.1 Global router rules (go_router redirect)
+
+These run **before** any screen loads (except `/splash`, which is always allowed):
+
+| # | Condition | Result |
+|---|-----------|--------|
+| R1 | Path is `/splash` | Stay on splash (no redirect) |
+| R2 | Auth or user profile still loading | Stay on requested path (wait) |
+| R3 | **No session** + path is public | Allow — see [public routes](#192-public-routes-no-login-required) |
+| R4 | **No session** + path is NOT public | **Redirect → `/login`** |
+| R5 | **Session exists** + `role = admin` + path ≠ `/admin-web-only` | **Redirect → `/admin-web-only`** |
+| R6 | **Session exists** + `role = admin` + on `/admin-web-only` | Allow |
+| R7 | **Session exists** + `role = client` or `professional` + on auth path (`/login`, `/register`, `/forgot-password`, `/onboarding`, `/welcome`) | **Redirect → `/home`** |
+| R8 | **Session exists** + `role = client` or `professional` + on `/admin-web-only` | **Redirect → `/home`** |
+| R9 | All other authenticated client/pro paths | Allow |
+
+**Public routes (no login required):** `/login`, `/register`, `/forgot-password`, `/onboarding`, `/welcome`, `/book/*`, `/booking/success/*`, `/contact`
+
+**Auth required (examples):** `/home`, `/search`, `/history`, `/profile`, `/requests`, `/calendar`, `/clients`, `/settings`, `/consultants/:userId`, `/prescription/:id`, `/profile/edit`
+
+---
+
+### 19.2 App cold start
+
+| Step | Screen | Route | Condition | Next screen |
+|------|--------|-------|-----------|-------------|
+| 1 | Splash | `/splash` | App opens | Wait 1.8s, then check below |
+| 2a | — | — | `Env` not configured (missing `.env.mobile`) | → `/login` |
+| 2b | Onboarding | `/onboarding` | Env OK + `onboarding_complete` = false | User chooses below |
+| 2c | Login | `/login` | Env OK + onboarding already done | User signs in |
+| 3 | Register | `/register` | Onboarding → tap **Create an account** (sets onboarding done) | After signup → `/home` |
+| 4 | Login | `/login` | Onboarding → tap **Login** (sets onboarding done) | After signin → see [auth outcomes](#194-after-login--register) |
+
+> **Note:** `/welcome` is registered but **not used** by splash/onboarding today. It only loads if navigated manually.
+
+---
+
+### 19.3 After login / register
+
+| Condition | Next route | Screen shown |
+|-----------|------------|--------------|
+| Sign-in success + `role = client` | `/home` | `ClientHomeScreen` (client shell) |
+| Sign-in success + `role = professional` | `/home` | `ProfessionalHomeScreen` (pro shell) |
+| Sign-in success + `role = admin` | `/admin-web-only` | `AdminWebOnlyScreen` |
+| Register success (client or pro only; admin blocked at signup) | `/home` | Role-appropriate home |
+| Router intercepts admin on any other path | `/admin-web-only` | Admin blocker |
+
+**Side effect on every sign-in/sign-up:** `POST /api/v1/auth/sync-session` (sync JWT role metadata).
+
+---
+
+### 19.4 Auth screens
+
+| Screen | Route | How you get here | User action | Goes to |
+|--------|-------|------------------|-------------|---------|
+| Login | `/login` | Splash, redirect R4, sign-out, onboarding | Tap **Go to Home** (submit) | `/home` or `/admin-web-only` by role |
+| Login | `/login` | | Tap **Forgot password?** | `push` → `/forgot-password` |
+| Login | `/login` | | Tap **Register** | `push` → `/register` |
+| Register | `/register` | Login link, onboarding CTA, welcome CTA | Submit valid form (client or pro) | `/home` |
+| Register | `/register` | | Select admin role | **Error** — not allowed on mobile |
+| Forgot password | `/forgot-password` | Login, Settings | Submit email | Stay — show “Check your email” |
+| Forgot password | `/forgot-password` | | Tap **Back to sign in** | `/login` |
+| Admin web only | `/admin-web-only` | Admin login or redirect R5 | **Open web admin** | External browser → `WEB_BASE_URL/application/enter` |
+| Admin web only | `/admin-web-only` | | **Sign out** | `/login` |
+
+---
+
+### 19.5 Client shell (role = client, session required)
+
+Bottom nav switches route; `DashboardShell` renders the matching screen.
+
+| Tab | Route | Screen | Main navigations out |
+|-----|-------|--------|----------------------|
+| Home | `/home` | `ClientHomeScreen` | Search tile → `/search` · History tile → `/history` · Doctor card → `push` `/consultants/:id` · Book CTA → `/search` |
+| Search | `/search` | `ConsultantsListScreen` | Consultant row → `push` `/consultants/:id` |
+| History | `/history` | `AppointmentsScreen` | Empty state → `/search` · Message → `push` `/contact` · Rebook → `/search` |
+| Profile | `/profile` | `ClientDashboardProfileScreen` | Edit → `push` `/profile/edit` · Settings icon → `push` `/settings` · In-tab: meds/docs/insurance CRUD (no route change) |
+
+---
+
+### 19.6 Professional shell (role = professional, session required)
+
+| Tab | Route | Screen | Main navigations out |
+|-----|-------|--------|----------------------|
+| Home | `/home` | `ProfessionalHomeScreen` | Guest booking card → `push` `/prescription/:guestAppointmentId` |
+| Requests | `/requests` | `ProfessionalConsultationsScreen` | Guest item → `push` `/prescription/:guestAppointmentId` |
+| Calendar | `/calendar` | `ProfessionalSectionScreen` (calendar) | Add/delete availability slots (modal, no route) |
+| Clients | `/clients` | `ProfessionalSectionScreen` (clients) | Read-only list |
+| Profile | `/profile` | `ProfessionalDashboardProfileScreen` | Settings → `push` `/settings` · Credentials panel inline |
+
+---
+
+### 19.7 Consultant → booking flow
+
+| Step | Route | Auth required? | Condition / trigger | Next |
+|------|-------|----------------|---------------------|------|
+| 1 | `/search` or `/home` | Yes | User browses consultants | Tap consultant |
+| 2 | `/consultants/:userId` | Yes | Consultant detail loaded | Tap **Book appointment** |
+| 3 | `/book/:professionalUserId` | **No** (public) | Multi-step form (5 steps) | Submit success |
+| 4 | `/booking/success/:id` | **No** (public) | `POST /api/v1/booking/guest` returns id | Tap **Back to home** |
+| 5 | `/home` | Yes | Success button | **If not logged in → redirect R4 → `/login`** |
+
+**Booking form steps (same route, internal `PageView`):**  
+(1) Patient info → (2) Category + city (`GET /places/search`) → (3) Date (next 14 days) → (4) Time (hardcoded slots) → (5) Review → submit.
+
+---
+
+### 19.8 Prescription flow (professional only)
+
+| Step | Route | Condition | Next |
+|------|-------|-----------|------|
+| 1 | `/home` or `/requests` | Pro sees guest appointment | Tap item |
+| 2 | `/prescription/:guestAppointmentId` | Session + pro role | Compose text → **Send** |
+| 3 | Previous screen | `POST /api/v1/prescriptions/send` success | `context.pop()` back |
+
+---
+
+### 19.9 Settings & profile
+
+| Screen | Route | How you get here | Action | Goes to |
+|--------|-------|------------------|--------|---------|
+| Settings | `/settings` | Profile → Settings | Notifications row | `push` → `/settings/notifications` |
+| Settings | `/settings` | | Change password row | `push` → `/forgot-password` |
+| Settings | `/settings` | | Log out | `/login` |
+| Notifications | `/settings/notifications` | Settings | Toggle switches | Stay (local only, no backend) |
+| Profile edit | `/profile/edit` | Client profile → Edit | Save | `pop` back |
+| Contact | `/contact` | Appointments message, or direct | Submit form | Stay (success message) |
+
+---
+
+### 19.10 Master navigation diagram (copy)
+
+```mermaid
+flowchart TD
+  subgraph bootstrap["Cold start"]
+    SPLASH["/splash"]
+    SPLASH -->|env missing| LOGIN
+    SPLASH -->|onboarding not done| ONB["/onboarding"]
+    SPLASH -->|onboarding done| LOGIN["/login"]
+    ONB -->|Create account| REG["/register"]
+    ONB -->|Login| LOGIN
+  end
+
+  subgraph auth["Auth outcomes"]
+    LOGIN -->|signIn client/pro| HOME["/home"]
+    LOGIN -->|signIn admin| ADMIN["/admin-web-only"]
+    REG -->|signUp| HOME
+    LOGIN -->|Forgot password| FP["/forgot-password"]
+    LOGIN -->|Register link| REG
+    FP -->|Back to sign in| LOGIN
+    ADMIN -->|Sign out| LOGIN
+    ADMIN -->|Open web| EXT["Browser: /application/enter"]
+  end
+
+  subgraph clientShell["Client shell — role=client"]
+    HOME --> C_HOME["/home ClientHome"]
+    C_HOME --> C_SEARCH["/search"]
+    C_HOME --> C_HIST["/history"]
+    C_HOME --> C_PROF["/profile"]
+    C_SEARCH --> DETAIL["/consultants/:userId"]
+    DETAIL --> BOOK["/book/:proUserId"]
+    C_PROF --> EDIT["/profile/edit"]
+    C_PROF --> SET["/settings"]
+    SET --> NOTIF["/settings/notifications"]
+    SET --> FP
+    C_HIST --> CONTACT["/contact"]
+  end
+
+  subgraph proShell["Pro shell — role=professional"]
+    HOME --> P_HOME["/home ProHome"]
+    P_HOME --> P_REQ["/requests"]
+    P_HOME --> P_CAL["/calendar"]
+    P_HOME --> P_CLI["/clients"]
+    P_HOME --> P_PROF["/profile"]
+    P_REQ --> RX["/prescription/:guestId"]
+    P_HOME --> RX
+    P_PROF --> SET
+  end
+
+  subgraph bookingPublic["Guest booking — no login"]
+    BOOK --> SUCCESS["/booking/success/:id"]
+    SUCCESS -->|Back to home| HOME
+    SUCCESS -->|no session: redirect R4| LOGIN
+  end
+
+  subgraph guard["Router redirect rules"]
+    G1["No session + protected path"] --> LOGIN
+    G2["Admin on any path"] --> ADMIN
+    G3["Logged in on /login /register"] --> HOME
+  end
+```
+
+---
+
+### 19.11 Screen inventory (all routes)
+
+| Route | Screen widget | Login? | Role | In bottom nav? |
+|-------|---------------|--------|------|----------------|
+| `/splash` | SplashScreen | — | — | — |
+| `/onboarding` | OnboardingScreen | No | — | — |
+| `/welcome` | WelcomeScreen | No | — | — *(unused in bootstrap)* |
+| `/login` | LoginScreen | No | — | — |
+| `/register` | RegisterScreen | No | — | — |
+| `/forgot-password` | ForgotPasswordScreen | No | — | — |
+| `/admin-web-only` | AdminWebOnlyScreen | Yes | admin only | — |
+| `/home` | ClientHome **or** ProHome | Yes | client / pro | Yes |
+| `/search` | ConsultantsListScreen | Yes | client | Yes |
+| `/history` | AppointmentsScreen | Yes | client | Yes |
+| `/profile` | ClientDashboardProfile **or** ProDashboardProfile | Yes | both | Yes |
+| `/requests` | ProfessionalConsultationsScreen | Yes | pro | Yes |
+| `/calendar` | ProfessionalSection (calendar) | Yes | pro | Yes |
+| `/clients` | ProfessionalSection (clients) | Yes | pro | Yes |
+| `/consultants/:userId` | ConsultantDetailScreen | Yes | both | No (push) |
+| `/book/:professionalUserId` | BookConsultationScreen | **No** | — | No |
+| `/booking/success/:id` | BookingSuccessScreen | **No** | — | No |
+| `/prescription/:guestAppointmentId` | PrescriptionScreen | Yes | pro | No (push) |
+| `/profile/edit` | ClientProfileEditScreen | Yes | client | No (push) |
+| `/settings` | SettingsScreen | Yes | both | No (push) |
+| `/settings/notifications` | NotificationsScreen | Yes | both | No (push) |
+| `/contact` | ContactScreen | **No** | — | No |
+
+---
+
+### 19.12 Orphan screens (NOT in router — unreachable via normal nav)
+
+These files exist but have **no route** in `app_router.dart`:
+
+| Screen file | Intended purpose |
+|-------------|------------------|
+| `ChatScreen` | Messages placeholder |
+| `BookScreen` | Alternate browse/book UI |
+| `MyDoctorScreen` | Saved + booked doctors |
+| `ClientAccountScreen` | Old profile hub |
+| `ClientProfileScreen` | Full health tabs (only via AccountScreen `MaterialPageRoute`) |
+| `ProfessionalAccountScreen` | Old pro profile hub |
+| `ProfessionalProfileScreen` | Full pro tabs (only via AccountScreen) |
+| `ProfessionalBookScreen` | Pro booking UI |
+| `ProfessionalMyDoctorScreen` | Pro saved doctors |
+| `ProfessionalPaymentsScreen` | Payments placeholder |
+
+---
+
+## Quick Reference
+
+### Web team — next API work for mobile
+
+1. Implement Section 8.2 booking/order routes (highest impact).
+2. Optionally expose OTP registration as `/api/v1/auth/register-otp`.
+3. Keep [docs/API.md](./API.md) updated as routes are added.
+
+### Mobile team — next sprint
+
+1. Wire meeting URL + `url_launcher` on appointment cards.
+2. Session restore on splash.
+3. Start booking parity: slot API integration once web team ships routes.
+4. Add blog feature module OR explicitly defer and update README.
+5. Build AI assistant screen (API already exists).
+6. Clean up orphaned screens in `mobile/lib/features/`.
+
+### Key references
+
+- REST API: [docs/API.md](./API.md)
+- Web theme: `src/app/globals.css`, `dashboard-theme.ts`
 - Database: `SUPABASE_SETUP.sql`
 - Development rules: `src/DEVELOPMENT_RULES.md`
-- Existing docs: `docs/ANALYTICS_AND_MONITORING.md`, `docs/RATE_LIMITS.md`
+- Mobile entry: `mobile/README.md`, `mobile/lib/core/router/app_router.dart`
+- **Flow diagrams:** [§18 App Flow Diagrams](#18-app-flow-diagrams-mermaid)
+- Rate limits: [docs/RATE_LIMITS.md](./RATE_LIMITS.md)
 
 ---
 
-*Last updated: June 2026 — align with HealthHere web codebase.*
+*Last updated: June 2026 — audited against HealthHere web + `mobile/` codebase.*
