@@ -93,6 +93,22 @@ class AuthRepository {
     return _fetchAppUser(user);
   }
 
+  Future<AppUser> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final response = await _supabase.auth.verifyOTP(
+      type: OtpType.signup,
+      token: otp.trim(),
+      email: email.trim(),
+    );
+    final user = response.user;
+    if (user == null) throw const AuthException('OTP verification failed');
+
+    await _syncSession();
+    return _fetchAppUser(user);
+  }
+
   Future<void> updateUserProfile({
     String? name,
     String? phone,
