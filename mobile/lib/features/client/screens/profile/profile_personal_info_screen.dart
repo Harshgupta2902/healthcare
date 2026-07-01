@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/glass_card.dart';
-import '../../../shared/widgets/primary_button.dart';
-import '../../auth/data/auth_repository.dart';
-import '../../auth/providers/auth_providers.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/glass_card.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/data/auth_repository.dart';
+import '../../../auth/providers/auth_providers.dart';
 import '../../data/client_repository.dart';
 
 class ProfilePersonalInfoScreen extends ConsumerStatefulWidget {
@@ -87,11 +87,11 @@ class _ProfilePersonalInfoScreenState extends ConsumerState<ProfilePersonalInfoS
                             : null,
                       ),
                       if (_uploadingPhoto)
-                        Positioned.fill(
+                        const Positioned.fill(
                           child: CircleAvatar(
                             radius: 52,
                             backgroundColor: Colors.black38,
-                            child: const CircularProgressIndicator(color: Colors.white),
+                            child: CircularProgressIndicator(color: Colors.white),
                           ),
                         )
                       else

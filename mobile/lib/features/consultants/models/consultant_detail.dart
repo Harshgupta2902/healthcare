@@ -71,7 +71,7 @@ List<ConsultantReview> consultantFallbackReviews(String displayName) {
       body:
           'Very competent and attentive. $first explained everything clearly and made the consultation comfortable.',
     ),
-    ConsultantReview(
+    const ConsultantReview(
       authorName: 'Patient feedback',
       body:
           'Wonderful experience — professional, smart, and easy to talk to. Would recommend to family and friends.',

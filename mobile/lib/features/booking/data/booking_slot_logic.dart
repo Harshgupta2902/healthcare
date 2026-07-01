@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 /// Hourly booking slot helpers — mirrors `src/lib/booking/` (IST / Asia/Kolkata).
 abstract final class BookingSlotLogic {
   static const slotIntervalMinutes = 60;
-  static const istOffsetMs = (5.5 * 60 * 60 * 1000).round();
+  static int istOffsetMs = (5.5 * 60 * 60 * 1000).round();
 
   static const _dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -92,7 +92,8 @@ abstract final class BookingSlotLogic {
     return dates;
   }
 
-  static bool isValidHourlyAvailabilityWindow(String startTime, String endTime) {
+  static bool isValidHourlyAvailabilityWindow(
+      String startTime, String endTime) {
     final start = parseTimeToMinutes(normalizeAvailabilityTime(startTime));
     final end = parseTimeToMinutes(normalizeAvailabilityTime(endTime));
     return start + slotIntervalMinutes <= end;
@@ -104,10 +105,12 @@ abstract final class BookingSlotLogic {
     int advanceWeeks, {
     DateTime? now,
   }) {
-    return listBookableDates(availableDaysOfWeek, advanceWeeks, now: now).contains(dateYmd);
+    return listBookableDates(availableDaysOfWeek, advanceWeeks, now: now)
+        .contains(dateYmd);
   }
 
-  static ({String date, String time}) slotStartToAppointmentFields(String slotStartAt) {
+  static ({String date, String time}) slotStartToAppointmentFields(
+      String slotStartAt) {
     final start = DateTime.parse(slotStartAt).toUtc();
     return (date: utcToIstDateYmd(start), time: utcToIstTimeHm(start));
   }
@@ -143,7 +146,8 @@ abstract final class BookingSlotLogic {
         cursor += slotIntervalMinutes) {
       final timeValue = formatMinutesAsTime(cursor);
       final slotStartAt = istSlotStartToUtc(dateYmd, timeValue);
-      final slotEndAt = slotStartAt.add(Duration(minutes: slotIntervalMinutes));
+      final slotEndAt =
+          slotStartAt.add(const Duration(minutes: slotIntervalMinutes));
 
       if (!includePast && slotStartAt.isBefore(current.toUtc())) continue;
 
@@ -166,13 +170,15 @@ abstract final class BookingSlotLogic {
   }) {
     final current = now ?? DateTime.now();
     final dayOfWeek = istDayOfWeekFromYmd(dateYmd);
-    final matched = availability.where((a) => a.dayOfWeek == dayOfWeek && a.isAvailable);
+    final matched =
+        availability.where((a) => a.dayOfWeek == dayOfWeek && a.isAvailable);
     if (matched.isEmpty) return 'no_availability_window';
 
     final window = matched.first;
     final startMinutes = parseTimeToMinutes(window.startTime);
     final endMinutes = parseTimeToMinutes(window.endTime);
-    if (startMinutes + slotIntervalMinutes > endMinutes) return 'invalid_time_window';
+    if (startMinutes + slotIntervalMinutes > endMinutes)
+      return 'invalid_time_window';
 
     final rawSlots = generateHourlySlotsForWindow(
       dateYmd,
@@ -215,7 +221,8 @@ abstract final class BookingSlotLogic {
         )
         .toList();
 
-    final window = normalized.where((a) => a.dayOfWeek == dayOfWeek && a.isAvailable);
+    final window =
+        normalized.where((a) => a.dayOfWeek == dayOfWeek && a.isAvailable);
     if (window.isEmpty) return [];
 
     final matched = window.first;
@@ -229,10 +236,12 @@ abstract final class BookingSlotLogic {
     final occupiedActive = occupied.where((o) => _isActiveHold(o, nowMs));
 
     return baseSlots.map((slot) {
-      if (myHoldSlotStartAt != null && slotInstantsEqual(slot.slotStartAt, myHoldSlotStartAt)) {
+      if (myHoldSlotStartAt != null &&
+          slotInstantsEqual(slot.slotStartAt, myHoldSlotStartAt)) {
         return GeneratedBookableSlot.fromBase(slot, 'available');
       }
-      final occ = occupiedActive.where((o) => slotInstantsEqual(o.slotStartAt, slot.slotStartAt));
+      final occ = occupiedActive
+          .where((o) => slotInstantsEqual(o.slotStartAt, slot.slotStartAt));
       if (occ.isNotEmpty) {
         final row = occ.first;
         if (row.status == 'held' && _isActiveHold(row, nowMs)) {
@@ -247,7 +256,8 @@ abstract final class BookingSlotLogic {
   static bool _isActiveHold(OccupiedSlot row, int nowMs) {
     if (row.status != 'held') return true;
     if (row.expiresAt == null) return false;
-    return DateTime.parse(row.expiresAt!).toUtc().millisecondsSinceEpoch > nowMs;
+    return DateTime.parse(row.expiresAt!).toUtc().millisecondsSinceEpoch >
+        nowMs;
   }
 }
 
@@ -322,6 +332,7 @@ String generateOrderNumber({DateTime? now}) {
   final y = current.year;
   final m = current.month.toString().padLeft(2, '0');
   final d = current.day.toString().padLeft(2, '0');
-  final rand = DateTime.now().microsecondsSinceEpoch.toRadixString(36).toUpperCase();
+  final rand =
+      DateTime.now().microsecondsSinceEpoch.toRadixString(36).toUpperCase();
   return 'HH-$y$m$d-${rand.substring(rand.length > 6 ? rand.length - 6 : 0)}';
 }

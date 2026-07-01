@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:healthhere_mobile/features/client/data/client_repository.dart';
+import 'package:healthhere_mobile/features/client/utils/medical_document_types.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radii.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../shared/models/models.dart';
-import '../../../shared/widgets/empty_state.dart';
-import '../../../shared/widgets/glass_card.dart';
-import '../data/client_repository.dart';
-import '../utils/medical_document_types.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/models/models.dart';
+import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/glass_card.dart';
 
 class ProfileDocumentsHubScreen extends ConsumerStatefulWidget {
   const ProfileDocumentsHubScreen({super.key});

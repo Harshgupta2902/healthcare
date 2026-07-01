@@ -49,7 +49,8 @@ class ClientDashboardProfileScreen extends ConsumerWidget {
             Center(
               child: Text(
                 user?.name ?? 'Patient',
-                style: AppTypography.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: AppTypography.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             const SizedBox(height: 28),
@@ -135,7 +136,8 @@ class ProfileMedicalHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text('Medical History', style: AppTypography.pageTitle.copyWith(fontSize: 18)),
+        title: Text('Medical History',
+            style: AppTypography.pageTitle.copyWith(fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
@@ -159,7 +161,8 @@ class ProfileMedicationsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text('Medications', style: AppTypography.pageTitle.copyWith(fontSize: 18)),
+        title: Text('Medications',
+            style: AppTypography.pageTitle.copyWith(fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
@@ -183,7 +186,8 @@ class ProfileInsuranceScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text('Insurance', style: AppTypography.pageTitle.copyWith(fontSize: 18)),
+        title: Text('Insurance',
+            style: AppTypography.pageTitle.copyWith(fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),

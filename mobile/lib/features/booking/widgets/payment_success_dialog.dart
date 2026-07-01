@@ -20,7 +20,7 @@ Future<void> showPaymentSuccessDialog(BuildContext context) {
             Container(
               width: 72,
               height: 72,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.surfaceContainer,
                 shape: BoxShape.circle,
               ),

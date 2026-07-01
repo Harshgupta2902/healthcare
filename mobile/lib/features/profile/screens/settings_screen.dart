@@ -6,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../auth/data/auth_repository.dart';
-import 'notifications_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -45,7 +44,7 @@ class SettingsScreen extends ConsumerWidget {
                 label: 'Notifications',
                 onTap: () => context.push('/settings/notifications'),
               ),
-              _SettingsItem(
+              const _SettingsItem(
                   icon: Icons.language_outlined,
                   label: 'Language',
                   trailing: 'English'),
@@ -54,13 +53,13 @@ class SettingsScreen extends ConsumerWidget {
                 label: 'Forgot password',
                 onTap: () => context.push('/forgot-password'),
               ),
-              _SettingsItem(
+              const _SettingsItem(
                   icon: Icons.security_outlined, label: '2FA authentication'),
-              _SettingsItem(
+              const _SettingsItem(
                   icon: Icons.brightness_6_outlined,
                   label: 'Theme',
                   trailing: 'Light mode'),
-              _SettingsItem(
+              const _SettingsItem(
                   icon: Icons.sync_outlined, label: 'Sync with calendar'),
               _SettingsItem(
                 icon: Icons.logout,

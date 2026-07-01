@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/primary_button.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/primary_button.dart';
 
 class ProfileDocumentUploadSuccessScreen extends StatelessWidget {
   const ProfileDocumentUploadSuccessScreen({super.key});
@@ -21,8 +21,8 @@ class ProfileDocumentUploadSuccessScreen extends StatelessWidget {
               Container(
                 width: 120,
                 height: 120,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F8EF),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8F8EF),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

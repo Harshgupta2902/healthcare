@@ -296,7 +296,7 @@ class _AvailabilityTab extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<int>(
-              value: day,
+              initialValue: day,
               items: List.generate(
                 7,
                 (i) => DropdownMenuItem(value: i, child: Text(_dayNames[i])),

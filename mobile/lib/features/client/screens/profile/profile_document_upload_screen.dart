@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radii.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/primary_button.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/primary_button.dart';
 import '../../data/client_repository.dart';
 import '../../utils/medical_document_types.dart';
 
@@ -190,7 +190,7 @@ class _ProfileDocumentUploadScreenState extends ConsumerState<ProfileDocumentUpl
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, color: AppColors.onSurfaceVariant, size: 20),
+                  const Icon(Icons.calendar_today_outlined, color: AppColors.onSurfaceVariant, size: 20),
                   const SizedBox(width: 12),
                   Text(
                     _reportDate != null
@@ -230,7 +230,7 @@ class _ProfileDocumentUploadScreenState extends ConsumerState<ProfileDocumentUpl
               ),
               child: Column(
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 40, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.cloud_upload_outlined, size: 40, color: AppColors.onSurfaceVariant),
                   const SizedBox(height: 8),
                   Text(
                     _pickedFile?.name ?? 'Click to upload file',
