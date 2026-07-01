@@ -3,8 +3,12 @@ abstract final class ApiEndpoints {
   static const registerOtp = '/api/v1/auth/register-otp';
   static const verifyOtp = '/api/v1/auth/verify-otp';
   static const placesSearch = '/api/v1/places/search';
-  static const bookingGuest = '/api/v1/booking/guest';
-  static String bookingGuestConfirm(String id) => '/api/v1/booking/guest/$id/confirm';
+  static String bookingOrderRazorpay(String orderId) =>
+      '/api/v1/booking/orders/$orderId/razorpay';
+  static String bookingOrderVerify(String orderId) =>
+      '/api/v1/booking/orders/$orderId/verify';
+  static String bookingOrderConfirmFree(String orderId) =>
+      '/api/v1/booking/orders/$orderId/confirm-free';
   static const meetingsCreate = '/api/v1/meetings/create';
   static const meetingsGuestPipeline = '/api/v1/meetings/guest/pipeline';
   static const contact = '/api/v1/contact';

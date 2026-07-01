@@ -47,12 +47,10 @@ flutter run --dart-define-from-file=.env.mobile
 
 - [x] Professional dashboard (home, requests, calendar, clients, profile)
 - [x] Availability CRUD, credentials + document upload
-- [x] Guest booking flow + booking success (legacy API)
+- [x] Guest booking flow replaced by Supabase SDK + Razorpay checkout
 - [x] Contact form (`POST /api/v1/contact`)
 - [x] Prescription compose + send (`POST /api/v1/prescriptions/send`)
-- [x] All 11 existing `/api/v1` routes on Next.js — see [docs/API.md](../docs/API.md)
-- [ ] Booking orders + Razorpay (web has this; mobile does not)
-- [ ] Real slot picker (mobile uses hardcoded time slots)
+- [x] Booking payment APIs (`razorpay`, `verify`, `confirm-free`) — see [docs/API.md](../docs/API.md)
 - [ ] Blog read + engagement
 - [ ] Meeting join / pipeline wired in UI
 - [ ] Logged-in appointment booking + cancel/status UI
@@ -95,8 +93,8 @@ Full Mermaid flow diagrams: [FLUTTER_AND_API_PLAN.md §18](../docs/FLUTTER_AND_A
 | `/login`, `/register`, `/forgot-password` | Auth |
 | `/home`, `/search`, `/history`, `/profile` | Client shell |
 | `/home`, `/requests`, `/calendar`, `/clients`, `/profile` | Pro shell |
-| `/book/:professionalUserId` | Guest booking (public) |
-| `/booking/success/:id` | Booking confirmation |
+| `/book/:professionalUserId` | Book consultation (public form) |
+| `/book/:professionalUserId/checkout` | Razorpay checkout (client auth required) |
 | `/prescription/:guestAppointmentId` | Pro prescription send |
 | `/consultants/:userId` | Consultant detail |
 | `/contact` | Contact form |

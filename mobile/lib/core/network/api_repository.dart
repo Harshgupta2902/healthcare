@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/models/registration_settings.dart' show RegisterOtpSentResult;
+import '../../features/booking/models/booking_models.dart';
 import '../../shared/models/models.dart';
 import '../services/device_hash.dart';
 import 'api_endpoints.dart';
@@ -97,61 +98,6 @@ class ApiRepository {
         .toList();
   }
 
-  Future<String> submitGuestBooking({
-    required String firstName,
-    required String lastName,
-    required int age,
-    required String phone,
-    required String email,
-    required String category,
-    required String state,
-    required String city,
-    required String date,
-    required String time,
-    required String professionalId,
-    String? message,
-  }) async {
-    final deviceHash = await DeviceHashService.getDeviceHash();
-    final response = await _dio.post(
-      ApiEndpoints.bookingGuest,
-      data: {
-        'firstName': firstName,
-        'lastName': lastName,
-        'age': age,
-        'phone': phone,
-        'email': email,
-        'category': category,
-        'state': state,
-        'city': city,
-        'date': date,
-        'time': time,
-        'professionalId': professionalId,
-        if (message != null && message.isNotEmpty) 'message': message,
-        'deviceHash': deviceHash,
-      },
-    );
-    final envelope = ApiResponse.fromJson(
-      Map<String, dynamic>.from(response.data as Map),
-      (d) => d,
-    );
-    if (!envelope.success) {
-      throw Exception(envelope.error?['message'] ?? 'Booking failed');
-    }
-    return envelope.data?['id'] as String;
-  }
-
-  Future<Map<String, dynamic>> getGuestBookingConfirmation(String id) async {
-    final response = await _dio.get(ApiEndpoints.bookingGuestConfirm(id));
-    final envelope = ApiResponse.fromJson(
-      Map<String, dynamic>.from(response.data as Map),
-      (d) => Map<String, dynamic>.from(d as Map),
-    );
-    if (!envelope.success || envelope.data == null) {
-      throw Exception(envelope.error?['message'] ?? 'Confirmation not found');
-    }
-    return envelope.data!;
-  }
-
   Future<Map<String, dynamic>> createMeeting({required String guestAppointmentId}) async {
     final response = await _dio.post(
       ApiEndpoints.meetingsCreate,
@@ -243,6 +189,40 @@ class ApiRepository {
     if (!envelope.success) {
       throw Exception(envelope.error?['message'] ?? 'Unsubscribe failed');
     }
+  }
+
+  Future<Map<String, dynamic>> _unwrapMap(Response<dynamic> response) {
+    return Future.value(_unwrap(response));
+  }
+
+  Future<RazorpayCheckoutPayload> createRazorpayCheckoutOrder(String orderId) async {
+    final response = await _dio.post(ApiEndpoints.bookingOrderRazorpay(orderId));
+    final data = await _unwrapMap(response);
+    return RazorpayCheckoutPayload.fromJson(data);
+  }
+
+  Future<PaymentFulfillmentResult> verifyRazorpayPayment({
+    required String orderId,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _dio.post(
+      ApiEndpoints.bookingOrderVerify(orderId),
+      data: {
+        'razorpayOrderId': razorpayOrderId,
+        'razorpayPaymentId': razorpayPaymentId,
+        'razorpaySignature': razorpaySignature,
+      },
+    );
+    final data = await _unwrapMap(response);
+    return PaymentFulfillmentResult.fromJson(data);
+  }
+
+  Future<PaymentFulfillmentResult> confirmFreeBookingOrder(String orderId) async {
+    final response = await _dio.post(ApiEndpoints.bookingOrderConfirmFree(orderId));
+    final data = await _unwrapMap(response);
+    return PaymentFulfillmentResult.fromJson(data);
   }
 
   Map<String, dynamic> _unwrap(Response<dynamic> response) {
