@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/auth/models/registration_settings.dart' show RegisterOtpSentResult;
 import '../../shared/models/models.dart';
 import '../services/device_hash.dart';
 import 'api_endpoints.dart';
@@ -17,6 +18,65 @@ class ApiRepository {
 
   Future<void> syncSession() async {
     await _dio.post(ApiEndpoints.syncSession);
+  }
+
+  Future<RegisterOtpSentResult> requestRegistrationOtp({
+    required String email,
+    required String password,
+    required String name,
+    required String role,
+  }) async {
+    final deviceHash = await DeviceHashService.getDeviceHash();
+    final response = await _dio.post(
+      ApiEndpoints.registerOtp,
+      data: {
+        'email': email.trim(),
+        'password': password,
+        'name': name.trim(),
+        'role': role,
+        'deviceHash': deviceHash,
+      },
+    );
+    final envelope = ApiResponse.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+      (d) => RegisterOtpSentResult.fromJson(Map<String, dynamic>.from(d as Map)),
+    );
+    if (!envelope.success || envelope.data == null) {
+      throw Exception(
+        envelope.error?['message'] ?? 'Could not send verification code',
+      );
+    }
+    return envelope.data!;
+  }
+
+  Future<void> verifyOtpAndSignUp({
+    required String email,
+    required String password,
+    required String name,
+    required String role,
+    required String otp,
+  }) async {
+    final deviceHash = await DeviceHashService.getDeviceHash();
+    final response = await _dio.post(
+      ApiEndpoints.verifyOtp,
+      data: {
+        'email': email.trim(),
+        'password': password,
+        'name': name.trim(),
+        'role': role,
+        'otp': otp.trim().toUpperCase(),
+        'deviceHash': deviceHash,
+      },
+    );
+    final envelope = ApiResponse.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+      (d) => d,
+    );
+    if (!envelope.success) {
+      throw Exception(
+        envelope.error?['message'] ?? 'OTP verification failed',
+      );
+    }
   }
 
   Future<List<PlacePrediction>> searchPlaces(String query) async {
