@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_client.dart';
 import '../../../shared/models/models.dart';
+import '../models/consultant_detail.dart';
 
 final consultantsRepositoryProvider = Provider<ConsultantsRepository>((ref) {
   return ConsultantsRepository(supabase: ref.watch(supabaseClientProvider));
@@ -37,14 +38,37 @@ class ConsultantsRepository {
 
   /// [userId] is the public directory id (users.id).
   Future<ProfessionalProfile?> getByUserId(String userId) async {
-    final row = await _supabase
-        .from('professional_profiles')
-        .select('*, users(name, image)')
-        .eq('user_id', userId)
-        .maybeSingle();
+    final detail = await getDetail(userId);
+    return detail?.profile;
+  }
 
+  Future<ConsultantDetail?> getDetail(String userId) async {
+    final results = await Future.wait([
+      _supabase
+          .from('professional_profiles')
+          .select('*, users(name, image)')
+          .eq('user_id', userId)
+          .maybeSingle(),
+      _supabase
+          .from('professional_qualifications')
+          .select('id, degree, institution, year, document_url, document_approved')
+          .eq('professional_id', userId)
+          .order('year', ascending: false),
+    ]);
+
+    final row = results[0];
     if (row == null) return null;
-    return ProfessionalProfile.fromJson(Map<String, dynamic>.from(row));
+
+    final profile = ProfessionalProfile.fromJson(Map<String, dynamic>.from(row as Map));
+    final qualifications = (results[1] as List)
+        .map((e) => ProfessionalQualification.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
+    return ConsultantDetail(
+      profile: profile,
+      qualifications: qualifications,
+      reviews: consultantFallbackReviews(profile.displayName),
+    );
   }
 
   Future<List<AvailabilitySlot>> getAvailability(String userId) async {
@@ -65,8 +89,8 @@ final consultantsListProvider = FutureProvider<List<ProfessionalProfile>>((ref) 
 });
 
 final consultantDetailProvider =
-    FutureProvider.family<ProfessionalProfile?, String>((ref, userId) async {
-  return ref.watch(consultantsRepositoryProvider).getByUserId(userId);
+    FutureProvider.family<ConsultantDetail?, String>((ref, userId) async {
+  return ref.watch(consultantsRepositoryProvider).getDetail(userId);
 });
 
 final consultantAvailabilityProvider =
