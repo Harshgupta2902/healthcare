@@ -37,8 +37,10 @@ class DashboardShell extends ConsumerWidget {
         ? switch (location) {
             '/home' => const ProfessionalHomeScreen(),
             '/requests' => const ProfessionalConsultationsScreen(),
-            '/calendar' => const ProfessionalSectionScreen(section: ProfessionalSection.calendar),
-            '/clients' => const ProfessionalSectionScreen(section: ProfessionalSection.clients),
+            '/calendar' => const ProfessionalSectionScreen(
+                section: ProfessionalSection.calendar),
+            '/clients' => const ProfessionalSectionScreen(
+                section: ProfessionalSection.clients),
             '/profile' => const ProfessionalDashboardProfileScreen(),
             _ => const ProfessionalHomeScreen(),
           }
@@ -54,7 +56,7 @@ class DashboardShell extends ConsumerWidget {
     return Scaffold(
       extendBody: true,
       backgroundColor: AppColors.surface,
-      body: AmbientBackground(child: body),
+      body: SafeArea(child: AmbientBackground(child: body)),
       bottomNavigationBar: GlassNavBar(
         selectedIndex: selectedIndex,
         onSelected: (i) => context.go(paths[i]),

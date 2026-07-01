@@ -36,8 +36,8 @@ class AppUser extends Equatable {
       name: usersRow?['name'] as String? ??
           metadata?['name'] as String? ??
           metadata?['full_name'] as String?,
-      image: usersRow?['image'] as String? ??
-          metadata?['avatar_url'] as String?,
+      image:
+          usersRow?['image'] as String? ?? metadata?['avatar_url'] as String?,
       phone: usersRow?['phone'] as String?,
       role: _parseRole(roleStr),
     );

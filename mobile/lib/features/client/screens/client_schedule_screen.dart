@@ -66,8 +66,7 @@ class _ClientScheduleScreenState extends ConsumerState<ClientScheduleScreen> {
 
   void _toggleMeeting(ClientScheduleMeeting meeting) {
     setState(() {
-      _selectedMeeting =
-          _selectedMeeting?.id == meeting.id ? null : meeting;
+      _selectedMeeting = _selectedMeeting?.id == meeting.id ? null : meeting;
     });
   }
 
@@ -151,14 +150,6 @@ class _ClientScheduleScreenState extends ConsumerState<ClientScheduleScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
             children: [
-              Text(
-                'appointment',
-                style: AppTypography.sectionLabel.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -216,9 +207,7 @@ class _ClientScheduleScreenState extends ConsumerState<ClientScheduleScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                isTodayLocal(_selectedDay)
-                    ? 'Schedule Today'
-                    : 'Schedule',
+                isTodayLocal(_selectedDay) ? 'Schedule Today' : 'Schedule',
                 style: AppTypography.pageTitle.copyWith(fontSize: 18),
               ),
               const SizedBox(height: 16),
@@ -471,8 +460,7 @@ class _ScheduleTimeline extends StatelessWidget {
     final now = DateTime.now();
     final showNowLine = isTodayLocal(selectedDay) &&
         now.hour >= hourStart &&
-        (now.hour < hourEnd ||
-            (now.hour == hourEnd && now.minute == 0));
+        (now.hour < hourEnd || (now.hour == hourEnd && now.minute == 0));
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,7 +613,8 @@ class _TimelineMeetingBar extends StatelessWidget {
                         meeting.specialistLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTypography.pageSubtitle.copyWith(fontSize: 12),
+                        style:
+                            AppTypography.pageSubtitle.copyWith(fontSize: 12),
                       ),
                     ],
                   ),
@@ -800,7 +789,8 @@ class _MeetingDetailCard extends StatelessWidget {
                         const SizedBox(width: 10),
                         Text(
                           DateFormat('EEEE, MMM d').format(meeting.start),
-                          style: AppTypography.bodyMedium.copyWith(fontSize: 14),
+                          style:
+                              AppTypography.bodyMedium.copyWith(fontSize: 14),
                         ),
                       ],
                     ),
@@ -815,7 +805,8 @@ class _MeetingDetailCard extends StatelessWidget {
                         const SizedBox(width: 10),
                         Text(
                           timeRange,
-                          style: AppTypography.bodyMedium.copyWith(fontSize: 14),
+                          style:
+                              AppTypography.bodyMedium.copyWith(fontSize: 14),
                         ),
                       ],
                     ),

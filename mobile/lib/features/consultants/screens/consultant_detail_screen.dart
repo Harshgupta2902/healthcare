@@ -148,18 +148,6 @@ class _ProfileTopBar extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              'profile / doctor',
-              style: AppTypography.sectionLabel.copyWith(
-                color: AppColors.onSurfaceVariant,
-                letterSpacing: 0.3,
-                fontSize: 10,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
               _CircleIconButton(
