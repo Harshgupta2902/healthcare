@@ -274,27 +274,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     },
                   ),
                 ] else ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _RoleChip(
-                          label: 'Patient',
-                          icon: Icons.person_outline,
-                          selected: _role == UserRole.client,
-                          onTap: () => setState(() => _role = UserRole.client),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _RoleChip(
-                          label: 'Professional',
-                          icon: Icons.medical_services_outlined,
-                          selected: _role == UserRole.professional,
-                          onTap: () =>
-                              setState(() => _role = UserRole.professional),
-                        ),
-                      ),
-                    ],
+                  _RoleSegmentControl(
+                    role: _role,
+                    onRoleChanged: (role) => setState(() => _role = role),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -517,8 +499,52 @@ class _ChecklistItem extends StatelessWidget {
   }
 }
 
-class _RoleChip extends StatelessWidget {
-  const _RoleChip({
+class _RoleSegmentControl extends StatelessWidget {
+  const _RoleSegmentControl({
+    required this.role,
+    required this.onRoleChanged,
+  });
+
+  final UserRole role;
+  final ValueChanged<UserRole> onRoleChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.outline.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _RoleSegmentTab(
+              label: 'Patient',
+              icon: Icons.person_outline,
+              selected: role == UserRole.client,
+              onTap: () => onRoleChanged(UserRole.client),
+            ),
+          ),
+          Expanded(
+            child: _RoleSegmentTab(
+              label: 'Provider',
+              icon: Icons.medical_services_outlined,
+              selected: role == UserRole.professional,
+              onTap: () => onRoleChanged(UserRole.professional),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleSegmentTab extends StatelessWidget {
+  const _RoleSegmentTab({
     required this.label,
     required this.icon,
     required this.selected,
@@ -536,29 +562,44 @@ class _RoleChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            gradient: selected ? AppColors.brandGradient : null,
-            color: selected ? null : AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected
-                  ? Colors.transparent
-                  : AppColors.outline.withValues(alpha: 0.4),
-            ),
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.onSurface.withValues(alpha: 0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon,
-                  size: 18, color: selected ? Colors.white : AppColors.brand),
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? AppColors.brand : AppColors.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: selected ? Colors.white : AppColors.onSurface,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                    color:
+                        selected ? AppColors.brand : AppColors.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
