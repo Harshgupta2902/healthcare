@@ -35,11 +35,13 @@ class HomeGreetingHeader extends StatelessWidget {
         CircleAvatar(
           radius: 26,
           backgroundColor: AppColors.surfaceContainer,
-          backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+          backgroundImage:
+              imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
           child: imageUrl == null
               ? Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: AppTypography.textTheme.titleMedium!.copyWith(color: AppColors.brand),
+                  style: AppTypography.textTheme.titleMedium!
+                      .copyWith(color: AppColors.brand),
                 )
               : null,
         ),
@@ -48,8 +50,10 @@ class HomeGreetingHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Hello $name', style: AppTypography.pageTitle.copyWith(fontSize: 20)),
-              Text(_greeting, style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
+              Text('Hello $name',
+                  style: AppTypography.pageTitle.copyWith(fontSize: 20)),
+              Text(_greeting,
+                  style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
             ],
           ),
         ),
@@ -66,7 +70,8 @@ class HomeGreetingHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 boxShadow: AppColors.softElevation,
               ),
-              child: const Icon(Icons.notifications_none_rounded, color: AppColors.brand, size: 22),
+              child: const Icon(Icons.notifications_none_rounded,
+                  color: AppColors.brand, size: 22),
             ),
           ),
         ),
@@ -186,7 +191,7 @@ class PillSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       elevated: false,
-      borderRadius: AppRadii.pill,
+      borderRadius: AppRadii.xs,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       child: TextField(
         controller: controller,
@@ -195,9 +200,9 @@ class PillSearchBar extends StatelessWidget {
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: AppTypography.body.copyWith(color: AppColors.onSurfaceVariant),
+          hintStyle:
+              AppTypography.body.copyWith(color: AppColors.onSurfaceVariant),
           prefixIcon: const Icon(Icons.search_rounded, color: AppColors.brand),
-          suffixIcon: Icon(Icons.mic_none_rounded, color: AppColors.onSurfaceVariant.withValues(alpha: 0.7)),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -205,7 +210,10 @@ class PillSearchBar extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
-    ).animate().fadeIn(delay: 80.ms, duration: 400.ms).slideY(begin: 0.06, end: 0);
+    )
+        .animate()
+        .fadeIn(delay: 80.ms, duration: 400.ms)
+        .slideY(begin: 0.06, end: 0);
   }
 }
 
@@ -247,7 +255,9 @@ class UpcomingVisitHeroCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text('Upcoming Visit', style: AppTypography.bodyMedium.copyWith(color: Colors.white70)),
+                  Text('Upcoming Visit',
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: Colors.white70)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -255,7 +265,8 @@ class UpcomingVisitHeroCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 20),
+                    child: const Icon(Icons.videocam_rounded,
+                        color: Colors.white, size: 20),
                   ),
                 ],
               ),
@@ -265,11 +276,15 @@ class UpcomingVisitHeroCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.white24,
-                    backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+                    backgroundImage: imageUrl != null
+                        ? CachedNetworkImageProvider(imageUrl!)
+                        : null,
                     child: imageUrl == null
                         ? Text(
                             doctorName.isNotEmpty ? doctorName[0] : 'D',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           )
                         : null,
                   ),
@@ -280,9 +295,12 @@ class UpcomingVisitHeroCard extends StatelessWidget {
                       children: [
                         Text(
                           doctorName,
-                          style: AppTypography.textTheme.titleMedium!.copyWith(color: Colors.white),
+                          style: AppTypography.textTheme.titleMedium!
+                              .copyWith(color: Colors.white),
                         ),
-                        Text(specialty, style: AppTypography.pageSubtitle.copyWith(color: Colors.white70, fontSize: 13)),
+                        Text(specialty,
+                            style: AppTypography.pageSubtitle
+                                .copyWith(color: Colors.white70, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -291,16 +309,27 @@ class UpcomingVisitHeroCard extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _InfoPill(icon: Icons.calendar_today_rounded, label: 'Date', value: dateLabel)),
+                  Expanded(
+                      child: _InfoPill(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Date',
+                          value: dateLabel)),
                   const SizedBox(width: 12),
-                  Expanded(child: _InfoPill(icon: Icons.access_time_rounded, label: 'Time', value: timeLabel)),
+                  Expanded(
+                      child: _InfoPill(
+                          icon: Icons.access_time_rounded,
+                          label: 'Time',
+                          value: timeLabel)),
                 ],
               ),
             ],
           ),
         ),
       ),
-    ).animate().fadeIn(delay: 120.ms, duration: 450.ms).scale(begin: const Offset(0.97, 0.97), end: const Offset(1, 1));
+    )
+        .animate()
+        .fadeIn(delay: 120.ms, duration: 450.ms)
+        .scale(begin: const Offset(0.97, 0.97), end: const Offset(1, 1));
   }
 }
 
@@ -337,7 +366,8 @@ class ClientUpcomingAppointmentCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppRadii.xl),
-            border: Border.all(color: AppColors.outline.withValues(alpha: 0.18)),
+            border:
+                Border.all(color: AppColors.outline.withValues(alpha: 0.18)),
             boxShadow: AppColors.softElevation,
           ),
           child: Column(
@@ -446,12 +476,16 @@ class ClientUpcomingAppointmentCard extends StatelessWidget {
           ),
         ),
       ),
-    ).animate().fadeIn(delay: 140.ms, duration: 450.ms).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(delay: 140.ms, duration: 450.ms)
+        .slideY(begin: 0.05, end: 0);
   }
 }
 
 class _InfoPill extends StatelessWidget {
-  const _InfoPill({required this.icon, required this.label, required this.value});
+  const _InfoPill(
+      {required this.icon, required this.label, required this.value});
   final IconData icon;
   final String label;
   final String value;
@@ -472,8 +506,15 @@ class _InfoPill extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 10)),
-                Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
+                Text(label,
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 10)),
+                Text(value,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12)),
               ],
             ),
           ),
@@ -611,14 +652,22 @@ class SpecialtyCategoryRow extends StatelessWidget {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: active ? AppColors.brand : AppColors.surfaceContainerLowest,
+                      color: active
+                          ? AppColors.brand
+                          : AppColors.surfaceContainerLowest,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: active ? AppColors.brand : AppColors.outline.withValues(alpha: 0.5),
+                        color: active
+                            ? AppColors.brand
+                            : AppColors.outline.withValues(alpha: 0.5),
                       ),
-                      boxShadow: active ? AppColors.brandGlow : AppColors.softElevation,
+                      boxShadow: active
+                          ? AppColors.brandGlow
+                          : AppColors.softElevation,
                     ),
-                    child: Icon(icon, color: active ? Colors.white : AppColors.brand, size: 24),
+                    child: Icon(icon,
+                        color: active ? Colors.white : AppColors.brand,
+                        size: 24),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -628,13 +677,17 @@ class SpecialtyCategoryRow extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: AppTypography.fieldLabel.copyWith(
                       fontSize: 9,
-                      color: active ? AppColors.brand : AppColors.onSurfaceVariant,
+                      color:
+                          active ? AppColors.brand : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-          ).animate(delay: (60 * i).ms).fadeIn(duration: 350.ms).slideX(begin: 0.1, end: 0);
+          )
+              .animate(delay: (60 * i).ms)
+              .fadeIn(duration: 350.ms)
+              .slideX(begin: 0.1, end: 0);
         },
       ),
     );
@@ -673,14 +726,19 @@ class DoctorListCard extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: isVerified ? Border.all(color: AppColors.brand, width: 2) : null,
+              border: isVerified
+                  ? Border.all(color: AppColors.brand, width: 2)
+                  : null,
             ),
             child: CircleAvatar(
               radius: 28,
               backgroundColor: AppColors.surfaceContainer,
-              backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+              backgroundImage: imageUrl != null
+                  ? CachedNetworkImageProvider(imageUrl!)
+                  : null,
               child: imageUrl == null
-                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: AppTypography.bodyMedium)
+                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: AppTypography.bodyMedium)
                   : null,
             ),
           ),
@@ -691,9 +749,12 @@ class DoctorListCard extends StatelessWidget {
               children: [
                 Text(name, style: AppTypography.textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text(specialty, style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
+                Text(specialty,
+                    style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
                 const SizedBox(height: 4),
-                Text(fee, style: AppTypography.statValue.copyWith(fontSize: 15, color: AppColors.brand)),
+                Text(fee,
+                    style: AppTypography.statValue
+                        .copyWith(fontSize: 15, color: AppColors.brand)),
               ],
             ),
           ),
@@ -704,7 +765,8 @@ class DoctorListCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: AppColors.brandGlow,
             ),
-            child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+            child: const Icon(Icons.arrow_forward_rounded,
+                color: Colors.white, size: 18),
           ),
         ],
       ),
@@ -743,7 +805,9 @@ class SegmentedUnderlineTabs extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: i == selectedIndex ? AppColors.brand : Colors.transparent,
+                      color: i == selectedIndex
+                          ? AppColors.brand
+                          : Colors.transparent,
                       width: 2.5,
                     ),
                   ),
@@ -752,8 +816,11 @@ class SegmentedUnderlineTabs extends StatelessWidget {
                   tabs[i],
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium.copyWith(
-                    color: i == selectedIndex ? AppColors.brand : AppColors.onSurfaceVariant,
-                    fontWeight: i == selectedIndex ? FontWeight.w700 : FontWeight.w500,
+                    color: i == selectedIndex
+                        ? AppColors.brand
+                        : AppColors.onSurfaceVariant,
+                    fontWeight:
+                        i == selectedIndex ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -804,7 +871,9 @@ class AppointmentListCard extends StatelessWidget {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.surfaceContainer,
-                backgroundImage: imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+                backgroundImage: imageUrl != null
+                    ? CachedNetworkImageProvider(imageUrl!)
+                    : null,
                 child: imageUrl == null
                     ? Text(doctorName.isNotEmpty ? doctorName[0] : 'D')
                     : null,
@@ -814,8 +883,11 @@ class AppointmentListCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(doctorName, style: AppTypography.textTheme.titleMedium),
-                    Text(specialty, style: AppTypography.pageSubtitle.copyWith(fontSize: 13)),
+                    Text(doctorName,
+                        style: AppTypography.textTheme.titleMedium),
+                    Text(specialty,
+                        style:
+                            AppTypography.pageSubtitle.copyWith(fontSize: 13)),
                   ],
                 ),
               ),
@@ -825,7 +897,8 @@ class AppointmentListCard extends StatelessWidget {
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.videocam_outlined, color: AppColors.brand, size: 18),
+                child: const Icon(Icons.videocam_outlined,
+                    color: AppColors.brand, size: 18),
               ),
             ],
           ),
@@ -833,10 +906,16 @@ class AppointmentListCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _Meta(icon: Icons.calendar_today_outlined, label: 'Date', value: dateLabel),
+                child: _Meta(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Date',
+                    value: dateLabel),
               ),
               Expanded(
-                child: _Meta(icon: Icons.access_time_outlined, label: 'Time', value: timeLabel),
+                child: _Meta(
+                    icon: Icons.access_time_outlined,
+                    label: 'Time',
+                    value: timeLabel),
               ),
             ],
           ),
@@ -850,14 +929,19 @@ class AppointmentListCard extends StatelessWidget {
                       onPressed: onSecondary,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.onSurfaceVariant,
-                        side: BorderSide(color: AppColors.outline.withValues(alpha: 0.8)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.pill)),
+                        side: BorderSide(
+                            color: AppColors.outline.withValues(alpha: 0.8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadii.pill)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: Text(secondaryLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      child: Text(secondaryLabel,
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
                     ),
                   ),
-                if (onSecondary != null && onPrimary != null) const SizedBox(width: 10),
+                if (onSecondary != null && onPrimary != null)
+                  const SizedBox(width: 10),
                 if (onPrimary != null)
                   Expanded(
                     child: DecoratedBox(
@@ -876,7 +960,8 @@ class AppointmentListCard extends StatelessWidget {
                             child: Text(
                               primaryLabel,
                               textAlign: TextAlign.center,
-                              style: AppTypography.button.copyWith(fontSize: 13),
+                              style:
+                                  AppTypography.button.copyWith(fontSize: 13),
                             ),
                           ),
                         ),
@@ -957,7 +1042,9 @@ class ProfileMenuTile extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             Expanded(child: Text(label, style: AppTypography.bodyMedium)),
-            trailing ?? const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+            trailing ??
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.onSurfaceVariant),
           ],
         ),
       ),
@@ -1058,7 +1145,15 @@ class DateOvalScroller extends StatelessWidget {
               d.year == selected!.year &&
               d.month == selected!.month &&
               d.day == selected!.day;
-          final dayLabel = const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d.weekday - 1];
+          final dayLabel = const [
+            'Mon',
+            'Tue',
+            'Wed',
+            'Thu',
+            'Fri',
+            'Sat',
+            'Sun'
+          ][d.weekday - 1];
 
           return GestureDetector(
             onTap: () => onSelected(d),
@@ -1070,9 +1165,12 @@ class DateOvalScroller extends StatelessWidget {
                 color: isSelected ? null : AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: isSelected ? Colors.transparent : AppColors.outline.withValues(alpha: 0.5),
+                  color: isSelected
+                      ? Colors.transparent
+                      : AppColors.outline.withValues(alpha: 0.5),
                 ),
-                boxShadow: isSelected ? AppColors.brandGlow : AppColors.softElevation,
+                boxShadow:
+                    isSelected ? AppColors.brandGlow : AppColors.softElevation,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1089,7 +1187,9 @@ class DateOvalScroller extends StatelessWidget {
                     dayLabel,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isSelected ? Colors.white70 : AppColors.onSurfaceVariant,
+                      color: isSelected
+                          ? Colors.white70
+                          : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -1132,7 +1232,9 @@ class TimeSlotRow extends StatelessWidget {
               color: isSelected ? null : AppColors.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(AppRadii.pill),
               border: Border.all(
-                color: isSelected ? Colors.transparent : AppColors.outline.withValues(alpha: 0.5),
+                color: isSelected
+                    ? Colors.transparent
+                    : AppColors.outline.withValues(alpha: 0.5),
               ),
               boxShadow: isSelected ? AppColors.brandGlow : null,
             ),
@@ -1219,11 +1321,13 @@ class DualChoiceToggle extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _ChoiceCard(label: leftLabel, selected: leftSelected, onTap: onLeft),
+          child: _ChoiceCard(
+              label: leftLabel, selected: leftSelected, onTap: onLeft),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _ChoiceCard(label: rightLabel, selected: !leftSelected, onTap: onRight),
+          child: _ChoiceCard(
+              label: rightLabel, selected: !leftSelected, onTap: onRight),
         ),
       ],
     );
@@ -1231,7 +1335,8 @@ class DualChoiceToggle extends StatelessWidget {
 }
 
 class _ChoiceCard extends StatelessWidget {
-  const _ChoiceCard({required this.label, required this.selected, required this.onTap});
+  const _ChoiceCard(
+      {required this.label, required this.selected, required this.onTap});
 
   final String label;
   final bool selected;

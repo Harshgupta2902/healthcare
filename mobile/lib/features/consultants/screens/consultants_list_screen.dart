@@ -133,7 +133,8 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                   label: Text(_filters.healthCategory!),
                   deleteIcon: const Icon(Icons.close, size: 16),
                   onDeleted: () => setState(
-                    () => _filters = _filters.copyWith(clearHealthCategory: true),
+                    () =>
+                        _filters = _filters.copyWith(clearHealthCategory: true),
                   ),
                   backgroundColor: AppColors.surfaceContainer,
                   labelStyle: AppTypography.bodyMedium.copyWith(
@@ -165,7 +166,8 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(consultantsListProvider),
+                  onRefresh: () async =>
+                      ref.invalidate(consultantsListProvider),
                   color: AppColors.brand,
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
@@ -176,7 +178,8 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                         children: [
                           Text(
                             '${filtered.length}',
-                            style: AppTypography.textTheme.titleMedium!.copyWith(
+                            style:
+                                AppTypography.textTheme.titleMedium!.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -188,13 +191,6 @@ class _ConsultantsListScreenState extends ConsumerState<ConsultantsListScreen> {
                             ),
                           ),
                           const Spacer(),
-                          Text(
-                            _filters.sort.label,
-                            style: AppTypography.pageSubtitle.copyWith(
-                              fontSize: 12,
-                              color: AppColors.brand,
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
