@@ -48,8 +48,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (!mounted) return;
 
+      final redirect = GoRouterState.of(context).uri.queryParameters['redirect'];
       if (user.isAdmin) {
         context.go('/admin-web-only');
+      } else if (redirect != null && redirect.isNotEmpty) {
+        context.go(redirect);
       } else {
         context.go('/home');
       }
