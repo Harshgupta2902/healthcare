@@ -6,12 +6,17 @@ import '../../shared/widgets/glass_nav_bar.dart';
 abstract final class RoleDashboardConfig {
   static const clientTabs = [
     GlassNavDestination(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home_rounded),
+    GlassNavDestination(
+      label: 'Calendar',
+      icon: Icons.calendar_month_outlined,
+      selectedIcon: Icons.calendar_month_rounded,
+    ),
     GlassNavDestination(label: 'Search', icon: Icons.search_rounded, selectedIcon: Icons.search_rounded),
     GlassNavDestination(label: 'History', icon: Icons.history_rounded, selectedIcon: Icons.history_rounded),
     GlassNavDestination(label: 'Profile', icon: Icons.person_outline, selectedIcon: Icons.person_rounded),
   ];
 
-  static const clientPaths = ['/home', '/search', '/history', '/profile'];
+  static const clientPaths = ['/home', '/calendar', '/search', '/history', '/profile'];
 
   static const professionalTabs = [
     GlassNavDestination(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home_rounded),

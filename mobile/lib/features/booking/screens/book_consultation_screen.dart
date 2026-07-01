@@ -205,15 +205,16 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
               child: BookingStepBar(step: _step, total: 4),
             ),
             consultant.when(
-              data: (p) => p != null
+              data: (detail) => detail != null
                   ? Padding(
                       padding: const EdgeInsets.all(20),
                       child: DoctorListCard(
-                        name: p.displayName,
-                        specialty: p.specialization ?? 'Healthcare professional',
-                        fee: '${p.displayFee} / Consultation',
-                        imageUrl: p.image,
-                        isVerified: p.isVerified,
+                        name: detail.profile.displayName,
+                        specialty: detail.profile.specialization ??
+                            'Healthcare professional',
+                        fee: '${detail.profile.displayFee} / Consultation',
+                        imageUrl: detail.profile.image,
+                        isVerified: detail.profile.isVerified,
                       ),
                     )
                   : const SizedBox.shrink(),

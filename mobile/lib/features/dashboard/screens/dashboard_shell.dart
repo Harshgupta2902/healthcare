@@ -10,6 +10,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../../client/screens/appointments_screen.dart';
 import '../../client/screens/client_dashboard_profile_screen.dart';
 import '../../client/screens/client_home_screen.dart';
+import '../../client/screens/client_schedule_screen.dart';
 import '../../consultants/screens/consultants_list_screen.dart';
 import '../../professional/screens/professional_consultations_screen.dart';
 import '../../professional/screens/professional_dashboard_profile_screen.dart';
@@ -17,7 +18,7 @@ import '../../professional/screens/professional_home_screen.dart';
 import '../../professional/screens/professional_profile_screen.dart';
 import '../role_dashboard_config.dart';
 
-/// Role-aware shell: client Home·Search·History·Profile, pro Home·Requests·Calendar·Clients·Profile.
+/// Role-aware shell: client Home·Calendar·Search·History·Profile, pro Home·Requests·Calendar·Clients·Profile.
 class DashboardShell extends ConsumerWidget {
   const DashboardShell({super.key, required this.child});
 
@@ -43,6 +44,7 @@ class DashboardShell extends ConsumerWidget {
           }
         : switch (location) {
             '/home' => const ClientHomeScreen(),
+            '/calendar' => const ClientScheduleScreen(),
             '/search' => const ConsultantsListScreen(),
             '/history' => const AppointmentsScreen(),
             '/profile' => const ClientDashboardProfileScreen(),
