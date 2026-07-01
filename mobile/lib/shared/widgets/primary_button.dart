@@ -11,12 +11,14 @@ class PrimaryGradientButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.gradient,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
+  final Gradient? gradient;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class PrimaryGradientButton extends StatelessWidget {
       height: 52,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: onPressed == null || isLoading ? null : AppColors.brandGradient,
+          gradient: onPressed == null || isLoading ? null : (gradient ?? AppColors.brandGradient),
           color: onPressed == null || isLoading
               ? AppColors.outline.withValues(alpha: 0.5)
               : null,

@@ -19,8 +19,9 @@ Authorization: Bearer <supabase_access_token>
 |--------|------|------|---------|
 | `POST` | `/api/v1/auth/sync-session` | Yes | Sync `users` row + JWT role metadata |
 | `GET` | `/api/v1/places/search?q=` | No | Indian cities autocomplete |
-| `POST` | `/api/v1/booking/guest` | Optional | Create guest appointment |
-| `GET` | `/api/v1/booking/guest/:id/confirm` | No | Booking confirmation (RPC) |
+| `POST` | `/api/v1/booking/orders/:orderId/razorpay` | Yes (client) | Create Razorpay order for booking |
+| `POST` | `/api/v1/booking/orders/:orderId/verify` | Yes (client) | Verify Razorpay payment signature |
+| `POST` | `/api/v1/booking/orders/:orderId/confirm-free` | Yes (client) | Fulfill zero-amount booking order |
 | `POST` | `/api/v1/meetings/create` | Yes | Create Meet/Jitsi link + save URL |
 | `POST` | `/api/v1/meetings/guest/pipeline` | Yes | Full meeting pipeline (owner/pro) |
 | `POST` | `/api/v1/contact` | No | Contact form (`deviceHash` required) |

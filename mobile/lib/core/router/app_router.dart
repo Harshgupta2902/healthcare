@@ -8,8 +8,8 @@ import '../../features/auth/screens/admin_web_only_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/booking/screens/appointment_checkout_screen.dart';
 import '../../features/booking/screens/book_consultation_screen.dart';
-import '../../features/booking/screens/booking_success_screen.dart';
 import '../../features/client/screens/client_profile_edit_screen.dart';
 import '../../features/consultants/screens/consultant_detail_screen.dart';
 import '../../features/contact/screens/contact_screen.dart';
@@ -47,12 +47,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/onboarding' ||
           location == '/welcome';
 
-      final isPublicRoute = location.startsWith('/book/') ||
-          location.startsWith('/booking/success/') ||
-          location == '/contact';
+      final isBookForm = RegExp(r'^/book/[^/]+$').hasMatch(location);
+      final isPublicRoute = isBookForm || location == '/contact';
 
       if (session == null) {
-        if (isAuthRoute || location == '/onboarding' || location == '/welcome' || isPublicRoute) return null;
+        if (isAuthRoute || location == '/onboarding' || location == '/welcome' || isPublicRoute) {
+          return null;
+        }
+        if (location.contains('/checkout')) {
+          return '/login?redirect=${Uri.encodeComponent(location)}';
+        }
         return '/login';
       }
 
@@ -83,12 +87,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => BookConsultationScreen(
           professionalUserId: state.pathParameters['professionalUserId']!,
         ),
-      ),
-      GoRoute(
-        path: '/booking/success/:id',
-        builder: (_, state) => BookingSuccessScreen(
-          bookingId: state.pathParameters['id']!,
-        ),
+        routes: [
+          GoRoute(
+            path: 'checkout',
+            builder: (_, state) => AppointmentCheckoutScreen(
+              professionalUserId: state.pathParameters['professionalUserId']!,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/prescription/:guestAppointmentId',
