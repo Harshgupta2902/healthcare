@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -28,31 +26,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _bootstrap();
-  }
-
-  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _bootstrap() async {
-    try {
-      final settings =
-          await Supabase.instance.client.rpc('get_registration_settings');
-      print(settings.toString());
-      if (settings != null && settings is Map) {
-        final emailOtpEnabled = settings['email_otp_enabled'] as bool? ?? false;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('email_otp_enabled', emailOtpEnabled);
-      }
-    } catch (_) {
-      // ignore
-    }
   }
 
   Future<void> _submit() async {
@@ -77,7 +54,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.go('/home');
       }
     } catch (e) {
-      setState(() => _error = e.toString().replaceFirst('AuthException: ', ''));
+      setState(() {
+        _error = e
+            .toString()
+            .replaceFirst('Exception: ', '')
+            .replaceFirst('AuthException: ', '');
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -118,9 +100,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: Icons.email_outlined,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
-                      return 'Email is required';
-                    if (!v.contains('@')) return 'Enter a valid email';
+                    final value = v?.trim() ?? '';
+                    if (value.isEmpty) return 'Email is required';
+                    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                        .hasMatch(value)) {
+                      return 'Enter a valid email address';
+                    }
                     return null;
                   },
                 ),
@@ -141,9 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         setState(() => _showPassword = !_showPassword),
                   ),
                   validator: (v) {
-                    if (v == null || v.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
+                    if (v == null || v.isEmpty) return 'Password is required';
                     return null;
                   },
                   onFieldSubmitted: (_) => _submit(),

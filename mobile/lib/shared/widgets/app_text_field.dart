@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -18,6 +19,8 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.onFieldSubmitted,
     this.onChanged,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   final TextEditingController controller;
@@ -32,6 +35,8 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final void Function(String)? onFieldSubmitted;
   final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,8 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           onFieldSubmitted: onFieldSubmitted,
           onChanged: onChanged,
+          inputFormatters: inputFormatters,
+          textCapitalization: textCapitalization,
           style: AppTypography.bodyMedium,
           decoration: InputDecoration(
             hintText: hint,
