@@ -316,7 +316,9 @@ class MedicalDocumentItem extends Equatable {
       fileSize: json['file_size'] as int?,
       uploadDate: json['upload_date'] != null
           ? DateTime.tryParse(json['upload_date'] as String)
-          : null,
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'] as String)
+              : null,
       notes: json['notes'] as String?,
     );
   }
@@ -523,6 +525,9 @@ class GuestAppointmentItem extends Equatable {
     this.prescriptionHtml,
     this.prescriptionUpdatedAt,
     this.calendarInviteUrl,
+    this.professionalId,
+    this.professionalName,
+    this.createdAt,
   });
 
   final String id;
@@ -540,8 +545,14 @@ class GuestAppointmentItem extends Equatable {
   final String? prescriptionHtml;
   final String? prescriptionUpdatedAt;
   final String? calendarInviteUrl;
+  final String? professionalId;
+  final String? professionalName;
+  final DateTime? createdAt;
 
   String get patientName => '$firstName $lastName'.trim();
+
+  String get specialistLabel =>
+      professionalName?.trim().isNotEmpty == true ? professionalName! : 'Consultation';
 
   factory GuestAppointmentItem.fromJson(Map<String, dynamic> json) {
     return GuestAppointmentItem(
@@ -560,11 +571,73 @@ class GuestAppointmentItem extends Equatable {
       prescriptionHtml: json['prescription_html'] as String?,
       prescriptionUpdatedAt: json['prescription_updated_at'] as String?,
       calendarInviteUrl: json['calendar_invite_url'] as String?,
+      professionalId: json['professional_id'] as String?,
+      professionalName: json['professional_name'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
 
   @override
-  List<Object?> get props => [id, appointmentDate, appointmentTime];
+  List<Object?> get props => [id, appointmentDate, appointmentTime, professionalId];
+}
+
+class ClientBookingOrderItem extends Equatable {
+  const ClientBookingOrderItem({
+    required this.id,
+    required this.orderNumber,
+    required this.status,
+    required this.amountPaise,
+    required this.consultantName,
+    required this.appointmentDate,
+    required this.appointmentTime,
+    required this.createdAt,
+    this.failureReason,
+    this.guestAppointmentId,
+    this.professionalId,
+  });
+
+  final String id;
+  final String orderNumber;
+  final String status;
+  final String? failureReason;
+  final int amountPaise;
+  final String consultantName;
+  final String appointmentDate;
+  final String appointmentTime;
+  final DateTime createdAt;
+  final String? guestAppointmentId;
+  final String? professionalId;
+
+  String get amountLabel {
+    if (amountPaise <= 0) return 'Free';
+    return '₹ ${(amountPaise / 100).toStringAsFixed(2)}';
+  }
+
+  factory ClientBookingOrderItem.fromJson(Map<String, dynamic> json) {
+    final snapshot = json['booking_snapshot'];
+    final snap = snapshot is Map
+        ? Map<String, dynamic>.from(snapshot)
+        : <String, dynamic>{};
+
+    return ClientBookingOrderItem(
+      id: json['id'] as String,
+      orderNumber: json['order_number'] as String? ?? '',
+      status: json['status'] as String? ?? 'pending',
+      failureReason: json['failure_reason'] as String?,
+      amountPaise: (json['amount_paise'] as num?)?.toInt() ?? 0,
+      consultantName: json['consultant_name'] as String? ?? 'Consultation',
+      appointmentDate: snap['date'] as String? ?? '',
+      appointmentTime: snap['time'] as String? ?? '',
+      createdAt: DateTime.parse(json['created_at'] as String),
+      guestAppointmentId: json['guest_appointment_id'] as String?,
+      professionalId: json['professional_id'] as String?,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, status, orderNumber];
 }
 
 class PlacePrediction extends Equatable {

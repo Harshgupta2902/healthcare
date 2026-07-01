@@ -356,10 +356,12 @@ class ClientRepository {
   }
 
   Future<MedicalDocumentItem> uploadDocument({
-    required String fileName,
+    required String documentName,
     required String documentType,
+    required String fileName,
     required Uint8List bytes,
     String? notes,
+    String? mimeType,
   }) async {
     final uid = _userId;
     if (uid == null) throw const AuthException('Not authenticated');
@@ -370,7 +372,10 @@ class ClientRepository {
     await _supabase.storage.from('medical-documents').uploadBinary(
           storagePath,
           bytes,
-          fileOptions: const FileOptions(upsert: false),
+          fileOptions: FileOptions(
+            upsert: false,
+            contentType: mimeType,
+          ),
         );
 
     final fileUrl = _supabase.storage.from('medical-documents').getPublicUrl(storagePath);
@@ -379,11 +384,11 @@ class ClientRepository {
         .from('medical_documents')
         .insert({
           'user_id': uid,
-          'document_name': fileName,
+          'document_name': documentName,
           'document_type': documentType,
           'file_url': fileUrl,
           'file_size': bytes.length,
-          if (notes != null) 'notes': notes,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
         })
         .select()
         .single();
@@ -392,7 +397,25 @@ class ClientRepository {
   }
 
   Future<void> deleteDocument(String id) async {
-    await _supabase.from('medical_documents').delete().eq('id', id);
+    final uid = _userId;
+    if (uid == null) throw const AuthException('Not authenticated');
+
+    final doc = await _supabase
+        .from('medical_documents')
+        .select('file_url')
+        .eq('id', id)
+        .eq('user_id', uid)
+        .maybeSingle();
+
+    final fileUrl = doc?['file_url'] as String?;
+    if (fileUrl != null && fileUrl.contains('/medical-documents/')) {
+      final storagePath = fileUrl.split('/medical-documents/').last.split('?').first;
+      try {
+        await _supabase.storage.from('medical-documents').remove([storagePath]);
+      } catch (_) {}
+    }
+
+    await _supabase.from('medical_documents').delete().eq('id', id).eq('user_id', uid);
   }
 
   Future<void> addInsurance({
@@ -475,6 +498,146 @@ class ClientRepository {
   Future<void> cancelAppointment(String id) async {
     await updateAppointmentStatus(id, 'cancelled');
   }
+
+  Future<List<GuestAppointmentItem>> getConsultationRequests() async {
+    final uid = _userId;
+    if (uid == null) throw const AuthException('Not authenticated');
+
+    final rows = await _supabase
+        .from('guest_appointments')
+        .select('*')
+        .order('appointment_date', ascending: false)
+        .order('appointment_time', ascending: false);
+
+    final list = (rows as List)
+        .map((e) => GuestAppointmentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
+    return _attachProfessionalNames(list);
+  }
+
+  Future<List<ClientBookingOrderItem>> getBookingOrderHistory() async {
+    final uid = _userId;
+    if (uid == null) throw const AuthException('Not authenticated');
+
+    await _supabase.rpc('expire_stale_booking_orders');
+
+    final rows = await _supabase
+        .from('booking_orders')
+        .select('*')
+        .eq('user_id', uid)
+        .order('created_at', ascending: false);
+
+    final orders = (rows as List)
+        .map((e) => ClientBookingOrderItem.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+
+    return _attachConsultantNames(orders);
+  }
+
+  Future<List<GuestAppointmentItem>> _attachProfessionalNames(
+    List<GuestAppointmentItem> items,
+  ) async {
+    final ids = items
+        .map((e) => e.professionalId)
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return items;
+
+    final profiles = await _supabase
+        .from('professional_profiles')
+        .select('user_id, name_title, users(name)')
+        .inFilter('user_id', ids);
+
+    final nameById = <String, String>{};
+    for (final row in profiles as List) {
+      final map = Map<String, dynamic>.from(row as Map);
+      final userId = map['user_id'] as String?;
+      if (userId == null) continue;
+      final users = map['users'] as Map<String, dynamic>?;
+      final name = users?['name'] as String? ?? '';
+      final title = map['name_title'] as String?;
+      nameById[userId] = title != null && title.isNotEmpty ? '$title $name' : name;
+    }
+
+    return items
+        .map(
+          (item) => GuestAppointmentItem(
+            id: item.id,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            email: item.email,
+            phone: item.phone,
+            category: item.category,
+            state: item.state,
+            city: item.city,
+            appointmentDate: item.appointmentDate,
+            appointmentTime: item.appointmentTime,
+            message: item.message,
+            age: item.age,
+            prescriptionHtml: item.prescriptionHtml,
+            prescriptionUpdatedAt: item.prescriptionUpdatedAt,
+            calendarInviteUrl: item.calendarInviteUrl,
+            professionalId: item.professionalId,
+            professionalName: item.professionalId != null
+                ? nameById[item.professionalId]
+                : null,
+            createdAt: item.createdAt,
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<ClientBookingOrderItem>> _attachConsultantNames(
+    List<ClientBookingOrderItem> orders,
+  ) async {
+    final profIds = orders
+        .map((o) => o.professionalId)
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+    if (profIds.isEmpty) return orders;
+
+    final profiles = await _supabase
+        .from('professional_profiles')
+        .select('user_id, name_title, users(name)')
+        .inFilter('user_id', profIds);
+
+    final nameById = <String, String>{};
+    for (final row in profiles as List) {
+      final map = Map<String, dynamic>.from(row as Map);
+      final userId = map['user_id'] as String?;
+      if (userId == null) continue;
+      final users = map['users'] as Map<String, dynamic>?;
+      final name = users?['name'] as String? ?? '';
+      final title = map['name_title'] as String?;
+      nameById[userId] = title != null && title.isNotEmpty ? '$title $name' : name;
+    }
+
+    return orders
+        .map((order) {
+          final consultant = order.professionalId != null
+              ? nameById[order.professionalId]
+              : null;
+          return ClientBookingOrderItem(
+            id: order.id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            failureReason: order.failureReason,
+            amountPaise: order.amountPaise,
+            consultantName: consultant?.isNotEmpty == true ? consultant! : order.consultantName,
+            appointmentDate: order.appointmentDate,
+            appointmentTime: order.appointmentTime,
+            createdAt: order.createdAt,
+            guestAppointmentId: order.guestAppointmentId,
+            professionalId: order.professionalId,
+          );
+        })
+        .toList();
+  }
 }
 
 final clientDashboardProvider = FutureProvider<ClientDashboardData>((ref) async {
@@ -485,4 +648,16 @@ final clientDashboardProvider = FutureProvider<ClientDashboardData>((ref) async 
 final clientAppointmentsProvider = FutureProvider<List<AppointmentItem>>((ref) async {
   ref.watch(authStateProvider);
   return ref.watch(clientRepositoryProvider).getAppointments();
+});
+
+final clientConsultationRequestsProvider =
+    FutureProvider<List<GuestAppointmentItem>>((ref) async {
+  ref.watch(authStateProvider);
+  return ref.watch(clientRepositoryProvider).getConsultationRequests();
+});
+
+final clientBookingOrdersProvider =
+    FutureProvider<List<ClientBookingOrderItem>>((ref) async {
+  ref.watch(authStateProvider);
+  return ref.watch(clientRepositoryProvider).getBookingOrderHistory();
 });
