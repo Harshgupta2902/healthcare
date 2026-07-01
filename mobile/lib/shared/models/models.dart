@@ -166,6 +166,7 @@ class AppointmentItem extends Equatable {
     this.meetingUrl,
     this.professionalName,
     this.clientName,
+    this.professionalImage,
   });
 
   final String id;
@@ -179,6 +180,7 @@ class AppointmentItem extends Equatable {
   final String? meetingUrl;
   final String? professionalName;
   final String? clientName;
+  final String? professionalImage;
 
   factory AppointmentItem.fromJson(Map<String, dynamic> json) {
     final proUser = json['professional'] as Map<String, dynamic>?;
@@ -196,11 +198,24 @@ class AppointmentItem extends Equatable {
       meetingUrl: json['meeting_url'] as String?,
       professionalName: proUser?['name'] as String?,
       clientName: clientUser?['name'] as String?,
+      professionalImage: proUser?['image'] as String?,
     );
   }
 
   @override
   List<Object?> get props => [id, status, startTime];
+}
+
+extension AppointmentItemUpcoming on AppointmentItem {
+  /// True when appointment should appear on client home (future, not cancelled/done).
+  bool isUpcomingForClientHome([DateTime? now]) {
+    final at = now ?? DateTime.now();
+    final s = status.toLowerCase();
+    if (s == 'cancelled' || s == 'canceled' || s == 'completed') {
+      return false;
+    }
+    return startTime.isAfter(at);
+  }
 }
 
 class MedicalHistoryItem extends Equatable {

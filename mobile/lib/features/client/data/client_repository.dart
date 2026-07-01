@@ -84,6 +84,7 @@ class ClientDashboardData {
       documentsCount: json['documentsCount'] as int? ?? 0,
       upcomingAppointments: (json['upcomingAppointments'] as List? ?? [])
           .map((e) => _appointmentFromJson(Map<String, dynamic>.from(e as Map)))
+          .where((a) => a.isUpcomingForClientHome())
           .toList(),
       allAppointments: (json['allAppointments'] as List? ?? json['upcomingAppointments'] as List? ?? [])
           .map((e) => _appointmentFromJson(Map<String, dynamic>.from(e as Map)))
@@ -198,7 +199,7 @@ class ClientRepository {
       _supabase
           .from('appointments')
           .select(
-            '*, professional:users!appointments_professional_id_fkey(name), client:users!appointments_client_id_fkey(name)',
+            '*, professional:users!appointments_professional_id_fkey(name, image), client:users!appointments_client_id_fkey(name)',
           )
           .eq('client_id', uid)
           .order('start_time', ascending: true),
@@ -235,7 +236,7 @@ class ClientRepository {
 
     final now = DateTime.now();
     final upcoming = appointmentList
-        .where((a) => a.startTime.isAfter(now))
+        .where((a) => a.isUpcomingForClientHome(now))
         .take(10)
         .toList();
 
