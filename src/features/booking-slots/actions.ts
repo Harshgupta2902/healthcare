@@ -19,7 +19,11 @@ import {
   listBookableDates,
 } from "@/lib/booking/bookable-dates";
 import { zodFirstError } from "@/lib/server-action-result";
-import { requireClientForBooking } from "@/lib/booking/require-client-booking";
+import {
+  resolveClientBookingAuth,
+  type BookingActionAuth,
+} from "@/lib/booking/action-auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   activeHoldSchema,
   holdIdSchema,
@@ -48,10 +52,6 @@ export type GetAvailableSlotsResult =
       debug: ReturnType<typeof diagnoseSlotGeneration>;
       emptyReason: ReturnType<typeof diagnoseSlotGeneration>["emptyReason"] | "occupied_only" | null;
     };
-
-async function requireAuthUser() {
-  return requireClientForBooking();
-}
 
 export async function fetchBookingSettings(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -93,13 +93,16 @@ async function loadProfessionalAvailabilityDays(
     .map((row) => Number(row.day_of_week));
 }
 
-export async function getBookableDates(input: unknown): Promise<GetBookableDatesResult> {
+export async function getBookableDates(
+  input: unknown,
+  supabaseOverride?: SupabaseClient,
+): Promise<GetBookableDatesResult> {
   const parsed = z
     .object({ professionalId: z.string().uuid("Invalid consultant.") })
     .safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const supabase = await createClient();
+  const supabase = supabaseOverride ?? (await createClient());
   const settings = await fetchBookingSettings(supabase);
 
   try {
@@ -135,11 +138,14 @@ export async function getBookableDates(input: unknown): Promise<GetBookableDates
   }
 }
 
-export async function getAvailableSlots(input: unknown): Promise<GetAvailableSlotsResult> {
+export async function getAvailableSlots(
+  input: unknown,
+  auth?: BookingActionAuth,
+): Promise<GetAvailableSlotsResult> {
   const parsed = professionalDateSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const supabase = await createClient();
+  const supabase = auth?.supabase ?? (await createClient());
   await supabase.rpc("expire_stale_slot_reservations");
 
   const settings = await fetchBookingSettings(supabase);
@@ -172,15 +178,15 @@ export async function getAvailableSlots(input: unknown): Promise<GetAvailableSlo
   if (availError) return { error: availError.message };
   if (occError) return { error: occError.message };
 
-  const auth = await supabase.auth.getUser();
+  const userId = auth?.user.id ?? (await supabase.auth.getUser()).data.user?.id;
   let myHoldSlotStartAt: string | null = null;
 
-  if (auth.data.user) {
+  if (userId) {
     const { data: myHold } = await supabase
       .from("professional_slot_reservations")
       .select("slot_start_at")
       .eq("professional_id", parsed.data.professionalId)
-      .eq("held_by_user_id", auth.data.user.id)
+      .eq("held_by_user_id", userId)
       .eq("status", "held")
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
@@ -227,12 +233,12 @@ export async function getAvailableSlots(input: unknown): Promise<GetAvailableSlo
   };
 }
 
-export async function reserveSlot(input: unknown) {
+export async function reserveSlot(input: unknown, authOverride?: BookingActionAuth) {
   const parsed = reserveSlotSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
-  if (!auth.ok) return { error: auth.error };
+  const auth = await resolveClientBookingAuth(authOverride);
+  if (!auth.ok) return { error: auth.error, ...(auth.role ? { code: "wrong_role" as const } : {}) };
 
   const settings = await fetchBookingSettings(auth.supabase);
   const { date: slotDate } = slotStartToAppointmentFields(parsed.data.slotStartAt);
@@ -283,12 +289,12 @@ export async function reserveSlot(input: unknown) {
   };
 }
 
-export async function releaseSlot(input: unknown) {
+export async function releaseSlot(input: unknown, authOverride?: BookingActionAuth) {
   const parsed = holdIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
-  if (!auth.ok) return { error: auth.error };
+  const auth = await resolveClientBookingAuth(authOverride);
+  if (!auth.ok) return { error: auth.error, ...(auth.role ? { code: "wrong_role" as const } : {}) };
 
   const { data, error } = await auth.supabase.rpc("release_slot_reservation", {
     p_hold_id: parsed.data.holdId,
@@ -299,12 +305,12 @@ export async function releaseSlot(input: unknown) {
   return { success: true as const };
 }
 
-export async function getMyActiveHold(input: unknown) {
+export async function getMyActiveHold(input: unknown, authOverride?: BookingActionAuth) {
   const parsed = activeHoldSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireAuthUser();
-  if (!auth.ok) return { error: auth.error };
+  const auth = await resolveClientBookingAuth(authOverride);
+  if (!auth.ok) return { error: auth.error, ...(auth.role ? { code: "wrong_role" as const } : {}) };
 
   await auth.supabase.rpc("expire_stale_slot_reservations");
 

@@ -3,6 +3,7 @@ export {
   getCheckoutOrder,
   cancelBookingOrder,
   processMockPayment,
+  confirmFreeBookingOrder,
   createRazorpayCheckoutOrder,
   verifyRazorpayPayment,
   finalizeBookingOrder,

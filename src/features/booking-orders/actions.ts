@@ -36,15 +36,32 @@ import type {
   ClientOrderHistoryItem,
 } from "./types";
 import { attachSharedPrescriptionsToBooking } from "@/features/prescription-sharing/actions";
+import {
+  resolveClientBookingAuth,
+  type BookingActionAuth,
+} from "@/lib/booking/action-auth";
 import { requireClientForBooking } from "@/lib/booking/require-client-booking";
 
-async function requireAuthUser() {
+export type BookingOrderActionOptions = {
+  auth?: BookingActionAuth;
+  clientIp?: string;
+};
+
+async function resolveOrderAuth(options?: BookingOrderActionOptions) {
+  return resolveClientBookingAuth(options?.auth);
+}
+
+async function requireAnyAuthUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "You must be signed in." };
   return { ok: true as const, supabase, user };
+}
+
+async function requireOrderClientAuth(options?: BookingOrderActionOptions) {
+  return resolveOrderAuth(options);
 }
 
 async function expireStaleOrders(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -310,17 +327,20 @@ async function fulfillBookingOrderAfterPayment(
   }
 }
 
-export async function createBookingOrder(form: unknown) {
+export async function createBookingOrder(
+  form: unknown,
+  options?: BookingOrderActionOptions,
+) {
   const validated = createBookingOrderSchema.safeParse(form);
   if (!validated.success) {
     return { error: zodFirstError(validated.error) };
   }
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error, ...(auth.role ? { code: "wrong_role" as const } : {}) };
 
   const headerStore = await headers();
-  const clientIp = getClientIpFromHeaders(headerStore);
+  const clientIp = options?.clientIp ?? getClientIpFromHeaders(headerStore);
   const rateLimit = await assertGuestBookingRateLimits({
     ip: clientIp,
     deviceHash: validated.data.deviceHash,
@@ -410,13 +430,16 @@ export async function createBookingOrder(form: unknown) {
   };
 }
 
-export async function getCheckoutOrder(input: unknown) {
+export async function getCheckoutOrder(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   const parsed = orderRefSchema.safeParse(input);
   if (!parsed.success) {
     return { error: zodFirstError(parsed.error) };
   }
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   const { decodeOrderRef } = await import("./lib/order-ref");
@@ -436,11 +459,14 @@ export async function getCheckoutOrder(input: unknown) {
   };
 }
 
-export async function cancelBookingOrder(input: unknown) {
+export async function cancelBookingOrder(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   await expireStaleOrders(auth.supabase);
@@ -505,7 +531,10 @@ export async function processMockPayment(input: unknown) {
   );
 }
 
-export async function createRazorpayCheckoutOrder(input: unknown) {
+export async function createRazorpayCheckoutOrder(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   if (PAYMENT_PROVIDER !== "razorpay") {
     return { error: "Razorpay is not enabled for checkout." };
   }
@@ -513,7 +542,7 @@ export async function createRazorpayCheckoutOrder(input: unknown) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   const validation = await validatePendingCheckoutOrder(
@@ -554,7 +583,10 @@ export async function createRazorpayCheckoutOrder(input: unknown) {
   }
 }
 
-export async function verifyRazorpayPayment(input: unknown) {
+export async function verifyRazorpayPayment(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   if (PAYMENT_PROVIDER !== "razorpay") {
     return { error: "Razorpay is not enabled for checkout." };
   }
@@ -562,7 +594,7 @@ export async function verifyRazorpayPayment(input: unknown) {
   const parsed = razorpayVerifyPaymentSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   const validation = await validatePendingCheckoutOrder(
@@ -602,12 +634,41 @@ export async function verifyRazorpayPayment(input: unknown) {
   );
 }
 
+/** Confirm a zero-fee order without payment (mobile / API — no mock provider). */
+export async function confirmFreeBookingOrder(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
+  const parsed = orderIdSchema.safeParse(input);
+  if (!parsed.success) return { error: zodFirstError(parsed.error) };
+
+  const auth = await requireOrderClientAuth(options);
+  if (!auth.ok) return { error: auth.error };
+
+  const validation = await validatePendingCheckoutOrder(
+    auth.supabase,
+    parsed.data.orderId,
+    auth.user.id,
+  );
+  if (!validation.ok) return { error: validation.error };
+
+  const row = validation.row;
+  if (row.amount_paise > 0) {
+    return { error: "This order requires payment." };
+  }
+
+  return fulfillBookingOrderAfterPayment(auth.supabase, auth.user.id, row, null);
+}
+
 /** Run after meeting pipeline succeeds. */
-export async function finalizeBookingOrder(input: unknown) {
+export async function finalizeBookingOrder(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   const parsed = finalizeOrderSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   const { data, error } = await auth.supabase.rpc("finalize_booking_order", {
@@ -626,11 +687,14 @@ export async function finalizeBookingOrder(input: unknown) {
   return { success: true as const };
 }
 
-export async function markBookingOrderFulfillmentFailed(input: unknown) {
+export async function markBookingOrderFulfillmentFailed(
+  input: unknown,
+  options?: BookingOrderActionOptions,
+) {
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) return { error: zodFirstError(parsed.error) };
 
-  const auth = await requireClientForBooking();
+  const auth = await requireOrderClientAuth(options);
   if (!auth.ok) return { error: auth.error };
 
   const ok = await patchOrderStatus(
@@ -699,7 +763,7 @@ export async function getClientOrderHistory() {
 }
 
 export async function getProfessionalPayments() {
-  const auth = await requireAuthUser();
+  const auth = await requireAnyAuthUser();
   if (!auth.ok) return { success: false as const, error: auth.error };
 
   const { data, error } = await auth.supabase
