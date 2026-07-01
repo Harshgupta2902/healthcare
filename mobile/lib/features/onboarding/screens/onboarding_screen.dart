@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../shared/widgets/primary_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -21,22 +19,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _slides = [
     _Slide(
-      icon: Icons.search_rounded,
-      iconColor: Color(0xFF3775E0),
-      title: 'Accurate specialist search made simple',
-      illustration: Icons.person_search_rounded,
+      imagePath: 'assets/icons/doctor1.png',
+      title: 'Find a lot of specialist\ndoctors in one place',
     ),
     _Slide(
-      icon: Icons.calendar_month_rounded,
-      iconColor: Color(0xFF3775E0),
-      title: 'Book appointments effortlessly',
-      illustration: Icons.event_available_rounded,
-    ),
-    _Slide(
-      icon: Icons.chat_rounded,
-      iconColor: Color(0xFF3775E0),
-      title: 'Expert advice & chat at your fingertips',
-      illustration: Icons.support_agent_rounded,
+      imagePath: 'assets/icons/doctor2.png',
+      title: 'Get advice only from a\ndoctor you believe in.',
     ),
   ];
 
@@ -46,6 +34,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _nextPage() async {
+    if (_index < _slides.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      await OnboardingPrefs.setComplete();
+      if (!mounted) return;
+      context.go('/login');
+    }
+  }
+
+  void _skip() async {
+    await OnboardingPrefs.setComplete();
+    if (!mounted) return;
+    context.go('/login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,6 +60,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Skip button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _skip,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF9E9E9E),
+                  ),
+                  child: const Text('Skip'),
+                ),
+              ),
+            ),
+
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -60,65 +82,81 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (i) => setState(() => _index = i),
                 itemBuilder: (_, i) {
                   final slide = _slides[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 48),
-                        Text(
-                          slide.title,
-                          style: AppTypography.pageTitle.copyWith(
-                            fontSize: 26,
-                            height: 1.25,
-                          ),
-                          textAlign: TextAlign.center,
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: Image.asset(
+                          slide.imagePath,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.bottomCenter,
                         ),
-                        const Spacer(),
-                        _IllustrationPlaceholder(icon: slide.illustration),
-                        const Spacer(),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 32),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            slide.title,
+                            style: AppTypography.pageTitle.copyWith(
+                              fontSize: 28,
+                              height: 1.2,
+                              color: const Color(0xFF1B1B1B),
+                              fontWeight: FontWeight.w800,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   );
                 },
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_slides.length, (i) {
-                final active = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: active ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: active ? AppColors.brand : AppColors.outline.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4),
+
+            // Bottom Controls
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Indicators
+                  Row(
+                    children: List.generate(_slides.length, (i) {
+                      final active = i == _index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        margin: const EdgeInsets.only(right: 6),
+                        width: active ? 24 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? AppColors.brand
+                              : AppColors.outline.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
                   ),
-                );
-              }),
-            ),
-            const SizedBox(height: 28),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-              child: PrimaryGradientButton(
-                label: 'Create an account',
-                onPressed: () async {
-                  await OnboardingPrefs.setComplete();
-                  if (!mounted) return;
-                  context.go('/register');
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: SecondaryButton(
-                label: 'Login',
-                onPressed: () async {
-                  await OnboardingPrefs.setComplete();
-                  if (!mounted) return;
-                  context.go('/login');
-                },
+                  // Next button
+                  InkWell(
+                    onTap: _nextPage,
+                    borderRadius: BorderRadius.circular(32),
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: const BoxDecoration(
+                        color: AppColors.brand,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -128,35 +166,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-class _IllustrationPlaceholder extends StatelessWidget {
-  const _IllustrationPlaceholder({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 260,
-      height: 260,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.xxl),
-      ),
-      child: Icon(icon, size: 100, color: AppColors.brand.withValues(alpha: 0.6)),
-    ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.9, 0.9));
-  }
-}
-
 class _Slide {
   const _Slide({
-    required this.icon,
-    required this.iconColor,
+    required this.imagePath,
     required this.title,
-    required this.illustration,
   });
 
-  final IconData icon;
-  final Color iconColor;
+  final String imagePath;
   final String title;
-  final IconData illustration;
 }
