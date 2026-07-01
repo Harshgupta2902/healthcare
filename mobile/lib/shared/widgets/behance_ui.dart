@@ -75,6 +75,96 @@ class HomeGreetingHeader extends StatelessWidget {
   }
 }
 
+/// Compact client home header — avatar, name, location line, notifications.
+class ClientHomeHeader extends StatelessWidget {
+  const ClientHomeHeader({
+    super.key,
+    required this.name,
+    this.imageUrl,
+    this.locationLabel,
+    this.onNotificationTap,
+  });
+
+  final String name;
+  final String? imageUrl;
+  final String? locationLabel;
+  final VoidCallback? onNotificationTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          radius: 22,
+          backgroundColor: AppColors.surfaceContainer,
+          backgroundImage:
+              imageUrl != null ? CachedNetworkImageProvider(imageUrl!) : null,
+          child: imageUrl == null
+              ? Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.brand,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.textTheme.titleMedium!.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.brandDeep,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                locationLabel ?? 'Location: —',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.pageSubtitle.copyWith(
+                  fontSize: 12,
+                  color: AppColors.brand.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Material(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: onNotificationTap ?? () => context.push('/history'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.onSurfaceVariant.withValues(alpha: 0.85),
+                size: 22,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.06, end: 0);
+  }
+}
+
 /// Rounded pill search bar (Behance home).
 class PillSearchBar extends StatelessWidget {
   const PillSearchBar({
@@ -214,6 +304,152 @@ class UpcomingVisitHeroCard extends StatelessWidget {
   }
 }
 
+/// Client home upcoming appointment — light card with doctor photo (design mock).
+class ClientUpcomingAppointmentCard extends StatelessWidget {
+  const ClientUpcomingAppointmentCard({
+    super.key,
+    required this.doctorName,
+    required this.specialty,
+    required this.consultationLabel,
+    required this.dateLabel,
+    required this.timeLabel,
+    this.imageUrl,
+    this.onTap,
+  });
+
+  final String doctorName;
+  final String specialty;
+  final String consultationLabel;
+  final String dateLabel;
+  final String timeLabel;
+  final String? imageUrl;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+            border: Border.all(color: AppColors.outline.withValues(alpha: 0.18)),
+            boxShadow: AppColors.softElevation,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: 88,
+                      height: 108,
+                      color: AppColors.surfaceContainer,
+                      child: imageUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl!,
+                              fit: BoxFit.cover,
+                            )
+                          : Center(
+                              child: Text(
+                                doctorName.isNotEmpty
+                                    ? doctorName[0].toUpperCase()
+                                    : 'D',
+                                style: AppTypography.textTheme.titleLarge!
+                                    .copyWith(color: AppColors.brand),
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          doctorName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.textTheme.titleMedium!.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.brandDeep,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          specialty,
+                          style: AppTypography.pageSubtitle.copyWith(
+                            fontSize: 12,
+                            color: AppColors.brand,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          consultationLabel,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.brand,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_outlined,
+                        size: 16, color: AppColors.brandDeep),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        dateLabel,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandDeep,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.access_time_rounded,
+                        size: 16, color: AppColors.brandDeep),
+                    const SizedBox(width: 6),
+                    Text(
+                      timeLabel,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brandDeep,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 140.ms, duration: 450.ms).slideY(begin: 0.05, end: 0);
+  }
+}
+
 class _InfoPill extends StatelessWidget {
   const _InfoPill({required this.icon, required this.label, required this.value});
   final IconData icon;
@@ -242,6 +478,84 @@ class _InfoPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontal health browse categories (rounded-square icons).
+class HealthCategoryRow extends StatelessWidget {
+  const HealthCategoryRow({
+    super.key,
+    required this.categories,
+    this.selected,
+    this.onSelected,
+  });
+
+  final List<({String label, IconData icon})> categories;
+  final String? selected;
+  final ValueChanged<String>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (categories.isEmpty) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) {
+          final cat = categories[i];
+          final active = selected == cat.label;
+          return GestureDetector(
+            onTap: () => onSelected?.call(cat.label),
+            child: SizedBox(
+              width: 76,
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: active
+                          ? AppColors.brand.withValues(alpha: 0.12)
+                          : AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: active
+                            ? AppColors.brand.withValues(alpha: 0.45)
+                            : AppColors.outline.withValues(alpha: 0.22),
+                      ),
+                      boxShadow: AppColors.softElevation,
+                    ),
+                    child: Icon(
+                      cat.icon,
+                      color: AppColors.brand,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    cat.label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.fieldLabel.copyWith(
+                      fontSize: 10,
+                      height: 1.2,
+                      color: active ? AppColors.brand : AppColors.brandDeep,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ).animate(delay: (40 * i).ms).fadeIn(duration: 320.ms);
+        },
       ),
     );
   }
