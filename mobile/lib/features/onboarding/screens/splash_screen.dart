@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../core/config/env.dart';
-import '../../../core/router/app_router.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
+import 'package:healthhere_mobile/core/config/env.dart';
+import 'package:healthhere_mobile/core/router/app_router.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -44,48 +42,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF5B9FFF), Color(0xFF3775E0), Color(0xFF2D5FCC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.health_and_safety_rounded, color: AppColors.brand, size: 44),
+      backgroundColor: const Color(0xFFEAF1F8),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/logo.svg',
+                    width: 140,
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              Text(
-                'HealthHere',
-                style: AppTypography.pageTitle.copyWith(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
