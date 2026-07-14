@@ -48,3 +48,5 @@ next-env.d.ts
 # blog cover uploads (keep directory via .gitkeep)
 /public/uploads/blogs/*
 !/public/uploads/blogs/.gitkeep
+
+.kiro
