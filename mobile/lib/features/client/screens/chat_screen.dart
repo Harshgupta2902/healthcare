@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/empty_state.dart';
 
-/// Chat tab placeholder — messaging with doctors coming soon.
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 

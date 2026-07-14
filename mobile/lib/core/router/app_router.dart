@@ -10,7 +10,14 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/booking/screens/appointment_checkout_screen.dart';
 import '../../features/booking/screens/book_consultation_screen.dart';
+import '../../features/client/screens/client_dashboard_profile_screen.dart';
 import '../../features/client/screens/client_profile_edit_screen.dart';
+import '../../features/client/screens/profile/profile_document_upload_screen.dart';
+import '../../features/client/screens/profile/profile_document_upload_success_screen.dart';
+import '../../features/client/screens/profile/profile_documents_hub_screen.dart';
+import '../../features/client/screens/profile/profile_orders_screen.dart';
+import '../../features/client/screens/profile/profile_personal_info_screen.dart';
+import '../../features/client/screens/profile/profile_requests_screen.dart';
 import '../../features/consultants/screens/consultant_detail_screen.dart';
 import '../../features/contact/screens/contact_screen.dart';
 import '../../features/dashboard/screens/dashboard_shell.dart';
@@ -82,6 +89,29 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/contact', builder: (_, __) => const ContactScreen()),
       GoRoute(path: '/profile/edit', builder: (_, __) => const ClientProfileEditScreen()),
+      GoRoute(path: '/profile/requests', builder: (_, __) => const ProfileRequestsScreen()),
+      GoRoute(path: '/profile/orders', builder: (_, __) => const ProfileOrdersScreen()),
+      GoRoute(path: '/profile/personal-info', builder: (_, __) => const ProfilePersonalInfoScreen()),
+      GoRoute(
+        path: '/profile/medical-history',
+        builder: (_, __) => const ProfileMedicalHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/profile/medications',
+        builder: (_, __) => const ProfileMedicationsScreen(),
+      ),
+      GoRoute(path: '/profile/insurance', builder: (_, __) => const ProfileInsuranceScreen()),
+      GoRoute(path: '/profile/documents', builder: (_, __) => const ProfileDocumentsHubScreen()),
+      GoRoute(
+        path: '/profile/documents/upload',
+        builder: (_, __) => const ProfileDocumentUploadScreen(),
+        routes: [
+          GoRoute(
+            path: 'success',
+            builder: (_, __) => const ProfileDocumentUploadSuccessScreen(),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/book/:professionalUserId',
         builder: (_, state) => BookConsultationScreen(

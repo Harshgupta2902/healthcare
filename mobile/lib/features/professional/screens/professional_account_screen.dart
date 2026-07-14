@@ -33,7 +33,7 @@ class ProfessionalAccountScreen extends ConsumerWidget {
             badge: 'Healthcare professional',
           ),
           const SizedBox(height: 28),
-          _SectionHeader(title: 'General'),
+          const _SectionHeader(title: 'General'),
           _ProfileListCard(
             items: [
               _ProfileListItem(
@@ -58,7 +58,7 @@ class ProfessionalAccountScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _SectionHeader(title: 'Others'),
+          const _SectionHeader(title: 'Others'),
           _ProfileListCard(
             items: [
               _ProfileListItem(icon: Icons.help_outline, label: 'Help center', onTap: () => context.push('/contact')),

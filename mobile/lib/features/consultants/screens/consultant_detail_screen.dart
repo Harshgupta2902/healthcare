@@ -441,7 +441,7 @@ class _ReviewsSectionState extends State<_ReviewsSection> {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.surfaceAlt,
                   shape: BoxShape.circle,
                 ),
@@ -517,7 +517,7 @@ class _ReviewTile extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.surfaceAlt,
               shape: BoxShape.circle,
             ),

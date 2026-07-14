@@ -130,9 +130,9 @@ class _BookedPatientsTab extends ConsumerWidget {
           ..sort((a, b) => b.lastVisit.compareTo(a.lastVisit));
 
         if (patients.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               child: EmptyState(
                 title: 'No booked patients yet',
                 subtitle: 'Confirmed appointments with patients appear here.',

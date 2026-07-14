@@ -47,7 +47,8 @@ flutter run --dart-define-from-file=.env.mobile
 
 - [x] Professional dashboard (home, requests, calendar, clients, profile)
 - [x] Availability CRUD, credentials + document upload
-- [x] Guest booking flow replaced by Supabase SDK + Razorpay checkout
+- [x] Client profile hub with requests, orders, personal info, health sections
+- [x] Medical reports vault with upload flow (Supabase storage)
 - [x] Contact form (`POST /api/v1/contact`)
 - [x] Prescription compose + send (`POST /api/v1/prescriptions/send`)
 - [x] Booking payment APIs (`razorpay`, `verify`, `confirm-free`) — see [docs/API.md](../docs/API.md)
@@ -95,6 +96,15 @@ Full Mermaid flow diagrams: [FLUTTER_AND_API_PLAN.md §18](../docs/FLUTTER_AND_A
 | `/home`, `/requests`, `/calendar`, `/clients`, `/profile` | Pro shell |
 | `/book/:professionalUserId` | Book consultation (public form) |
 | `/book/:professionalUserId/checkout` | Razorpay checkout (client auth required) |
+| `/profile` | Client profile menu hub |
+| `/profile/documents` | Medical reports vault (list, search, upload) |
+| `/profile/documents/upload` | Upload medical report form |
+| `/profile/requests` | Consultation requests (`guest_appointments`) |
+| `/profile/orders` | Booking order history |
+| `/profile/personal-info` | Personal & medical profile |
+| `/profile/medical-history` | Medical conditions |
+| `/profile/medications` | Medications |
+| `/profile/insurance` | Insurance policies |
 | `/prescription/:guestAppointmentId` | Pro prescription send |
 | `/consultants/:userId` | Consultant detail |
 | `/contact` | Contact form |

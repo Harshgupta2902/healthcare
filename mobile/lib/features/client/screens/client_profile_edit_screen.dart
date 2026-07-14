@@ -7,7 +7,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/models/models.dart';
 import '../../../shared/widgets/ambient_background.dart';
-import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/glass_card.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../auth/data/auth_repository.dart';

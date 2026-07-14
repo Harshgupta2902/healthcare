@@ -109,7 +109,7 @@ class _ConsultantFilterSheetState extends State<ConsultantFilterSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionLabel('Specialty'),
+                  const _SectionLabel('Specialty'),
                   const SizedBox(height: 8),
                   _FilterDropdown<String?>(
                     value: _specialty ?? ConsultantSearchFilters.allSpecialty,
@@ -129,7 +129,7 @@ class _ConsultantFilterSheetState extends State<ConsultantFilterSheet> {
                     }),
                   ),
                   const SizedBox(height: 20),
-                  _SectionLabel('City'),
+                  const _SectionLabel('City'),
                   const SizedBox(height: 8),
                   _FilterDropdown<String?>(
                     value: _city ?? ConsultantSearchFilters.allCity,
@@ -147,7 +147,7 @@ class _ConsultantFilterSheetState extends State<ConsultantFilterSheet> {
                     }),
                   ),
                   const SizedBox(height: 20),
-                  _SectionLabel('Health category'),
+                  const _SectionLabel('Health category'),
                   const SizedBox(height: 8),
                   _FilterDropdown<String?>(
                     value: _healthCategory ?? '',
@@ -165,7 +165,7 @@ class _ConsultantFilterSheetState extends State<ConsultantFilterSheet> {
                     }),
                   ),
                   const SizedBox(height: 20),
-                  _SectionLabel('Sort by'),
+                  const _SectionLabel('Sort by'),
                   const SizedBox(height: 8),
                   _FilterDropdown<ConsultantSortOption>(
                     value: _sort,

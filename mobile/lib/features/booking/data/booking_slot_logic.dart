@@ -146,7 +146,8 @@ abstract final class BookingSlotLogic {
         cursor += slotIntervalMinutes) {
       final timeValue = formatMinutesAsTime(cursor);
       final slotStartAt = istSlotStartToUtc(dateYmd, timeValue);
-      final slotEndAt = slotStartAt.add(Duration(minutes: slotIntervalMinutes));
+      final slotEndAt =
+          slotStartAt.add(const Duration(minutes: slotIntervalMinutes));
 
       if (!includePast && slotStartAt.isBefore(current.toUtc())) continue;
 

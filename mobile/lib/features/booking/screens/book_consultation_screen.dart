@@ -25,10 +25,12 @@ class BookConsultationScreen extends ConsumerStatefulWidget {
   final String professionalUserId;
 
   @override
-  ConsumerState<BookConsultationScreen> createState() => _BookConsultationScreenState();
+  ConsumerState<BookConsultationScreen> createState() =>
+      _BookConsultationScreenState();
 }
 
-class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen> {
+class _BookConsultationScreenState
+    extends ConsumerState<BookConsultationScreen> {
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _age = TextEditingController();
@@ -93,7 +95,8 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
     if (nameParts.length > 1) _lastName.text = nameParts.sublist(1).join(' ');
 
     try {
-      final profile = await ref.read(clientRepositoryProvider).getMedicalProfile();
+      final profile =
+          await ref.read(clientRepositoryProvider).getMedicalProfile();
       if (profile?.city != null) {
         _city = profile!.city!;
         _citySearch.text = profile.city!;
@@ -117,8 +120,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
   Future<void> _loadBookableDates() async {
     setState(() => _loadingDates = true);
     try {
-      final result =
-          await ref.read(bookingRepositoryProvider).getBookableDates(widget.professionalUserId);
+      final result = await ref
+          .read(bookingRepositoryProvider)
+          .getBookableDates(widget.professionalUserId);
       setState(() {
         _bookableDates = result.dates;
         if (_selectedDateYmd.isEmpty && result.dates.isNotEmpty) {
@@ -130,7 +134,8 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _loadingDates = false);
@@ -139,7 +144,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
 
   Future<void> _restoreActiveHold() async {
     try {
-      final hold = await ref.read(bookingRepositoryProvider).getActiveHold(widget.professionalUserId);
+      final hold = await ref
+          .read(bookingRepositoryProvider)
+          .getActiveHold(widget.professionalUserId);
       if (hold != null && mounted) {
         setState(() {
           _hold = hold;
@@ -154,10 +161,11 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
   Future<void> _loadSlots(String dateYmd) async {
     setState(() => _loadingSlots = true);
     try {
-      final result = await ref.read(bookingRepositoryProvider).getAvailableSlots(
-            professionalId: widget.professionalUserId,
-            date: dateYmd,
-          );
+      final result =
+          await ref.read(bookingRepositoryProvider).getAvailableSlots(
+                professionalId: widget.professionalUserId,
+                date: dateYmd,
+              );
       if (mounted) {
         setState(() {
           _slots = result.slots;
@@ -166,7 +174,8 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _loadingSlots = false);
@@ -204,7 +213,8 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _reservingSlot = false);
@@ -223,10 +233,12 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
     final ms = DateTime.parse(expiresAt).difference(DateTime.now()).inSeconds;
     if (ms <= 0) {
       _holdTimer?.cancel();
-      if (mounted) setState(() {
-        _hold = null;
-        _holdCountdown = '';
-      });
+      if (mounted) {
+        setState(() {
+          _hold = null;
+          _holdCountdown = '';
+        });
+      }
       return;
     }
     final m = ms ~/ 60;
@@ -267,7 +279,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
       return;
     }
 
-    final consultant = ref.read(consultantDetailProvider(widget.professionalUserId)).valueOrNull;
+    final consultant = ref
+        .read(consultantDetailProvider(widget.professionalUserId))
+        .valueOrNull;
     final profile = consultant?.profile;
 
     final snapshot = BookingSnapshot(
@@ -300,19 +314,22 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
   List<DateTime> get _dateObjects {
     return _bookableDates.map((ymd) {
       final parts = ymd.split('-');
-      return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+      return DateTime(
+          int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
     }).toList();
   }
 
   DateTime? get _selectedDateObject {
     if (_selectedDateYmd.isEmpty) return null;
     final parts = _selectedDateYmd.split('-');
-    return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    return DateTime(
+        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
   }
 
   @override
   Widget build(BuildContext context) {
-    final consultant = ref.watch(consultantDetailProvider(widget.professionalUserId));
+    final consultant =
+        ref.watch(consultantDetailProvider(widget.professionalUserId));
 
     consultant.whenData((detail) {
       if (detail != null && _category.isEmpty) {
@@ -336,7 +353,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
           onPressed: () async {
             if (_hold != null) {
               try {
-                await ref.read(bookingRepositoryProvider).releaseSlot(_hold!.holdId);
+                await ref
+                    .read(bookingRepositoryProvider)
+                    .releaseSlot(_hold!.holdId);
               } catch (_) {}
             }
             if (context.mounted) context.pop();
@@ -352,7 +371,8 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                       child: DoctorListCard(
                         name: detail.profile.displayName,
-                        specialty: detail.profile.specialization ?? 'Healthcare professional',
+                        specialty: detail.profile.specialization ??
+                            'Healthcare professional',
                         fee: '${detail.profile.displayFee} / Consultation',
                         imageUrl: detail.profile.image,
                         isVerified: detail.profile.isVerified,
@@ -366,14 +386,20 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                 children: [
-                  _SectionTitle(title: 'Patient details'),
+                  const _SectionTitle(title: 'Patient details'),
                   const SizedBox(height: 12),
                   GlassCard(
                     child: Column(
                       children: [
-                        AppTextField(controller: _firstName, label: 'First name', hint: 'Jane'),
+                        AppTextField(
+                            controller: _firstName,
+                            label: 'First name',
+                            hint: 'Jane'),
                         const SizedBox(height: 12),
-                        AppTextField(controller: _lastName, label: 'Last name', hint: 'Doe'),
+                        AppTextField(
+                            controller: _lastName,
+                            label: 'Last name',
+                            hint: 'Doe'),
                         const SizedBox(height: 12),
                         AppTextField(
                           controller: _age,
@@ -396,19 +422,21 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _SectionTitle(title: 'Appointment'),
+                  const _SectionTitle(title: 'Appointment'),
                   const SizedBox(height: 12),
                   if (_loadingDates)
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(color: AppColors.brand),
+                        child:
+                            CircularProgressIndicator(color: AppColors.brand),
                       ),
                     )
                   else if (_bookableDates.isEmpty)
                     Text(
                       'No bookable dates for this consultant.',
-                      style: AppTypography.body.copyWith(color: AppColors.onSurfaceVariant),
+                      style: AppTypography.body
+                          .copyWith(color: AppColors.onSurfaceVariant),
                     )
                   else ...[
                     DateOvalScroller(
@@ -423,54 +451,65 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                     const SizedBox(height: 16),
                     if (_holdCountdown.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainer,
                           borderRadius: BorderRadius.circular(AppRadii.lg),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.timer_outlined, size: 18, color: AppColors.brand),
+                            const Icon(Icons.timer_outlined,
+                                size: 18, color: AppColors.brand),
                             const SizedBox(width: 8),
                             Text(
                               'Slot held — $_holdCountdown remaining',
-                              style: AppTypography.bodyMedium.copyWith(color: AppColors.brand),
+                              style: AppTypography.bodyMedium
+                                  .copyWith(color: AppColors.brand),
                             ),
                           ],
                         ),
                       ),
                     const SizedBox(height: 12),
                     if (_loadingSlots)
-                      const Center(child: CircularProgressIndicator(color: AppColors.brand))
+                      const Center(
+                          child:
+                              CircularProgressIndicator(color: AppColors.brand))
                     else if (_slots.isEmpty)
                       Text(
                         _emptySlotsMessage(_slotsEmptyReason),
-                        style: AppTypography.body.copyWith(color: AppColors.onSurfaceVariant),
+                        style: AppTypography.body
+                            .copyWith(color: AppColors.onSurfaceVariant),
                       )
                     else
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
                         children: _slots.map((slot) {
-                          final isSelected = _hold?.slotStartAt == slot.slotStartAt;
+                          final isSelected =
+                              _hold?.slotStartAt == slot.slotStartAt;
                           final enabled = slot.isAvailable || isSelected;
                           return GestureDetector(
                             onTap: enabled ? () => _onSlotTap(slot) : null,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
-                                gradient: isSelected ? AppColors.brandGradient : null,
+                                gradient:
+                                    isSelected ? AppColors.brandGradient : null,
                                 color: isSelected
                                     ? null
                                     : enabled
                                         ? AppColors.surfaceContainerLowest
                                         : AppColors.surfaceAlt,
-                                borderRadius: BorderRadius.circular(AppRadii.pill),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadii.pill),
                                 border: Border.all(
                                   color: isSelected
                                       ? Colors.transparent
-                                      : AppColors.outline.withValues(alpha: 0.5),
+                                      : AppColors.outline
+                                          .withValues(alpha: 0.5),
                                 ),
                               ),
                               child: Text(
@@ -481,7 +520,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                                       : enabled
                                           ? AppColors.onSurface
                                           : AppColors.onSurfaceVariant,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -493,7 +534,9 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                       const LinearProgressIndicator(color: AppColors.brand),
                     ],
                     const SizedBox(height: 16),
-                    _ReadOnlyField(label: 'Category', value: _category.isEmpty ? '—' : _category),
+                    _ReadOnlyField(
+                        label: 'Category',
+                        value: _category.isEmpty ? '—' : _category),
                     const SizedBox(height: 12),
                     AppTextField(
                       controller: _message,
@@ -503,7 +546,7 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                     ),
                   ],
                   const SizedBox(height: 24),
-                  _SectionTitle(title: 'Location'),
+                  const _SectionTitle(title: 'Location'),
                   const SizedBox(height: 12),
                   GlassCard(
                     child: Column(
@@ -518,10 +561,12 @@ class _BookConsultationScreenState extends ConsumerState<BookConsultationScreen>
                         if (_placeResults.isNotEmpty)
                           ..._placeResults.take(5).map(
                                 (p) => ListTile(
-                                  title: Text(p.description, style: AppTypography.body),
+                                  title: Text(p.description,
+                                      style: AppTypography.body),
                                   onTap: () {
                                     setState(() {
-                                      _city = p.description.split(',').first.trim();
+                                      _city =
+                                          p.description.split(',').first.trim();
                                       _state = p.description.contains(',')
                                           ? p.description.split(',').last.trim()
                                           : '';

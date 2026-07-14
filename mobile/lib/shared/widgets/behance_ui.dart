@@ -445,7 +445,7 @@ class ClientUpcomingAppointmentCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined,
+                    const Icon(Icons.calendar_today_outlined,
                         size: 16, color: AppColors.brandDeep),
                     const SizedBox(width: 6),
                     Expanded(
@@ -458,7 +458,7 @@ class ClientUpcomingAppointmentCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Icon(Icons.access_time_rounded,
+                    const Icon(Icons.access_time_rounded,
                         size: 16, color: AppColors.brandDeep),
                     const SizedBox(width: 6),
                     Text(

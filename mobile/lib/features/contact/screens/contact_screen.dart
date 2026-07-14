@@ -105,7 +105,7 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                   ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _subject,
+                    initialValue: _subject,
                     borderRadius: BorderRadius.circular(16),
                     items: _contactSubjects
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
