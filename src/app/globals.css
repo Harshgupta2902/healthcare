@@ -27,6 +27,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* PWA install banner height offset */
+  --pwa-banner-h: 0px;
   /* Header nav: mobile below 992px, desktop at 992px+ */
   --breakpoint-nav: 62rem;
 

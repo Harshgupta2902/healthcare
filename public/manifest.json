@@ -1,12 +1,12 @@
 {
-  "name": "HealthHere — Healthcare that actually works",
-  "short_name": "HealthHere",
+  "name": "Healthhere",
+  "short_name": "Healthhere",
   "description": "Making quality healthcare accessible and convenient for everyone, wherever you are.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#0d9488",
+  "theme_color": "#0059bb",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

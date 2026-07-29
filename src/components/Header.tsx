@@ -181,7 +181,7 @@ export default function Header({ className }: HeaderProps) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 flex h-20 w-full items-center justify-between border-b border-lp-outline-variant/30 bg-lp-surface/80 px-5 shadow-sm backdrop-blur-md sm:px-8 lg:px-16 ${className ?? ""}`}
+      className={`fixed left-0 right-0 z-50 flex h-20 w-full items-center justify-between border-b border-lp-outline-variant/30 bg-lp-surface/80 px-5 shadow-sm backdrop-blur-md sm:px-8 lg:px-16 top-[var(--pwa-banner-h,0px)] ${className ?? ""}`}
     >
       <div className="flex min-w-0 items-center gap-3 nav:gap-4">
         <Link

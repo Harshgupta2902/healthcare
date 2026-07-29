@@ -9,7 +9,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { rootMetadata } from "@/lib/seo/root-metadata";
 import { RootJsonLd } from "@/lib/seo/root-json-ld";
 import Script from "next/script";
-import { SerwistProvider } from "@serwist/turbopack/react";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 export const metadata: Metadata = {
@@ -22,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d9488",
+  themeColor: "#0059bb",
 };
 
 export default function RootLayout({
@@ -35,6 +34,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://checkout.razorpay.com" />
         <Script
           id="razorpay-checkout-js"
@@ -43,17 +43,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col min-w-0" suppressHydrationWarning>
-        <SerwistProvider swUrl="/serwist/sw.js">
-          <PwaInstallBanner />
-          <RootJsonLd />
-          <ErrorReporter />
-          <Analytics />
-          <AuthModalProvider>
-            <SiteChrome>{children}</SiteChrome>
-          </AuthModalProvider>
-          <HealthHereAssistant />
-          <Toaster position="top-right" richColors />
-        </SerwistProvider>
+        <PwaInstallBanner />
+        <RootJsonLd />
+        <ErrorReporter />
+        <Analytics />
+        <AuthModalProvider>
+          <SiteChrome>{children}</SiteChrome>
+        </AuthModalProvider>
+        <HealthHereAssistant />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
