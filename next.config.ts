@@ -1,3 +1,4 @@
+import { withSerwist } from "@serwist/turbopack";
 import type { NextConfig } from "next";
 
 /** jsPDF uses html2canvas 1.x, which cannot parse Tailwind v4 `oklch()`. Alias to html2canvas-pro. */
@@ -73,5 +74,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
 // Orchids restart: 1767959722778
