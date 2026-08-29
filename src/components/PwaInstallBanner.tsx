@@ -21,6 +21,16 @@ export function PwaInstallBanner() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
 
+    // Check if device is mobile/tablet
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
+    if (!isMobileDevice) {
+      setIsInstalled(true); // Hide on desktop
+      return;
+    }
+
     // Check if already installed (standalone mode)
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
