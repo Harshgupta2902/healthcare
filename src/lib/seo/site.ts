@@ -1,8 +1,8 @@
 /**
  * Canonical site URL for metadata, OG URLs, and sitemap.
- * Set APP_URL in production (e.g. https://www.healthhere.example).
+ * Set APP_URL in production (e.g. https://www.protealth.example).
  */
-export const SITE_NAME = "HealthHere";
+export const SITE_NAME = "Protealth";
 
 export const DEFAULT_DESCRIPTION =
   "Making quality healthcare accessible and convenient for everyone, wherever you are.";

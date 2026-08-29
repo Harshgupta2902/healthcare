@@ -81,7 +81,7 @@ export function TermsPageContent() {
                 Terms of Service
               </h1>
               <p className="font-sans text-lg leading-relaxed text-lp-on-surface-variant">
-                These terms describe the rules and responsibilities that apply when using the HealthHere website,
+                These terms describe the rules and responsibilities that apply when using the Protealth website,
                 patient features, professional tools, and admin services.
               </p>
             </div>
@@ -153,7 +153,7 @@ export function TermsPageContent() {
                     Not Emergency Care
                   </div>
                   <p className="text-lg font-medium leading-relaxed text-lp-on-surface">
-                    HealthHere is for non-emergency medical information and consultations only. If you are experiencing
+                    Protealth is for non-emergency medical information and consultations only. If you are experiencing
                     a medical emergency, call your local emergency services immediately.
                   </p>
                 </div>
@@ -173,13 +173,13 @@ export function TermsPageContent() {
             <SectionHeading number="01" title="Introduction" />
             <div className="glass-card flex flex-col gap-4 rounded-3xl border border-lp-outline-variant/20 p-8 shadow-sm">
               <p className="text-lg leading-relaxed text-lp-on-surface-variant">
-                Welcome to HealthHere. These terms govern your use of our website, patient features, professional tools,
+                Welcome to Protealth. These terms govern your use of our website, patient features, professional tools,
                 and admin services. Our mission is to make quality healthcare accessible and convenient while maintaining
                 a high standard of care and data security.
               </p>
               <p className="text-lg leading-relaxed text-lp-on-surface-variant">
                 By using this platform, you agree to comply with the rules and guidelines set forth in this document.
-                These terms are designed to protect both you, as the user, and HealthHere, as the provider.
+                These terms are designed to protect both you, as the user, and Protealth, as the provider.
               </p>
             </div>
           </section>
@@ -189,7 +189,7 @@ export function TermsPageContent() {
             <SectionHeading number="02" title="Acceptance of Terms" />
             <div className="flex flex-col gap-4 rounded-3xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-8 shadow-sm">
               <p className="text-lg leading-relaxed text-lp-on-surface-variant">
-                Your access to and use of HealthHere is conditioned on your acceptance of and compliance with these
+                Your access to and use of Protealth is conditioned on your acceptance of and compliance with these
                 Terms. These Terms apply to all visitors, users, and others who access or use the Service.
               </p>
               <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -240,7 +240,7 @@ export function TermsPageContent() {
             <SectionHeading number="04" title="Emergency Disclaimer" variant="error" />
             <div className="flex flex-col gap-4 rounded-3xl border-2 border-dashed border-red-500/30 bg-red-50/20 p-8">
               <p className="text-lg leading-relaxed text-lp-on-surface-variant">
-                Information on HealthHere is for general informational and administrative purposes. It does not replace
+                Information on Protealth is for general informational and administrative purposes. It does not replace
                 advice, diagnosis, or treatment from a qualified clinician. Verification status does not guarantee a
                 particular clinical outcome.
               </p>

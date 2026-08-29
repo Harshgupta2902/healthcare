@@ -1,8 +1,8 @@
-# Analytics — HealthHere
+# Analytics — Protealth
 
 **Last updated:** 2026-06-04
 
-HealthHere uses **Vercel Analytics** for traffic and Web Vitals on deployments hosted on Vercel. Firebase Analytics and Crashlytics have been removed from the codebase.
+Protealth uses **Vercel Analytics** for traffic and Web Vitals on deployments hosted on Vercel. Firebase Analytics and Crashlytics have been removed from the codebase.
 
 ---
 

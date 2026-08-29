@@ -64,11 +64,11 @@ type Question = {
 const PUBLIC_QUESTIONS: Question[] = [
   {
     id: "services",
-    label: "What services does HealthHere offer?",
+    label: "What services does Protealth offer?",
     group: "Public",
     guest: true,
     answer: () =>
-      "HealthHere helps you discover consultants, book consultation requests, manage appointments and profile details from your dashboard, and view prescriptions or documents when available. This platform is not for emergency care.",
+      "Protealth helps you discover consultants, book consultation requests, manage appointments and profile details from your dashboard, and view prescriptions or documents when available. This platform is not for emergency care.",
   },
   {
     id: "find-consultants",
@@ -259,8 +259,8 @@ function buildInitialMessages(ctx: AssistantContext | null, loading = false): As
 }
 
 function getHistoryStorageKey(ctx: AssistantContext | null) {
-  if (ctx?.isAuthenticated && ctx.userId) return `healthhere-assistant-history:${ctx.userId}`;
-  return "healthhere-assistant-history:guest";
+  if (ctx?.isAuthenticated && ctx.userId) return `protealth-assistant-history:${ctx.userId}`;
+  return "protealth-assistant-history:guest";
 }
 
 function readStoredMessages(ctx: AssistantContext | null) {
@@ -338,11 +338,11 @@ function getVisibleQuestions(ctx: AssistantContext | null) {
 }
 
 function getInitialAssistantText(ctx: AssistantContext | null, loading: boolean) {
-  if (loading) return "Hi, I am HealthHere Assistant. I am checking your login status...";
+  if (loading) return "Hi, I am Protealth Assistant. I am checking your login status...";
   if (ctx?.isAuthenticated) {
-    return `Hi ${ctx.displayName || "there"}, I am HealthHere Assistant. I can help with dashboard navigation, booking, profile updates, and appointment or prescription details.`;
+    return `Hi ${ctx.displayName || "there"}, I am Protealth Assistant. I can help with dashboard navigation, booking, profile updates, and appointment or prescription details.`;
   }
-  return "Hi, I am HealthHere Assistant. I can help with services, consultants, the booking flow, the dashboard, and public FAQs. After login, account-specific questions will also appear.";
+  return "Hi, I am Protealth Assistant. I can help with services, consultants, the booking flow, the dashboard, and public FAQs. After login, account-specific questions will also appear.";
 }
 
 function escapeRegExp(value: string) {
@@ -426,7 +426,7 @@ export function HealthHereAssistant() {
             {
               id: "hello-context-error",
               role: "assistant",
-              text: "HealthHere Assistant is ready, but account context could not be loaded. You can still use the public help questions.",
+              text: "Protealth Assistant is ready, but account context could not be loaded. You can still use the public help questions.",
             },
           ]
         );
@@ -554,7 +554,7 @@ export function HealthHereAssistant() {
                 <Bot className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-heading text-white text-sm font-bold">HealthHere Assistant</p>
+                <p className="font-heading text-white text-sm font-bold">Protealth Assistant</p>
                 <p className="text-[11px] text-lp-on-brand/80">
                   {ctx?.isAuthenticated ? `${ctx.role} help enabled` : "Public help"}
                 </p>
@@ -650,7 +650,7 @@ export function HealthHereAssistant() {
             : "bg-gradient-to-r from-lp-brand to-lp-brand-bright text-lp-on-brand hover:shadow-lp-brand/35",
         )}
         onClick={() => setOpen((current) => !current)}
-        aria-label={open ? "Close HealthHere Assistant" : "Open HealthHere Assistant"}
+        aria-label={open ? "Close Protealth Assistant" : "Open Protealth Assistant"}
         aria-expanded={open}
       >
         {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}

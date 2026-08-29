@@ -77,13 +77,13 @@ export function buildPageMetadata({
 
 export function buildHomeMetadata(): Metadata {
   return buildPageMetadata({
-    absoluteTitle: "HealthHere — Healthcare that actually works",
-    title: "HealthHere",
+    absoluteTitle: "Protealth — Healthcare that actually works",
+    title: "Protealth",
     description:
-      "Healthcare that actually works: skip the waiting room and access medical experts, personalized treatment plans, and secure care from anywhere. HealthHere makes quality healthcare accessible and convenient.",
+      "Healthcare that actually works: skip the waiting room and access medical experts, personalized treatment plans, and secure care from anywhere. Protealth makes quality healthcare accessible and convenient.",
     pathname: "/",
     keywords: [
-      "HealthHere",
+      "Protealth",
       "healthcare that actually works",
       "telehealth",
       "online doctor",

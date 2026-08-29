@@ -98,7 +98,7 @@ export function PrivacyPageContent() {
                 Privacy Policy
               </h1>
               <p className="font-sans text-lg leading-relaxed text-lp-on-surface-variant">
-                Your privacy matters. This policy explains how HealthHere handles information when you use our
+                Your privacy matters. This policy explains how Protealth handles information when you use our
                 website, services, forms, dashboards, and communications.
               </p>
             </div>
@@ -266,7 +266,7 @@ export function PrivacyPageContent() {
                     6. Children and emergencies
                   </h2>
                   <p className="mb-4 text-base font-semibold leading-relaxed text-red-900">
-                    HealthHere is not intended to replace emergency medical care. If you are experiencing a medical
+                    Protealth is not intended to replace emergency medical care. If you are experiencing a medical
                     emergency, contact local emergency services immediately.
                   </p>
                   <p className="text-sm leading-relaxed text-red-800/80">
@@ -285,11 +285,11 @@ export function PrivacyPageContent() {
                 </p>
                 <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                   <a
-                    href="mailto:care@healthhere.com"
+                    href="mailto:care@protealth.com"
                     className="flex items-center gap-3 text-sm font-semibold text-lp-brand hover:underline"
                   >
                     <Mail className="size-5 shrink-0" aria-hidden />
-                    care@healthhere.com
+                    care@protealth.com
                   </a>
                   <Link
                     href="/contact"

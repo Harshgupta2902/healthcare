@@ -10,7 +10,7 @@ import { buildPageMetadata, ROBOTS_NOINDEX } from '@/lib/seo/page-metadata'
 export const metadata: Metadata = buildPageMetadata({
     title: 'Unsubscribe from our newsletter',
     description:
-        'Unsubscribe from our newsletter: confirm removal, see when you are already unsubscribed, or troubleshoot an invalid unsubscribe link on HealthHere.',
+        'Unsubscribe from our newsletter: confirm removal, see when you are already unsubscribed, or troubleshoot an invalid unsubscribe link on Protealth.',
     pathname: '/unsubscribe',
     robots: ROBOTS_NOINDEX,
 })

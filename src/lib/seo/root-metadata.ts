@@ -7,8 +7,8 @@ const ROOT_DESCRIPTION =
 export const rootMetadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: "HealthHere — Healthcare that actually works",
-    template: "%s | HealthHere",
+    default: "Protealth — Healthcare that actually works",
+    template: "%s | Protealth",
   },
   description: ROOT_DESCRIPTION,
   applicationName: SITE_NAME,

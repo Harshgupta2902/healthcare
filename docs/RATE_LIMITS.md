@@ -1,4 +1,4 @@
-# Rate limits — HealthHere
+# Rate limits — Protealth
 
 Reference for all request / signup rate limiting in this project.  
 Last updated: **2026-05-20**

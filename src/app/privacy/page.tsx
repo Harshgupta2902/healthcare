@@ -5,9 +5,9 @@ import { PrivacyPageContent } from "./PrivacyPageContent";
 export const metadata: Metadata = buildPageMetadata({
   title: "Privacy Policy",
   description:
-    "Your privacy matters: how HealthHere handles information when you use our website, services, forms, dashboards, and communications—and how we protect healthcare-related data.",
+    "Your privacy matters: how Protealth handles information when you use our website, services, forms, dashboards, and communications—and how we protect healthcare-related data.",
   pathname: "/privacy",
-  keywords: ["HealthHere privacy", "your privacy matters", "health data protection"],
+  keywords: ["Protealth privacy", "your privacy matters", "health data protection"],
 });
 
 export default function PrivacyPage() {

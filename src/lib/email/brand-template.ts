@@ -1,5 +1,5 @@
 /**
- * HealthHere transactional / newsletter email shell — aligned with lp-* theme tokens.
+ * Protealth transactional / newsletter email shell — aligned with lp-* theme tokens.
  * Inline styles only; email-client safe layout.
  */
 
@@ -36,7 +36,7 @@ function emailHead(): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>HealthHere</title>
+  <title>Protealth</title>
   <!--[if !mso]><!-->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet" />
   <!--<![endif]-->
@@ -48,7 +48,7 @@ function emailHeader(appUrl: string): string {
   <tr>
     <td style="background:${EMAIL.brand};background:linear-gradient(135deg, ${EMAIL.brand} 0%, ${EMAIL.brandBright} 100%);padding:28px 32px;border-radius:${EMAIL.radius} ${EMAIL.radius} 0 0;">
       <a href="${appUrl}" style="text-decoration:none;display:inline-block;">
-        <span style="font-family:${EMAIL.fontHeading};font-size:26px;font-weight:700;color:${EMAIL.onBrand};letter-spacing:-0.02em;">HealthHere</span>
+        <span style="font-family:${EMAIL.fontHeading};font-size:26px;font-weight:700;color:${EMAIL.onBrand};letter-spacing:-0.02em;">Protealth</span>
       </a>
       <p style="margin:8px 0 0;font-family:${EMAIL.fontSans};font-size:13px;color:rgba(255,255,255,0.88);line-height:1.4;">
         Healthcare that actually works
@@ -68,7 +68,7 @@ export function buildEmailShell({ appUrl, bodyHtml, footerHtml }: BuildEmailShel
   const footer =
     footerHtml ??
     `<p style="margin:0;font-family:${EMAIL.fontSans};font-size:12px;line-height:1.6;color:${EMAIL.muted};text-align:center;">
-        <a href="${appUrl}" style="color:${EMAIL.brand};text-decoration:none;font-weight:600;">Visit HealthHere</a>
+        <a href="${appUrl}" style="color:${EMAIL.brand};text-decoration:none;font-weight:600;">Visit Protealth</a>
       </p>`
 
   return `<!DOCTYPE html>
@@ -93,7 +93,7 @@ export function buildEmailShell({ appUrl, bodyHtml, footerHtml }: BuildEmailShel
           </tr>
         </table>
         <p style="margin:20px 0 0;font-family:${EMAIL.fontSans};font-size:11px;line-height:1.5;color:${EMAIL.muted};text-align:center;max-width:${EMAIL.maxWidth}px;">
-          &copy; ${new Date().getFullYear()} HealthHere. All rights reserved.
+          &copy; ${new Date().getFullYear()} Protealth. All rights reserved.
         </p>
       </td>
     </tr>

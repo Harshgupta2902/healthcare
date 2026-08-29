@@ -109,9 +109,9 @@ export function PwaInstallBanner() {
         <div className="flex items-center gap-2 text-sm font-medium">
           <Download className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">
-            Install HealthHere for a faster, app-like experience
+            Install Protealth for a faster, app-like experience
           </span>
-          <span className="sm:hidden">Get the HealthHere app</span>
+          <span className="sm:hidden">Get the Protealth app</span>
         </div>
         <div className="flex items-center gap-2">
           <button

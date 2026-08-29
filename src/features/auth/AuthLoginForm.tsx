@@ -219,7 +219,7 @@ export function AuthLoginForm({
       {onSwitchToSignup ? (
         <div className="mt-6 text-center">
           <p className="font-sans text-sm leading-5 text-lp-on-surface-variant">
-            New to HealthHere?{" "}
+          New to Protealth?{" "}
             <button
               type="button"
               onClick={onSwitchToSignup}

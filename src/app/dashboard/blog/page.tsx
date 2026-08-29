@@ -9,7 +9,7 @@ import { MyBlogPostsTable } from './_components/MyBlogPostsTable'
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'My articles',
-  description: 'Write and manage your HealthHere blog articles.',
+    description: 'Write and manage your Protealth blog articles.',
   pathname: '/dashboard/blog',
   robots: ROBOTS_NOINDEX,
 })

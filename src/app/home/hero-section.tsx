@@ -10,13 +10,9 @@ const TRUST_STATS = [
 
 export function HeroSection() {
   return (
-    <section className="relative w-full bg-lp-surface px-5 py-24 sm:px-8 md:py-32 lg:px-16">
+    <section className="relative w-full bg-lp-surface px-5 py-18 sm:px-8 md:py-28 lg:px-16">
       <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-lp-brand/20 bg-lp-brand-bright/10 px-4 py-1.5 text-lp-brand">
-            <BadgeCheck className="size-[18px] shrink-0" aria-hidden />
-            <span className="font-sans text-sm font-semibold uppercase tracking-wide">Trusted by 10k+ patients</span>
-          </div>
           <h1 className="font-heading text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
             Healthcare that <br />
             <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">

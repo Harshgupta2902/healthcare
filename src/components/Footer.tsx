@@ -29,9 +29,9 @@ export default function Footer({ className }: FooterProps) {
         className={`mx-auto grid max-w-7xl grid-cols-1 gap-6 px-5 sm:px-8 md:grid-cols-12 md:gap-6 lg:px-16 ${hasMobileStickyCta ? "pb-10 lg:pb-0" : ""}`}
       >
         <div className="space-y-6 md:col-span-4">
-          <div className={headingClass}>HealthHere</div>
+          <div className={headingClass}>Protealth</div>
           <p className="max-w-xs text-sm leading-relaxed text-lp-on-surface-variant">
-            © {new Date().getFullYear()} HealthHere. Clinical authority meets human-centric care. Leading the digital
+            © {new Date().getFullYear()} Protealth. Clinical authority meets human-centric care. Leading the digital
             health revolution with empathy and precision.
           </p>
         </div>
@@ -84,14 +84,14 @@ export default function Footer({ className }: FooterProps) {
             <Link
               href="/about"
               className="flex size-10 items-center justify-center rounded-full bg-lp-surface-container text-lp-on-surface-variant transition-all hover:bg-lp-brand/10 hover:text-lp-brand"
-              aria-label="HealthHere on the web"
+              aria-label="Protealth on the web"
             >
               <Globe2 className="size-5" aria-hidden />
             </Link>
             <Link
               href="/contact"
               className="flex size-10 items-center justify-center rounded-full bg-lp-surface-container text-lp-on-surface-variant transition-all hover:bg-lp-brand/10 hover:text-lp-brand"
-              aria-label="Contact HealthHere"
+              aria-label="Contact Protealth"
             >
               <MessagesSquare className="size-5" aria-hidden />
             </Link>

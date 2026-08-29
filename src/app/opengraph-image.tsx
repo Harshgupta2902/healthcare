@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "HealthHere — healthcare access platform";
+export const alt = "Protealth — healthcare access platform";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -28,7 +28,7 @@ export default function OpenGraphImage() {
             lineHeight: 1.05,
           }}
         >
-          HealthHere
+          Protealth
         </div>
         <div
           style={{

@@ -37,7 +37,7 @@ export function meetingTitleForContext(ctx: GuestMeetingContext): string {
 
 export function buildJitsiMeetUrl(guestAppointmentId: string): string {
   const slug = guestAppointmentId.replace(/-/g, '').slice(0, 12)
-  return `https://meet.jit.si/HealthHere-${slug}`
+  return `https://meet.jit.si/Protealth-${slug}`
 }
 
 export function formatSlotLabel(appointmentDate: string, appointmentTime: string): string {
@@ -177,14 +177,14 @@ function buildIcsForMeeting(ctx: GuestMeetingContext, meetUrl: string): string {
     .join('\n')
 
   return buildConsultationIcs({
-    uid: `${ctx.guestAppointmentId}@healthhere.com`,
+    uid: `${ctx.guestAppointmentId}@protealth.com`,
     title,
     description,
     location: meetUrl,
     start,
     end,
-    organizerEmail: process.env.SMTP_USER || 'noreply@healthhere.com',
-    organizerName: process.env.SMTP_FROM_NAME || 'HealthHere',
+    organizerEmail: process.env.SMTP_USER || 'noreply@protealth.com',
+    organizerName: process.env.SMTP_FROM_NAME || 'Protealth',
     attendeeEmails: [ctx.guestEmail, ctx.professionalEmail],
   })
 }
@@ -202,7 +202,7 @@ export async function emailGuestMeetingInvitePatient(
     guestEmail: ctx.guestEmail,
     professionalName: ctx.professionalName,
     icsContent: ics,
-    icsFilename: `healthhere-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
+    icsFilename: `protealth-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
   })
 }
 
@@ -218,7 +218,7 @@ export async function emailGuestMeetingInviteConsultant(
     guestName: ctx.guestName,
     professionalEmail: ctx.professionalEmail,
     icsContent: ics,
-    icsFilename: `healthhere-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
+    icsFilename: `protealth-consultation-${ctx.guestAppointmentId.slice(0, 8)}.ics`,
   })
 }
 

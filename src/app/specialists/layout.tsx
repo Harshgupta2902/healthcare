@@ -4,9 +4,9 @@ import { buildPageMetadata } from "@/lib/seo/page-metadata";
 export const metadata: Metadata = buildPageMetadata({
   title: "Medical specialists",
   description:
-    "Medical specialists on HealthHere: explore verified experts across specialties, search by city, and find the right clinician for your needs.",
+    "Medical specialists on Protealth: explore verified experts across specialties, search by city, and find the right clinician for your needs.",
   pathname: "/specialists",
-  keywords: ["medical specialists", "verified experts", "find a doctor", "HealthHere"],
+  keywords: ["medical specialists", "verified experts", "find a doctor", "Protealth"],
 });
 
 export default function SpecialistsLayout({ children }: { children: React.ReactNode }) {

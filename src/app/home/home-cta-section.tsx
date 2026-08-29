@@ -14,7 +14,7 @@ export function HomeCtaSection() {
               Ready to take control?
             </h2>
             <p className="mb-12 max-w-2xl font-sans text-lg leading-relaxed text-white/90">
-              Join thousands of patients who have transformed their healthcare experience with HealthHere.
+              Join thousands of patients who have transformed their healthcare experience with Protealth.
             </p>
             <Link
               href="/book-consultation"

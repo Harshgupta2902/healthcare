@@ -42,14 +42,14 @@ const contactChannels = [
   {
     icon: Mail,
     label: "General Enquiries",
-    value: "care@healthhere.com",
-    href: "mailto:care@healthhere.com",
+    value: "care@protealth.com",
+    href: "mailto:care@protealth.com",
   },
   {
     icon: Stethoscope,
     label: "Clinical Enquiries",
-    value: "care@healthhere.com",
-    href: "mailto:care@healthhere.com",
+    value: "care@protealth.com",
+    href: "mailto:care@protealth.com",
   },
 ] as const;
 
@@ -316,7 +316,7 @@ export default function ContactPage() {
                       </p>
                       <p className="mt-0.5 text-lg font-bold text-white">Call 112 or 108 immediately</p>
                       <p className="mt-1 text-sm text-white/55">
-                        HealthHere is not an emergency service.
+                        Protealth is not an emergency service.
                       </p>
                     </div>
                   </div>

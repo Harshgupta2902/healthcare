@@ -32,8 +32,8 @@ interface TrustAndTestimonialsProps {
 const defaultTestimonials: Testimonial[] = [
   {
     id: "1",
-    quote: "HealthHere transformed how we deliver patient care. The platform is intuitive and our patients love it.",
-    fullQuote: "HealthHere transformed how we deliver patient care. The platform is intuitive and our patients love it. We've seen a 40% increase in patient satisfaction scores since implementing their solution. The seamless integration with our existing systems made the transition effortless.",
+    quote: "Protealth transformed how we deliver patient care. The platform is intuitive and our patients love it.",
+    fullQuote: "Protealth transformed how we deliver patient care. The platform is intuitive and our patients love it. We've seen a 40% increase in patient satisfaction scores since implementing their solution. The seamless integration with our existing systems made the transition effortless.",
     author: "Dr. Sarah Chen",
     role: "Chief Medical Officer",
     company: "Metro Health Network",
@@ -43,7 +43,7 @@ const defaultTestimonials: Testimonial[] = [
   {
     id: "2",
     quote: "The specialist network is incredible. I found the right expert for my condition within minutes.",
-    fullQuote: "The specialist network is incredible. I found the right expert for my condition within minutes. The quality of care I received through HealthHere exceeded my expectations. The convenience of virtual consultations saved me hours of travel time.",
+    fullQuote: "The specialist network is incredible. I found the right expert for my condition within minutes. The quality of care I received through Protealth exceeded my expectations. The convenience of virtual consultations saved me hours of travel time.",
     author: "Michael Rodriguez",
     role: "Patient",
     company: "Verified User",
@@ -52,8 +52,8 @@ const defaultTestimonials: Testimonial[] = [
   },
   {
     id: "3",
-    quote: "Secure, reliable, and user-friendly. HealthHere has everything we need for modern healthcare delivery.",
-    fullQuote: "Secure, reliable, and user-friendly. HealthHere has everything we need for modern healthcare delivery. The platform's security features give us confidence in handling sensitive patient data, while the user experience keeps both staff and patients engaged.",
+    quote: "Secure, reliable, and user-friendly. Protealth has everything we need for modern healthcare delivery.",
+    fullQuote: "Secure, reliable, and user-friendly. Protealth has everything we need for modern healthcare delivery. The platform's security features give us confidence in handling sensitive patient data, while the user experience keeps both staff and patients engaged.",
     author: "Jennifer Park",
     role: "IT Director",
     company: "Regional Medical Center",

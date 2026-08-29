@@ -1,6 +1,6 @@
-# HealthHere
+# Protealth
 
-**HealthHere** is a modern healthcare platform for discovering consultants, booking consultations, reading clinical insights, and managing patient and professional health records—all in one place. The product combines a public marketing site and blog, role-based dashboards, and an admin operations panel, backed by Supabase and deployed on Next.js.
+**Protealth** is a modern healthcare platform for discovering consultants, booking consultations, reading clinical insights, and managing patient and professional health records—all in one place. The product combines a public marketing site and blog, role-based dashboards, and an admin operations panel, backed by Supabase and deployed on Next.js.
 
 ---
 
@@ -149,7 +149,7 @@ Marketing and trust content for patients and professionals.
 | Support, Terms, Privacy, Accessibility | Legal and help content |
 | Login / Register | Supabase Auth; rate-limited sign-up and sign-in |
 
-**HealthHere Assistant** — contextual help on public and dashboard pages (suggested questions, links into booking and dashboard).
+**Protealth Assistant** — contextual help on public and dashboard pages (suggested questions, links into booking and dashboard).
 
 **Blog listing** — featured article on page 1, sticky category pills, responsive card grid, and shared `NewsletterSubscribe` band above the footer.
 
@@ -228,7 +228,7 @@ All mutations go through **admin Server Actions** with Zod schemas and `requireA
 
 ### Blog & content publishing
 
-HealthHere includes a full editorial workflow for clinical insights and wellness articles.
+Protealth includes a full editorial workflow for clinical insights and wellness articles.
 
 #### Public blog (`/blog`, `/blog/[slug]`)
 
@@ -321,7 +321,7 @@ flowchart TD
 | Mode | Meeting link | Invites |
 |------|----------------|---------|
 | **Google configured** | Real `meet.google.com` URL from Calendar API | Sent by Google (`sendUpdates: all`) |
-| **Fallback** | Stable Jitsi room per appointment | Sent by HealthHere SMTP with join link + ICS file |
+| **Fallback** | Stable Jitsi room per appointment | Sent by Protealth SMTP with join link + ICS file |
 
 **Optional Google setup** — requires `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET`, and `GOOGLE_CALENDAR_REFRESH_TOKEN` in environment (Calendar API enabled in Google Cloud). Without these, the platform still works using Jitsi + email.
 
@@ -355,7 +355,7 @@ Professionals share booking URLs that include an encoded consultant reference (`
 ```mermaid
 sequenceDiagram
   participant Patient
-  participant Site as HealthHere
+  participant Site as Protealth
   participant DB as Supabase
   participant Admin
   participant Consultant
@@ -550,8 +550,8 @@ Variables commonly required (names only—set values in `.env` locally and in Ve
 
 ## Visual identity
 
-HealthHere uses a **premium healthcare** aesthetic: soft teals, glassmorphism panels, rounded-xl surfaces, and subtle Framer Motion transitions. Icons are from Lucide React. The experience is designed to feel calm, trustworthy, and spacious on both desktop and mobile—including a bottom navigation bar for the admin panel on small screens.
+Protealth uses a **premium healthcare** aesthetic: soft teals, glassmorphism panels, rounded-xl surfaces, and subtle Framer Motion transitions. Icons are from Lucide React. The experience is designed to feel calm, trustworthy, and spacious on both desktop and mobile—including a bottom navigation bar for the admin panel on small screens.
 
 ---
 
-*HealthHere — connecting patients and consultants with secure booking, records, and video care.*
+*Protealth — connecting patients and consultants with secure booking, records, and video care.*

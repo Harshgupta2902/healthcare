@@ -1,8 +1,8 @@
 <website_design>
-A single-page, warm and professional landing page for "HealthHere" that uses soft pastel whites and an aquatic-green gradient accent at low opacity (20–30%) to communicate calm, trust, and approachability. The page is vertically structured and responsive, with a fixed/sticky top header, a visually prominent hero section, a features/services block, a trust & testimonials strip, and a compact footer. page.tsx is responsible for the overall layout container, page-level spacing, and responsive breakpoints: it provides a centered max-width container on large screens, stacked full-width flow on small screens, and consistent vertical rhythm between the sections.
+A single-page, warm and professional landing page for "Protealth" that uses soft pastel whites and an aquatic-green gradient accent at low opacity (20–30%) to communicate calm, trust, and approachability. The page is vertically structured and responsive, with a fixed/sticky top header, a visually prominent hero section, a features/services block, a trust & testimonials strip, and a compact footer. page.tsx is responsible for the overall layout container, page-level spacing, and responsive breakpoints: it provides a centered max-width container on large screens, stacked full-width flow on small screens, and consistent vertical rhythm between the sections.
 
 Layout order and relationship:
-- Header (sticky at top): compact bar containing brand mark area, the HealthHere name on the left, and Sign In / Login + logo space on the right. The header lives above all other content and remains simple so it doesn't compete with the hero.
+- Header (sticky at top): compact bar containing brand mark area, the Protealth name on the left, and Sign In / Login + logo space on the right. The header lives above all other content and remains simple so it doesn't compete with the hero.
 - Hero (first fold): large welcoming headline, supporting paragraph, primary CTA and secondary CTA, and an inline lead-capture form. The hero uses a rounded, soft card and an aquatic-green gradient background layer (20–30% opacity) blended with warm pastel whites. An illustration/visual placeholder sits to the right on wide screens and stacks under content on small screens.
 - Services/How it works (below hero): horizontally arranged feature cards (tele-consultations, specialist network, secure records, personalized plans). Each card includes icon, short copy, and an action button. Booking flow lives inside this section as a modal/drawer owned by this component.
 - Trust & Testimonials: logos/trust badges and a small testimonials carousel (3 items) to build credibility. This is visually lighter and kept compact to not distract from conversion CTAs.
@@ -19,11 +19,11 @@ Visual system notes for page.tsx:
   <create_component>
     <file_path>src/components/Header.tsx</file_path>
     <design_instructions>
-      Purpose: A self-contained top navigation bar that presents the HealthHere brand, a visible logo area (top-right), and user authentication entry points. It provides a responsive navigation affordance and an inline sign-in modal.
+      Purpose: A self-contained top navigation bar that presents the Protealth brand, a visible logo area (top-right), and user authentication entry points. It provides a responsive navigation affordance and an inline sign-in modal.
 
       Visual / layout:
       - Horizontal bar with subtle glass / pastel white background, soft drop shadow, rounded lower corners optional on large screens.
-      - Left area: Brand wordmark "HealthHere" styled in a friendly blue (primary brand blue) using the chosen heading font (Nunito by default). The brand name should be prominent but not oversized.
+      - Left area: Brand wordmark "Protealth" styled in a friendly blue (primary brand blue) using the chosen heading font (Nunito by default). The brand name should be prominent but not oversized.
       - Middle: optional small nav links (hidden on narrow screens) like "Services", "How it works", "Pricing" (anchor links) presented as low-contrast text.
       - Right area: placeholder square for logo/avatar (visible on all breakpoints) and two actions: "Sign in" (text link) and a primary "Get started" button (filled). On mobile, collapse into a hamburger icon that toggles a slide-over menu.
 
@@ -51,7 +51,7 @@ Visual system notes for page.tsx:
       Visual / layout:
       - Two-column layout on wide screens: left column for text content, CTAs, and inline form; right column for an illustration/visual placeholder (vector/photography card with rounded corners). On narrow screens content stacks vertically (text first, then illustration).
       - Background: a soft warm-white base with a horizontal/diagonal aquatic-green gradient overlay in the hero area. The aquatic gradient uses a low alpha (20–30%) and transitions from a pale aquamarine to a slightly deeper aqua to produce a calming wash behind the hero card.
-      - Headline: large, friendly heading using the chosen heading font (Nunito). Include the brand name styled in the brand blue when mentioned in the headline (e.g., "Welcome to HealthHere").
+      - Headline: large, friendly heading using the chosen heading font (Nunito). Include the brand name styled in the brand blue when mentioned in the headline (e.g., "Welcome to Protealth").
       - Supporting text: clear, empathetic sentence or two that emphasize care, confidentiality, and simplicity.
       - CTAs: prominent primary "Book a free consultation" (filled, accessible contrast) and secondary "Learn how it works" (outline/ghost). Below/adjacent is an email capture inline form with placeholder and submit icon.
       - Microcopy under form: note about privacy and a small lock icon to reassure users about confidentiality.

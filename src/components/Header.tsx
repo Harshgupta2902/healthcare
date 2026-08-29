@@ -188,7 +188,7 @@ export default function Header({ className }: HeaderProps) {
           href="/"
           className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600 font-extrabold tracking-tight font-heading text-2xl sm:text-3xl"
         >
-          HealthHere
+          Protealth
         </Link>
         {mounted && !isPending && user && (
           <Badge

@@ -229,7 +229,7 @@ export default function UnsubscribeClient({ email, token, initialStatus }: Props
                     </p>
                     <p className="text-lg font-bold mb-8 break-all">{email}</p>
                     <p className="text-muted-foreground font-medium mb-8 max-w-md mx-auto">
-                        Thanks for being with us. You&apos;ll no longer receive newsletter emails from HealthHere.
+                        Thanks for being with us. You&apos;ll no longer receive newsletter emails from Protealth.
                     </p>
 
                     <Button

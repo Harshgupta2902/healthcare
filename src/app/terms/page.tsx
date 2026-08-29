@@ -5,9 +5,9 @@ import { TermsPageContent } from "./TermsPageContent";
 export const metadata: Metadata = buildPageMetadata({
   title: "Terms of Service",
   description:
-    "Terms for using HealthHere: rules and responsibilities for the website, patient features, professional tools, and admin services—including emergency care and medical information disclaimers.",
+    "Terms for using Protealth: rules and responsibilities for the website, patient features, professional tools, and admin services—including emergency care and medical information disclaimers.",
   pathname: "/terms",
-  keywords: ["HealthHere terms", "terms of service", "platform rules"],
+  keywords: ["Protealth terms", "terms of service", "platform rules"],
 });
 
 export default function TermsPage() {

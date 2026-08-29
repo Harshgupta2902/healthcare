@@ -18,7 +18,7 @@ export async function generateMetadata({
   const result = await getMyBlogPostById(id)
   return buildPageMetadata({
     title: result.success && result.data ? `Edit: ${result.data.title}` : 'Edit article',
-    description: 'Edit your HealthHere blog article.',
+    description: 'Edit your Protealth blog article.',
     pathname: `/dashboard/blog/${id}/edit`,
     robots: ROBOTS_NOINDEX,
   })

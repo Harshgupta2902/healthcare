@@ -8,9 +8,9 @@ import { buildPageMetadata } from "@/lib/seo/page-metadata";
 export const metadata: Metadata = buildPageMetadata({
   title: "Healthcare without limits",
   description:
-    "Experience the next generation of digital healthcare on HealthHere: simplified medical access, board-certified professionals, and wellbeing-focused services—healthcare without limits.",
+    "Experience the next generation of digital healthcare on Protealth: simplified medical access, board-certified professionals, and wellbeing-focused services—healthcare without limits.",
   pathname: "/services",
-  keywords: ["healthcare without limits", "digital healthcare", "HealthHere services", "medical platform"],
+  keywords: ["healthcare without limits", "digital healthcare", "Protealth services", "medical platform"],
 });
 
 export default function ServicesPage() {

@@ -1,4 +1,4 @@
-/** Shared HealthHere (lp-*) styling for client & professional dashboards. */
+/** Shared Protealth (lp-*) styling for client & professional dashboards. */
 
 export const dashboardPageTitle =
   "font-heading text-2xl sm:text-3xl font-bold text-lp-cta-bg mb-2 tracking-tight";

@@ -1,4 +1,4 @@
-const CACHE_NAME = "healthhere-v1";
+const CACHE_NAME = "protealth-v1";
 const OFFLINE_URL = "/~offline";
 
 // Assets to precache

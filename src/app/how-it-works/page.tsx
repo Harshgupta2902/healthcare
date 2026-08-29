@@ -41,7 +41,7 @@ export default function HowItWorksPage() {
             >
               How <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
-                HealthHere Works
+                Protealth Works
               </span>
             </motion.h1>
 

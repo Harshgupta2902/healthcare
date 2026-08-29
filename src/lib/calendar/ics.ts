@@ -41,7 +41,7 @@ export function buildConsultationIcs(params: {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//HealthHere//Consultation//EN',
+    'PRODID:-//Protealth//Consultation//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',

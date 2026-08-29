@@ -9,7 +9,7 @@ import { requireDashboardBlogAuthor } from '../_components/require-blog-author'
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'New article',
-  description: 'Write a new HealthHere blog article.',
+    description: 'Write a new Protealth blog article.',
   pathname: '/dashboard/blog/new',
   robots: ROBOTS_NOINDEX,
 })

@@ -133,7 +133,7 @@ export const SUPPORT_FAQ_TOPICS: SupportFaqTopic[] = [
       },
       {
         q: "Do you provide emergency services?",
-        a: "No. HealthHere is for outpatient consultations only. In an emergency, call 112 or 108 immediately or go to the nearest emergency department.",
+        a: "No. Protealth is for outpatient consultations only. In an emergency, call 112 or 108 immediately or go to the nearest emergency department.",
       },
     ],
   },

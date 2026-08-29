@@ -10,19 +10,19 @@
  * 2) strip Lexical/Tailwind `class` and inline `style` on **descendants** of `.rx-body` (keep `.rx-body` for PDF CSS).
  */
 
-export const HEALTHHERE_PDF_BRANDING = {
-    companyName: "HealthHere",
+export const PROTEALTH_PDF_BRANDING = {
+    companyName: "Protealth",
     tagline: "Making quality healthcare accessible and convenient for everyone.",
     addressLine: "Serving patients digitally across India",
-    email: "care@healthhere.com",
+    email: "care@protealth.com",
     phone: "+91 9981322736",
 } as const;
 
 /** Temp `<style>` id — removed after PDF render */
-export const HEALTHHERE_PDF_HEAD_STYLE_ID = "healthhere-prescription-pdf-styles";
+export const PROTEALTH_PDF_HEAD_STYLE_ID = "protealth-prescription-pdf-styles";
 
 /** Full-screen mask while html2canvas runs — sits above the off-screen shell so the UI never flashes the letter HTML */
-export const HEALTHHERE_PDF_MASK_ID = "healthhere-prescription-pdf-mask";
+export const PROTEALTH_PDF_MASK_ID = "protealth-prescription-pdf-mask";
 
 export const PRESCRIPTION_PDF_STYLE_CSS = `
   .rx-wrap { font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #0f172a; font-size: 13px; line-height: 1.45; box-sizing: border-box; background: #ffffff; }
@@ -139,12 +139,12 @@ export function stripPrescriptionBodyForPdfEngine(shell: HTMLElement): void {
 }
 
 export function attachPrescriptionPdfStylesToHead(): HTMLStyleElement {
-    const existing = document.getElementById(HEALTHHERE_PDF_HEAD_STYLE_ID);
+    const existing = document.getElementById(PROTEALTH_PDF_HEAD_STYLE_ID);
     if (existing instanceof HTMLStyleElement) {
         existing.remove();
     }
     const style = document.createElement("style");
-    style.id = HEALTHHERE_PDF_HEAD_STYLE_ID;
+    style.id = PROTEALTH_PDF_HEAD_STYLE_ID;
     style.textContent = PRESCRIPTION_PDF_STYLE_CSS;
     document.head.appendChild(style);
     return style;
@@ -152,7 +152,7 @@ export function attachPrescriptionPdfStylesToHead(): HTMLStyleElement {
 
 export function detachPrescriptionPdfStyles(styleEl: HTMLStyleElement | null): void {
     styleEl?.remove();
-    document.getElementById(HEALTHHERE_PDF_HEAD_STYLE_ID)?.remove();
+    document.getElementById(PROTEALTH_PDF_HEAD_STYLE_ID)?.remove();
 }
 
 /**
@@ -190,9 +190,9 @@ export function preparePrescriptionPdfShellForRaster(shell: HTMLElement): void {
 }
 
 export function attachPrescriptionPdfLoadingMask(): HTMLDivElement {
-    document.getElementById(HEALTHHERE_PDF_MASK_ID)?.remove();
+    document.getElementById(PROTEALTH_PDF_MASK_ID)?.remove();
     const mask = document.createElement("div");
-    mask.id = HEALTHHERE_PDF_MASK_ID;
+    mask.id = PROTEALTH_PDF_MASK_ID;
     mask.setAttribute("role", "status");
     mask.setAttribute("aria-live", "polite");
     mask.style.cssText = [
@@ -217,7 +217,7 @@ export function attachPrescriptionPdfLoadingMask(): HTMLDivElement {
 
 export function detachPrescriptionPdfLoadingMask(mask: HTMLDivElement | null): void {
     mask?.remove();
-    document.getElementById(HEALTHHERE_PDF_MASK_ID)?.remove();
+    document.getElementById(PROTEALTH_PDF_MASK_ID)?.remove();
 }
 
 /**
@@ -304,7 +304,7 @@ export async function rasterizePrescriptionShellToPdfBlobUrl(shell: HTMLElement)
 }
 
 export function buildPrescriptionPdfDocumentHtml(input: PrescriptionPdfLayoutInput): string {
-    const b = HEALTHHERE_PDF_BRANDING;
+    const b = PROTEALTH_PDF_BRANDING;
     const safe = {
         doctor: escapeHtml(input.doctorDisplayName),
         qual: escapeHtml(input.qualificationLine),

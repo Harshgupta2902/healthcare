@@ -23,9 +23,9 @@ import {
  *  - SMTP_PASS       Gmail app password (not the account password)
  *
  * Optional env:
- *  - SMTP_FROM_NAME  Display name for the sender (default: "HealthHere")
+ *  - SMTP_FROM_NAME  Display name for the sender (default: "Protealth")
  *  - SMTP_SERVICE    Nodemailer service preset (default: "gmail")
- *  - APP_URL         Public URL used in email CTAs (default: "https://healthhere.com")
+ *  - APP_URL         Public URL used in email CTAs (default: "https://protealth.com")
  */
 let transporter: Transporter | null = null
 
@@ -50,13 +50,13 @@ function getTransporter(): Transporter {
 }
 
 function getFromAddress(): string {
-    const fromName = process.env.SMTP_FROM_NAME || 'HealthHere'
+    const fromName = process.env.SMTP_FROM_NAME || 'Protealth'
     const user = process.env.SMTP_USER as string
     return `"${fromName}" <${user}>`
 }
 
 function getAppUrl(): string {
-    return process.env.APP_URL || 'https://healthhere.com'
+    return process.env.APP_URL || ''
 }
 
 function buildUnsubscribeUrl(email: string): string {
@@ -77,7 +77,7 @@ function newsletterWelcomeTemplate(userName: string, unsubscribeUrl: string): st
         'Updates on new services and features',
         'Special offers and announcements',
       ])}
-      ${emailPrimaryButton(appUrl, 'Visit HealthHere')}
+      ${emailPrimaryButton(appUrl, 'Visit Protealth')}
     `
 
     return buildEmailShell({
@@ -103,7 +103,7 @@ export async function sendNewsletterEmail(
     const info = await t.sendMail({
         from: getFromAddress(),
         to: userEmail,
-        subject: 'Welcome to the HealthHere Newsletter 🎉',
+        subject: 'Welcome to the Protealth Newsletter 🎉',
         html: newsletterWelcomeTemplate(safeName, unsubscribeUrl),
         headers: {
             'List-Unsubscribe': `<${unsubscribeUrl}>`,
@@ -138,7 +138,7 @@ export async function sendNewsletterBroadcastEmail(
         bodyHtml,
         footerHtml: emailUnsubscribeFooter(
             unsubscribeUrl,
-            'You received this email because you subscribed to HealthHere updates.'
+            'You received this email because you subscribed to Protealth updates.'
         ),
     })
 
@@ -181,7 +181,7 @@ function consultationMeetingInviteTemplate(params: {
         footerHtml: `<p style="margin:0;font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#76849f;text-align:center;">
           A calendar invite (.ics) is attached &mdash; open it to add this appointment to your calendar.
           <br /><br />
-          ${emailInlineLink(appUrl, 'Visit HealthHere')}
+          ${emailInlineLink(appUrl, 'Visit Protealth')}
         </p>`,
     })
 }
@@ -196,7 +196,7 @@ export async function sendConsultationMeetingInviteToGuest(params: {
     icsFilename: string
 }): Promise<void> {
     const t = getTransporter()
-    const subject = `HealthHere consultation — ${params.slotLabel}`
+    const subject = `Protealth consultation — ${params.slotLabel}`
     const guestDisplay = params.guestName.trim() || params.guestEmail.split('@')[0] || 'there'
     const profDisplay =
         params.professionalName.trim() || 'your consultant'
@@ -232,7 +232,7 @@ export async function sendConsultationMeetingInviteToProfessional(params: {
     icsFilename: string
 }): Promise<void> {
     const t = getTransporter()
-    const subject = `HealthHere consultation — ${params.slotLabel}`
+    const subject = `Protealth consultation — ${params.slotLabel}`
     const guestDisplay = params.guestName.trim() || 'the patient'
     const profDisplay = params.professionalEmail.split('@')[0] || 'there'
 
@@ -270,7 +270,7 @@ function registrationOtpTemplate(params: {
   const bodyHtml = `
       ${emailHeading('Verify your email')}
       ${emailParagraph(`Hi ${safeName},`)}
-      ${emailParagraph('Use this verification code to complete your HealthHere account registration:')}
+      ${emailParagraph('Use this verification code to complete your Protealth account registration:')}
       <p style="margin:24px 0;font-family:${EMAIL.fontHeading};font-size:32px;font-weight:700;letter-spacing:0.28em;text-align:center;color:${EMAIL.brand};">
         ${safeCode}
       </p>
@@ -298,7 +298,7 @@ export async function sendRegistrationOtpEmail(params: {
   const info = await t.sendMail({
     from: getFromAddress(),
     to: params.email,
-    subject: `${params.otpCode} is your HealthHere verification code`,
+    subject: `${params.otpCode} is your Protealth verification code`,
     html: registrationOtpTemplate({
       recipientName: safeName,
       otpCode: params.otpCode,
