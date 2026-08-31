@@ -335,7 +335,7 @@ export function AuthRegisterForm({
                   className="gap-2"
                 >
                   <Stethoscope className="size-5 shrink-0" aria-hidden />
-                  Provider
+                  Professional
                 </LpButton>
               </div>
 
