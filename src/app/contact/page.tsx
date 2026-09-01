@@ -28,7 +28,6 @@ import { submitContactForm } from "@/features/contact/actions";
 import { cn } from "@/lib/utils";
 import { contactSchema, type ContactFormValues } from "@/features/contact/schema";
 import { getDeviceFingerprintHash } from "@/lib/device-fingerprint";
-import { CONTACT_HERO_IMAGE } from "@/app/contact/constants";
 import { CONTACT_SUBJECT_OPTIONS } from "@/features/contact/constants";
 
 const contactChannels = [
@@ -93,44 +92,47 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-lp-on-surface">
-      <main className="pb-16 pt-24 md:pb-20 md:pt-28">
+    <div className="min-h-screen bg-white text-lp-on-surface">
+      <main className="pb-16 pt-16 md:pb-20 md:pt-20">
         {/* Hero */}
-        <section className="mx-auto mb-12 max-w-6xl px-5 text-center md:mb-16 md:px-8 lg:px-12">
-        <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+        <section className="bg-gradient-to-b from-white to-[#f9fbff]">
+          <div className="mx-auto max-w-[1120px] px-4 py-12 text-center md:py-16">
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]"
+              className="mb-4 text-4xl font-bold leading-[1.1] tracking-tight text-[#102b51] md:text-5xl"
             >
-              Get in {" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
+              Get in{" "}
+              <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Touch with Us
               </span>
             </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="mx-auto mt-4 max-w-[700px] text-base leading-relaxed text-lp-on-surface-variant md:text-lg"
-          >
-            Whether you&apos;re a patient seeking care or a provider interested in collaboration,
-            our team is here to provide clinical excellence and human-centric support.
-          </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="mx-auto mt-4 max-w-[640px] text-base leading-relaxed text-[#6f7f94] md:text-lg"
+            >
+              Whether you&apos;re a patient seeking care or a provider interested in collaboration,
+              our team is here to provide clinical excellence and human-centric support.
+            </motion.p>
+          </div>
         </section>
 
         {/* Form + sidebar */}
-        <section className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-5 md:grid-cols-12 md:gap-6 md:px-8 lg:px-12">
+        <section className="mx-auto mt-10 grid max-w-[1120px] grid-cols-1 gap-6 px-4 md:grid-cols-12 md:gap-6">
           {/* Form card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
-            className="rounded-2xl border border-lp-outline-variant/30 bg-white p-6 shadow-[0_4px_20px_rgba(10,25,47,0.05)] md:col-span-7 md:p-8"
+            className="rounded-2xl border border-[#e1e8f2] bg-white p-6 shadow-[0_4px_20px_rgba(10,25,47,0.04)] md:col-span-7 md:p-8"
           >
             <div className="mb-8 flex items-center gap-3">
-              <Mail className="size-6 text-lp-brand" aria-hidden />
-              <h2 className="font-heading text-xl font-semibold text-lp-on-surface md:text-2xl">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-[#eef5ff] text-[#2871d4]">
+                <Mail className="size-5" aria-hidden />
+              </div>
+              <h2 className="font-heading text-xl font-semibold text-[#122e52] md:text-2xl">
                 Send us a message
               </h2>
             </div>
@@ -258,68 +260,55 @@ export default function ContactPage() {
             </Form>
           </motion.div>
 
-          {/* Direct channels + image */}
+          {/* Direct channels */}
           <div className="space-y-6 md:col-span-5">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.16 }}
-              className="relative overflow-hidden rounded-2xl border border-white/10 p-6 shadow-[0_4px_24px_rgba(0,89,187,0.18)] md:p-8"
+              className="rounded-2xl border border-[#e1e8f2] bg-white p-6 shadow-[0_4px_20px_rgba(10,25,47,0.04)] md:p-8"
             >
-              <div
-                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-lp-primary-container via-[#0c2d5c] to-lp-brand"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-lp-brand-bright/25 blur-3xl"
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute -bottom-20 -left-12 size-56 rounded-full bg-white/5 blur-3xl"
-                aria-hidden
-              />
-
-              <div className="relative z-10 text-white">
-                <h3 className="font-heading text-white mb-6 text-xl font-semibold md:text-2xl">
-                  Direct Channels
-                </h3>
-                <div className="space-y-6">
-                  {contactChannels.map((channel) => (
-                    <div key={channel.label} className="flex items-start gap-4">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-                        <channel.icon className="size-5 text-lp-secondary-fixed" aria-hidden />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-white/65">
-                          {channel.label}
-                        </p>
-                        <a
-                          href={channel.href}
-                          className="mt-0.5 block text-lg font-bold text-white hover:text-lp-secondary-fixed transition-colors"
-                        >
-                          {channel.value}
-                        </a>
-                        {"note" in channel && channel.note ? (
-                          <p className="mt-1 text-sm text-white/55">{channel.note}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="flex items-start gap-4 border-t border-white/15 pt-6">
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-red-500/25 backdrop-blur-sm">
-                      <AlertCircle className="size-5 text-red-200" aria-hidden />
+              <h3 className="font-heading mb-6 text-xl font-semibold text-[#122e52] md:text-2xl">
+                Direct Channels
+              </h3>
+              <div className="space-y-5">
+                {contactChannels.map((channel) => (
+                  <a
+                    key={channel.label}
+                    href={channel.href}
+                    className="group flex items-start gap-4 rounded-xl border border-transparent p-3 transition-colors hover:border-[#e1e8f2] hover:bg-[#f9fbff]"
+                  >
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#2871d4] transition-colors group-hover:bg-[#2871d4]">
+                      <channel.icon className="size-5" aria-hidden />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-white/65">
-                        Medical Emergency
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#8390a0]">
+                        {channel.label}
                       </p>
-                      <p className="mt-0.5 text-lg font-bold text-white">Call 112 or 108 immediately</p>
-                      <p className="mt-1 text-sm text-white/55">
-                        Protealth is not an emergency service.
-                      </p>
+                      <span className="mt-0.5 block text-base font-bold text-[#1f385a]">
+                        {channel.value}
+                      </span>
+                      {"note" in channel && channel.note ? (
+                        <p className="mt-1 text-sm text-[#718198]">{channel.note}</p>
+                      ) : null}
                     </div>
-                  </div>
+                  </a>
+                ))}
+              </div>
+
+              {/* Emergency note */}
+              <div className="mt-6 flex items-start gap-4 rounded-xl border border-red-100 bg-red-50 p-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                  <AlertCircle className="size-5" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
+                    Medical Emergency
+                  </p>
+                  <p className="mt-0.5 text-base font-bold text-[#1f385a]">Call 112 or 108 immediately</p>
+                  <p className="mt-1 text-sm text-[#718198]">
+                    Protealth is not an emergency service.
+                  </p>
                 </div>
               </div>
             </motion.div>
