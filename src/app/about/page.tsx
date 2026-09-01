@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Heart, Info, ShieldCheck, Users } from "lucide-react";
-import { LpButton } from "@/components/ui/lp-button";
+import { ArrowRight, Heart, ShieldCheck, Users } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { ABOUT_MISSION_IMAGE } from "./constants";
 
@@ -37,21 +36,18 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-lp-surface font-sans text-lp-on-surface selection:bg-lp-brand/15">
+    <div className="min-h-screen bg-white font-sans text-lp-on-surface selection:bg-lp-brand/15">
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_50%,rgba(0,89,187,0.05)_0%,rgba(248,249,255,0)_70%)] py-16 md:py-32">
-          <div className="mx-auto max-w-7xl px-5 text-center sm:px-8 lg:px-16">
-            <div className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-lp-outline-variant/30 bg-lp-surface-container-high px-4 py-1.5">
-              <Info className="size-[18px] text-lp-brand" aria-hidden />
-              <span className="font-sans text-sm font-semibold uppercase tracking-wider text-lp-on-surface-variant">
-                About HealthHere
+        <section className="bg-gradient-to-b from-white to-[#f9fbff]">
+          <div className="mx-auto max-w-[1120px] px-4 py-14 text-center md:py-20">
+            <h1 className="mx-auto mb-4 max-w-3xl font-heading text-4xl font-bold leading-[1.1] tracking-tight text-[#102b51] md:text-5xl">
+              Clinical access,{" "}
+              <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                designed around people
               </span>
-            </div>
-            <h1 className="mx-auto mb-6 max-w-4xl font-heading text-4xl font-bold tracking-tight text-lp-on-surface sm:text-5xl md:text-[48px] md:leading-[56px]">
-              Clinical access, designed around people.
             </h1>
-            <p className="mx-auto max-w-2xl font-sans text-lg leading-relaxed text-lp-on-surface-variant">
+            <p className="mx-auto max-w-2xl font-sans text-base leading-relaxed text-[#6f7f94] md:text-lg">
               HealthHere connects patients with trusted healthcare professionals through a secure, simple, and
               supportive digital care experience.
             </p>
@@ -59,49 +55,47 @@ export default function AboutPage() {
         </section>
 
         {/* Values */}
-        <section className="pb-16 md:pb-24">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-16">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <section className="py-12 md:py-16">
+          <div className="mx-auto max-w-[1120px] px-4">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {values.map(({ icon: Icon, title, description }) => (
                 <div
                   key={title}
-                  className="rounded-xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-8 transition-shadow duration-300 hover:shadow-xl"
+                  className="group rounded-2xl border border-[#e1e8f2] bg-white p-6 transition-all duration-[250ms] hover:-translate-y-1 hover:border-[#b9d2f2] hover:shadow-[0_12px_30px_rgba(31,102,190,0.08)]"
                 >
-                  <div className="mb-6 flex size-12 items-center justify-center rounded-xl bg-lp-surface-container-high">
-                    <Icon className="size-6 text-lp-brand" aria-hidden />
+                  <div className="mb-4 flex size-11 items-center justify-center rounded-xl text-[#2871d4] transition-colors group-hover:bg-[#2871d4]">
+                    <Icon className="size-5" aria-hidden />
                   </div>
-                  <h2 className="mb-4 font-heading text-2xl font-semibold text-lp-on-surface">{title}</h2>
-                  <p className="text-base leading-6 text-lp-on-surface-variant">{description}</p>
+                  <h2 className="mb-2 font-heading text-base font-bold text-[#1f385a]">{title}</h2>
+                  <p className="text-sm leading-relaxed text-[#718198]">{description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Mission bento */}
-        <section className="bg-lp-surface-container-low/30 py-16 md:py-24">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-16">
-            <div className="grid grid-cols-1 overflow-hidden rounded-3xl border border-lp-outline-variant/20 bg-lp-surface-container-lowest shadow-sm lg:grid-cols-2">
-              <div className="flex flex-col justify-center p-8 md:p-16">
-                <h2 className="mb-8 font-heading text-3xl font-semibold tracking-tight text-lp-on-surface md:text-[32px] md:leading-10">
+        {/* Mission */}
+        <section className="pb-16 md:pb-20">
+          <div className="mx-auto max-w-[1120px] px-4">
+            <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-[#e1e8f2] bg-white shadow-sm lg:grid-cols-2">
+              <div className="flex flex-col justify-center p-8 md:p-12">
+                <h2 className="mb-4 font-heading text-2xl font-bold tracking-tight text-[#122e52] md:text-3xl">
                   Our mission
                 </h2>
-                <p className="mb-10 font-sans text-lg leading-relaxed text-lp-on-surface-variant">
+                <p className="mb-8 font-sans text-base leading-relaxed text-[#6f7f94]">
                   We are building a healthcare platform where patients can discover specialists, understand their
                   options, and request care with confidence. HealthHere is not a substitute for emergency services or
                   in-person medical judgment, but it helps make routine access, communication, and coordination easier.
                 </p>
-                <LpButton
-                  className="inline-flex h-auto w-fit rounded-xl bg-lp-cta-bg px-8 py-4 normal-case tracking-normal text-white hover:opacity-90"
-                  asChild
+                <Link
+                  href="/book-consultation"
+                  className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#1769d8] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#1769d8]/20 transition-colors hover:bg-[#1556b8]"
                 >
-                  <Link href="/book-consultation">
-                    Start a consultation
-                    <ArrowRight className="size-5" aria-hidden />
-                  </Link>
-                </LpButton>
+                  Start a consultation
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
               </div>
-              <div className="relative min-h-[400px]">
+              <div className="relative min-h-[320px] lg:min-h-full">
                 <Image
                   src={ABOUT_MISSION_IMAGE}
                   alt="Healthcare professional in a modern clinical setting"
