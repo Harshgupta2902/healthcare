@@ -7,7 +7,6 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -39,31 +38,33 @@ export default function SupportPage() {
   }, [query]);
 
   return (
-    <div className="min-h-screen bg-background text-lp-on-surface">
-      <main className="pb-0 pt-24 md:pt-28">
+    <div className="min-h-screen bg-white text-lp-on-surface">
+      <main className="pb-0 pt-16 md:pt-20">
         {/* Hero */}
-        <section className="mx-auto mb-16 max-w-4xl px-5 text-center md:mb-24 md:px-8 lg:px-12">
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-heading text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl"
-          >
-            How can we help you today?
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-lp-on-surface-variant md:text-xl"
-          >
-            Search our knowledge base for answers regarding appointments, clinical records, and
-            billing services.
-          </motion.p>
+        <section className="bg-gradient-to-b from-white to-[#f9fbff]">
+          <div className="mx-auto max-w-[1120px] px-5 py-4 text-center md:py-8 md:px-8">
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="font-heading text-4xl font-bold tracking-tight text-[#102b51] md:text-5xl"
+            >
+              How can we help you today?
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 }}
+              className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6f7f94] md:text-lg"
+            >
+              Search our knowledge base for answers regarding appointments, clinical records, and
+              billing services.
+            </motion.p>
+          </div>
         </section>
 
         {/* Category grid */}
-        <section className="mx-auto mb-16 max-w-6xl px-5 md:mb-24 md:px-8 lg:px-12">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mx-auto max-w-[1120px] px-5 py-12 md:py-16 md:px-8">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {SUPPORT_CATEGORIES.map((cat, index) => (
               <motion.a
                 key={cat.title}
@@ -72,13 +73,13 @@ export default function SupportPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.06 }}
-                className="group border border-lp-outline-variant/50 bg-white p-8 transition-all duration-300 hover:border-lp-brand"
+                className="group rounded-2xl border border-[#e1e8f2] bg-white p-6 transition-all duration-[250ms] hover:-translate-y-1 hover:border-[#b9d2f2] hover:shadow-[0_12px_30px_rgba(31,102,190,0.08)]"
               >
-                <div className="mb-6 flex size-12 items-center justify-center bg-lp-surface-container-low text-lp-on-surface transition-colors group-hover:bg-lp-brand group-hover:text-white">
-                  <cat.icon className="size-6" aria-hidden />
+                <div className="mb-4 flex size-11 items-center justify-center rounded-xl text-[#2871d4] transition-colors">
+                  <cat.icon className="size-5" aria-hidden />
                 </div>
-                <h3 className="font-heading mb-2 text-xl font-bold">{cat.title}</h3>
-                <p className="text-sm leading-relaxed text-lp-on-surface-variant">
+                <h3 className="font-heading mb-1.5 text-base font-bold text-[#1f385a]">{cat.title}</h3>
+                <p className="text-sm leading-relaxed text-[#718198]">
                   {cat.description}
                 </p>
               </motion.a>
@@ -87,15 +88,15 @@ export default function SupportPage() {
         </section>
 
         {/* FAQ */}
-        <section className="mx-auto mb-16 max-w-6xl px-5 md:mb-24 md:px-8 lg:px-12">
-          <h2 className="font-heading mb-12 text-center text-3xl font-bold text-lp-on-surface md:mb-16 md:text-4xl">
+        <section className="mx-auto max-w-[1120px] px-5 pb-12 md:pb-16 md:px-8">
+          <h2 className="font-heading mb-10 text-center text-2xl font-bold text-lp-on-surface md:mb-12 md:text-3xl">
             Frequently Asked Questions
           </h2>
 
           {filteredTopics.length === 0 ? (
-            <p className="text-center text-lp-on-surface-variant">
+            <p className="text-center text-[#718198]">
               No articles match your search. Try different keywords or{" "}
-              <Link href="/contact" className="font-semibold text-lp-brand hover:underline">
+              <Link href="/contact" className="font-semibold text-[#2871d4] hover:underline">
                 contact support
               </Link>
               .
@@ -105,7 +106,7 @@ export default function SupportPage() {
               {/* Sidebar */}
               <div className="lg:col-span-4">
                 <div className="lg:sticky lg:top-24">
-                  <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-lp-on-surface-variant">
+                  <p className="mb-4 px-4 text-xs font-semibold uppercase tracking-wide text-[#8390a0]">
                     Topics
                   </p>
                   <nav className="flex flex-col gap-1 sm:flex-row sm:flex-wrap lg:flex-col">
@@ -120,10 +121,10 @@ export default function SupportPage() {
                           href={`#${topic.id}`}
                           onClick={() => setActiveTopic(topic.id)}
                           className={cn(
-                            "py-2 text-base font-medium transition-colors",
+                            "rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
                             isActive
-                              ? "border-b-2 border-lp-on-surface font-semibold text-lp-on-surface"
-                              : "text-lp-on-surface-variant hover:text-lp-brand",
+                              ? "bg-[#eef5ff] font-semibold text-[#2871d4]"
+                              : "text-[#6f7f94] hover:bg-[#f5f8fd] hover:text-[#2871d4]",
                           )}
                         >
                           {topic.label}
@@ -138,25 +139,25 @@ export default function SupportPage() {
               <div className="space-y-12 lg:col-span-8">
                 {filteredTopics.map((topic) => (
                   <div key={topic.id} id={topic.id} className="scroll-mt-28">
-                    <h3 className="font-heading mb-6 border-b border-lp-outline-variant/30 pb-4 text-2xl font-semibold text-lp-on-surface">
+                    <h3 className="font-heading mb-5 text-xl font-bold text-[#122e52]">
                       {topic.title}
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {topic.questions.map((faq) => (
                         <details
                           key={faq.q}
-                          className="group rounded-lg bg-lp-surface-container-low/50"
+                          className="group rounded-2xl border border-[#e1e8f2] bg-white transition-colors hover:border-[#b9d2f2]"
                         >
-                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
-                            <span className="font-heading text-left text-lg font-semibold text-lp-on-surface">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
+                            <span className="font-heading text-left text-base font-semibold text-[#1f385a]">
                               {faq.q}
                             </span>
                             <Plus
-                              className="size-5 shrink-0 text-lp-brand transition-transform duration-300 group-open:rotate-45"
+                              className="size-5 shrink-0 text-[#2871d4] transition-transform duration-300 group-open:rotate-45"
                               aria-hidden
                             />
                           </summary>
-                          <div className="px-6 pb-6 text-base leading-relaxed text-lp-on-surface-variant">
+                          <div className="px-5 pb-5 text-sm leading-relaxed text-[#718198]">
                             {faq.a}
                           </div>
                         </details>
@@ -170,44 +171,61 @@ export default function SupportPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-lp-primary-container py-16 text-white md:py-24">
-          <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-5 md:px-8 lg:flex-row lg:gap-16 lg:px-12">
-            <div className="flex-1 text-center lg:text-left">
-              <h2 className="font-heading mb-6 text-3xl font-bold md:text-4xl">
-                Still have questions?
-              </h2>
-              <p className="mx-auto mb-10 max-w-lg text-lg text-white/70 lg:mx-0">
-                Our dedicated support team is available to help you with clinical or technical
-                inquiries.
-              </p>
-              <div className="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
-                <Button
-                  asChild
-                  className="h-12 rounded-lg bg-white px-8 font-bold text-lp-primary-container hover:bg-lp-surface-container-low"
-                >
-                  <Link href="/contact">Contact Support</Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-12 rounded-lg border-white/30 bg-transparent px-8 font-bold text-white hover:bg-white/10 hover:text-white"
-                >
-                  <Link href="/services">Browse Services</Link>
-                </Button>
-              </div>
-            </div>
+        <section className="mx-auto max-w-[1120px] px-5 py-16 md:px-8">
+          <div className="cta-box relative overflow-hidden rounded-2xl px-8 py-12 text-white md:px-12 md:py-14">
+            <style jsx>{`
+              .cta-box {
+                background: linear-gradient(105deg, #123b7d, #2873dc);
+              }
+              .cta-box::after {
+                content: "";
+                position: absolute;
+                width: 280px;
+                height: 280px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 50%;
+                right: -130px;
+                top: -140px;
+              }
+            `}</style>
 
-            <div className="grid w-full max-w-lg flex-1 grid-cols-2 gap-8">
-              {SUPPORT_CTA_FEATURES.map((item) => (
-                <div
-                  key={item.title}
-                  className="flex flex-col items-center text-center lg:items-start lg:text-left"
-                >
-                  <item.icon className="mb-4 size-10 text-white/50" aria-hidden />
-                  <h4 className="mb-1 font-bold">{item.title}</h4>
-                  <p className="text-xs text-white/50">{item.description}</p>
+            <div className="relative z-10 flex flex-col items-center gap-10 lg:flex-row lg:gap-16">
+              <div className="flex-1 text-center lg:text-left">
+                <h2 className="font-heading mb-4 text-2xl font-bold text-white md:text-3xl">
+                  Still have questions?
+                </h2>
+                <p className="mx-auto mb-8 max-w-lg text-sm text-white/90 md:text-base lg:mx-0">
+                  Our dedicated support team is available to help you with clinical or technical
+                  inquiries.
+                </p>
+                <div className="flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                  <Link
+                    href="/contact"
+                    className="rounded-lg bg-white px-6 py-3 text-sm font-bold text-[#2265b8] transition-colors hover:bg-gray-50"
+                  >
+                    Contact Us
+                  </Link>
+                  <Link
+                    href="/services"
+                    className="rounded-lg border border-white/40 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
+                  >
+                    Browse Services
+                  </Link>
                 </div>
-              ))}
+              </div>
+
+              <div className="grid w-full max-w-lg flex-1 grid-cols-2 gap-6">
+                {SUPPORT_CTA_FEATURES.map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex flex-col items-center text-center lg:items-start lg:text-left"
+                  >
+                    <item.icon className="mb-3 size-8 text-white/70" aria-hidden />
+                    <h4 className="mb-1 text-sm font-bold text-white">{item.title}</h4>
+                    <p className="text-xs text-white/70">{item.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
