@@ -11,16 +11,24 @@ import {
   HeartPulse,
   ArrowRight,
 } from "lucide-react";
+import { consultantsHrefForSpecialty, type Specialty } from "@/lib/specialties";
 
-const specialists = [
-  { icon: Stethoscope, name: "General\nPhysician", href: "/consultants?specialty=General%20Practitioner" },
-  { icon: Brain, name: "Psychiatrist", href: "/consultants?specialty=Psychiatrist" },
-  { icon: Sparkles, name: "Dermatologist", href: "/consultants?specialty=Dermatologist" },
-  { icon: Baby, name: "Pediatrician", href: "/consultants?specialty=Pediatrician" },
-  { icon: Heart, name: "Gynecologist", href: "/consultants?specialty=Gynecologist" },
-  { icon: Bone, name: "Orthopedic", href: "/consultants?specialty=Orthopedic" },
-  { icon: HeartPulse, name: "Cardiologist", href: "/consultants?specialty=Cardiologist" },
-  { icon: ArrowRight, name: "View All", href: "/specialists", isArrow: true },
+type SpecialistTile = {
+  icon: typeof Stethoscope;
+  name: string;
+  specialty: Specialty | null;
+  isArrow?: boolean;
+};
+
+const specialists: SpecialistTile[] = [
+  { icon: Stethoscope, name: "General\nPhysician", specialty: "General Physician" },
+  { icon: Brain, name: "Psychiatrist", specialty: "Psychiatrist" },
+  { icon: Sparkles, name: "Dermatologist", specialty: "Dermatologist" },
+  { icon: Baby, name: "Pediatrician", specialty: "Pediatrician" },
+  { icon: Heart, name: "Gynecologist", specialty: "Gynecologist" },
+  { icon: Bone, name: "Orthopedic", specialty: "Orthopedic" },
+  { icon: HeartPulse, name: "Cardiologist", specialty: "Cardiologist" },
+  { icon: ArrowRight, name: "View All", specialty: null, isArrow: true },
 ];
 
 export function SpecialistsSection() {
@@ -41,10 +49,13 @@ export function SpecialistsSection() {
         <div className="specialist-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           {specialists.map((specialist, index) => {
             const Icon = specialist.icon;
+            const href = specialist.specialty
+              ? consultantsHrefForSpecialty(specialist.specialty)
+              : "/specialists";
             return (
               <Link
                 key={index}
-                href={specialist.href}
+                href={href}
                 className="specialist text-center cursor-pointer group"
               >
                 <div className="specialist-icon w-[58px] h-[58px] border border-[#e1e8f2] rounded-full mx-auto mb-[10px] flex items-center justify-center text-[#2871d4] bg-white transition-all duration-[250ms] group-hover:-translate-y-1 group-hover:border-[#b9d2f2] group-hover:bg-[#f7faff] group-hover:shadow-[0_8px_20px_rgba(31,102,190,0.08)]">

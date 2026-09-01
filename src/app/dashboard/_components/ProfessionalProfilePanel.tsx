@@ -33,6 +33,7 @@ import {
   resolveCountryIsoFromDialCode,
 } from "@/lib/phone-country-options";
 import { formatProfessionalDisplayName, PROFESSIONAL_NAME_TITLES } from "@/lib/professional-name-title";
+import { SPECIALTIES } from "@/lib/specialties";
 import { cn } from "@/lib/utils";
 import {
   Briefcase,
@@ -75,29 +76,9 @@ export type ProfessionalProfileForm = {
   profilePhotoUrl?: string | null;
 };
 
-const SPECIALIZATIONS = [
-  "General Physician",
-  "Cardiologist",
-  "Dermatologist",
-  "Neurologist",
-  "Pediatrician",
-  "Psychiatrist",
-  "Orthopedic",
-  "Gynecologist",
-  "ENT Specialist",
-  "Ophthalmologist",
-  "Psychologist",
-  "Clinical psychologist",
-  "Clinical psychologist (Associate)",
-  "Rehabilitation psychologist",
-  "Rehabilitation counsellor",
-  "Radiologist",
-  "Ayurveda",
-  "Homeopathy",
-  "Naturopathy",
-  "Oncologist",
-  "General surgeon",
-] as const;
+// Canonical specialty list lives in @/lib/specialties so every consumer
+// (landing tiles, consultants filter, admin dialog, this form) stays in sync.
+const SPECIALIZATIONS = SPECIALTIES;
 
 type ProfessionalProfilePanelProps = {
   user: {

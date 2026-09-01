@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { createProfessional, updateProfessional } from '@/features/admin/actions'
+import { SPECIALTIES } from '@/lib/specialties'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
@@ -217,9 +218,20 @@ export function ProfessionalDialog({ open, onOpenChange, professional, onSuccess
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Specialization</FormLabel>
-                  <FormControl>
-                    <Input {...field} className="rounded-xl" />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="Select specialization" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {SPECIALTIES.map((spec) => (
+                        <SelectItem key={spec} value={spec}>
+                          {spec}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

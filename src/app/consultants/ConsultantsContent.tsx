@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Star,
   ShieldCheck,
-  Briefcase,
   Stethoscope,
   ChevronLeft,
   ChevronRight,
@@ -18,7 +17,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LpButton, lpButtonVariants } from "@/components/ui/lp-button";
+import { LpButton } from "@/components/ui/lp-button";
 import { LpTextField } from "@/components/ui/lp-text-field";
 import {
   Select,
@@ -27,28 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SPECIALTIES, ALL_SPECIALTIES, specialtyLabel } from "@/lib/specialties";
 
 interface ConsultantsContentProps {
   initialProfessionals: any[];
 }
 
-const specialties = [
-  "all",
-  "Cardiologist",
-  "Dermatologist",
-  "General Practitioner",
-  "Neurologist",
-  "Pediatrician",
-  "Psychiatrist",
-  "Orthopedic",
-  "Gynecologist",
-  "Ophthalmologist",
-];
-
-function specialtyLabel(s: string) {
-  if (s === "all") return "All Specialists";
-  return s.replace("Specialist", "");
-}
+const specialties = [ALL_SPECIALTIES, ...SPECIALTIES];
 
 /** Same visual height as `LpTextField` search (py-3 + line + border). */
 const DIRECTORY_FIELD_CLASS =
@@ -111,25 +95,72 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
   return (
     <div className="min-h-0 bg-lp-surface pb-16 font-sans text-lp-on-surface selection:bg-lp-brand/20">
       <div className="mx-auto max-w-7xl px-5 md:px-16">
-        <section className="mb-8 pt-2">
-          <h1 className="mb-4 mt-8 font-heading text-4xl font-bold leading-tight tracking-tight text-lp-cta-bg md:text-5xl md:leading-[56px]">
+        <section className="my-2">
+          <h1 className="mb-3 mt-8 font-heading text-4xl font-bold leading-tight tracking-tight text-lp-cta-bg md:text-5xl md:leading-[56px]">
             Find Your Specialist
           </h1>
-          <p className="max-w-2xl font-sans text-lg leading-7 text-lp-on-surface-variant">
-            Connect with top-tier healthcare professionals through our verified directory. Clinical excellence meets
-            personal care.
-          </p>
         </section>
 
         <div className="sticky top-20 z-40 -mx-5 bg-lp-surface px-5 py-4 md:-mx-16 md:px-16">
-          <div className="mx-auto flex max-w-7xl w-full flex-col gap-4 md:flex-row md:items-stretch">
+          <div className="mx-auto flex max-w-7xl w-full flex-col gap-3 md:flex-row md:items-stretch">
+            <div className="min-w-0 flex-1 [&_.space-y-2]:space-y-0">
+              <LpTextField
+                key={currentSearch}
+                id="consultant-search"
+                name="q"
+                type="search"
+                autoComplete="off"
+                placeholder="Search by name, specialty, or keyword..."
+                defaultValue={currentSearch}
+                onChange={(e) => updateQuery({ q: e.target.value || null })}
+                startIcon={<Search className="size-5" aria-hidden />}
+                surface="white"
+                rounding="2xl"
+                inputClassName={cn(
+                  DIRECTORY_FIELD_CLASS,
+                  "placeholder:font-normal placeholder:text-lp-on-surface-variant/80",
+                )}
+              />
+            </div>
+
+            <div className="flex w-full min-w-0 items-stretch md:w-auto md:min-w-[200px]">
+              <Select value={currentSpecialty} onValueChange={(val) => updateQuery({ specialty: val })}>
+                <SelectTrigger
+                  className={cn(
+                    "w-full rounded-2xl bg-lp-surface-container-lowest px-4 shadow-none",
+                    DIRECTORY_FIELD_CLASS,
+                    "font-sans text-sm font-semibold text-lp-on-surface",
+                    "focus:ring-2 focus:ring-lp-brand/20 focus:ring-offset-0 focus-visible:border-lp-brand",
+                    "data-[placeholder]:text-lp-on-surface-variant [&>svg]:text-lp-on-surface-variant",
+                    "data-[size=default]:!min-h-12 data-[size=default]:!h-auto",
+                  )}
+                >
+                  <div className="flex min-h-0 min-w-0 flex-1 items-center gap-2">
+                    <Stethoscope className="size-5 shrink-0 text-lp-brand" aria-hidden />
+                    <SelectValue placeholder="All Specialties" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-lp-outline-variant/30 shadow-xl">
+                  {specialties.map((s) => (
+                    <SelectItem
+                      key={s}
+                      value={s}
+                      className="cursor-pointer py-3 font-sans text-sm"
+                    >
+                      {s === "all" ? "All Specialties" : specialtyLabel(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex w-full min-w-0 items-stretch md:w-auto md:min-w-[180px]">
               <Select value={currentCity} onValueChange={(val) => updateQuery({ city: val })}>
                 <SelectTrigger
                   className={cn(
                     "w-full rounded-2xl bg-lp-surface-container-lowest px-4 shadow-none",
                     DIRECTORY_FIELD_CLASS,
-                    "font-sans text-xs font-semibold uppercase tracking-wide text-lp-on-surface",
+                    "font-sans text-sm font-semibold text-lp-on-surface",
                     "focus:ring-2 focus:ring-lp-brand/20 focus:ring-offset-0 focus-visible:border-lp-brand",
                     "data-[placeholder]:text-lp-on-surface-variant [&>svg]:text-lp-on-surface-variant",
                     "data-[size=default]:!min-h-12 data-[size=default]:!h-auto",
@@ -153,42 +184,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="min-w-0 flex-1 [&_.space-y-2]:space-y-0">
-              <LpTextField
-                key={currentSearch}
-                id="consultant-search"
-                name="q"
-                type="search"
-                autoComplete="off"
-                placeholder="Search consultants by name..."
-                defaultValue={currentSearch}
-                onChange={(e) => updateQuery({ q: e.target.value || null })}
-                startIcon={<Search className="size-5" aria-hidden />}
-                surface="white"
-                rounding="2xl"
-                inputClassName={cn(
-                  DIRECTORY_FIELD_CLASS,
-                  "placeholder:font-normal placeholder:text-lp-on-surface-variant/80",
-                )}
-              />
-            </div>
           </div>
-        </div>
-
-        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-4 pt-2">
-          {specialties.map((s) => (
-            <LpButton
-              key={s}
-              type="button"
-              variant={currentSpecialty === s ? "pillOn" : "pillOff"}
-              className="shrink-0 gap-2 normal-case"
-              onClick={() => updateQuery({ specialty: s })}
-            >
-              {s === "all" ? <Briefcase className="size-4 shrink-0" aria-hidden /> : <Stethoscope className="size-4 shrink-0" aria-hidden />}
-              {specialtyLabel(s)}
-            </LpButton>
-          ))}
         </div>
 
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-baseline ">
@@ -230,7 +226,7 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
         </div>
 
         <AnimatePresence mode="popLayout">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {sortedProfessionals.map((prof, idx) => (
               <ConsultantCard key={prof.id} prof={prof} index={idx} />
             ))}
@@ -274,6 +270,41 @@ export default function ConsultantsContent({ initialProfessionals }: Consultants
             <ChevronRight className="size-5" />
           </LpButton>
         </div>
+
+        {/* CTA band */}
+        <div className="cta-box relative mt-14 flex flex-col items-start justify-between gap-5 overflow-hidden rounded-2xl px-8 py-7 text-white md:flex-row md:items-center md:px-10">
+          <style jsx>{`
+            .cta-box {
+              background: linear-gradient(105deg, #123b7d, #2873dc);
+            }
+            .cta-box::after {
+              content: "";
+              position: absolute;
+              width: 240px;
+              height: 240px;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 50%;
+              right: -110px;
+              top: -120px;
+            }
+          `}</style>
+
+          <div className="relative z-10">
+            <h2 className="mb-1 font-heading text-xl font-bold text-white md:text-2xl">
+              Can&apos;t find what you&apos;re looking for?
+            </h2>
+            <p className="font-sans text-sm text-white/90">
+              Our care team is here to help you find the right specialist.
+            </p>
+          </div>
+
+          <Link
+            href="/contact"
+            className="relative z-10 w-max shrink-0 rounded-lg bg-white px-6 py-3 text-sm font-bold text-[#2265b8] transition-colors hover:bg-gray-50"
+          >
+            Connect with Us
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -290,77 +321,56 @@ function ConsultantCard({ prof, index }: { prof: any; index: number }) {
       className="h-full"
     >
       <Link href={`/consultants/${prof.id}`} className="group block h-full">
-        <div className="flex h-full flex-col rounded-3xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-          <div className="relative mb-6 aspect-[4/3] overflow-hidden rounded-2xl bg-lp-surface-container">
-            {prof.profilePhotoUrl ? (
-              <Image
-                src={prof.profilePhotoUrl}
-                alt={prof.displayName ?? prof.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-lp-surface-container-high to-lp-surface-container">
-                <span className="font-heading text-3xl font-bold text-lp-brand/50">{prof.name?.slice(0, 2).toUpperCase()}</span>
-              </div>
-            )}
-
-            {prof.isVerified && (
-              <div className="absolute left-4 top-4 flex gap-2">
-                <div className="flex items-center gap-1 rounded-full bg-lp-surface/90 px-3 py-1 shadow-sm backdrop-blur-md">
-                  <ShieldCheck className="size-3.5 shrink-0 text-lp-brand" aria-hidden />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-lp-brand">Verified</span>
+        <div className="flex h-full flex-col rounded-2xl border border-lp-outline-variant/30 bg-lp-surface-container-lowest p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-lp-surface-container">
+              {prof.profilePhotoUrl ? (
+                <Image
+                  src={prof.profilePhotoUrl}
+                  alt={prof.displayName ?? prof.name}
+                  fill
+                  sizes="64px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-lp-surface-container-high to-lp-surface-container">
+                  <span className="font-heading text-lg font-bold text-lp-brand/50">{prof.name?.slice(0, 2).toUpperCase()}</span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            <div className="absolute bottom-4 left-4 max-w-[calc(100%-2rem)]">
-              <span className="inline-block rounded-lg bg-lp-brand/90 px-3 py-1 font-sans text-xs font-semibold text-lp-on-brand backdrop-blur-md">
+            <div className="min-w-0 flex-1">
+              <h3 className="flex items-center gap-1 truncate font-heading text-base font-semibold leading-tight text-lp-on-surface">
+                <span className="truncate">{prof.displayName ?? prof.name}</span>
+                {prof.isVerified && <ShieldCheck className="size-4 shrink-0 text-lp-brand" aria-hidden />}
+              </h3>
+              <p className="mt-0.5 truncate font-sans text-sm font-medium text-lp-brand">
                 {prof.specialization}
-              </span>
+              </p>
+              <div className="mt-1 flex items-center gap-1" aria-hidden>
+                <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-sans text-xs font-semibold text-lp-on-surface">4.9</span>
+                <span className="font-sans text-xs text-lp-on-surface-variant">· {prof.yearsOfExperience ?? 0} yrs exp</span>
+              </div>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col px-1">
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <h3 className="font-heading text-xl font-semibold leading-tight text-lp-on-surface md:text-2xl">
-                {prof.displayName ?? prof.name}
-              </h3>
+          {/* Fee + status row */}
+          <div className="mt-4 flex items-center justify-between border-t border-lp-outline-variant/30 pt-3">
+            <div>
+              <span className="flex items-center gap-0.5 font-heading text-lg font-bold text-lp-on-surface">
+                <IndianRupee className="size-4 shrink-0" aria-hidden />
+                {((prof.consultationFee || 0) / 100).toLocaleString()}
+              </span>
             </div>
-
-            <div className="mb-4 flex items-center gap-2 text-lp-on-surface-variant">
-              <MapPin className="size-4 shrink-0" aria-hidden />
-              <span className="font-sans text-sm">{prof.city || "Online consultation"}</span>
-            </div>
-
-            <div className="mb-6 grid grid-cols-2 gap-4 rounded-2xl bg-lp-surface-container-low p-4">
-              <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-lp-on-surface-variant">Experience</p>
-                <p className="font-heading text-xl font-semibold text-lp-on-surface">
-                  {prof.yearsOfExperience ?? 0}+ <span className="text-xs font-normal">Yrs</span>
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-lp-on-surface-variant">
-                  Consultation Fee
-                </p>
-                <p className="flex items-center gap-0.5 font-heading text-xl font-semibold text-lp-on-surface">
-                  <IndianRupee className="size-4 shrink-0" aria-hidden />
-                  {((prof.consultationFee || 0) / 100).toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-auto flex items-center justify-between border-t border-lp-outline-variant/30 pt-5">
-              <div className="flex items-center gap-2">
-                <span className="size-2 shrink-0 animate-pulse rounded-full bg-emerald-500" aria-hidden />
-                <span className="font-sans text-xs font-semibold text-emerald-700">Accepting consultations</span>
-              </div>
-              <div className={cn(lpButtonVariants({ variant: "directoryFab", size: "default" }))} aria-hidden>
-                <ArrowRight className="size-5" />
-              </div>
-            </div>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg bg-lp-brand px-4 py-2 font-sans text-xs font-semibold text-lp-on-brand shadow-sm transition-transform group-hover:scale-[1.03]",
+              )}
+            >
+              Book
+              <ArrowRight className="size-4" />
+            </span>
           </div>
         </div>
       </Link>
