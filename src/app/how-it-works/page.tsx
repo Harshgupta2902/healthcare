@@ -1,215 +1,240 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { openAuthModal } from "@/features/auth/open-auth-modal";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Video, MessageSquare, MapPin, Clock, Shield, Calendar, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import {
+  Video,
+  MessageSquare,
+  MapPin,
+  Clock,
+  Shield,
+  Calendar,
+  ArrowRight,
+} from "lucide-react";
 import { motion } from "framer-motion";
+
+const benefits = [
+  { icon: Clock, label: "24/7 Availability", desc: "Access care anytime, anywhere." },
+  { icon: Shield, label: "Secure & Private", desc: "HIPAA-compliant platform." },
+  { icon: Calendar, label: "Flexible Scheduling", desc: "Book appointments that fit your life." },
+];
+
+const methods = [
+  {
+    id: "video",
+    icon: Video,
+    title: "Video Consultations",
+    desc: "Connect face-to-face with licensed healthcare professionals through secure, high-quality video calls from the comfort of your home. Perfect for routine check-ups, follow-ups, and mental health sessions.",
+    steps: [
+      "Choose a convenient time slot",
+      "Join the secure video call",
+      "Discuss your health concerns",
+      "Receive digital prescriptions",
+    ],
+    img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
+  },
+  {
+    id: "chat",
+    icon: MessageSquare,
+    title: "Text / Chat Support",
+    desc: "Get expert medical advice through secure text messaging when you need quick answers or prefer written communication. Ideal for follow-ups and prescription refills.",
+    steps: [
+      "Send your health question",
+      "Provider responds within hours",
+      "Continue the conversation",
+      "Access complete chat history",
+    ],
+    img: "https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=800&q=80",
+  },
+  {
+    id: "in-person",
+    icon: MapPin,
+    title: "In-Person Visits",
+    desc: "Schedule traditional face-to-face visits at one of our partner clinics when physical examinations are necessary. Essential for comprehensive screenings and diagnostic procedures.",
+    steps: [
+      "Search for nearby partner clinics",
+      "Select your preferred provider",
+      "Complete pre-visit forms online",
+      "Visit for a comprehensive exam",
+    ],
+    img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
+  },
+];
 
 export default function HowItWorksPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-background selection:bg-primary selection:text-primary-foreground">
-      {/* Designer Background: Subtle texture across the whole page */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
-
-
-      <main className="relative z-10 flex flex-col">
-        {/* Modern Hero Section */}
-        <section className="relative w-full pt-24 md:pt-32 overflow-hidden">
-          {/* Atmospheric Glows */}
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="container relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>The Platform Guide</span>
-            </motion.div>
+    <div className="min-h-screen bg-white text-lp-on-surface">
+      <main className="flex flex-col">
+        {/* Hero */}
+        <section className="bg-gradient-to-b from-white to-[#f9fbff]">
+          <div className="container mx-auto max-w-[1120px] px-4 py-14 text-center md:py-20">
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]"
+              className="mb-4 text-4xl font-bold leading-[1.1] tracking-tight text-[#102b51] md:text-5xl"
             >
-              How <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
-                Protealth Works
+              <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+               How Protealth Works
               </span>
             </motion.h1>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium mb-16"
+              transition={{ delay: 0.08 }}
+              className="mx-auto max-w-2xl text-base leading-relaxed text-[#6f7f94] md:text-lg"
             >
-              We've designed multiple ways to connect with healthcare professionals,
-              ensuring you get the care you need, when and how you need it.
+              We&apos;ve designed multiple ways to connect with healthcare professionals, so you get
+              the care you need, when and how you need it.
             </motion.p>
 
-            {/* Key Benefits - Modernized */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {[
-                { icon: Clock, label: "24/7 Availability", desc: "Access care anytime, anywhere" },
-                { icon: Shield, label: "Secure & Private", desc: "HIPAA-compliant platform" },
-                { icon: Calendar, label: "Flexible Scheduling", desc: "Book appointments that fit your life" }
-              ].map((benefit, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
-                  className="group p-8 rounded-3xl bg-background border border-primary/05 hover:border-primary/30 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 text-center"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-primary mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <benefit.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-black mb-2">{benefit.label}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{benefit.desc}</p>
-                </motion.div>
-              ))}
+            {/* Benefits */}
+            <div className="mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-3">
+              {benefits.map((benefit, i) => {
+                const Icon = benefit.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 + i * 0.08 }}
+                    className="group rounded-2xl border border-[#e1e8f2] bg-white p-6 text-center transition-all duration-[250ms] hover:-translate-y-1 hover:border-[#b9d2f2] hover:shadow-[0_12px_30px_rgba(31,102,190,0.08)]"
+                  >
+                    <div className="mx-auto mb-4 flex size-11 items-center justify-center rounded-xl text-[#2871d4]">
+                      <Icon className="size-5" strokeWidth={1.7} />
+                    </div>
+                    <h3 className="mb-1 text-base font-bold text-[#1f385a]">{benefit.label}</h3>
+                    <p className="text-sm text-[#718198]">{benefit.desc}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* Dynamic Consultation Sections */}
-        {[
-          {
-            id: "video",
-            icon: Video,
-            title: "Video Consultations",
-            desc: "Connect face‑to‑face with licensed healthcare professionals through secure, high‑quality video calls from the comfort of your home. Perfect for routine check‑ups, follow‑ups, and mental health sessions.",
-            steps: ["Choose a convenient time slot", "Join the secure video call", "Discuss your health concerns", "Receive digital prescriptions"],
-            img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
-            dark: true
-          },
-          {
-            id: "chat",
-            icon: MessageSquare,
-            title: "Text/Chat Support",
-            desc: "Get expert medical advice through secure text messaging when you need quick answers or prefer written communication. Ideal for follow-ups and prescription refills.",
-            steps: ["Send your health question", "Provider responds within hours", "Continue the conversation", "Access complete chat history"],
-            img: "https://media.istockphoto.com/id/1255861967/photo/woman-hand-typing-on-keyboard-laptop-with-mobile-smartphone-live-chat-chatting-on-application.webp?a=1&b=1&s=612x612&w=0&k=20&c=9fzWBEdNqrzgPiiPGa-13WSDPbnZBx0xUER2InECaeg=",
-            dark: false
-          },
-          {
-            id: "in-person",
-            icon: MapPin,
-            title: "In-Person Visits",
-            desc: "Schedule traditional face-to-face visits at one of our partner clinics when physical examinations are necessary. Essential for comprehensive screenings and diagnostic procedures.",
-            steps: ["Search for nearby partner clinics", "Select your preferred provider", "Complete pre-visit forms online", "Visit for comprehensive exam"],
-            img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
-            dark: true
-          }
-        ].map((section, idx) => (
-          <section
-            key={section.id}
-            className={`pt-32 relative overflow-hidden ${
-              section.dark ? 'bg-secondary/20 border-y border-border/50' : 'bg-background'
-            }`}
-          >
-            {section.dark && <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none" />}
-
-            <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-              <div className={`flex flex-col lg:items-center gap-16 ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}>
-                {/* Text Column */}
-                <div className="lg:w-1/2 space-y-8">
-                  <div className="flex items-center gap-4">
-                    <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-600 to-indigo-600">
-                        {section.title}
-                      </span>
+        {/* Consultation methods */}
+        <section className="container mx-auto max-w-[1120px] px-4 py-12 md:py-16">
+          <div className="space-y-12 md:space-y-16">
+            {methods.map((method, idx) => {
+              const Icon = method.icon;
+              return (
+                <div
+                  key={method.id}
+                  className={`flex flex-col gap-8 lg:items-center lg:gap-14 ${
+                    idx % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
+                  }`}
+                >
+                  {/* Text */}
+                  <div className="lg:w-1/2">
+                    {/* <div className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-[#eef5ff] text-[#2871d4]">
+                      <Icon className="size-6" strokeWidth={1.7} />
+                    </div> */}
+                    <h2 className="mb-3 text-2xl font-bold tracking-tight text-[#122e52] md:text-3xl">
+                      {method.title}
                     </h2>
-                  </div>
+                    <p className="mb-6 max-w-xl text-base leading-relaxed text-[#6f7f94]">
+                      {method.desc}
+                    </p>
 
-                  <p className="text-xl text-muted-foreground font-medium leading-relaxed max-w-xl">
-                    {section.desc}
-                  </p>
-
-                  {/* Process Card */}
-                  <div className="space-y-4 pt-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">The Process:</h4>
-                    <div className="grid gap-3 p-6 rounded-2xl backdrop-blur-md bg-white/5 dark:bg-black/10 border border-white/15">
-                      {section.steps.map((step, i) => (
-                        <div key={i} className="flex items-center gap-3 group/step">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary ring-1 ring-primary/20 group-hover/step:bg-primary group-hover/step:text-white transition-colors">
-                            {i + 1}
-                          </div>
-                          <span className="font-medium text-muted-foreground group-hover/step:text-foreground transition-colors">
-                            {step}
-                          </span>
-                        </div>
-                      ))}
+                    <div>
+                      <h4 className="mb-4 text-xs font-semibold uppercase tracking-wide text-[#2871d4]">
+                        The Process
+                      </h4>
+                      <ol className="relative space-y-5 pl-2">
+                        {method.steps.map((step, i) => (
+                          <li key={i} className="relative flex items-start gap-4">
+                            {/* connector line */}
+                            {i < method.steps.length - 1 && (
+                              <span
+                                className="absolute left-[15px] top-8 h-[calc(100%-8px)] w-px bg-[#d7e4f5]"
+                                aria-hidden
+                              />
+                            )}
+                            <div className="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full bg-[#1769d8] text-xs font-bold text-white shadow-sm shadow-[#1769d8]/30">
+                              {i + 1}
+                            </div>
+                            <span className="pt-1.5 text-sm font-medium text-[#40597d]">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
                     </div>
-                  </div>
 
-                  {/* CTA */}
-                  <div className="pt-8">
-                    <Button
-                      size="lg"
-                      className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all group bg-gradient-to-r from-primary to-blue-600 hover:from-primary/95 hover:to-blue-600/95"
+                    <Link
+                      href="/book-consultation"
+                      className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#1769d8] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#1769d8]/20 transition-colors hover:bg-[#1556b8]"
                     >
-                      Get Started Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+                      Get Started Now
+                      <ArrowRight className="size-4" />
+                    </Link>
                   </div>
-                </div>
 
-                {/* Visual Column */}
-                <div className="lg:w-1/2">
-                  <div className="relative group">
-                    {/* Decorative ring/glow */}
-                    <div className="absolute -inset-4 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-[40px] blur-2xl opacity-50 group-hover:opacity-80 transition-opacity duration-500" />
-                    <div className="relative rounded-[32px] overflow-hidden border border-white/20 bg-white/5 dark:bg-black/20 backdrop-blur-md shadow-2xl">
+                  {/* Visual */}
+                  <div className="lg:w-1/2">
+                    <div className="overflow-hidden rounded-2xl border border-[#e1e8f2] bg-[#edf4ff] shadow-sm">
                       <img
-                        src={section.img}
-                        alt={section.title}
-                        className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-700"
+                        src={method.img}
+                        alt={method.title}
+                        className="aspect-[4/3] w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
                       />
                     </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="container mx-auto max-w-[1120px] px-4 pb-16">
+          <div className="cta-box relative overflow-hidden rounded-2xl px-8 py-12 text-center text-white md:px-12 md:py-16">
+            <style jsx>{`
+              .cta-box {
+                background: linear-gradient(105deg, #123b7d, #2873dc);
+              }
+              .cta-box::after {
+                content: "";
+                position: absolute;
+                width: 300px;
+                height: 300px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 50%;
+                right: -140px;
+                top: -150px;
+              }
+            `}</style>
+
+            <div className="relative z-10">
+              <h2 className="mb-3 text-2xl font-bold text-white md:text-3xl">
+                Experience the future of care today
+              </h2>
+              <p className="mx-auto mb-8 max-w-2xl text-sm text-white/90 md:text-base">
+                We&apos;re not just another healthcare app. We&apos;re your dedicated health partner,
+                available whenever and wherever you need us.
+              </p>
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => openAuthModal({ view: "signup" })}
+                  className="rounded-lg bg-white px-6 py-3 text-sm font-bold text-[#2265b8] transition-colors hover:bg-gray-50 cursor-pointer"
+                >
+                  Create Free Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/consultants")}
+                  className="rounded-lg border border-white/40 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-white/10 cursor-pointer"
+                >
+                  Meet the Experts
+                </button>
               </div>
-            </div>
-          </section>
-        ))}
-
-        {/* Final CTA - Designer Style */}
-        <section className="py-32 w-full bg-background relative overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="container mx-auto max-w-4xl px-4 text-center space-y-12">
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight">
-              Experience the future <br />
-              of <span className="text-primary">care today.</span>
-            </h2>
-            <p className="text-xl text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-              We're not just another healthcare app. We're your dedicated health partner, available whenever and wherever you need us.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button size="lg" className="h-16 px-10 text-lg font-black rounded-2xl cursor-pointer bg-primary shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" onClick={() => openAuthModal({ view: "signup" })}>
-                Create Free Account
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-16 px-10 text-lg font-bold rounded-2xl border-2 transition-all cursor-pointer hover:bg-secondary/60 hover:text-primary hover:border-primary/60 hover:shadow-lg hover:-translate-y-0.5"
-                onClick={() => router.push("/consultants")}
-              >
-                Meet the Experts
-              </Button>
             </div>
           </div>
         </section>
       </main>
-
     </div>
   );
 }
